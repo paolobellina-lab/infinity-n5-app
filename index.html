@@ -3,145 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Infinity N5 - Risoluzione Scontri Multipli</title>
+    <title>Infinity N5 - Intelligenza Tattica v7</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #1e2124;
-            color: #ffffff;
-            padding: 20px;
-            max-width: 450px;
-            margin: 0 auto;
-        }
-        h2 { text-align: center; color: #00ffaa; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #aaa; font-size: 14px; margin-bottom: 20px; }
+        body { font-family: Arial, sans-serif; background-color: #1e2124; color: #ffffff; padding: 20px; max-width: 500px; margin: 0 auto; }
+        h2 { text-align: center; color: #00ffaa; margin-bottom: 0; }
+        .version { text-align: center; color: #00d2ff; font-size: 14px; font-weight: bold; margin-bottom: 20px; }
         
-        .button-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        button {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
+        #setupScreen, #mainScreen { background-color: #2c2f33; padding: 20px; border-radius: 8px; border: 1px solid #444; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 13px; color: #aaa; margin-bottom: 5px; }
+        select { width: 100%; padding: 10px; background-color: #1a1c1e; color: #fff; border: 1px solid #555; border-radius: 4px; font-size: 14px; }
+        
+        button { width: 100%; padding: 15px; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        .btn-primary { background-color: #00d2ff; color: #000; }
         .btn-active { background-color: #00ffaa; color: #000; }
         .btn-reactive { background-color: #ffaa00; color: #000; }
-        .btn-reset { background-color: #ff3366; color: #fff; width: 100%; margin-top: 10px; }
+        .btn-reset { background-color: #ff3366; color: #fff; margin-top: 20px;}
+        button.recording { opacity: 0.8; animation: pulse 1s infinite; background-color: #ff3366 !important; color: white !important;}
+
+        .player-panel { display: flex; gap: 10px; margin-bottom: 10px; }
+        .player-panel button { margin-top: 0; }
+
+        .encounter-board { margin-top: 20px; border-top: 2px dashed #555; padding-top: 15px; }
+        .active-card { background-color: rgba(0, 255, 170, 0.1); border-left: 4px solid #00ffaa; padding: 12px; margin-bottom: 10px; border-radius: 4px; }
+        .aro-card { background-color: rgba(255, 170, 0, 0.1); border-left: 4px solid #ffaa00; padding: 12px; margin-bottom: 10px; border-radius: 4px; }
         
-        button.recording { opacity: 0.7; animation: pulse 1s infinite; }
-        
-        /* Area di Risoluzione */
-        .encounter-board {
-            background-color: #2c2f33;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 20px;
-            border: 1px solid #444;
-        }
-
-        .active-card {
-            background-color: rgba(0, 255, 170, 0.1);
-            border-left: 4px solid #00ffaa;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }
-
-        .aro-card {
-            background-color: rgba(255, 170, 0, 0.1);
-            border-left: 4px solid #ffaa00;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
         .action-title { font-weight: bold; font-size: 16px; margin: 0 0 5px 0; }
-        .action-desc { font-size: 13px; color: #ccc; margin: 0; font-style: italic; }
+        .action-desc { font-size: 13px; color: #ccc; margin: 0 0 8px 0; font-style: italic; }
+        
+        .error-tag { background-color: #ff3366; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; display: inline-block; margin-top: 5px; }
+        .success-tag { background-color: #00cc88; color: black; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; display: inline-block; margin-top: 5px; }
 
-        .burst-control {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .burst-input {
-            width: 40px;
-            padding: 5px;
-            text-align: center;
-            background-color: #1e2124;
-            color: #fff;
-            border: 1px solid #666;
-            border-radius: 4px;
-        }
-
+        .tactical-data { display: flex; justify-content: space-between; background-color: #1a1c1e; padding: 8px; border-radius: 4px; border: 1px solid #555; margin-top: 8px; }
+        .t-input { width: 40px; padding: 4px; text-align: center; background-color: #2c2f33; color: #fff; border: 1px solid #00ffaa; border-radius: 4px; }
+        
         .status { text-align: center; font-size: 12px; color: #888; margin-top: 20px; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(0.98); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <h2>Terminale N5</h2>
-    <div class="subtitle">Gestione Tiri a Confronto Multipli</div>
+    <h2>Terminale Tattico N5</h2>
+    <div class="version">Versione 7.0 - Arbitro Vocale e Validazione</div>
 
-    <div class="button-container">
-        <button id="btnVoice" class="btn-active">🎤 Dichiara Ordine</button>
-        <button id="btnAro" class="btn-reactive">🛡️ Aggiungi ARO</button>
+    <div id="setupScreen">
+        <h3 style="margin-top:0; text-align:center;">Caricamento Liste</h3>
+        <p style="font-size: 13px; color: #ccc; text-align: center;">Seleziona le fazioni. L'IA convaliderà gli ordini in base ai profili di queste squadre.</p>
+        <div class="form-group">
+            <label>Giocatore 1 (Attivo)</label>
+            <select id="team1Select"></select>
+        </div>
+        <div class="form-group">
+            <label>Giocatore 2 (Reattivo)</label>
+            <select id="team2Select"></select>
+        </div>
+        <button class="btn-primary" onclick="avviaPartita()">Sincronizza Liste e Inizia 🚀</button>
     </div>
 
-    <div id="board" class="encounter-board" style="display: none;">
-        <div id="activeActionArea"></div>
-        <h4 style="margin: 15px 0 5px 0; color: #ffaa00; border-bottom: 1px solid #444; padding-bottom: 5px;">Reazioni Nemiche (ARO)</h4>
-        <div id="aroListArea"></div>
+    <div id="mainScreen" style="display: none;">
+        
+        <div class="player-panel">
+            <button id="btnVoice" class="btn-active">🎤 Ordine (G1)</button>
+            <button id="btnAro" class="btn-reactive">🛡️ ARO (G2)</button>
+        </div>
+
+        <div id="board" class="encounter-board" style="display: none;">
+            <div id="activeActionArea"></div>
+            <div id="aroListArea"></div>
+            <button id="btnReset" class="btn-reset" onclick="resetBoard()">🔄 Risolvi e Pulisci Tavolo</button>
+        </div>
     </div>
 
-    <button id="btnReset" class="btn-reset" style="display: none;" onclick="resetBoard()">🔄 Chiudi Ordine e Pulisci</button>
-
-    <div class="status" id="dbStatus">Connessione al database in corso...</div>
+    <div class="status" id="dbStatus">Connessione a Firebase in corso...</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
+        // FIREBASE CONFIG (Pronto per il DB reale)
         const firebaseConfig = {
             apiKey: "AIzaSyAMpF8Le_srYjxgC7vb231Ng40iXwr256o",
             authDomain: "infinityn5-database.firebaseapp.com",
             projectId: "infinityn5-database",
             storageBucket: "infinityn5-database.firebasestorage.app",
             messagingSenderId: "506923243459",
-            appId: "1:506923243459:web:4aa5e59c84c9d8156c4f76",
-            measurementId: "G-PTSEKES982"
+            appId: "1:506923243459:web:4aa5e59c84c9d8156c4f76"
         };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        document.getElementById('dbStatus').innerText = "✅ Database Firestore Connesso";
+        initializeApp(firebaseConfig);
+        document.getElementById('dbStatus').innerText = "✅ Arbitro IA Connesso";
         document.getElementById('dbStatus').style.color = "#00ffaa";
 
         // ==========================================
-        // STATO DEL GIOCO (POOL DI RISOLUZIONE)
+        // ROSTER SIMULATO (Sarà sostituito da Firebase)
         // ==========================================
-        window.poolScontro = {
+        const databaseSquadre = {
+            "PanOceania": {
+                "fusilier": ["combi rifle", "pistol", "cc weapon"],
+                "orc troop": ["multi rifle", "heavy pistol", "cc weapon"],
+                "aquila guard": ["hmg", "shock marksman rifle", "pistol"]
+            },
+            "Nomads": {
+                "alguacil": ["combi rifle", "pistol", "cc weapon"],
+                "moran": ["boarding shotgun", "combi rifle", "flash pulse"],
+                "mobile brigada": ["multi rifle", "light flamethrower", "pistol"]
+            }
+        };
+
+        // Dizionario di tutte le armi per riconoscerle nella frase anche se sbagliate
+        const tutteLeArmi = ["combi rifle", "multi rifle", "hmg", "shock marksman rifle", "boarding shotgun", "flash pulse", "light flamethrower", "pistol", "heavy pistol", "cc weapon"];
+
+        const fazioni = Object.keys(databaseSquadre);
+        const selT1 = document.getElementById('team1Select');
+        const selT2 = document.getElementById('team2Select');
+        fazioni.forEach(f => { selT1.add(new Option(f, f)); selT2.add(new Option(f, f)); });
+        selT2.selectedIndex = 1;
+
+        let fazioneAttiva = "";
+        let fazioneReattiva = "";
+
+        window.avviaPartita = function() {
+            fazioneAttiva = document.getElementById('team1Select').value;
+            fazioneReattiva = document.getElementById('team2Select').value;
+            document.getElementById('setupScreen').style.display = "none";
+            document.getElementById('mainScreen').style.display = "block";
+        };
+
+        window.poolScontro = { 
             azioneAttiva: null,
-            paroleAttive: "",
-            bersagliAro: []
+            bersagliAro: [] 
         };
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
-        const btnVoice = document.getElementById('btnVoice');
-        const btnAro = document.getElementById('btnAro');
         let modalitaCorrente = 'active';
 
         if (SpeechRecognition) {
@@ -151,112 +144,157 @@
             recognition.maxAlternatives = 1;
 
             recognition.onstart = function() {
-                let btn = modalitaCorrente === 'active' ? btnVoice : btnAro;
-                btn.classList.add('recording');
-                btn.innerText = "Ascolto...";
+                let btn = modalitaCorrente === 'active' ? document.getElementById('btnVoice') : document.getElementById('btnAro');
+                btn.classList.add('recording'); btn.innerText = "Ascolto in corso...";
             };
-
             recognition.onspeechend = function() { recognition.stop(); };
-
+            
             recognition.onresult = function(event) {
-                btnVoice.classList.remove('recording'); btnVoice.innerText = "🎤 Dichiara Ordine";
-                btnAro.classList.remove('recording'); btnAro.innerText = "🛡️ Aggiungi ARO";
-
+                ripristinaBottoni();
                 const trascrizione = event.results[0][0].transcript.toLowerCase();
-                analizzaComando(trascrizione, modalitaCorrente);
+                elaboraComandoVocale(trascrizione, modalitaCorrente);
                 aggiornaInterfaccia();
             };
+            recognition.onerror = function() { ripristinaBottoni(); };
 
-            recognition.onerror = function(event) {
-                btnVoice.classList.remove('recording'); btnVoice.innerText = "🎤 Dichiara Ordine";
-                btnAro.classList.remove('recording'); btnAro.innerText = "🛡️ Aggiungi ARO";
-            };
-
-            btnVoice.addEventListener('click', () => { modalitaCorrente = 'active'; recognition.start(); });
-            btnAro.addEventListener('click', () => { modalitaCorrente = 'reactive'; recognition.start(); });
-
-        } else {
-            alert("Il browser non supporta la voce.");
+            document.getElementById('btnVoice').addEventListener('click', () => { modalitaCorrente = 'active'; recognition.start(); });
+            document.getElementById('btnAro').addEventListener('click', () => { modalitaCorrente = 'reactive'; recognition.start(); });
         }
 
-        function analizzaComando(testo, mode) {
-            const paroleChiave = {
-                "muovo": mode === 'active' ? "Move" : "Movimento Illegale in ARO",
-                "sparo": mode === 'active' ? "BS Attack" : "BS Attack (ARO B:1)",
-                "schivo": mode === 'active' ? "Dodge" : "Dodge (ARO)",
-                "scopro": mode === 'active' ? "Discover" : "Discover (ARO)",
-                "hacker": mode === 'active' ? "Hacking" : "Hacking (ARO)",
-                "corpo a corpo": mode === 'active' ? "CC Attack" : "CC Attack (ARO)"
-            };
+        function ripristinaBottoni() {
+            const btnV = document.getElementById('btnVoice'); btnV.classList.remove('recording'); btnV.innerHTML = "🎤 Ordine (G1)";
+            const btnA = document.getElementById('btnAro'); btnA.classList.remove('recording'); btnA.innerHTML = "🛡️ ARO (G2)";
+        }
 
-            let skillTrovata = "Azione Generica";
-            for (const [parola, skill] of Object.entries(paroleChiave)) {
-                if (testo.includes(parola)) {
-                    skillTrovata = skill;
-                    break;
+        function estraiDatiTattici(testo) {
+            let dadi = 1; let dist = 0;
+            const mapNumeri = { "un": 1, "uno": 1, "due": 2, "tre": 3, "quattro": 4, "cinque": 5 };
+            let testoNorm = testo;
+            for (let [word, num] of Object.entries(mapNumeri)) testoNorm = testoNorm.replace(new RegExp(`\\b${word}\\b`, 'g'), num);
+            let matchDadi = testoNorm.match(/(\d+)\s*(dadi|dado|colpi|colpo)/); if (matchDadi) dadi = parseInt(matchDadi[1]);
+            let matchDist = testoNorm.match(/(\d+)\s*(pollici|inch)/) || testoNorm.match(/(distanza|entro|a)\s*(\d+)/); if (matchDist) dist = parseInt(matchDist[2] || matchDist[1]);
+            return { dadi, dist };
+        }
+
+        // ==========================================
+        // CUORE DELL'ARBITRO IA: VALIDAZIONE
+        // ==========================================
+        function validaEntita(testo, fazione) {
+            let truppaTrovata = "Sconosciuto";
+            let armaTrovata = "Nessuna Arma Specifica";
+            let errori = [];
+
+            const roster = databaseSquadre[fazione];
+            const nomiTruppe = Object.keys(roster);
+
+            // 1. Cerca la truppa nella frase
+            for (let t of nomiTruppe) {
+                if (testo.includes(t)) { truppaTrovata = t; break; }
+            }
+
+            if (truppaTrovata === "Sconosciuto") {
+                errori.push(`Unità non trovata nel roster ${fazione}.`);
+            } else {
+                // 2. Cerca un'arma qualsiasi nella frase
+                let armaNellaFrase = null;
+                for (let w of tutteLeArmi) {
+                    if (testo.includes(w)) { armaNellaFrase = w; break; }
+                }
+
+                if (armaNellaFrase) {
+                    // 3. Controlla se la truppa ha quell'arma
+                    if (roster[truppaTrovata].includes(armaNellaFrase)) {
+                        armaTrovata = armaNellaFrase;
+                    } else {
+                        armaTrovata = armaNellaFrase;
+                        errori.push(`Il ${truppaTrovata.toUpperCase()} non ha ${armaNellaFrase.toUpperCase()} in dotazione!`);
+                    }
                 }
             }
 
+            return { truppa: truppaTrovata, arma: armaTrovata, errori: errori };
+        }
+
+        function elaboraComandoVocale(testo, mode) {
+            const fazione = mode === 'active' ? fazioneAttiva : fazioneReattiva;
+            
+            // Estrazione Skill base
+            const paroleChiave = { "muovo": "Move", "muove": "Move", "sparo": "BS Attack", "spara": "BS Attack", "schiva": "Dodge", "schivo": "Dodge", "scopro": "Discover", "hacker": "Hacking", "corpo": "CC Attack" };
+            let skill = "Azione Non Riconosciuta";
+            for (const [parola, s] of Object.entries(paroleChiave)) if (testo.includes(parola)) { skill = s; break; }
+
+            // Validazione Roster
+            const check = validaEntita(testo, fazione);
+            const dati = estraiDatiTattici(testo);
+
+            const pacchettoAzione = {
+                skillBase: mode === 'active' ? skill : skill + " (ARO)",
+                testoOriginale: testo,
+                unita: check.truppa.toUpperCase(),
+                arma: check.arma.toUpperCase(),
+                errori: check.errori,
+                dadi: dati.dadi,
+                distanza: dati.distanza
+            };
+
             if (mode === 'active') {
-                // Inizia un nuovo scontro
-                window.poolScontro.azioneAttiva = skillTrovata;
-                window.poolScontro.paroleAttive = testo;
-                window.poolScontro.bersagliAro = []; // Azzera le ARO precedenti
+                window.poolScontro.azioneAttiva = pacchettoAzione;
+                window.poolScontro.bersagliAro = [];
             } else {
-                // Aggiunge un nemico al pool
-                window.poolScontro.bersagliAro.push({
-                    azione: skillTrovata,
-                    parole: testo,
-                    dadiSubiti: 1 // Default dadi assegnati dall'attaccante a questo bersaglio
-                });
+                window.poolScontro.bersagliAro.push(pacchettoAzione);
             }
         }
 
         window.aggiornaInterfaccia = function() {
             document.getElementById('board').style.display = "block";
-            document.getElementById('btnReset').style.display = "block";
             
-            // Render Attaccante
-            let activeHtml = "";
+            // Render Azione Attiva
+            let htmlAttivo = "";
             if (window.poolScontro.azioneAttiva) {
-                activeHtml = `
+                let act = window.poolScontro.azioneAttiva;
+                let tags = "";
+                if (act.errori.length > 0) {
+                    act.errori.forEach(e => tags += `<div class="error-tag">❌ ILLEGALE: ${e}</div><br>`);
+                } else {
+                    tags = `<div class="success-tag">✅ Profilo Convalidato</div>`;
+                }
+
+                htmlAttivo = `
                     <div class="active-card">
-                        <p class="action-title" style="color:#00ffaa;">🟢 ATTIVO: ${window.poolScontro.azioneAttiva}</p>
-                        <p class="action-desc">"${window.poolScontro.paroleAttive}"</p>
+                        <p class="action-title" style="color:#00ffaa;">🟢 ${act.unita} | Arma: ${act.arma}</p>
+                        <p class="action-desc">Ordine: ${act.skillBase} - "${act.testoOriginale}"</p>
+                        ${tags}
                     </div>
                 `;
-            } else {
-                activeHtml = `<p style="color:#666; font-style:italic;">Dichiara prima un Ordine Attivo.</p>`;
             }
-            document.getElementById('activeActionArea').innerHTML = activeHtml;
+            document.getElementById('activeActionArea').innerHTML = htmlAttivo;
 
-            // Render AROs e Divisione Burst
-            let aroHtml = "";
-            if (window.poolScontro.bersagliAro.length === 0) {
-                aroHtml = `<p style="color:#666; font-style:italic;">Nessuna ARO dichiarata (Tiro Normale).</p>`;
-            } else {
-                window.poolScontro.bersagliAro.forEach((aro, index) => {
-                    aroHtml += `
-                        <div class="aro-card">
-                            <div>
-                                <p class="action-title" style="color:#ffaa00;">Bersaglio ${index + 1}: ${aro.azione}</p>
-                                <p class="action-desc">"${aro.parole}"</p>
-                            </div>
-                            <div class="burst-control">
-                                <span style="font-size:12px; color:#ccc;">Dadi vs Lui:</span>
-                                <input type="number" class="burst-input" value="${aro.dadiSubiti}" min="0" max="6">
-                            </div>
+            // Render ARO
+            let htmlAro = "";
+            window.poolScontro.bersagliAro.forEach((aro, i) => {
+                let tags = "";
+                if (aro.errori.length > 0) {
+                    aro.errori.forEach(e => tags += `<div class="error-tag">❌ ILLEGALE: ${e}</div><br>`);
+                }
+
+                htmlAro += `
+                    <div class="aro-card">
+                        <p class="action-title" style="color:#ffaa00;">🛡️ ARO ${i+1}: ${aro.unita} | Arma: ${aro.arma}</p>
+                        <p class="action-desc">${aro.skillBase} - "${aro.testoOriginale}"</p>
+                        ${tags}
+                        <div class="tactical-data">
+                            <span style="font-size:12px; color:#ccc;">Pollici: <input type="number" class="t-input" style="border-color:#00d2ff;" value="${aro.distanza||''}"></span>
+                            <span style="font-size:12px; color:#ccc;">Dadi vs Lui: <input type="number" class="t-input" value="${aro.dadi}"></span>
                         </div>
-                    `;
-                });
-            }
-            document.getElementById('aroListArea').innerHTML = aroHtml;
+                    </div>
+                `;
+            });
+            document.getElementById('aroListArea').innerHTML = htmlAro;
         }
 
         window.resetBoard = function() {
-            window.poolScontro = { azioneAttiva: null, paroleAttive: "", bersagliAro: [] };
+            window.poolScontro = { azioneAttiva: null, bersagliAro: [] };
             document.getElementById('board').style.display = "none";
-            document.getElementById('btnReset').style.display = "none";
         }
     </script>
 </body>
