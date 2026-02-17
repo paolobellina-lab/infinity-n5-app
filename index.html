@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinity N5 - Comandante Vocale & Database</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1e2124;
+            color: #ffffff;
+            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        h2 { text-align: center; color: #00ffaa; }
+        .form-group { margin-bottom: 15px; }
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: #00ffaa;
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        button:hover { background-color: #00cc88; }
+        button.recording { background-color: #ff3366; color: white; animation: pulse 1.5s infinite; }
+        
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #2c2f33;
+            border-left: 4px solid #00ffaa;
+            border-radius: 4px;
+        }
+        .action-tag {
+            display: inline-block;
+            background-color: #00d2ff;
+            color: black;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .status {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            margin-top: 20px;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Terminale Tattico N5</h2>
+
+    <div class="form-group">
+        <button id="btnVoice">
+            🎤 Premi e Dichiara Ordine
+        </button>
+    </div>
+
+    <div class="result-box" id="resultBox" style="display: none;">
+        <p><strong>Comando Rilevato:</strong></p>
+        <p id="testoTrascritto" style="font-size: 18px;"></p>
+        <hr style="border-color: #444;">
+        <p><strong>Azioni Riconosciute:</strong></p>
+        <div id="azioniRiconosciute"></div>
+    </div>
+
+    <div class="status" id="dbStatus">Connessione al database in corso...</div>
+
+    <script type="module">
+        // 1. IMPORTA FIREBASE (usiamo la versione compatibile con HTML puro)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // 2. LA TUA CONFIGURAZIONE FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyAMpF8Le_srYjxgC7vb231Ng40iXwr256o",
+            authDomain: "infinityn5-database.firebaseapp.com",
+            projectId: "infinityn5-database",
+            storageBucket: "infinityn5-database.firebasestorage.app",
+            messagingSenderId: "506923243459",
+            appId: "1:506923243459:web:4aa5e59c84c9d8156c4f76",
+            measurementId: "G-PTSEKES982"
+        };
+
+        // 3. INIZIALIZZA L'APP E IL DATABASE
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Conferma visiva che Firebase è collegato
+        document.getElementById('dbStatus').innerText = "✅ Database Firestore Connesso";
+        document.getElementById('dbStatus').style.color = "#00ffaa";
+
+        // ==========================================
+        // 4. LOGICA DEL RICONOSCIMENTO VOCALE
+        // ==========================================
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        const btnVoice = document.getElementById('btnVoice');
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'it-IT';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = function() {
+                btnVoice.classList.add('recording');
+                btnVoice.innerText = "🔴 In ascolto... Parla ora!";
+            };
+
+            recognition.onspeechend = function() {
+                recognition.stop();
+            };
+
+            recognition.onresult = function(event) {
+                btnVoice.classList.remove('recording');
+                btnVoice.innerText = "🎤 Premi e Dichiara Ordine";
+
+                const trascrizione = event.results[0][0].transcript.toLowerCase();
+                document.getElementById('testoTrascritto').innerText = `"${trascrizione}"`;
+                
+                analizzaComando(trascrizione);
+                document.getElementById('resultBox').style.display = "block";
+            };
+
+            recognition.onerror = function(event) {
+                btnVoice.classList.remove('recording');
+                btnVoice.innerText = "🎤 Errore/Riprova";
+                alert("Errore vocale: " + event.error);
+            };
+
+            // Collega il bottone alla funzione di avvio
+            btnVoice.addEventListener('click', () => {
+                recognition.start();
+            });
+
+        } else {
+            alert("Il browser non supporta la voce. Usa Chrome su GitHub Pages.");
+        }
+
+        function analizzaComando(testo) {
+            const displayAzioni = document.getElementById('azioniRiconosciute');
+            displayAzioni.innerHTML = ""; 
+            let trovataAzione = false;
+
+            const paroleChiave = {
+                "muovo": "Move (Short Skill)",
+                "sparo": "BS Attack (Short Skill)",
+                "schivo": "Dodge",
+                "scopro": "Discover"
+            };
+
+            for (const [parola, skill] of Object.entries(paroleChiave)) {
+                if (testo.includes(parola)) {
+                    displayAzioni.innerHTML += `<span class="action-tag">${skill}</span> `;
+                    trovataAzione = true;
+                }
+            }
+
+            if (!trovataAzione) {
+                displayAzioni.innerHTML = "<em>Azione non riconosciuta.</em>";
+            }
+        }
+    </script>
+</body>
+</html>
