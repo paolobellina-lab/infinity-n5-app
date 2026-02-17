@@ -14,47 +14,72 @@
             margin: 0 auto;
         }
         h2 { text-align: center; color: #00ffaa; }
-        .form-group { margin-bottom: 15px; }
+        
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
         button {
             width: 100%;
             padding: 15px;
-            background-color: #00ffaa;
-            color: #000;
             border: none;
             border-radius: 4px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            margin-top: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
+            transition: background-color 0.2s;
         }
-        button:hover { background-color: #00cc88; }
-        button.recording { background-color: #ff3366; color: white; animation: pulse 1.5s infinite; }
+
+        /* Stile pulsante Ordine (Turno Attivo) */
+        .btn-active {
+            background-color: #00ffaa;
+            color: #000;
+        }
+        .btn-active:hover { background-color: #00cc88; }
+
+        /* Stile pulsante ARO (Turno Reattivo) */
+        .btn-reactive {
+            background-color: #ffaa00; /* Arancione per l'ARO */
+            color: #000;
+        }
+        .btn-reactive:hover { background-color: #cc8800; }
+
+        /* Stile registrazione in corso */
+        button.recording { 
+            background-color: #ff3366 !important; 
+            color: white !important; 
+            animation: pulse 1.5s infinite; 
+        }
         
         .result-box {
-            margin-top: 20px;
             padding: 15px;
             background-color: #2c2f33;
-            border-left: 4px solid #00ffaa;
+            border-left: 4px solid #444; /* Cambierà colore via JS */
             border-radius: 4px;
         }
+        
         .action-tag {
             display: inline-block;
-            background-color: #00d2ff;
             color: black;
-            padding: 2px 6px;
-            border-radius: 3px;
+            padding: 4px 8px;
+            border-radius: 4px;
             font-weight: bold;
             margin-right: 5px;
+            margin-top: 5px;
         }
+        
         .status {
             text-align: center;
             font-size: 12px;
             color: #888;
-            margin-top: 20px;
+            margin-top: 30px;
         }
 
         @keyframes pulse {
@@ -68,15 +93,19 @@
 
     <h2>Terminale Tattico N5</h2>
 
-    <div class="form-group">
-        <button id="btnVoice">
-            🎤 Premi e Dichiara Ordine
+    <div class="button-container">
+        <button id="btnVoice" class="btn-active">
+            🎤 Dichiara Ordine
+        </button>
+
+        <button id="btnAro" class="btn-reactive">
+            🛡️ Dichiara ARO
         </button>
     </div>
 
     <div class="result-box" id="resultBox" style="display: none;">
-        <p><strong>Comando Rilevato:</strong></p>
-        <p id="testoTrascritto" style="font-size: 18px;"></p>
+        <p><strong><span id="faseTesto">Comando</span> Rilevato:</strong></p>
+        <p id="testoTrascritto" style="font-size: 18px; font-style: italic;"></p>
         <hr style="border-color: #444;">
         <p><strong>Azioni Riconosciute:</strong></p>
         <div id="azioniRiconosciute"></div>
@@ -85,11 +114,10 @@
     <div class="status" id="dbStatus">Connessione al database in corso...</div>
 
     <script type="module">
-        // 1. IMPORTA FIREBASE (usiamo la versione compatibile con HTML puro)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // 2. LA TUA CONFIGURAZIONE FIREBASE
+        // CONFIGURAZIONE FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyAMpF8Le_srYjxgC7vb231Ng40iXwr256o",
             authDomain: "infinityn5-database.firebaseapp.com",
@@ -100,20 +128,24 @@
             measurementId: "G-PTSEKES982"
         };
 
-        // 3. INIZIALIZZA L'APP E IL DATABASE
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
-        // Conferma visiva che Firebase è collegato
         document.getElementById('dbStatus').innerText = "✅ Database Firestore Connesso";
         document.getElementById('dbStatus').style.color = "#00ffaa";
 
         // ==========================================
-        // 4. LOGICA DEL RICONOSCIMENTO VOCALE
+        // LOGICA DEL RICONOSCIMENTO VOCALE
         // ==========================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
+        
         const btnVoice = document.getElementById('btnVoice');
+        const btnAro = document.getElementById('btnAro');
+        
+        // Variabili per capire in che modalità siamo
+        let modalitaCorrente = 'active'; // o 'reactive'
+        let bottoneAttivo = null;
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
@@ -122,8 +154,10 @@
             recognition.maxAlternatives = 1;
 
             recognition.onstart = function() {
-                btnVoice.classList.add('recording');
-                btnVoice.innerText = "🔴 In ascolto... Parla ora!";
+                if(bottoneAttivo) {
+                    bottoneAttivo.classList.add('recording');
+                    bottoneAttivo.innerText = "🔴 In ascolto...";
+                }
             };
 
             recognition.onspeechend = function() {
@@ -131,24 +165,31 @@
             };
 
             recognition.onresult = function(event) {
-                btnVoice.classList.remove('recording');
-                btnVoice.innerText = "🎤 Premi e Dichiara Ordine";
+                ripristinaBottoni();
 
                 const trascrizione = event.results[0][0].transcript.toLowerCase();
                 document.getElementById('testoTrascritto').innerText = `"${trascrizione}"`;
                 
-                analizzaComando(trascrizione);
+                analizzaComando(trascrizione, modalitaCorrente);
                 document.getElementById('resultBox').style.display = "block";
             };
 
             recognition.onerror = function(event) {
-                btnVoice.classList.remove('recording');
-                btnVoice.innerText = "🎤 Errore/Riprova";
+                ripristinaBottoni();
                 alert("Errore vocale: " + event.error);
             };
 
-            // Collega il bottone alla funzione di avvio
+            // Event Listener Bottone Ordine (Turno Attivo)
             btnVoice.addEventListener('click', () => {
+                modalitaCorrente = 'active';
+                bottoneAttivo = btnVoice;
+                recognition.start();
+            });
+
+            // Event Listener Bottone ARO (Turno Reattivo)
+            btnAro.addEventListener('click', () => {
+                modalitaCorrente = 'reactive';
+                bottoneAttivo = btnAro;
                 recognition.start();
             });
 
@@ -156,27 +197,55 @@
             alert("Il browser non supporta la voce. Usa Chrome su GitHub Pages.");
         }
 
-        function analizzaComando(testo) {
+        // Funzione per rimettere i bottoni allo stato normale
+        function ripristinaBottoni() {
+            btnVoice.classList.remove('recording');
+            btnVoice.innerText = "🎤 Dichiara Ordine";
+            btnAro.classList.remove('recording');
+            btnAro.innerText = "🛡️ Dichiara ARO";
+        }
+
+        // Analizza il testo in base al turno (Attivo o Reattivo)
+        function analizzaComando(testo, mode) {
             const displayAzioni = document.getElementById('azioniRiconosciute');
+            const resultBox = document.getElementById('resultBox');
+            const faseTesto = document.getElementById('faseTesto');
             displayAzioni.innerHTML = ""; 
             let trovataAzione = false;
 
+            // Cambia l'estetica del box in base al turno
+            if (mode === 'active') {
+                resultBox.style.borderLeftColor = "#00ffaa";
+                faseTesto.innerText = "Ordine";
+            } else {
+                resultBox.style.borderLeftColor = "#ffaa00";
+                faseTesto.innerText = "ARO";
+            }
+
+            // Mappatura delle abilità in base alla modalità
             const paroleChiave = {
-                "muovo": "Move (Short Skill)",
-                "sparo": "BS Attack (Short Skill)",
-                "schivo": "Dodge",
-                "scopro": "Discover"
+                "muovo": mode === 'active' ? "Move (Short Skill)" : "🚫 Movimento non valido in ARO",
+                "sparo": mode === 'active' ? "BS Attack (Short Skill)" : "BS Attack (ARO)",
+                "schivo": mode === 'active' ? "Dodge" : "Dodge (ARO)",
+                "scopro": mode === 'active' ? "Discover (Short Skill)" : "Discover (ARO)",
+                "hacker": mode === 'active' ? "Hacking (Short Skill)" : "Hacking (ARO)",
+                "reset": mode === 'active' ? "Reset" : "Reset (ARO)",
+                "corpo a corpo": mode === 'active' ? "CC Attack (Short Skill)" : "CC Attack (ARO)"
             };
 
             for (const [parola, skill] of Object.entries(paroleChiave)) {
                 if (testo.includes(parola)) {
-                    displayAzioni.innerHTML += `<span class="action-tag">${skill}</span> `;
+                    // Colore del tag: Verde/Azzurro per Attivo, Arancione per Reattivo, Rosso per errore (es. se provi a muovere in ARO)
+                    let tagColor = mode === 'active' ? '#00d2ff' : '#ffaa00';
+                    if (skill.includes("🚫")) tagColor = '#ff3366'; // Errore rosso
+                    
+                    displayAzioni.innerHTML += `<span class="action-tag" style="background-color: ${tagColor};">${skill}</span> `;
                     trovataAzione = true;
                 }
             }
 
             if (!trovataAzione) {
-                displayAzioni.innerHTML = "<em>Azione non riconosciuta.</em>";
+                displayAzioni.innerHTML = "<em>Nessuna azione riconosciuta. Riprova.</em>";
             }
         }
     </script>
