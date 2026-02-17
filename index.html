@@ -3,113 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Infinity N5 - Comandante Vocale & Database</title>
+    <title>Infinity N5 - Risoluzione Scontri Multipli</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #1e2124;
             color: #ffffff;
             padding: 20px;
-            max-width: 400px;
+            max-width: 450px;
             margin: 0 auto;
         }
-        h2 { text-align: center; color: #00ffaa; }
+        h2 { text-align: center; color: #00ffaa; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #aaa; font-size: 14px; margin-bottom: 20px; }
         
         .button-container {
             display: flex;
-            flex-direction: column;
-            gap: 15px;
+            gap: 10px;
             margin-bottom: 20px;
         }
 
         button {
-            width: 100%;
-            padding: 15px;
+            flex: 1;
+            padding: 12px;
             border: none;
             border-radius: 4px;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
             transition: background-color 0.2s;
         }
 
-        /* Stile pulsante Ordine (Turno Attivo) */
-        .btn-active {
-            background-color: #00ffaa;
-            color: #000;
-        }
-        .btn-active:hover { background-color: #00cc88; }
-
-        /* Stile pulsante ARO (Turno Reattivo) */
-        .btn-reactive {
-            background-color: #ffaa00; /* Arancione per l'ARO */
-            color: #000;
-        }
-        .btn-reactive:hover { background-color: #cc8800; }
-
-        /* Stile registrazione in corso */
-        button.recording { 
-            background-color: #ff3366 !important; 
-            color: white !important; 
-            animation: pulse 1.5s infinite; 
-        }
+        .btn-active { background-color: #00ffaa; color: #000; }
+        .btn-reactive { background-color: #ffaa00; color: #000; }
+        .btn-reset { background-color: #ff3366; color: #fff; width: 100%; margin-top: 10px; }
         
-        .result-box {
-            padding: 15px;
+        button.recording { opacity: 0.7; animation: pulse 1s infinite; }
+        
+        /* Area di Risoluzione */
+        .encounter-board {
             background-color: #2c2f33;
-            border-left: 4px solid #444; /* Cambierà colore via JS */
-            border-radius: 4px;
-        }
-        
-        .action-tag {
-            display: inline-block;
-            color: black;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-            margin-right: 5px;
-            margin-top: 5px;
-        }
-        
-        .status {
-            text-align: center;
-            font-size: 12px;
-            color: #888;
-            margin-top: 30px;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid #444;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
+        .active-card {
+            background-color: rgba(0, 255, 170, 0.1);
+            border-left: 4px solid #00ffaa;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
         }
+
+        .aro-card {
+            background-color: rgba(255, 170, 0, 0.1);
+            border-left: 4px solid #ffaa00;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-title { font-weight: bold; font-size: 16px; margin: 0 0 5px 0; }
+        .action-desc { font-size: 13px; color: #ccc; margin: 0; font-style: italic; }
+
+        .burst-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .burst-input {
+            width: 40px;
+            padding: 5px;
+            text-align: center;
+            background-color: #1e2124;
+            color: #fff;
+            border: 1px solid #666;
+            border-radius: 4px;
+        }
+
+        .status { text-align: center; font-size: 12px; color: #888; margin-top: 20px; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(0.98); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <h2>Terminale Tattico N5</h2>
+    <h2>Terminale N5</h2>
+    <div class="subtitle">Gestione Tiri a Confronto Multipli</div>
 
     <div class="button-container">
-        <button id="btnVoice" class="btn-active">
-            🎤 Dichiara Ordine
-        </button>
-
-        <button id="btnAro" class="btn-reactive">
-            🛡️ Dichiara ARO
-        </button>
+        <button id="btnVoice" class="btn-active">🎤 Dichiara Ordine</button>
+        <button id="btnAro" class="btn-reactive">🛡️ Aggiungi ARO</button>
     </div>
 
-    <div class="result-box" id="resultBox" style="display: none;">
-        <p><strong><span id="faseTesto">Comando</span> Rilevato:</strong></p>
-        <p id="testoTrascritto" style="font-size: 18px; font-style: italic;"></p>
-        <hr style="border-color: #444;">
-        <p><strong>Azioni Riconosciute:</strong></p>
-        <div id="azioniRiconosciute"></div>
+    <div id="board" class="encounter-board" style="display: none;">
+        <div id="activeActionArea"></div>
+        <h4 style="margin: 15px 0 5px 0; color: #ffaa00; border-bottom: 1px solid #444; padding-bottom: 5px;">Reazioni Nemiche (ARO)</h4>
+        <div id="aroListArea"></div>
     </div>
+
+    <button id="btnReset" class="btn-reset" style="display: none;" onclick="resetBoard()">🔄 Chiudi Ordine e Pulisci</button>
 
     <div class="status" id="dbStatus">Connessione al database in corso...</div>
 
@@ -117,7 +113,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // CONFIGURAZIONE FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyAMpF8Le_srYjxgC7vb231Ng40iXwr256o",
             authDomain: "infinityn5-database.firebaseapp.com",
@@ -135,17 +130,19 @@
         document.getElementById('dbStatus').style.color = "#00ffaa";
 
         // ==========================================
-        // LOGICA DEL RICONOSCIMENTO VOCALE
+        // STATO DEL GIOCO (POOL DI RISOLUZIONE)
         // ==========================================
+        window.poolScontro = {
+            azioneAttiva: null,
+            paroleAttive: "",
+            bersagliAro: []
+        };
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
-        
         const btnVoice = document.getElementById('btnVoice');
         const btnAro = document.getElementById('btnAro');
-        
-        // Variabili per capire in che modalità siamo
-        let modalitaCorrente = 'active'; // o 'reactive'
-        let bottoneAttivo = null;
+        let modalitaCorrente = 'active';
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
@@ -154,99 +151,112 @@
             recognition.maxAlternatives = 1;
 
             recognition.onstart = function() {
-                if(bottoneAttivo) {
-                    bottoneAttivo.classList.add('recording');
-                    bottoneAttivo.innerText = "🔴 In ascolto...";
-                }
+                let btn = modalitaCorrente === 'active' ? btnVoice : btnAro;
+                btn.classList.add('recording');
+                btn.innerText = "Ascolto...";
             };
 
-            recognition.onspeechend = function() {
-                recognition.stop();
-            };
+            recognition.onspeechend = function() { recognition.stop(); };
 
             recognition.onresult = function(event) {
-                ripristinaBottoni();
+                btnVoice.classList.remove('recording'); btnVoice.innerText = "🎤 Dichiara Ordine";
+                btnAro.classList.remove('recording'); btnAro.innerText = "🛡️ Aggiungi ARO";
 
                 const trascrizione = event.results[0][0].transcript.toLowerCase();
-                document.getElementById('testoTrascritto').innerText = `"${trascrizione}"`;
-                
                 analizzaComando(trascrizione, modalitaCorrente);
-                document.getElementById('resultBox').style.display = "block";
+                aggiornaInterfaccia();
             };
 
             recognition.onerror = function(event) {
-                ripristinaBottoni();
-                alert("Errore vocale: " + event.error);
+                btnVoice.classList.remove('recording'); btnVoice.innerText = "🎤 Dichiara Ordine";
+                btnAro.classList.remove('recording'); btnAro.innerText = "🛡️ Aggiungi ARO";
             };
 
-            // Event Listener Bottone Ordine (Turno Attivo)
-            btnVoice.addEventListener('click', () => {
-                modalitaCorrente = 'active';
-                bottoneAttivo = btnVoice;
-                recognition.start();
-            });
-
-            // Event Listener Bottone ARO (Turno Reattivo)
-            btnAro.addEventListener('click', () => {
-                modalitaCorrente = 'reactive';
-                bottoneAttivo = btnAro;
-                recognition.start();
-            });
+            btnVoice.addEventListener('click', () => { modalitaCorrente = 'active'; recognition.start(); });
+            btnAro.addEventListener('click', () => { modalitaCorrente = 'reactive'; recognition.start(); });
 
         } else {
-            alert("Il browser non supporta la voce. Usa Chrome su GitHub Pages.");
+            alert("Il browser non supporta la voce.");
         }
 
-        // Funzione per rimettere i bottoni allo stato normale
-        function ripristinaBottoni() {
-            btnVoice.classList.remove('recording');
-            btnVoice.innerText = "🎤 Dichiara Ordine";
-            btnAro.classList.remove('recording');
-            btnAro.innerText = "🛡️ Dichiara ARO";
-        }
-
-        // Analizza il testo in base al turno (Attivo o Reattivo)
         function analizzaComando(testo, mode) {
-            const displayAzioni = document.getElementById('azioniRiconosciute');
-            const resultBox = document.getElementById('resultBox');
-            const faseTesto = document.getElementById('faseTesto');
-            displayAzioni.innerHTML = ""; 
-            let trovataAzione = false;
-
-            // Cambia l'estetica del box in base al turno
-            if (mode === 'active') {
-                resultBox.style.borderLeftColor = "#00ffaa";
-                faseTesto.innerText = "Ordine";
-            } else {
-                resultBox.style.borderLeftColor = "#ffaa00";
-                faseTesto.innerText = "ARO";
-            }
-
-            // Mappatura delle abilità in base alla modalità
             const paroleChiave = {
-                "muovo": mode === 'active' ? "Move (Short Skill)" : "🚫 Movimento non valido in ARO",
-                "sparo": mode === 'active' ? "BS Attack (Short Skill)" : "BS Attack (ARO)",
+                "muovo": mode === 'active' ? "Move" : "Movimento Illegale in ARO",
+                "sparo": mode === 'active' ? "BS Attack" : "BS Attack (ARO B:1)",
                 "schivo": mode === 'active' ? "Dodge" : "Dodge (ARO)",
-                "scopro": mode === 'active' ? "Discover (Short Skill)" : "Discover (ARO)",
-                "hacker": mode === 'active' ? "Hacking (Short Skill)" : "Hacking (ARO)",
-                "reset": mode === 'active' ? "Reset" : "Reset (ARO)",
-                "corpo a corpo": mode === 'active' ? "CC Attack (Short Skill)" : "CC Attack (ARO)"
+                "scopro": mode === 'active' ? "Discover" : "Discover (ARO)",
+                "hacker": mode === 'active' ? "Hacking" : "Hacking (ARO)",
+                "corpo a corpo": mode === 'active' ? "CC Attack" : "CC Attack (ARO)"
             };
 
+            let skillTrovata = "Azione Generica";
             for (const [parola, skill] of Object.entries(paroleChiave)) {
                 if (testo.includes(parola)) {
-                    // Colore del tag: Verde/Azzurro per Attivo, Arancione per Reattivo, Rosso per errore (es. se provi a muovere in ARO)
-                    let tagColor = mode === 'active' ? '#00d2ff' : '#ffaa00';
-                    if (skill.includes("🚫")) tagColor = '#ff3366'; // Errore rosso
-                    
-                    displayAzioni.innerHTML += `<span class="action-tag" style="background-color: ${tagColor};">${skill}</span> `;
-                    trovataAzione = true;
+                    skillTrovata = skill;
+                    break;
                 }
             }
 
-            if (!trovataAzione) {
-                displayAzioni.innerHTML = "<em>Nessuna azione riconosciuta. Riprova.</em>";
+            if (mode === 'active') {
+                // Inizia un nuovo scontro
+                window.poolScontro.azioneAttiva = skillTrovata;
+                window.poolScontro.paroleAttive = testo;
+                window.poolScontro.bersagliAro = []; // Azzera le ARO precedenti
+            } else {
+                // Aggiunge un nemico al pool
+                window.poolScontro.bersagliAro.push({
+                    azione: skillTrovata,
+                    parole: testo,
+                    dadiSubiti: 1 // Default dadi assegnati dall'attaccante a questo bersaglio
+                });
             }
+        }
+
+        window.aggiornaInterfaccia = function() {
+            document.getElementById('board').style.display = "block";
+            document.getElementById('btnReset').style.display = "block";
+            
+            // Render Attaccante
+            let activeHtml = "";
+            if (window.poolScontro.azioneAttiva) {
+                activeHtml = `
+                    <div class="active-card">
+                        <p class="action-title" style="color:#00ffaa;">🟢 ATTIVO: ${window.poolScontro.azioneAttiva}</p>
+                        <p class="action-desc">"${window.poolScontro.paroleAttive}"</p>
+                    </div>
+                `;
+            } else {
+                activeHtml = `<p style="color:#666; font-style:italic;">Dichiara prima un Ordine Attivo.</p>`;
+            }
+            document.getElementById('activeActionArea').innerHTML = activeHtml;
+
+            // Render AROs e Divisione Burst
+            let aroHtml = "";
+            if (window.poolScontro.bersagliAro.length === 0) {
+                aroHtml = `<p style="color:#666; font-style:italic;">Nessuna ARO dichiarata (Tiro Normale).</p>`;
+            } else {
+                window.poolScontro.bersagliAro.forEach((aro, index) => {
+                    aroHtml += `
+                        <div class="aro-card">
+                            <div>
+                                <p class="action-title" style="color:#ffaa00;">Bersaglio ${index + 1}: ${aro.azione}</p>
+                                <p class="action-desc">"${aro.parole}"</p>
+                            </div>
+                            <div class="burst-control">
+                                <span style="font-size:12px; color:#ccc;">Dadi vs Lui:</span>
+                                <input type="number" class="burst-input" value="${aro.dadiSubiti}" min="0" max="6">
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('aroListArea').innerHTML = aroHtml;
+        }
+
+        window.resetBoard = function() {
+            window.poolScontro = { azioneAttiva: null, paroleAttive: "", bersagliAro: [] };
+            document.getElementById('board').style.display = "none";
+            document.getElementById('btnReset').style.display = "none";
         }
     </script>
 </body>
