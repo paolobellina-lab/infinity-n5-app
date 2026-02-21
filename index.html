@@ -76,7 +76,52 @@
 
     <div class="status" id="dbStatus">Connessione a Firebase in corso...</div>
 
-    <script type="module">
+    <script type="module">import { doc, setDoc, collection } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+async function popolaDatabaseN5() {
+    console.log("Inizio popolamento database...");
+
+    // --- 1. DEFINIZIONE ARMI N5 ---
+    const armiRef = collection(db, "armi");
+    const listaArmi = {
+        "combi rifle": { b: 3, dam: 13, ammo: "N", range: { "0-8": 3, "8-16": 3, "16-24": -3, "24-48": -6 } },
+        "multi rifle": { b: 3, dam: 13, ammo: "AP/Shock", range: { "0-8": 3, "8-16": 3, "16-24": -3, "24-48": -6 } },
+        "hmg": { b: 4, dam: 15, ammo: "N", range: { "0-8": -3, "8-16": 0, "16-32": 3, "32-48": -3 } },
+        "boarding shotgun": { b: 2, dam: 14, ammo: "AP", range: { "0-8": 6, "8-16": 0, "16-24": -6 } },
+        "pistol": { b: 1, dam: 11, ammo: "N", range: { "0-8": 3, "8-16": -3 } }
+    };
+
+    for (let [id, data] of Object.entries(listaArmi)) {
+        await setDoc(doc(armiRef, id), data);
+    }
+
+    // --- 2. DEFINIZIONE FAZIONI E UNITÀ ---
+    const fazioniRef = collection(db, "fazioni");
+    
+    // PanOceania
+    await setDoc(doc(fazioniRef, "PanOceania"), {
+        units: {
+            "fusilier": { bs: 12, arm: 1, w: 1, weapons: ["combi rifle", "pistol"] },
+            "orc troop": { bs: 13, arm: 4, w: 2, weapons: ["multi rifle", "pistol"] },
+            "aquila guard": { bs: 15, arm: 4, w: 2, weapons: ["hmg", "pistol"] }
+        }
+    });
+
+    // Nomads
+    await setDoc(doc(fazioniRef, "Nomads"), {
+        units: {
+            "alguacil": { bs: 11, arm: 1, w: 1, weapons: ["combi rifle", "pistol"] },
+            "moran": { bs: 12, arm: 2, w: 1, weapons: ["boarding shotgun", "combi rifle"] },
+            "mobile brigada": { bs: 13, arm: 4, w: 2, weapons: ["multi rifle", "pistol"] }
+        }
+    });
+
+    console.log("✅ Database Popolato con successo!");
+}
+
+// Esegui la funzione una sola volta
+// popolaDatabaseN5(); 
+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
