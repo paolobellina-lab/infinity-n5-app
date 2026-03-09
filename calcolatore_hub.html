@@ -112,15 +112,17 @@
             }
         };
         // --- FINE MOTORE CLOUD INVISIBILE ---
+
         window.gameState = { nomads: [], panoceania: [], activeFaction: 'NOMADI' };
 
-        function updateLog(msg) {
+        window.updateLog = (msg) => {
             const log = document.getElementById('battle-log');
             log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
             log.scrollTop = log.scrollHeight;
-        }
+        };
 
-        function toggleTurn() {
+        // Ora il bottone HTML riesce a trovare e usare questa funzione!
+        window.toggleTurn = () => {
             window.gameState.activeFaction = (window.gameState.activeFaction === 'NOMADI') ? 'PANOCEANIA' : 'NOMADI';
             
             // ---> FIX DATI FANTASMA: Azzera i canali ARO al cambio turno! <---
@@ -134,17 +136,16 @@
             textElem.innerText = window.gameState.activeFaction;
             textElem.style.color = (window.gameState.activeFaction === 'NOMADI') ? '#ff0000' : '#00ccff';
 
-            // SPEDISCE IL SEGNALE DI CAMBIO TURNO
+            // SPEDISCE IL SEGNALE DI CAMBIO TURNO VIA CLOUD
             localStorage.setItem('canale_hub_turno', JSON.stringify({ attivo: window.gameState.activeFaction }));
             
-            updateLog(`🔄 CAMBIO TURNO: Ora è il turno di ${window.gameState.activeFaction}`);
-        }
+            window.updateLog(`🔄 CAMBIO TURNO: Ora è il turno di ${window.gameState.activeFaction}`);
+        };
 
-        function broadcastState() {
+        window.broadcastState = () => {
             localStorage.setItem('global_game_state', JSON.stringify(window.gameState));
-            // Questo è il segnale che sblocca le app:
             localStorage.setItem('canale_hub_turno', JSON.stringify({ attivo: window.gameState.activeFaction }));
-        }
+        };
 
         setInterval(() => {
             // Ascolto Setup Nomadi
@@ -152,21 +153,21 @@
             if(sNom) {
                 window.gameState.nomads = JSON.parse(sNom).roster;
                 localStorage.removeItem('canale_setup_nomadi');
-                updateLog("Nomads: Roster ricevuto.");
-                refreshUI(); broadcastState();
+                window.updateLog("Nomads: Roster ricevuto.");
+                window.refreshUI(); window.broadcastState();
             }
             // Ascolto Setup PanO
             let sPano = localStorage.getItem('canale_setup_panoceania');
             if(sPano) {
                 window.gameState.panoceania = JSON.parse(sPano).roster;
                 localStorage.removeItem('canale_setup_panoceania');
-                updateLog("PanOceania: Roster ricevuto.");
-                refreshUI(); broadcastState();
+                window.updateLog("PanOceania: Roster ricevuto.");
+                window.refreshUI(); window.broadcastState();
             }
             // Allarme ARO
             let attacco = localStorage.getItem('canale_comunicazione_infinity');
             if(attacco) {
-                updateLog("⚠️ ATTACCO! Allarme ARO inviato.");
+                window.updateLog("⚠️ ATTACCO! Allarme ARO inviato.");
                 let datiAttacco = JSON.parse(attacco);
                 datiAttacco.timestamp_allarme = Date.now(); 
                 localStorage.setItem('canale_attacco_allarme', JSON.stringify(datiAttacco));
@@ -174,21 +175,20 @@
             }
 
             // --- ASCOLTO ARO NOMADI ---
-            // --- ASCOLTO ARO NOMADI ---
             let aroNomadi = localStorage.getItem('canale_aro_nomadi');
             if(aroNomadi) {
-                updateLog("🛡️ ARO Nomadi completato! PanOceania può procedere.");
+                window.updateLog("🛡️ ARO Nomadi completato! PanOceania può procedere.");
                 localStorage.setItem('hub_sblocco_attivo', Date.now().toString()); 
-                window.latestAroData = JSON.parse(aroNomadi).reazioni; // <--- SALVA I DATI ARO PER IL CALCOLO FINALE!
+                window.latestAroData = JSON.parse(aroNomadi).reazioni; 
                 localStorage.removeItem('canale_aro_nomadi');
             }
 
             // --- ASCOLTO ARO PANOCEANIA ---
             let aroPano = localStorage.getItem('canale_aro_panoceania');
             if(aroPano) {
-                updateLog("🛡️ ARO PanOceania completato! I Nomadi possono procedere.");
+                window.updateLog("🛡️ ARO PanOceania completato! I Nomadi possono procedere.");
                 localStorage.setItem('hub_sblocco_attivo', Date.now().toString()); 
-                window.latestAroData = JSON.parse(aroPano).reazioni; // <--- SALVA I DATI ARO PER IL CALCOLO FINALE!
+                window.latestAroData = JSON.parse(aroPano).reazioni; 
                 localStorage.removeItem('canale_aro_panoceania');
             }
             
@@ -200,16 +200,16 @@
                 let unit = faction.find(u => u.id === data.unitId);
                 if(unit) {
                     unit.state = data.newState;
-                    updateLog(`🩺 STATO AGGIORNATO: ${unit.alias || unit.nome} è ora ${data.newState}`);
-                    broadcastState(); 
+                    window.updateLog(`🩺 STATO AGGIORNATO: ${unit.alias || unit.nome} è ora ${data.newState}`);
+                    window.broadcastState(); 
                 }
                 localStorage.removeItem('hub_update_state');
-                refreshUI(); 
+                window.refreshUI(); 
             }
         }, 1000);
 
         // Generazione dei Tag di Stato usando Simboli e Icone
-        function generateStateTags(unit) {
+        window.generateStateTags = (unit) => {
             let tags = "";
             if (!unit.states) return "";
             
@@ -218,26 +218,26 @@
             if(unit.states.wounds > 0) tags += `<span class="state-tag" style="background:#cc0000; color:#fff;" title="Ferite">🩸${unit.states.wounds}</span>`;
             if(unit.states.stunned) tags += `<span class="state-tag" style="background:#555; color:#fff;" title="Stordito">💫</span>`;
             if(unit.states.suppressive) tags += `<span class="state-tag" style="background:#ff6600; color:#000;" title="Fuoco Soppressivo">🎯</span>`;
-            if(unit.states.fireteam) tags += `<span class="state-tag" style="background:#003366; color:#00ffff;" title="Fireteam">🔗 ${unit.states.fireteam}</span>`;
+            if(unit.states.fireteam) tags += `<span class="state-tag" style="background:#003366; color:#00ccff;" title="Fireteam">🔗 ${unit.states.fireteam}</span>`;
             
             if (unit.deployState && unit.deployState.startsWith('IMP')) tags += `<span class="state-tag" style="background:#444400; color:#ffff00;" title="Mimetismo">👤❓</span>`;
             
             return tags;
-        }
+        };
 
-        function refreshUI() {
+        window.refreshUI = () => {
             document.getElementById('status-nomads').innerHTML = window.gameState.nomads.map(u => 
                 `<div style="padding: 8px 0; border-bottom: 1px dashed #333;">
-                    <b style="color:#fff; font-size:16px;">${u.alias || u.nome}</b> ${generateStateTags(u)}
+                    <b style="color:#fff; font-size:16px;">${u.alias || u.nome}</b> ${window.generateStateTags(u)}
                 </div>`
             ).join('');
             
             document.getElementById('status-pano').innerHTML = window.gameState.panoceania.map(u => 
                 `<div style="padding: 8px 0; border-bottom: 1px dashed #333;">
-                    <b style="color:#fff; font-size:16px;">${u.alias || u.nome}</b> ${generateStateTags(u)}
+                    <b style="color:#fff; font-size:16px;">${u.alias || u.nome}</b> ${window.generateStateTags(u)}
                 </div>`
             ).join('');
-        }
+        };
 
         // ==========================================
         // 🧮 MOTORE MATEMATICO E SCHERMATA SCONTRI
@@ -498,7 +498,7 @@
         setInterval(() => {
             let calcolo = localStorage.getItem('canale_hub_calcolo');
             if(calcolo) {
-                updateLog("🎲 Ricevuti i parametri finali! Calcolo in corso...");
+                window.updateLog("🎲 Ricevuti i parametri finali! Calcolo in corso...");
                 
                 let datiReali = JSON.parse(calcolo);
                 let scontriCalcolati = window.generaRisoluzioneDaDati(datiReali);
@@ -528,4 +528,3 @@
 </body>
 
 </html>
-
