@@ -22,11 +22,16 @@
     </style>
 </head>
 <body>
-    <h1>🛰️ HUB CENTRALE - REGISTA N5</h1>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #00ff00; padding-bottom: 10px; margin-bottom: 20px;">
+        <h1 style="margin: 0; text-shadow: 0 0 10px #00ff00;">HUB CENTRALE - REGISTA N5</h1>
+        <button class="btn-turn" style="background:#8b0000; color:#fff; border: 2px solid #ff0000; font-size: 16px; padding: 8px 15px; margin: 0; box-shadow: 0 0 10px #ff0000;" onclick="window.resetPartita()">⚠️ RESET PARTITA</button>
+    </div>
 
     <div class="turn-controller">
-        <span class="active-label">TURNO ATTIVO ATTUALE: <b id="current-active-text" style="color:#ff0000;">NOMADS</b></span>
-        <button class="btn-turn" onclick="toggleTurn()">🔄 CAMBIA TURNO ATTIVO</button>
+        <span class="active-label">TURNO ATTIVO:</span>
+        <h2 id="current-active-text" style="font-family: 'Teko', sans-serif; font-size: 48px; margin: 10px 0; color: #ff0000; text-shadow: 0 0 10px currentColor;">NOMADI</h2>
+        <button class="btn-turn" onclick="window.toggleTurn()">🔄 CAMBIA TURNO ATTIVO</button>
     </div>
 
     <div class="status-grid">
@@ -140,6 +145,32 @@
             localStorage.setItem('canale_hub_turno', JSON.stringify({ attivo: window.gameState.activeFaction }));
             
             window.updateLog(`🔄 CAMBIO TURNO: Ora è il turno di ${window.gameState.activeFaction}`);
+        };
+
+	// NUOVA FUNZIONE: Tasto Rosso di Emergenza
+        window.resetPartita = () => {
+            if(confirm("⚠️ ATTENZIONE! Vuoi resettare l'intera partita? Tutti i dati sul server verranno distrutti e le app torneranno allo schieramento inizale!")) {
+                
+                // Elenco di tutti i canali usati per comunicare
+                const canaliCloud = [
+                    'canale_hub_turno', 'hub_sblocco_attivo', 'canale_setup_panoceania', 
+                    'canale_setup_nomadi', 'canale_attacco_allarme', 'canale_comunicazione_infinity',
+                    'canale_aro_panoceania', 'canale_aro_nomadi', 'canale_hub_calcolo', 
+                    'global_game_state', 'hub_update_state'
+                ];
+                
+                // Cancella tutti i dati dal server Firebase
+                canaliCloud.forEach(canale => {
+                    localStorage.removeItem(canale);
+                });
+
+                window.updateLog("🛑 SERVER RESETTATO! I dati della vecchia partita sono stati distrutti.");
+                
+                // Ricarica la pagina dell'Hub per pulire tutto
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            }
         };
 
         window.broadcastState = () => {
