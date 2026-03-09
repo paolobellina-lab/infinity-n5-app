@@ -1,0 +1,9 @@
+{
+  "name": "Regista HUB Centrale",
+  "short_name": "HUB N5",
+  "start_url": "./calcolatore_hub.html",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#00ff00",
+  "icons": [{"src": "img/icona_hub.png", "sizes": "192x192", "type": "image/png"}]
+}
