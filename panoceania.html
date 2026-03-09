@@ -1988,6 +1988,9 @@ if (window.isReactiveMode) {
         // --- LOGICA DI ASCOLTO TURNO E SBLOCCO ---
         window.addEventListener('storage', (event) => {
             if (event.key === 'canale_hub_turno') {
+
+		// --- SCUDO PROTETTIVO: Ignora il cambio turno se non hai finito di schierare ---
+                if (!window.schieramentoCompletato) return;
                 const dati = JSON.parse(event.newValue);
                 console.log("Cambio turno ricevuto:", dati.attivo);
 
@@ -2354,6 +2357,8 @@ window.apriDeployAzioni = (index) => {
         };
 
         window.confermaSchieramento = () => {
+	    // --- SBLOCCO GIOCO: Ora sei pronto a ricevere i comandi dall'HUB ---
+            window.schieramentoCompletato = true;
             // Salva tutti gli stati FOW per usarli in partita
             window.roster.forEach(u => {
                 if(!u.states) u.states = {};
@@ -2723,5 +2728,4 @@ window.apriDeployAzioni = (index) => {
     </script>
 </body>
 </html>
-
 
