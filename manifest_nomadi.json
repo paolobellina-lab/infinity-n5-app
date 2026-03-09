@@ -1,5 +1,5 @@
 {
-  "name": "Nomads Tactical Terminal",
+ "id": "app-nomadi",
   "name": "Nomads Tactical Terminal",
   "short_name": "Nomads",
   "start_url": "./nomadi.html",
@@ -9,4 +9,5 @@
   "icons": [{"src": "img/icona_nomadi.png", "sizes": "192x192", "type": "image/png"}]
 
 }
+
 
