@@ -556,6 +556,51 @@
             });
         }
     </script>
+
+<script>
+        // ==========================================
+        // 1. TRAPPOLA TASTO INDIETRO (Previeni uscita)
+        // ==========================================
+        // Spinge uno stato fittizio nella cronologia
+        window.history.pushState(null, null, window.location.href);
+        
+        // Se l'utente preme "Indietro" o fa lo swipe, intercetta e ributta lo stato fittizio
+        window.addEventListener('popstate', function(event) {
+            window.history.pushState(null, null, window.location.href);
+            console.log("Swipe/Tasto Indietro bloccato per sicurezza!");
+            // Opzionale: puoi decommentare la riga sotto se vuoi far apparire un avviso
+            // alert("Usa i bottoni dell'App per navigare!");
+        });
+
+        // ==========================================
+        // 2. SCHERMO SEMPRE ACCESO (Wake Lock API)
+        // ==========================================
+        let wakeLock = null;
+
+        const requestWakeLock = async () => {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Schermo bloccato sempre acceso.');
+                }
+            } catch (err) {
+                console.error('Errore Wake Lock:', err.name, err.message);
+            }
+        };
+
+        // Richiede il blocco schermo appena si carica la pagina
+        window.addEventListener('load', requestWakeLock);
+
+        // Se l'app va in background (es. rispondi a un messaggio) e torna attiva, ricarica il blocco schermo
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
+
+        // Fallback di sicurezza: alcuni browser richiedono un tocco sullo schermo per attivare il Wake Lock
+        document.addEventListener('pointerdown', requestWakeLock, { once: true });
+    </script>
     
 </body>
 
