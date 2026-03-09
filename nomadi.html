@@ -305,11 +305,71 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-        const firebaseConfig = { apiKey: "IL_TUO_API", projectId: "IL_TUO_PROGETTO" };
+        const firebaseConfig = {
+            apiKey: "AIzaSyAMpF8Le_srYjxgC7vb231Ng40iXwr256o",
+            authDomain: "infinityn5-database.firebaseapp.com",
+            databaseURL: "https://infinityn5-database-default-rtdb.firebaseio.com",
+            projectId: "infinityn5-database",
+            storageBucket: "infinityn5-database.firebasestorage.app",
+            messagingSenderId: "506923243459",
+            appId: "1:506923243459:web:4aa5e59c84c9d8156c4f76"
+        };
+
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const db = getDatabase(app);
+
+        // --- INIZIO MOTORE CLOUD INVISIBILE ---
+        // Lista dei canali che devono viaggiare su internet (I tuoi salvataggi squadra resteranno in locale!)
+        const canaliCloud = [
+            'canale_hub_turno', 'hub_sblocco_attivo', 'canale_setup_panoceania', 
+            'canale_setup_nomadi', 'canale_attacco_allarme', 'canale_comunicazione_infinity',
+            'canale_aro_panoceania', 'canale_aro_nomadi', 'canale_hub_calcolo', 
+            'global_game_state'
+        ];
+
+        const originalSetItem = localStorage.setItem;
+        const originalRemoveItem = localStorage.removeItem;
+
+        // Quando i dati arrivano dallo spazio, li mettiamo nella memoria finta del telefono
+        canaliCloud.forEach(canale => {
+            onValue(ref(db, canale), (snapshot) => {
+                const dati = snapshot.val();
+                if (dati !== null) {
+                    originalSetItem.call(localStorage, canale, dati);
+                    
+                    let eventoFake = new Event('storage');
+                    eventoFake.key = canale;
+                    eventoFake.newValue = dati;
+                    window.dispatchEvent(eventoFake);
+                } else {
+                    originalRemoveItem.call(localStorage, canale);
+                }
+            });
+        });
+
+        // Quando il tuo gioco cerca di salvare, noi "dirottiamo" il salvataggio sul Cloud
+        localStorage.setItem = function(key, value) {
+            if (canaliCloud.includes(key)) {
+                set(ref(db, key), value);
+            } else {
+                originalSetItem.call(localStorage, key, value);
+            }
+        };
+
+        localStorage.removeItem = function(key) {
+            if (canaliCloud.includes(key)) {
+                remove(ref(db, key));
+            } else {
+                originalRemoveItem.call(localStorage, key);
+            }
+        };
+        // --- FINE MOTORE CLOUD INVISIBILE ---
+
+        // ==========================================
+        // DATABASE DI TEST INTEGRATO E RESTO DEL GIOCO
+        // ==========================================
 
         // ==========================================
         // DATABASE DI TEST INTEGRATO (MOCK DATA)
@@ -2664,4 +2724,5 @@ window.apriDeployAzioni = (index) => {
 	
 </body>
 </html>
+
 
