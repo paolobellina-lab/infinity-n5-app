@@ -1,5 +1,5 @@
 // NOME DELLA CACHE (Cambialo se aggiorni l'app pesantemente per forzare l'aggiornamento)
-const CACHE_NAME = 'infinity-tactical-v1';
+const CACHE_NAME = 'infinity-tactical-v2';
 
 // File da salvare subito in memoria per funzionare offline
 const urlsToCache = [
