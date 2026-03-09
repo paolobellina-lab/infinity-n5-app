@@ -174,8 +174,9 @@
         };
 
         window.broadcastState = () => {
+            // L'Hub aggiorna i dati di mira (bersagli) in background,
+            // SENZA forzare i telefoni a cambiare schermata in modo aggressivo!
             localStorage.setItem('global_game_state', JSON.stringify(window.gameState));
-            localStorage.setItem('canale_hub_turno', JSON.stringify({ attivo: window.gameState.activeFaction }));
         };
 
         setInterval(() => {
