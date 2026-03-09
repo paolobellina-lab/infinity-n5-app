@@ -1,9 +1,10 @@
 {
   "name": "PanOceania Tactical Terminal",
   "short_name": "PanOceania",
-  "start_url": "./panoceania_attivo.html",
+  "start_url": "./panoceania.html",
   "display": "standalone",
   "background_color": "#000a14",
   "theme_color": "#00ccff",
   "icons": [{"src": "img/icona_pano.png", "sizes": "192x192", "type": "image/png"}]
+
 }
