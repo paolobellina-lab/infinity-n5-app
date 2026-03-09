@@ -303,7 +303,7 @@
 
     </div>
 
-    <script type="module">
+   <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
@@ -321,24 +321,21 @@
         const db = getDatabase(app);
 
         // --- INIZIO MOTORE CLOUD INVISIBILE ---
-        // Lista dei canali che devono viaggiare su internet (I tuoi salvataggi squadra resteranno in locale!)
         const canaliCloud = [
             'canale_hub_turno', 'hub_sblocco_attivo', 'canale_setup_panoceania', 
             'canale_setup_nomadi', 'canale_attacco_allarme', 'canale_comunicazione_infinity',
             'canale_aro_panoceania', 'canale_aro_nomadi', 'canale_hub_calcolo', 
-            'global_game_state'
+            'global_game_state', 'hub_update_state'
         ];
 
         const originalSetItem = localStorage.setItem;
         const originalRemoveItem = localStorage.removeItem;
 
-        // Quando i dati arrivano dallo spazio, li mettiamo nella memoria finta del telefono
         canaliCloud.forEach(canale => {
             onValue(ref(db, canale), (snapshot) => {
                 const dati = snapshot.val();
                 if (dati !== null) {
                     originalSetItem.call(localStorage, canale, dati);
-                    
                     let eventoFake = new Event('storage');
                     eventoFake.key = canale;
                     eventoFake.newValue = dati;
@@ -349,7 +346,6 @@
             });
         });
 
-        // Quando il tuo gioco cerca di salvare, noi "dirottiamo" il salvataggio sul Cloud
         localStorage.setItem = function(key, value) {
             if (canaliCloud.includes(key)) {
                 set(ref(db, key), value);
@@ -366,10 +362,6 @@
             }
         };
         // --- FINE MOTORE CLOUD INVISIBILE ---
-
-        // ==========================================
-        // DATABASE DI TEST INTEGRATO E RESTO DEL GIOCO
-        // ==========================================
 
         // ==========================================
         // DATABASE DI TEST INTEGRATO (MOCK DATA)
@@ -2724,5 +2716,4 @@ window.apriDeployAzioni = (index) => {
 	
 </body>
 </html>
-
 
