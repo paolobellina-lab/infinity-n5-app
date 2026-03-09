@@ -1,5 +1,6 @@
 {
   "name": "PanOceania Tactical Terminal",
+  "name": "PanOceania Tactical Terminal",
   "short_name": "PanOceania",
   "start_url": "./panoceania.html",
   "display": "standalone",
@@ -8,3 +9,4 @@
   "icons": [{"src": "img/icona_pano.png", "sizes": "192x192", "type": "image/png"}]
 
 }
+
