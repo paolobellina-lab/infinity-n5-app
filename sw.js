@@ -5,8 +5,8 @@ const CACHE_NAME = 'infinity-tactical-v1';
 const urlsToCache = [
   './',
   './database.js',
-  './nomadi_attivo.html',
-  './panoceania_attivo.html',
+  './nomadi.html',
+  './panoceania.html',
   './calcolatore_hub.html'
 ];
 
