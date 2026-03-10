@@ -1357,7 +1357,9 @@ if (window.isReactiveMode) {
         // --- MOTORE DI FILTRAGGIO AZIONI ---
         window.puoFareAzione = (unita, idAzione) => {
             if(!unita) return true;
-            let traits = ((unita.skills || "") + " " + (unita.equip || "")).toUpperCase();
+            
+            // FIX: Ora unisce Abilità, Equipaggiamento e ARMI per cercare le parole chiave!
+            let traits = ((unita.skills || "") + " " + (unita.equip || "") + " " + (unita.weapon || "")).toUpperCase();
             
             switch(idAzione) {
                 case 'HACKING': return traits.includes('HACKER');
@@ -1369,7 +1371,10 @@ if (window.isReactiveMode) {
                 case 'BERSERK': return traits.includes('BERSERK');
                 case 'FUOCO_TRIANGOLATO': return traits.includes('SENSOR');
                 case 'PIAZZARE_DEPLOYABLE': return traits.includes('MINE') || traits.includes('KOALA') || traits.includes('D-CHARGE') || traits.includes('DROP BEAR');
-		case 'ATTACCO GUIDATO': return traits.includes('GUIDED'); // Appare solo se l'unità ha 'GUIDED' nelle skill/equip/armi
+                
+                // Ora troverà "Guided" dentro "Guided Missile Launcher"
+                case 'ATTACCO GUIDATO': return traits.includes('GUIDED') || traits.includes('GUIDATO'); 
+                
                 default: return true; 
             }
         };
@@ -2778,5 +2783,6 @@ window.apriDeployAzioni = (index) => {
 
 </body>
 </html>
+
 
 
