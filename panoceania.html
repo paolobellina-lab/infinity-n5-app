@@ -797,7 +797,12 @@
         
         window.endUnitPress = (index) => {
             if (unitPressTimer) clearTimeout(unitPressTimer);
-            if (!longPressTriggered) selezionaUnita(index);
+            if (!longPressTriggered) {
+                // FIX: Ritardo di 50ms per evitare il "Tocco Fantasma" del browser
+                setTimeout(() => {
+                    selezionaUnita(index);
+                }, 50);
+            }
         };
         
         window.cancelUnitPress = () => { 
@@ -2773,4 +2778,5 @@ window.apriDeployAzioni = (index) => {
 
 </body>
 </html>
+
 
