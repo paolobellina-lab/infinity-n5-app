@@ -2692,17 +2692,15 @@ window.apriDeployAzioni = (index) => {
                 }
 
                 let ammoOptions = ammoOptionsList.map(opt => `<option value="${opt}" ${opt === tgt.ammo ? 'selected' : ''}>Munizioni: ${opt}</option>`).join('');
-                ammoHtml = `<select class="huge-btn" style="flex: 1; margin:0; min-height:55px; font-size:16px; background:#002233; color:#fff; border-color:#00ccff; text-align:center; padding:0 10px;" onchange="window.setAroAmmo(this.value)">${ammoOptions}</select>`;
+                ammoHtml = `<select class="huge-btn" style="width: 100%; margin-top:15px; min-height:55px; font-size:16px; background:#002233; color:#fff; border-color:#00ccff; text-align:center; padding:0 10px;" onchange="window.setAroAmmo(this.value)">${ammoOptions}</select>`;
             }
-
-            // GESTIONE TASTI DIFENSIVI (Copertura e Linea di Tiro)
-            let coverStyle = tgt.cover ? `background:var(--nomad-orange); color:#000; border-color:#fff;` : `background:#001122; color:#fff; border-color:#555;`;
             
+            // TASTO LINEA DI TIRO (Solo per la Schivata!)
             let lofHtml = "";
             if (isDodge) {
                 let lofStyle = tgt.hasLoF ? `background:#004400; color:#00ff00; border-color:#00ff00;` : `background:#440000; color:#ff0000; border-color:#ff0000;`;
                 let lofText = tgt.hasLoF ? '👁️ HAI LINEA DI TIRO' : '盲 NESSUNA LINEA DI TIRO (-3)';
-                lofHtml = `<button class="huge-btn" style="width:100%; margin-top:10px; min-height:55px; font-size:16px; ${lofStyle}" onclick="window.toggleAroLoF()">${lofText}</button>`;
+                lofHtml = `<button type="button" class="huge-btn" style="width:100%; margin-top:15px; min-height:60px; font-size:18px; ${lofStyle}" onclick="window.toggleAroLoF()">${lofText}</button>`;
             }
 
             container.innerHTML = `
@@ -2711,12 +2709,9 @@ window.apriDeployAzioni = (index) => {
                         <b style="color:var(--nomad-orange); font-size:24px;">VS: ${tgt.bersaglio}</b>
                         <div class="burst-ctrl"><span style="font-size:22px; font-weight:bold; color:#00ff00;">1 B (ARO)</span></div>
                     </div>
-                    ${rangeHtml}
                     
-                    <div style="display:flex; gap:10px; margin-top: 15px;">
-                        <button class="huge-btn" style="flex: 1; margin:0; min-height:55px; font-size:16px; ${coverStyle}" onclick="window.toggleAroCover()">${tgt.cover ? 'IN COPERTURA' : 'NO COPERTURA'}</button>
-                        ${ammoHtml}
-                    </div>
+                    ${rangeHtml}
+                    ${ammoHtml}
                     ${lofHtml}
 
                     <div style="display:flex; margin-top: 20px; margin-bottom: 5px;">
@@ -2728,10 +2723,9 @@ window.apriDeployAzioni = (index) => {
         };
 
         window.setAroRange = (idx, mod) => { window.aroCurrentConfig.rangeIndex = idx; window.aroCurrentConfig.rangeMod = mod; window.renderAroModifiersUI(); };
-        window.toggleAroCover = () => { window.aroCurrentConfig.cover = !window.aroCurrentConfig.cover; window.renderAroModifiersUI(); };
+        window.toggleAroLoF = () => { window.aroCurrentConfig.hasLoF = !window.aroCurrentConfig.hasLoF; window.renderAroModifiersUI(); };
         window.setAroTerrain = (val) => { window.aroCurrentConfig.terrain = val; window.renderAroModifiersUI(); };
         window.setAroAmmo = (val) => { window.aroCurrentConfig.ammo = val; window.renderAroModifiersUI(); };
-
 
 	 window.salvaAroCorrente = () => {
             window.aroReactions.push(JSON.parse(JSON.stringify(window.aroCurrentConfig)));
@@ -2845,6 +2839,7 @@ window.apriDeployAzioni = (index) => {
 	
 </body>
 </html>
+
 
 
 
