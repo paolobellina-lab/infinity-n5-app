@@ -383,39 +383,71 @@
 
                     attaccantiCheMiranoQui.forEach(att => {
                         let bersaglioSpecifico = att.bersagli.find(b => (b.name || b.nome) === nomeDifensore);
+                        let isGuided = (att.azione === 'ATTACCO GUIDATO');
                         
-                        // --- DATI ATTACCANTE (DA SOSTITUIRE POI CON LETTURA DB) ---
+                        // --- DATI ATTACCANTE (DA SOSTITUIRE POI CON LETTURA DB REALE) ---
                         let bsAtt = 12; 
-                        let armAtt = 3; // Armatura stimata dell'attaccante
-                        let btsAtt = 0; // BTS stimato dell'attaccante
-                        let damAtt = 14; // Danno stimato arma attaccante (es. MULTI)
-
-                        let modAtt = (bersaglioSpecifico.rangeMod || 0) + (bersaglioSpecifico.cover ? -3 : 0);
-                        let tgNumberAtt = bsAtt + modAtt;
+                        let armAtt = 3; 
+                        let btsAtt = 0; 
+                        let damAtt = 14; 
                         let burstAtt = bersaglioSpecifico.burst || 0;
                         let ammoAtt = bersaglioSpecifico.ammo || "NORMALE";
                         
+                        let modAtt = (bersaglioSpecifico.rangeMod || 0);
                         let dettAtt = `Statistica Base (Stimata): ${bsAtt}<br>`;
-                        dettAtt += `<span style="color:#00ff00">Gittata: ${bersaglioSpecifico.rangeMod > 0 ? '+'+bersaglioSpecifico.rangeMod : bersaglioSpecifico.rangeMod}</span><br>`;
-                        if(bersaglioSpecifico.cover) dettAtt += `<span style="color:#ff3333">Copertura nemica: -3</span>`;
+                        dettAtt += `<span style="color:#00ff00">Gittata (Scelta dal giocatore): ${bersaglioSpecifico.rangeMod > 0 ? '+'+bersaglioSpecifico.rangeMod : bersaglioSpecifico.rangeMod}</span><br>`;
+
+                        // === REGOLE SPECIALI: ATTACCO GUIDATO (ATTACCANTE) ===
+                        if (isGuided) {
+                            modAtt += 3; // Il bonus +3 per lo stato Targeted
+                            ammoAtt = "EXP"; // Forza munizione a EXP
+                            dettAtt += `<span style="color:#00ff00">Bonus Stato Bersagliato: +3 BS</span><br>`;
+                            dettAtt += `<span style="color:#00ccff">Regola Guidato: La Copertura viene ignorata. Munizione forzata a EXP.</span><br>`;
+                        } else {
+                            // Se NON è guidato, applica regolarmente la copertura
+                            if(bersaglioSpecifico.cover) {
+                                modAtt -= 3;
+                                dettAtt += `<span style="color:#ff3333">Copertura nemica: -3 BS</span><br>`;
+                            }
+                        }
+                        
+                        let tgNumberAtt = bsAtt + modAtt;
+
+                        // === REGOLE SPECIALI: DIFENSORE (SCHIVATA/RESET/GUIDATO) ===
+                        let finalTgNumberDif = tgNumberDif;
+                        let finalDettReazione = dettReazione;
+
+                        if (reazione) {
+                            // 1. Malus Schivata per mancanza di Linea di Tiro (Generico per tutti gli attacchi)
+                            if (reazione.azione === "DODGE" && reazione.hasLoF === false) {
+                                finalTgNumberDif -= 3;
+                                finalDettReazione += `<br><span style="color:#ff3333">Nessuna Linea di Tiro (Schivata alla Cieca): -3 PH</span>`;
+                            }
+                            
+                            // 2. Malus Reset contro un Attacco Guidato (Regola dello stato Targeted)
+                            if (reazione.azione === "RESET" && isGuided) {
+                                finalTgNumberDif -= 3;
+                                finalDettReazione += `<br><span style="color:#ff3333">Malus Reset (Bersagliato da Guidato): -3 WIP</span>`;
+                            }
+                        }
 
                         scontri.push({
                             titolo: isF2F ? "TIRO FACCIA A FACCIA" : "TIRO NORMALE",
                             attivo: {
                                 nome: att.attaccante, fazione: fazAttiva, azione: att.azione, 
-                                mod: tgNumberAtt, burst: burstAtt,
+                                mod: tgNumberAtt, burst: burstAtt, // Il Burst rimane quello scelto dall'utente!
                                 dettagliMod: dettAtt,
                                 salvezza: (burstDif > 0 && damDif > 0) ? window.calcolaSalvezza(ammoDif, damDif, armAtt, btsAtt) : "<span style='color:#555;'>Nessun danno in arrivo</span>"
                             },
                             reattivo: {
                                 nome: nomeDifensore, fazione: fazReattiva, azione: azioneReazione, 
-                                mod: tgNumberDif, burst: burstDif,
-                                dettagliMod: dettReazione,
+                                mod: finalTgNumberDif, burst: burstDif,
+                                dettagliMod: finalDettReazione,
                                 salvezza: (burstAtt > 0 && damAtt > 0) ? window.calcolaSalvezza(ammoAtt, damAtt, armDif, btsDif) : "<span style='color:#555;'>Nessun danno in arrivo</span>"
                             }
                         });
                     });
-                } 
+                }
                 // CASO B: Tiro Libero Reattivo
                 else if (burstDif > 0) {
                     // Se c'è solo l'attaccante stimiamo le sue stat per la salvezza
@@ -605,3 +637,4 @@
 </body>
 
 </html>
+
