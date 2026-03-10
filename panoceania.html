@@ -62,16 +62,16 @@
         /* Stile per i Token N5 - Ingranditi */
         .status-token { width: 55px; height: 55px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 0 5px rgba(0,0,0,0.8)); border-radius: 50%; }
         .spearhead-token { width: 34px; height: 34px; object-fit: contain; margin-left: 10px; vertical-align: middle; filter: drop-shadow(0 0 5px #00ccff); border-radius: 50%; }
-	/* Griglia Stati a 3 Colonne */
-        .state-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; justify-items: center; align-items: center; padding: 15px 0; }
+	/* Griglia Stati a 3 Colonne FLUIDA E ADATTIVA */
+        .state-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(5px, 2vw, 15px); justify-items: center; align-items: center; padding: 10px 0; }
         .state-label { cursor: pointer; text-align: center; width: 100%; display: flex; justify-content: center; }
         
         /* Nasconde il noioso quadratino della spunta */
         .state-checkbox { display: none; }
         
         /* Aspetto dell'icona SPENTA (Bianco e Nero / Trasparente) */
-        .state-icon { width: 120px; height: 120px; object-fit: contain; border-radius: 50%; transition: all 0.3s ease; filter: grayscale(100%) opacity(30%); }
-        .fallback-emoji { font-size: 80px; line-height: 120px; transition: all 0.3s ease; filter: grayscale(100%) opacity(30%); }
+        .state-icon { width: clamp(50px, 22vw, 110px); height: clamp(50px, 22vw, 110px); object-fit: contain; border-radius: 50%; transition: all 0.3s ease; filter: grayscale(100%) opacity(30%); }
+        .fallback-emoji { font-size: clamp(35px, 15vw, 75px); line-height: clamp(50px, 22vw, 110px); transition: all 0.3s ease; filter: grayscale(100%) opacity(30%); }
         
         /* Aspetto dell'icona ACCESA (A colori + Effetto Glow) */
         .state-checkbox:checked + .state-icon { filter: drop-shadow(0 0 10px var(--nomad-red)) drop-shadow(0 0 20px #ff0000); transform: scale(1.15); }
