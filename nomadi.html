@@ -1545,6 +1545,14 @@ if (window.isReactiveMode) {
                 // REGOLA B: I modelli morti vengono sempre ignorati
                 if (isDead) return false;
 
+				// ---> NUOVA REGOLA: ATTACCO GUIDATO <---
+                if (azioneAttuale === 'ATTACCO GUIDATO') {
+                    // Se l'unità nemica ha lo stato "Targeted" (Bersagliato) acceso, è valida!
+                    if (u.states && u.states.targeted) return true;
+                    // Altrimenti viene nascosta
+                    return false;
+                }
+				
                 // REGOLA C: Hacking
                 if (azioneAttuale === 'HACKING') {
                     if (isCamo || isImp) return false; // Non si hackera un marker
@@ -2776,6 +2784,7 @@ window.apriDeployAzioni = (index) => {
 	
 </body>
 </html>
+
 
 
 
