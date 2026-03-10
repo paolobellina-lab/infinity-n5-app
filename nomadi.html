@@ -1675,7 +1675,11 @@ if (window.isReactiveMode) {
             
             let dbArmi = window.RULES_WEAPONS || window.DB_ARMI;
             
-            // FIX: Cerca in modo intelligente. Se c'è scritto "Guided Missile Launcher", trova il "Missile Launcher"
+            // FIX: Legge entrambe le metà dell'ordine per non scordarsi l'attacco!
+            let act1 = (window.currentOrder && window.currentOrder.action1) ? window.currentOrder.action1.toUpperCase() : "";
+            let act2 = (window.currentOrder && window.currentOrder.action) ? window.currentOrder.action.toUpperCase() : "";
+            let isGuided = act1 === 'ATTACCO GUIDATO' || act2 === 'ATTACCO GUIDATO';
+
             let profileKey = null;
             if (cleanWeaponName && dbArmi) {
                 profileKey = Object.keys(dbArmi).find(k => 
@@ -1687,7 +1691,7 @@ if (window.isReactiveMode) {
             let profile = profileKey ? dbArmi[profileKey] : null;
             
             // PIANO B DI EMERGENZA: Se l'arma non esiste ma stiamo facendo un Guidato, crea le fasce del Lanciamissili!
-            if (!profile && window.currentOrder && window.currentOrder.action === 'ATTACCO GUIDATO') {
+            if (!profile && isGuided) {
                 return { 
                     burst: 1, dam: 14, ammo: "EXP", 
                     bands: [{ mod: 3, label: "Max 16\"" }, { mod: 3, label: "Max 32\"" }, { mod: -3, label: "Max 48\"" }],
@@ -1698,7 +1702,6 @@ if (window.isReactiveMode) {
             if (!profile) return defaultWpn;
             
             let parsedBands = [];
-            // FIX: Se l'arma ha le gittate definite nel DB, genera sempre la barra, ignorando se è una sagoma!
             if (profile.ranges) {
                 Object.keys(profile.ranges).forEach(key => {
                     let modValue = 0;
@@ -1849,13 +1852,24 @@ if (window.isReactiveMode) {
             let currentUnit = window.coordUnits[window.coordIndex];
             window.mostraTitoloUnitaCorrente();
 
+            // FIX: Controlla entrambe le azioni per decidere il numero di dadi corretto!
+            let act1 = (window.currentOrder.action1 || "").toUpperCase();
+            let act2 = (window.currentOrder.action || "").toUpperCase();
+            let isAttackBS = act1.includes('ATTACCO') || act2.includes('ATTACCO');
+            let isGuided = act1 === 'ATTACCO GUIDATO' || act2 === 'ATTACCO GUIDATO';
+
             let wpnProfile = window.getWeaponProfile(window.currentOrder.weapon);
             
-            // REGOLA N5: Il leader tira full Burst. I gregari (index > 0) tirano solo 1 Dado!
-            if (window.coordMode && window.coordIndex > 0 && window.currentOrder.action.toUpperCase().includes('ATTACCO')) {
+            // Calcolo del Burst (Dadi)
+            if (window.coordMode && window.coordIndex > 0 && isAttackBS) {
                 window.totalBurst = 1; 
             } else {
-                window.totalBurst = window.currentOrder.action.toUpperCase().includes('ATTACCO') ? wpnProfile.burst : 1;
+                window.totalBurst = isAttackBS ? wpnProfile.burst : 1;
+            }
+            
+            // 🎯 FORZATURA GUIDATO: In Guidato il Burst è sempre e solo 1!
+            if (isGuided) {
+                window.totalBurst = 1;
             }
             
             if (!window.combatTargets || window.combatTargets.length === 0) {
@@ -1864,7 +1878,6 @@ if (window.isReactiveMode) {
                 let currentAllocated = window.combatTargets.reduce((sum, t) => sum + t.burst, 0);
                 if (currentAllocated === 0 && window.combatTargets.length > 0) window.combatTargets[0].burst = window.totalBurst;
             }
-
             
             window.renderTargetsAllocation();
             window.goToStep('step-modifiers');
@@ -2832,6 +2845,7 @@ window.apriDeployAzioni = (index) => {
 	
 </body>
 </html>
+
 
 
 
