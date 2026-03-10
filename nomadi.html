@@ -2577,18 +2577,27 @@ window.apriDeployAzioni = (index) => {
             window.aroCurrentConfig.azione = act;
             let u = window.roster.find(x => x.id === window.aroCurrentConfig.id);
 
+            // Inizializza il parametro Linea di Tiro a VERO di default
+            window.aroCurrentConfig.hasLoF = true;
+
             if (act === 'BS_ATTACK' || act === 'HACKING') {
                 let container = document.getElementById('aro-weapon-list');
                 container.innerHTML = "";
                 if (act === 'HACKING') {
                     let progs = [{n: "SPOTLIGHT", d: "Applica TARGETED"}, {n: "CARBONITE", d: "Applica IMM-B"}, {n: "OBLIVION", d: "Applica ISOLATED"}];
-                    progs.forEach(p => container.innerHTML += `<button class="huge-btn" style="border-color:#00ffff;" onclick="window.selezionaArmaAro('${p.n}')">${p.n} <br><span style="color:#00ffff;">${p.d}</span></button>`);
+                    progs.forEach(p => container.innerHTML += `<button class="huge-btn" style="border-color:#00ccff;" onclick="window.selezionaArmaAro('${p.n}')">${p.n} <br><span style="color:#00ccff;">${p.d}</span></button>`);
                 } else if (u.weapon) {
                     u.weapon.replace('/', ',').split(',').forEach(w => {
                         container.innerHTML += `<button class="huge-btn" onclick="window.selezionaArmaAro('${w.trim()}')">${w.trim()}</button>`;
                     });
                 }
                 window.goToAroStep('step-aro-weapon');
+            } else if (act === 'DODGE' || act === 'RESET') {
+                // Se è Schivata o Reset, saltiamo l'arma e andiamo ai Modificatori per gestire Copertura e Linea di Tiro!
+                window.aroCurrentConfig.arma = "NESSUNA";
+                window.aroCurrentConfig.bersaglio = "TUTTI / NESSUNO";
+                window.renderAroModifiersUI();
+                window.goToAroStep('step-aro-modifiers');
             } else {
                 window.salvaAroCorrente(); 
             }
@@ -2613,35 +2622,52 @@ window.apriDeployAzioni = (index) => {
 
         window.renderAroModifiersUI = () => {
             let container = document.getElementById('aro-modifiers-content');
-            let wpnProfile = window.getWeaponProfile(window.aroCurrentConfig.arma);
             let tgt = window.aroCurrentConfig;
+            let wpnProfile = window.getWeaponProfile(tgt.arma);
+            
+            let isAttack = (tgt.azione === 'BS_ATTACK' || tgt.azione === 'HACKING');
+            let isDodge = (tgt.azione === 'DODGE');
 
             if (tgt.rangeMod === 0 && tgt.rangeIndex === 0) tgt.rangeMod = wpnProfile.bands[0].mod;
             
-            // --- LOGICA MUNIZIONI SPECIFICHE DELL'ARMA ---
             let baseAmmoStr = wpnProfile.ammo ? wpnProfile.ammo.toUpperCase() : "NORMALE";
             let ammoOptionsList = baseAmmoStr.split(/[\/,]/).map(a => a.trim());
             if (!tgt.ammo || !ammoOptionsList.includes(tgt.ammo)) tgt.ammo = ammoOptionsList[0];
 
             let rangeHtml = "";
-            if (wpnProfile.isTemplate) {
-                rangeHtml = `<div style="margin-bottom:15px; text-align:center; padding:10px; background:#440000; border:1px solid #ff0000; color:#ff9900; font-weight:bold; border-radius:5px;">🔥 ATTACCO A SAGOMA<br><span style="font-size:12px; color:#fff;">Colpo Automatico (Salta il tiro BS)</span></div>`;
-            } else if (wpnProfile.isCC) {
-                rangeHtml = `<div style="margin-bottom:15px; text-align:center; padding:10px; background:#002244; border:1px solid #00ccff; color:#00ffff; font-weight:bold; border-radius:5px;">⚔️ CORPO A CORPO<br><span style="font-size:12px; color:#fff;">(Usa Statistica CC)</span></div>`;
-            } else {
-                let segmentsHtml = ""; let labelsHtml = "";
-                wpnProfile.bands.forEach((band, bIdx) => {
-                    let colorClass = "seg-2"; 
-                    if(band.mod > 0) colorClass = "seg-1"; else if(band.mod === -3) colorClass = "seg-3"; else if(band.mod < -3) colorClass = "seg-4";
-                    let isActive = (tgt.rangeIndex === bIdx) ? "active" : "";
-                    segmentsHtml += `<div class="range-seg ${colorClass} ${isActive}" onclick="window.setAroRange(${bIdx}, ${band.mod})">${band.mod > 0 ? '+'+band.mod : band.mod}</div>`;
-                    labelsHtml += `<span>${band.label}</span>`;
-                });
-                rangeHtml = `<div style="margin-bottom:15px;"><div class="range-bar">${segmentsHtml}</div><div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${labelsHtml}</div></div>`;
+            let ammoHtml = "";
+            
+            // Mostra la barra della gittata e le munizioni SOLO se è un attacco
+            if (isAttack) {
+                if (wpnProfile.isTemplate) {
+                    rangeHtml = `<div style="margin-bottom:15px; text-align:center; padding:10px; background:#002255; border:1px solid #ff0000; color:#ff9900; font-weight:bold; border-radius:5px;">🔥 ATTACCO A SAGOMA<br><span style="font-size:12px; color:#fff;">Colpo Automatico (Salta il tiro BS)</span></div>`;
+                } else if (wpnProfile.isCC) {
+                    rangeHtml = `<div style="margin-bottom:15px; text-align:center; padding:10px; background:#002244; border:1px solid #00ccff; color:#00ccff; font-weight:bold; border-radius:5px;">⚔️ CORPO A CORPO<br><span style="font-size:12px; color:#fff;">(Usa Statistica CC)</span></div>`;
+                } else {
+                    let segmentsHtml = ""; let labelsHtml = "";
+                    wpnProfile.bands.forEach((band, bIdx) => {
+                        let colorClass = "seg-2"; 
+                        if(band.mod > 0) colorClass = "seg-1"; else if(band.mod === -3) colorClass = "seg-3"; else if(band.mod < -3) colorClass = "seg-4";
+                        let isActive = (tgt.rangeIndex === bIdx) ? "active" : "";
+                        segmentsHtml += `<div class="range-seg ${colorClass} ${isActive}" onclick="window.setAroRange(${bIdx}, ${band.mod})">${band.mod > 0 ? '+'+band.mod : band.mod}</div>`;
+                        labelsHtml += `<span>${band.label}</span>`;
+                    });
+                    rangeHtml = `<div style="margin-bottom:15px;"><div class="range-bar">${segmentsHtml}</div><div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${labelsHtml}</div></div>`;
+                }
+
+                let ammoOptions = ammoOptionsList.map(opt => `<option value="${opt}" ${opt === tgt.ammo ? 'selected' : ''}>Munizioni: ${opt}</option>`).join('');
+                ammoHtml = `<select class="huge-btn" style="flex: 1; margin:0; min-height:55px; font-size:16px; background:#002233; color:#fff; border-color:#00ccff; text-align:center; padding:0 10px;" onchange="window.setAroAmmo(this.value)">${ammoOptions}</select>`;
             }
 
-            let coverStyle = tgt.cover ? `background:var(--nomad-orange); color:#000;` : `background:#1a0000; color:#fff;`;
-            let ammoOptions = ammoOptionsList.map(opt => `<option value="${opt}" ${opt === tgt.ammo ? 'selected' : ''}>Munizioni: ${opt}</option>`).join('');
+            // GESTIONE TASTI DIFENSIVI (Copertura e Linea di Tiro)
+            let coverStyle = tgt.cover ? `background:var(--nomad-orange); color:#000; border-color:#fff;` : `background:#001122; color:#fff; border-color:#555;`;
+            
+            let lofHtml = "";
+            if (isDodge) {
+                let lofStyle = tgt.hasLoF ? `background:#004400; color:#00ff00; border-color:#00ff00;` : `background:#440000; color:#ff0000; border-color:#ff0000;`;
+                let lofText = tgt.hasLoF ? '👁️ HAI LINEA DI TIRO' : '盲 NESSUNA LINEA DI TIRO (-3)';
+                lofHtml = `<button class="huge-btn" style="width:100%; margin-top:10px; min-height:55px; font-size:16px; ${lofStyle}" onclick="window.toggleAroLoF()">${lofText}</button>`;
+            }
 
             container.innerHTML = `
                 <div class="target-card" style="border-left: 4px solid var(--nomad-red); background: rgba(255,255,255,0.03); padding: 15px; overflow: hidden;">
@@ -2653,12 +2679,11 @@ window.apriDeployAzioni = (index) => {
                     
                     <div style="display:flex; gap:10px; margin-top: 15px;">
                         <button class="huge-btn" style="flex: 1; margin:0; min-height:55px; font-size:16px; ${coverStyle}" onclick="window.toggleAroCover()">${tgt.cover ? 'IN COPERTURA' : 'NO COPERTURA'}</button>
-                        <select class="huge-btn" style="flex: 1; margin:0; min-height:55px; font-size:16px; background:#002233; color:#fff; border-color:#00ffff; text-align:center; padding:0 10px;" onchange="window.setAroAmmo(this.value)">
-                            ${ammoOptions}
-                        </select>
+                        ${ammoHtml}
                     </div>
+                    ${lofHtml}
 
-                    <div style="display:flex; margin-top: 25px; margin-bottom: 5px;">
+                    <div style="display:flex; margin-top: 20px; margin-bottom: 5px;">
                         <select class="huge-btn" style="flex: 1; margin:0; min-height:55px; font-size:16px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;" onchange="window.setAroTerrain(this.value)">
                             ${window.generaOpzioniTerreni(tgt.terrain)}
                         </select>
@@ -2784,6 +2809,7 @@ window.apriDeployAzioni = (index) => {
 	
 </body>
 </html>
+
 
 
 
