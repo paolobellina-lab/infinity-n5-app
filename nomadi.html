@@ -1673,21 +1673,33 @@ if (window.isReactiveMode) {
             let defaultWpn = { burst: 1, ammo: "NORMALE", bands: [{ mod: 0, label: "Auto" }] };
             let cleanWeaponName = weaponName ? weaponName.split('(')[0].trim() : "";
             
-            // Cerca il database delle armi, indipendentemente da come lo hai chiamato!
             let dbArmi = window.RULES_WEAPONS || window.DB_ARMI;
             
-            if (!cleanWeaponName || !dbArmi) return defaultWpn;
+            // FIX: Cerca in modo intelligente. Se c'è scritto "Guided Missile Launcher", trova il "Missile Launcher"
+            let profileKey = null;
+            if (cleanWeaponName && dbArmi) {
+                profileKey = Object.keys(dbArmi).find(k => 
+                    cleanWeaponName.toLowerCase().includes(k.toLowerCase()) || 
+                    k.toLowerCase().includes(cleanWeaponName.toLowerCase())
+                );
+            }
             
-            let profileKey = Object.keys(dbArmi).find(k => k.toLowerCase() === cleanWeaponName.toLowerCase());
             let profile = profileKey ? dbArmi[profileKey] : null;
+            
+            // PIANO B DI EMERGENZA: Se l'arma non esiste ma stiamo facendo un Guidato, crea le fasce del Lanciamissili!
+            if (!profile && window.currentOrder && window.currentOrder.action === 'ATTACCO GUIDATO') {
+                return { 
+                    burst: 1, dam: 14, ammo: "EXP", 
+                    bands: [{ mod: 3, label: "Max 16\"" }, { mod: 3, label: "Max 32\"" }, { mod: -3, label: "Max 48\"" }],
+                    isTemplate: false, isCC: false
+                };
+            }
+            
             if (!profile) return defaultWpn;
             
             let parsedBands = [];
-            if (profile.isTemplate) {
-                parsedBands.push({ mod: 0, label: `Sagoma ${profile.template || ''} (Colpo Auto)` });
-            } else if (profile.isCC) {
-                parsedBands.push({ mod: 0, label: `Corpo a Corpo (CC)` });
-            } else if (profile.ranges) {
+            // FIX: Se l'arma ha le gittate definite nel DB, genera sempre la barra, ignorando se è una sagoma!
+            if (profile.ranges) {
                 Object.keys(profile.ranges).forEach(key => {
                     let modValue = 0;
                     if (key.includes('p6')) modValue = 6;
@@ -1697,7 +1709,13 @@ if (window.isReactiveMode) {
                     if (key.includes('m6')) modValue = -6;
                     parsedBands.push({ mod: modValue, label: `Max ${profile.ranges[key]}"` });
                 });
-            } else { parsedBands.push({ mod: 0, label: "Auto" }); }
+            } else if (profile.isTemplate) {
+                parsedBands.push({ mod: 0, label: `Sagoma ${profile.template || ''} (Colpo Auto)` });
+            } else if (profile.isCC) {
+                parsedBands.push({ mod: 0, label: `Corpo a Corpo (CC)` });
+            } else { 
+                parsedBands.push({ mod: 0, label: "Auto" }); 
+            }
             
             return { 
                 burst: profile.b || 1, 
@@ -1708,7 +1726,6 @@ if (window.isReactiveMode) {
                 isCC: profile.isCC || false
             };
         };
-
         window.toggleTargetCover = (index) => { window.combatTargets[index].cover = !window.combatTargets[index].cover; window.renderTargetsAllocation(); };
         window.setTargetTerrain = (index, val) => { window.combatTargets[index].terrain = val; window.renderTargetsAllocation(); };
         window.setTargetRange = (targetIndex, rangeIdx, mod) => { window.combatTargets[targetIndex].rangeIndex = rangeIdx; window.combatTargets[targetIndex].rangeMod = mod; window.renderTargetsAllocation(); };
@@ -1752,24 +1769,31 @@ if (window.isReactiveMode) {
             let wpnProfile = window.getWeaponProfile(window.currentOrder.weapon);
 
             window.combatTargets.forEach((tgt, index) => {
-                let coverStyle = tgt.cover ? `background:var(--nomad-orange); color:#000;` : `background:#1a0000; color:#fff;`;
+                let coverStyle = tgt.cover ? `background:var(--nomad-orange); color:#000;` : `background:#001122; color:#fff;`;
                 
                 if (tgt.rangeMod === 0 && tgt.rangeIndex === 0) tgt.rangeMod = wpnProfile.bands[0].mod;
                 
                 // --- LOGICA MUNIZIONI SPECIFICHE DELL'ARMA ---
                 let baseAmmoStr = wpnProfile.ammo ? wpnProfile.ammo.toUpperCase() : "NORMALE";
+                
+                // 🎯 FIX GUIDATO: Forza graficamente la tendina su EXP!
+                if (window.currentOrder.action === 'ATTACCO GUIDATO') {
+                    baseAmmoStr = "EXP";
+                }
+
                 let ammoOptionsList = baseAmmoStr.split(/[\/,]/).map(a => a.trim());
                 if (!tgt.ammo || !ammoOptionsList.includes(tgt.ammo)) tgt.ammo = ammoOptionsList[0];
 
                 // === LOGICA DELL'INTERFACCIA PER SAGOME E CC ===
                 let rangeHtml = "";
                 if (isAttackBS) {
-                    if (wpnProfile.isTemplate) {
-                        rangeHtml = `<div style="margin-bottom:15px; text-align:center; padding:10px; background:#440000; border:1px solid #ff0000; color:#ff9900; font-weight:bold; border-radius:5px;">🔥 ATTACCO A SAGOMA<br><span style="font-size:12px; color:#fff;">Colpo Automatico (Salta il tiro BS)</span></div>`;
+                    // 🎯 FIX GUIDATO: L'attacco guidato richiede sempre il tiro per colpire, quindi mostra sempre le fasce di gittata!
+                    if (wpnProfile.isTemplate && window.currentOrder.action !== 'ATTACCO GUIDATO' && wpnProfile.bands.length === 1 && wpnProfile.bands[0].label.includes("Sagoma")) {
+                        rangeHtml = `<div style="margin-bottom:15px; text-align:center; padding:10px; background:#002255; border:1px solid #ff0000; color:#ff9900; font-weight:bold; border-radius:5px;">🔥 ATTACCO A SAGOMA<br><span style="font-size:12px; color:#fff;">Colpo Automatico (Salta il tiro BS)</span></div>`;
                         tgt.rangeIndex = 0; tgt.rangeMod = 0; 
                     } 
                     else if (wpnProfile.isCC) {
-                        rangeHtml = `<div style="margin-bottom:15px; text-align:center; padding:10px; background:#002244; border:1px solid #00ccff; color:#00ffff; font-weight:bold; border-radius:5px;">⚔️ CORPO A CORPO<br><span style="font-size:12px; color:#fff;">(Il calcolatore userà la statistica CC)</span></div>`;
+                        rangeHtml = `<div style="margin-bottom:15px; text-align:center; padding:10px; background:#002244; border:1px solid #00ccff; color:#00ccff; font-weight:bold; border-radius:5px;">⚔️ CORPO A CORPO<br><span style="font-size:12px; color:#fff;">(Il calcolatore userà la statistica CC)</span></div>`;
                         tgt.rangeIndex = 0; tgt.rangeMod = 0;
                     } 
                     else {
@@ -1801,7 +1825,7 @@ if (window.isReactiveMode) {
                         
                         <div style="display:flex; gap:10px; margin-top: 15px;">
                             <button class="huge-btn" style="flex: 1; margin:0; min-height:55px; font-size:16px; ${coverStyle}" onclick="window.toggleTargetCover(${index})">${tgt.cover ? 'IN COPERTURA' : 'NO COPERTURA'}</button>
-                            <select class="huge-btn" style="flex: 1; margin:0; min-height:55px; font-size:16px; background:#002233; color:#fff; border-color:#00ffff; text-align:center; padding:0 10px;" onchange="window.setTargetAmmo(${index}, this.value)">
+                            <select class="huge-btn" style="flex: 1; margin:0; min-height:55px; font-size:16px; background:#002233; color:#fff; border-color:#00ccff; text-align:center; padding:0 10px;" onchange="window.setTargetAmmo(${index}, this.value)">
                                 ${ammoOptions}
                             </select>
                         </div>
@@ -1814,7 +1838,6 @@ if (window.isReactiveMode) {
                     </div>`;
             });
         };
-
         // Funzione per salvare la munizione scelta
         window.setTargetAmmo = (index, val) => { window.combatTargets[index].ammo = val; window.renderTargetsAllocation(); };
 
@@ -2809,6 +2832,7 @@ window.apriDeployAzioni = (index) => {
 	
 </body>
 </html>
+
 
 
 
