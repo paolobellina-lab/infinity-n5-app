@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+
+    <link rel="manifest" href="manifest_hub.json">
+    <link rel="icon" type="image/png" href="img/icona_hub.png">
+    <link rel="apple-touch-icon" href="img/icona_hub.png">
+    
+
+    <meta charset="UTF-8">
+    <title>HUB CENTRALE - REGISTA N5</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Teko:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #111; color: #00ff00; font-family: 'Share Tech Mono', monospace; padding: 20px; }
+        .turn-controller { text-align: center; background: #222; padding: 15px; border: 2px solid #00ff00; margin-bottom: 20px; border-radius: 10px; }
+        .btn-turn { background: #00ff00; color: #000; font-family: 'Teko', sans-serif; font-size: 24px; padding: 10px 30px; cursor: pointer; border: none; font-weight: bold; border-radius: 5px; }
+        .active-label { font-size: 1.5em; margin-bottom: 10px; display: block; color: #aaa; }
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .faction-panel { border: 1px solid #555; padding: 10px; background: #222; border-radius: 5px; }
+        .log-container { background: #000; border: 1px solid #444; height: 200px; overflow-y: scroll; padding: 10px; font-size: 12px; margin-top: 20px; color: #888; }
+        .state-tag { padding: 2px 5px; border-radius: 3px; font-size: 10px; margin-left: 10px; text-transform: uppercase; background: #444; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #00ff00; padding-bottom: 10px; margin-bottom: 20px;">
+        <h1 style="margin: 0; text-shadow: 0 0 10px #00ff00;">HUB CENTRALE - REGISTA N5</h1>
+        <button class="btn-turn" style="background:#8b0000; color:#fff; border: 2px solid #ff0000; font-size: 16px; padding: 8px 15px; margin: 0; box-shadow: 0 0 10px #ff0000;" onclick="window.resetPartita()">⚠️ RESET PARTITA</button>
+    </div>
+
+    <div class="turn-controller">
+        <span class="active-label">TURNO ATTIVO:</span>
+        <h2 id="current-active-text" style="font-family: 'Teko', sans-serif; font-size: 48px; margin: 10px 0; color: #ff0000; text-shadow: 0 0 10px currentColor;">NOMADI</h2>
+        <button class="btn-turn" onclick="window.toggleTurn()">🔄 CAMBIA TURNO ATTIVO</button>
+    </div>
+
+    <div class="status-grid">
+        <div class="faction-panel">
+            <h2 style="color: #ff0000;">NOMADS</h2>
+            <div id="status-nomads">In attesa...</div>
+        </div>
+        <div class="faction-panel">
+            <h2 style="color: #00ccff;">PANOCEANIA</h2>
+            <div id="status-pano">In attesa...</div>
+        </div>
+    </div>
+
+    <div id="battle-log" class="log-container"></div>
+
+    <div id="step-resolution" style="display:none; padding-bottom:40px; margin-top: 20px;">
+        <h1 style="text-align:center; color:#00ff00; font-family:'Teko'; font-size:52px; text-shadow:0 0 15px #00ff00; margin-bottom: 5px;">RISOLUZIONE SCONTRI</h1>
+        <p style="text-align:center; color:#aaa; margin-top:0; margin-bottom:20px;">Elaborazione tiri Faccia a Faccia e Normali</p>
+        
+        <div id="clash-container"></div>
+        
+        <div style="text-align:center; margin-top:30px;">
+            <button class="btn-turn" style="background:#004400; border:2px solid #00ff00; color:#fff;" onclick="window.chiudiRisoluzione()">✅ APPLICA RISULTATI E TORNA AL RADAR</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAMpF8Le_srYjxgC7vb231Ng40iXwr256o",
+            authDomain: "infinityn5-database.firebaseapp.com",
+            databaseURL: "https://infinityn5-database-default-rtdb.firebaseio.com",
+            projectId: "infinityn5-database",
+            storageBucket: "infinityn5-database.firebasestorage.app",
+            messagingSenderId: "506923243459",
+            appId: "1:506923243459:web:4aa5e59c84c9d8156c4f76"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // --- INIZIO MOTORE CLOUD INVISIBILE ---
+        const canaliCloud = [
+            'canale_hub_turno', 'hub_sblocco_attivo', 'canale_setup_panoceania', 
+            'canale_setup_nomadi', 'canale_attacco_allarme', 'canale_comunicazione_infinity',
+            'canale_aro_panoceania', 'canale_aro_nomadi', 'canale_hub_calcolo', 
+            'global_game_state', 'hub_update_state'
+        ];
+
+        const originalSetItem = localStorage.setItem;
+        const originalRemoveItem = localStorage.removeItem;
+
+        canaliCloud.forEach(canale => {
+            onValue(ref(db, canale), (snapshot) => {
+                const dati = snapshot.val();
+                if (dati !== null) {
+                    originalSetItem.call(localStorage, canale, dati);
+                    let eventoFake = new Event('storage');
+                    eventoFake.key = canale;
+                    eventoFake.newValue = dati;
+                    window.dispatchEvent(eventoFake);
+                } else {
+                    originalRemoveItem.call(localStorage, canale);
+                }
+            });
+        });
+
+        localStorage.setItem = function(key, value) {
+            if (canaliCloud.includes(key)) {
+                set(ref(db, key), value);
+            } else {
+                originalSetItem.call(localStorage, key, value);
+            }
+        };
+
+        localStorage.removeItem = function(key) {
+            if (canaliCloud.includes(key)) {
+                remove(ref(db, key));
+            } else {
+                originalRemoveItem.call(localStorage, key);
+            }
+        };
+        // --- FINE MOTORE CLOUD INVISIBILE ---
+
+	// ==========================================
+        // 🧮 FASE 1: MOTORE SALVEZZE, MUNIZIONI E COPERTURA N5 (V2 INTELLIGENTE)
+        // ==========================================
+        // ==========================================
+        // 🧮 FASE 1: MOTORE SALVEZZE E MUNIZIONI (COMPLETO)
+        // ==========================================
+        window.calcolaSalvezza = (ammo, damage, baseArm, baseBts, basePh, hasCover, targetObj) => {
+            ammo = (ammo || "NORMALE").toUpperCase();
+            let arm = parseInt(baseArm) || 0;
+            let bts = parseInt(baseBts) || 0;
+            let ph = parseInt(basePh) || 10;
+            
+            let savesCount = 1;
+            let targetStat = "ARM";
+            let finalStatValue = arm;
+            let effectsText = "";
+
+            let isMachine = false;
+            if (targetObj) {
+                let tType = (targetObj.tipo || "LI").toUpperCase();
+                let tSkills = ((targetObj.skills || "") + " " + (targetObj.equip || "")).toUpperCase();
+                if (tType === 'HI' || tType === 'TAG' || tType === 'REM' || tType === 'VEH' || tSkills.includes('HACKABLE')) {
+                    isMachine = true;
+                }
+            }
+
+            // --- REGOLA K1 ---
+            if (ammo.includes("K1")) {
+                damage = 12; // Danno fisso a 12
+                finalStatValue = 0; // Azzera l'armatura base
+                hasCover = false; // Ignora il bonus armatura della copertura
+                effectsText += "<br>🔪 <i>Regola K1: Danno fisso a 12, Armatura e Copertura ignorate!</i>";
+            }
+
+            if (ammo.includes("DA") || ammo.includes("VIRAL")) savesCount = 2;
+            if (ammo.includes("EXP")) savesCount = 3;
+            
+            // --- REGOLA BIOWEAPON ---
+            if (ammo.includes("BIOWEAPON") || ammo.includes("BIO-WEAPON") || ammo.includes("BIO WEAPON")) {
+                targetStat = "BTS";
+                savesCount = 2;
+                effectsText += "<br>🧬 <i>Regola BIOWEAPON: 2 Tiri su BTS. Applica effetto Shock.</i>";
+                if (!ammo.includes("SHOCK")) ammo += " SHOCK"; // Forza l'effetto shock sotto
+            }
+
+            // --- DANNO CONTINUO (Continuous Damage) ---
+            if (ammo.includes("CONTINUOUS") || ammo.includes("CD") || ammo.includes("CONTINUO")) {
+                effectsText += "<br><span style='color:#ff0000; font-weight:bold;'>🔥 DANNO CONTINUO: Se fallisci, ricevi 1 W e DEVI TIRARE DI NUOVO finché non passi o muori!</span>";
+            }
+            
+            if (ammo.includes("AP") && !ammo.includes("K1")) {
+                finalStatValue = Math.ceil(arm / 2);
+                effectsText += "<br>🔸 <i>Regola AP: Armatura Base Dimezzata</i>";
+            }
+            if (ammo.includes("BREAKER")) {
+                targetStat = "BTS";
+                finalStatValue = Math.ceil(bts / 2);
+                effectsText += "<br>💔 <i>Regola BREAKER: Usa il BTS Dimezzato (Ignora Copertura)</i>";
+                hasCover = false; 
+            }
+
+            if (hasCover && targetStat === "ARM" && !ammo.includes("K1")) {
+                finalStatValue += 3;
+                effectsText += "<br>🛡️ <i>Bonus Copertura: +3 ARM</i>";
+            }
+
+            if (ammo.includes("SHOCK")) {
+                effectsText += "<br>⚡ <i>Regola SHOCK: Annulla Incosciente (Morte Istantanea per modelli a 1 W)</i>";
+            }
+            if (ammo.includes("VIRAL") && !ammo.includes("BIOWEAPON")) {
+                targetStat = "BTS";
+                finalStatValue = bts; 
+                effectsText += "<br>☣️ <i>Regola VIRALE: Usa BTS. Effetto Shock. 2 Tiri per colpo.</i>";
+            }
+            if (ammo.includes("E/M")) {
+                targetStat = "BTS";
+                finalStatValue = Math.ceil(bts / 2);
+                if (isMachine) effectsText += "<br>🌩️ <i>Regola E/M: BTS Dimezzato. Fallimento = ISOLATO + IMM-B</i>";
+                else effectsText += "<br>🌩️ <i>Regola E/M: BTS Dimezzato. Fallimento = ISOLATO</i>";
+            }
+            if (ammo.includes("PARA") || ammo.includes("ADHESIVE")) {
+                targetStat = "PH"; 
+                finalStatValue = ph - 6; 
+                effectsText += "<br>🕸️ <i>Regola ADESIVO (PARA): Usa FISICO - 6. Fallimento = IMMOBILIZZATO-A</i>";
+            }
+            if (ammo.includes("STUN") || ammo.includes("FLASH")) {
+                targetStat = "BTS"; 
+                finalStatValue = bts; 
+                effectsText += "<br>✨ <i>NON LETALE: Usa BTS. Fallimento = STORDITO (Stunned)</i>";
+            }
+
+            let diff = damage - finalStatValue;
+            if (diff < 0) diff = 0; 
+            let targetNumber = diff + 1; 
+            
+            if (targetStat === "PH") {
+                return `Tira <b>${savesCount} Dadi</b> su <b style="color:#00ffff;">${targetStat}</b> (Valore finale: ${finalStatValue}).<br>
+                        Fai <b style="color:#00ff00; font-size:22px;">${finalStatValue} o MENO</b> sul d20.<br>${effectsText}`;
+            }
+
+            if (targetNumber > 20) {
+                return `<span style="color:#ff0000; font-weight:bold;">Colpo Devastante! Salvezza Impossibile (Richiede ${targetNumber}+)</span>${effectsText}`;
+            }
+
+            return `Tira <b>${savesCount} Dadi</b> su <b style="color:#00ffff;">${targetStat}</b>.<br>
+                    Fai <b style="color:#00ff00; font-size:22px;">${targetNumber} o più</b> sul d20.<br>
+                    <span style="font-size:12px; color:#aaa;">(Matematica: Danno ${damage} - ${targetStat} ${finalStatValue})</span>${effectsText}`;
+        };
+
+        window.gameState = { nomads: [], panoceania: [], activeFaction: 'NOMADI' };
+
+        window.updateLog = (msg) => {
+            const log = document.getElementById('battle-log');
+            log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+            log.scrollTop = log.scrollHeight;
+        };
+
+        // Ora il bottone HTML riesce a trovare e usare questa funzione!
+        window.toggleTurn = () => {
+            window.gameState.activeFaction = (window.gameState.activeFaction === 'NOMADI') ? 'PANOCEANIA' : 'NOMADI';
+            
+            // ---> FIX DATI FANTASMA: Azzera i canali ARO al cambio turno! <---
+            localStorage.removeItem('canale_comunicazione_infinity');
+            localStorage.removeItem('canale_attacco_allarme');
+            localStorage.removeItem('canale_aro_nomadi');
+            localStorage.removeItem('canale_aro_panoceania');
+
+            // Aggiorna l'interfaccia dell'HUB
+            const textElem = document.getElementById('current-active-text');
+            textElem.innerText = window.gameState.activeFaction;
+            textElem.style.color = (window.gameState.activeFaction === 'NOMADI') ? '#ff0000' : '#00ccff';
+
+            // SPEDISCE IL SEGNALE DI CAMBIO TURNO VIA CLOUD
+            localStorage.setItem('canale_hub_turno', JSON.stringify({ attivo: window.gameState.activeFaction }));
+            
+            window.updateLog(`🔄 CAMBIO TURNO: Ora è il turno di ${window.gameState.activeFaction}`);
+        };
+
+	// NUOVA FUNZIONE: Tasto Rosso di Emergenza
+        window.resetPartita = () => {
+            if(confirm("⚠️ ATTENZIONE! Vuoi resettare l'intera partita? Tutti i dati sul server verranno distrutti e le app torneranno allo schieramento inizale!")) {
+                
+                // Elenco di tutti i canali usati per comunicare
+                const canaliCloud = [
+                    'canale_hub_turno', 'hub_sblocco_attivo', 'canale_setup_panoceania', 
+                    'canale_setup_nomadi', 'canale_attacco_allarme', 'canale_comunicazione_infinity',
+                    'canale_aro_panoceania', 'canale_aro_nomadi', 'canale_hub_calcolo', 
+                    'global_game_state', 'hub_update_state'
+                ];
+                
+                // Cancella tutti i dati dal server Firebase
+                canaliCloud.forEach(canale => {
+                    localStorage.removeItem(canale);
+                });
+
+                window.updateLog("🛑 SERVER RESETTATO! I dati della vecchia partita sono stati distrutti.");
+                
+                // Ricarica la pagina dell'Hub per pulire tutto
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            }
+        };
+
+        window.broadcastState = () => {
+            // L'Hub aggiorna i dati di mira (bersagli) in background,
+            // SENZA forzare i telefoni a cambiare schermata in modo aggressivo!
+            localStorage.setItem('global_game_state', JSON.stringify(window.gameState));
+        };
+
+        setInterval(() => {
+            // Ascolto Setup Nomadi
+            let sNom = localStorage.getItem('canale_setup_nomadi');
+            if(sNom) {
+                window.gameState.nomads = JSON.parse(sNom).roster;
+                localStorage.removeItem('canale_setup_nomadi');
+                window.updateLog("Nomads: Roster ricevuto.");
+                window.refreshUI(); window.broadcastState();
+            }
+            // Ascolto Setup PanO
+            let sPano = localStorage.getItem('canale_setup_panoceania');
+            if(sPano) {
+                window.gameState.panoceania = JSON.parse(sPano).roster;
+                localStorage.removeItem('canale_setup_panoceania');
+                window.updateLog("PanOceania: Roster ricevuto.");
+                window.refreshUI(); window.broadcastState();
+            }
+            // Allarme ARO
+            let attacco = localStorage.getItem('canale_comunicazione_infinity');
+            if(attacco) {
+                window.updateLog("⚠️ ATTACCO! Allarme ARO inviato.");
+                let datiAttacco = JSON.parse(attacco);
+                datiAttacco.timestamp_allarme = Date.now(); 
+                localStorage.setItem('canale_attacco_allarme', JSON.stringify(datiAttacco));
+                localStorage.removeItem('canale_comunicazione_infinity');
+            }
+
+            // --- ASCOLTO ARO NOMADI ---
+            let aroNomadi = localStorage.getItem('canale_aro_nomadi');
+            if(aroNomadi) {
+                window.updateLog("🛡️ ARO Nomadi completato! PanOceania può procedere.");
+                localStorage.setItem('hub_sblocco_attivo', Date.now().toString()); 
+                window.latestAroData = JSON.parse(aroNomadi).reazioni; 
+                localStorage.removeItem('canale_aro_nomadi');
+            }
+
+            // --- ASCOLTO ARO PANOCEANIA ---
+            let aroPano = localStorage.getItem('canale_aro_panoceania');
+            if(aroPano) {
+                window.updateLog("🛡️ ARO PanOceania completato! I Nomadi possono procedere.");
+                localStorage.setItem('hub_sblocco_attivo', Date.now().toString()); 
+                window.latestAroData = JSON.parse(aroPano).reazioni; 
+                localStorage.removeItem('canale_aro_panoceania');
+            }
+            
+            // ---> ASCOLTO CAMBI DI STATO <---
+            let updateState = localStorage.getItem('hub_update_state');
+            if(updateState) {
+                let data = JSON.parse(updateState);
+                let faction = data.fazione === 'NOMADI' ? window.gameState.nomads : window.gameState.panoceania;
+                let unit = faction.find(u => u.id === data.unitId);
+                if(unit) {
+                    unit.state = data.newState;
+                    window.updateLog(`🩺 STATO AGGIORNATO: ${unit.alias || unit.nome} è ora ${data.newState}`);
+                    window.broadcastState(); 
+                }
+                localStorage.removeItem('hub_update_state');
+                window.refreshUI(); 
+            }
+        }, 1000);
+
+        // Generazione dei Tag di Stato usando Simboli e Icone
+        window.generateStateTags = (unit) => {
+            let tags = "";
+            if (!unit.states) return "";
+            
+            if(unit.states.prone) tags += `<span class="state-tag" style="background:#333; color:#fff;" title="Prono">⬇️</span>`;
+            if(unit.states.unconscious) tags += `<span class="state-tag" style="background:#8b0000; color:#fff;" title="Incosciente">💀</span>`;
+            if(unit.states.wounds > 0) tags += `<span class="state-tag" style="background:#cc0000; color:#fff;" title="Ferite">🩸${unit.states.wounds}</span>`;
+            if(unit.states.stunned) tags += `<span class="state-tag" style="background:#555; color:#fff;" title="Stordito">💫</span>`;
+            if(unit.states.suppressive) tags += `<span class="state-tag" style="background:#ff6600; color:#000;" title="Fuoco Soppressivo">🎯</span>`;
+            if(unit.states.fireteam) tags += `<span class="state-tag" style="background:#003366; color:#00ccff;" title="Fireteam">🔗 ${unit.states.fireteam}</span>`;
+            
+            if (unit.deployState && unit.deployState.startsWith('IMP')) tags += `<span class="state-tag" style="background:#444400; color:#ffff00;" title="Mimetismo">👤❓</span>`;
+            
+            return tags;
+        };
+
+        window.refreshUI = () => {
+            document.getElementById('status-nomads').innerHTML = window.gameState.nomads.map(u => 
+                `<div style="padding: 8px 0; border-bottom: 1px dashed #333;">
+                    <b style="color:#fff; font-size:16px;">${u.alias || u.nome}</b> ${window.generateStateTags(u)}
+                </div>`
+            ).join('');
+            
+            document.getElementById('status-pano').innerHTML = window.gameState.panoceania.map(u => 
+                `<div style="padding: 8px 0; border-bottom: 1px dashed #333;">
+                    <b style="color:#fff; font-size:16px;">${u.alias || u.nome}</b> ${window.generateStateTags(u)}
+                </div>`
+            ).join('');
+        };
+
+        // ==========================================
+        // 🧮 MOTORE MATEMATICO E SCHERMATA SCONTRI
+        // ==========================================
+
+        window.toggleDettagli = (id) => {
+            let el = document.getElementById(id);
+            if (el.style.display === 'none') el.style.display = 'block';
+            else el.style.display = 'none';
+        };
+
+// Funzione potenziata: gestisce tutte le munizioni N5, Hack e danni speciali
+        window.calcolaSalvezza = (ammo, danno, armBase, btsBase, phBase, cover, bersaglioHackable, isHacking, hackingProgram) => {
+            // --- GESTIONE INFOGUERRA (HACKING) ---
+            if (isHacking) {
+                if (hackingProgram === 'SPOTLIGHT') return `<span style="color:#ffcc00; font-weight:bold;">🎯 NESSUN TIRO SALVEZZA! Se colpito, applica stato TARGETED.</span>`;
+                if (hackingProgram === 'CARBONITE') return `<span style="color:#00ffff; font-weight:bold;">🛑 Tira 2 Dadi su BTS contro Danno 13. Se fallisci: IMM-B.</span>`;
+                if (hackingProgram === 'OBLIVION') return `<span style="color:#00ffff; font-weight:bold;">📵 Tira 1 Dado su BTS DIMEZZATO (AP) contro Danno 15. Se fallisci: ISOLATED.</span>`;
+                if (hackingProgram === 'TRINITY') return `<span style="color:#ff0000; font-weight:bold;">☠️ Tira 1 Dado su BTS contro Danno 14. Se fallisci: 1 Ferita.</span>`;
+                return `<span style="color:#00ffff;">Attacco Infoguerra! (Vedi regole programma)</span>`;
+            }
+
+            if (!ammo) ammo = "NORMALE";
+            let up = ammo.toUpperCase();
+            let dadiSalvezza = 1;
+            let effetti = [];
+            let usaBTS = up.includes("VIRAL") || up.includes("BREAKER") || up.includes("NANOTECH") || up.includes("PLASMA") || up.includes("E/M") || up.includes("STUN");
+            let usaPH = up.includes("PARA") || up.includes("ADHESIVE");
+            
+            let statName = usaPH ? "PH" : (usaBTS ? "BTS" : "ARM");
+            let statValue = usaPH ? phBase : (usaBTS ? parseInt(btsBase) : parseInt(armBase));
+
+            // 1. Munizioni a Dadi Multipli
+            if (up.includes("EXP")) dadiSalvezza = 3;
+            else if (up.includes("DA") || up.includes("VIRAL") || up.includes("BIOWEAPON")) dadiSalvezza = 2;
+
+            // 2. Regole Speciali Munizioni (K1, Danno Continuo, ecc)
+            if (up.includes("K1")) {
+                effetti.push("Danno fisso 12, ARM/Cover Ignorate");
+                statValue = 0; danno = 12; cover = false;
+            }
+            if (up.includes("CONTINUOUS") || up.includes("CD") || up.includes("CONTINUO")) {
+                effetti.push("<b style='color:red'>🔥 DANNO CONTINUO (Tira finché non passi/muori)</b>");
+            }
+            if (up.includes("BIOWEAPON")) effetti.push("Applica effetto Shock");
+            if (up.includes("SHOCK")) effetti.push("Ignora NWI / Uccide a 1W");
+            
+            // 3. Modificatori Armatura / BTS
+            if (up.includes("AP") && !up.includes("K1")) {
+                effetti.push("Dimezza " + statName);
+                statValue = Math.ceil(statValue / 2);
+            }
+            if (up.includes("BREAKER")) {
+                effetti.push("Dimezza BTS (No Cover)");
+                statValue = Math.ceil(statValue / 2); cover = false;
+            }
+
+            // 4. Copertura (N5: +3 ARM) - Non si applica ad Hacking, K1, CC o Sagome (gestito prima)
+            if (cover && statName === "ARM" && !up.includes("K1")) {
+                statValue += 3;
+                effetti.push("+3 ARM per Copertura");
+            }
+
+            // 5. Effetti di Stato
+            if (up.includes("E/M")) effetti.push(bersaglioHackable ? "Fallimento = ISOLATO + IMM-B" : "Fallimento = ISOLATO");
+            if (up.includes("STUN") || up.includes("FLASH")) effetti.push("Fallimento = STORDITO");
+            
+            // --- CALCOLO MATEMATICO ---
+            let effTesto = effetti.length > 0 ? `<br><span style="font-size:12px; color:#aaa;">${effetti.join(' | ')}</span>` : "";
+            
+            // Munizioni PARA (usano PH-6, bisogna fare MENO della stat)
+            if (usaPH) {
+                let targetPara = statValue - 6;
+                return `<span style="color:#00ccff; font-weight:bold;">Munizione: ${ammo}</span><br>
+                        Tira <b style="color:#ff3333;">${dadiSalvezza} Dadi</b> su <b style="color:#00ffff;">PH</b>.<br>
+                        Devi fare <b style="color:#00ff00; font-size:22px;">${targetPara} o MENO</b> sul D20.${effTesto}`;
+            }
+
+            // Danni Standard (D20 >= Danno - Statistica)
+            let targetRoll = danno - statValue;
+            if (targetRoll < 1) targetRoll = 1; 
+
+            if (targetRoll > 20) return `<span style="color:#ff0000; font-weight:bold;">Colpo Devastante! Salvezza Impossibile (${targetRoll}+)</span>${effTesto}`;
+
+            return `<span style="color:#00ccff; font-weight:bold;">Munizione: ${ammo}</span><br>
+                    Tira <b style="color:#ff3333;">${dadiSalvezza} Dadi</b> su <b style="color:#00ffff;">${statName}</b>.<br>
+                    D20 al <span style="color:#00ff00; font-size:22px; font-weight:bold;">${targetRoll} o più</span> <span style="font-size:12px; color:#888;">(Danno ${danno} - ${statName} ${statValue})</span>
+                    ${effTesto}`;
+        };
+
+        // 1. IL MOTORE MATEMATICO COMPLETO N5
+        window.generaRisoluzioneDaDati = (dati) => {
+            let scontri = [];
+            let arrayAttacchi = dati.attacchi || [];
+            let reazioni = window.latestAroData || [];
+
+            let fazAttiva = window.gameState.activeFaction;
+            let fazReattiva = fazAttiva === 'NOMADI' ? 'PANOCEANIA' : 'NOMADI';
+
+            // Uniamo tutti i bersagli coinvolti per ciclarli
+            let unitaCoinvolte = new Set();
+            arrayAttacchi.forEach(att => {
+                if(att.bersagli) att.bersagli.forEach(b => unitaCoinvolte.add(b.name || b.nome));
+            });
+            reazioni.forEach(r => unitaCoinvolte.add(r.nome));
+
+            unitaCoinvolte.forEach(nomeDifensore => {
+                let reazione = reazioni.find(r => r.nome === nomeDifensore);
+                let attaccantiCheMiranoQui = arrayAttacchi.filter(att => att.bersagli && att.bersagli.some(b => (b.name || b.nome) === nomeDifensore));
+
+                // CASO A: Scontro a fuoco diretto o Hacking (Attivo vs Reattivo)
+                if (attaccantiCheMiranoQui.length > 0) {
+                    
+                    attaccantiCheMiranoQui.forEach(att => {
+                        let bersaglioSpecifico = att.bersagli.find(b => (b.name || b.nome) === nomeDifensore);
+                        
+                        let factionArrayAtt = fazAttiva === 'NOMADI' ? window.gameState.nomads : window.gameState.panoceania;
+                        let factionArrayDif = fazReattiva === 'NOMADI' ? window.gameState.nomads : window.gameState.panoceania;
+                        
+                        let trueAtt = factionArrayAtt.find(u => (u.alias || u.nome) === att.attaccante) || {};
+                        let trueDif = factionArrayDif.find(u => (u.alias || u.nome) === nomeDifensore) || {};
+                        
+                        let attSkills = ((trueAtt.skills || "") + " " + (trueAtt.equip || "")).toUpperCase();
+                        let difSkills = ((trueDif.skills || "") + " " + (trueDif.equip || "")).toUpperCase();
+                        let difType = (trueDif.tipo || "LI").toUpperCase();
+
+                        // --- LETTURA REGOLE SPECIALI ---
+                        let isGuided = (att.azione === 'ATTACCO GUIDATO');
+                        let isHackingAtt = (att.azione === 'HACKING');
+                        let isTemplateAtt = (att.arma && att.arma.isTemplate);
+                        let isCCAttacker = (att.azione === 'CC_ATTACK' || (att.arma && att.arma.isCC));
+                        let isSurpriseAttack = (att.azione === 'ATTACCO SORPRESA');
+
+                        let attHasMSV1 = attSkills.includes("MSV1") || attSkills.includes("MSV L1");
+                        let attHasMSV2 = attSkills.includes("MSV2") || attSkills.includes("MSV L2") || attSkills.includes("MSV3");
+                        let difHasMSV1 = difSkills.includes("MSV1") || difSkills.includes("MSV L1");
+                        let difHasMSV2 = difSkills.includes("MSV2") || difSkills.includes("MSV L2") || difSkills.includes("MSV3");
+                        
+                        let difHasSixthSense = difSkills.includes("SIXTH SENSE") || difSkills.includes("SESTO SENSO");
+                        let attHasMarksmanship = attSkills.includes("MARKSMANSHIP");
+                        let attHasXVisor = attSkills.includes("X VISOR") || attSkills.includes("X-VISOR");
+                        let difHasXVisor = difSkills.includes("X VISOR") || difSkills.includes("X-VISOR");
+                        let difHasTR = difSkills.includes("TOTAL REACTION");
+                        let difHasNeuro = difSkills.includes("NEUROCINETICS");
+                        let difHasTinBot = difSkills.includes("TINBOT") || difSkills.includes("FIREWALL");
+                        let attHasTinBot = attSkills.includes("TINBOT") || attSkills.includes("FIREWALL");
+
+                        let attMimetism = attSkills.includes("MIMETISM (-6)") ? -6 : (attSkills.includes("MIMETISM") ? -3 : 0);
+                        let difMimetism = difSkills.includes("MIMETISM (-6)") ? -6 : (difSkills.includes("MIMETISM") ? -3 : 0);
+
+                        let attInSuppressive = trueAtt.states && trueAtt.states.suppressive;
+                        let difInSuppressive = trueDif.states && trueDif.states.suppressive;
+
+                        // Bonus Fireteam Base (Se ci sono 4/5 modelli vivi nello stesso gruppo)
+                        let attFTCount = trueAtt.states && trueAtt.states.fireteam ? factionArrayAtt.filter(u => u.combatGroup === trueAtt.combatGroup && u.states && u.states.fireteam === trueAtt.states.fireteam && u.state !== 'DEAD').length : 0;
+                        let difFTCount = trueDif.states && trueDif.states.fireteam ? factionArrayDif.filter(u => u.combatGroup === trueDif.combatGroup && u.states && u.states.fireteam === trueDif.states.fireteam && u.state !== 'DEAD').length : 0;
+                        if (difFTCount >= 5) difHasSixthSense = true;
+
+                        // --- 1. MATEMATICA ATTACCANTE ---
+                        let bsAtt = parseInt(trueAtt.bs) || 11; let ccAtt = parseInt(trueAtt.cc) || 11; 
+                        let wipAtt = parseInt(trueAtt.wip) || 13; let phAtt = parseInt(trueAtt.ph) || 11;
+                        
+                        let statNameAtt = isCCAttacker ? "CC" : (isHackingAtt ? "WIP" : "BS");
+                        let statAtt = isCCAttacker ? ccAtt : (isHackingAtt ? wipAtt : bsAtt);
+                        
+                        let modAtt = (bersaglioSpecifico.rangeMod || 0);
+                        let burstAtt = bersaglioSpecifico.burst || 0;
+                        let damAtt = (att.arma && att.arma.dam) ? parseInt(att.arma.dam) : 13;
+                        let ammoAtt = bersaglioSpecifico.ammo || "NORMALE";
+                        
+                        let dettAtt = `Statistica Base (${statNameAtt}): ${statAtt}<br>`;
+                        let coverDifensore = bersaglioSpecifico.cover || false;
+
+                        // Modificatori per HACKING
+                        if (isHackingAtt) {
+                            dettAtt = `<span style="color:#00ffff">💻 INFOGUERRA (WIP)</span><br>Base (WIP): ${statAtt}<br>`;
+                            modAtt = 0; // Hacking ignora gittata e cover
+                            if (difHasTinBot) { modAtt -= 3; dettAtt += `<span style="color:#ff3333">Firewall nemico (TinBot): -3 WIP</span><br>`; }
+                            if (attFTCount >= 5) { modAtt += 1; dettAtt += `<span style="color:#00ff00">Bonus Fireteam: +1 WIP</span><br>`; }
+                        } 
+                        // Modificatori per ARMI A SAGOMA (Templates)
+                        else if (isTemplateAtt && !isGuided) {
+                            statAtt = "Auto (Sagoma)"; modAtt = 0; coverDifensore = false;
+                            dettAtt = `<span style="color:#ff9900">🔥 ARMA A SAGOMA</span><br><span style="color:#00ff00">Successo Automatico (Ignora Mimetismo e Copertura)</span><br>`;
+                        }
+                        // Modificatori per TIRO STANDARD
+                        else if (!isCCAttacker) {
+                            if (attHasXVisor && modAtt < 0) { modAtt += 3; if(modAtt>0)modAtt=0; dettAtt += `<span style="color:#00ffff">X-Visor riduce malus gittata</span><br>`; }
+                            dettAtt += `<span style="color:#00ff00">Gittata: ${modAtt > 0 ? '+'+modAtt : modAtt}</span><br>`;
+                            
+                            if (attFTCount >= 4) { modAtt += 1; dettAtt += `<span style="color:#00ff00">Bonus Fireteam: +1 BS</span><br>`; }
+
+                            if (isGuided) {
+                                modAtt += 3; burstAtt = 1; ammoAtt = "EXP"; coverDifensore = false;
+                                dettAtt += `<span style="color:#00ff00">Bersagliato (+3 BS)</span><br><span style="color:#00ffff">Guidato (No Cover, No Mimetismo)</span><br>`;
+                            } else {
+                                if (coverDifensore) {
+                                    if (attHasMarksmanship) dettAtt += `<span style="color:#00ffff">Marksmanship: Ignora -3 Copertura!</span><br>`;
+                                    else { modAtt -= 3; dettAtt += `<span style="color:#ff3333">Copertura nemica: -3 BS</span><br>`; }
+                                }
+                                if (difInSuppressive) { modAtt -= 3; dettAtt += `<span style="color:#ff3333">Nemico in Soppressione: -3 BS</span><br>`; }
+                                
+                                // Visori vs Mimetismo
+                                if (difMimetism < 0) {
+                                    if (attHasMSV2) dettAtt += `<span style="color:#00ffff">MSV2: Ignora Mimetismo!</span><br>`;
+                                    else if (attHasMSV1) {
+                                        let r = difMimetism + 3;
+                                        if (r < 0) { modAtt += r; dettAtt += `<span style="color:#ff3333">MSV1 riduce Mimetismo: ${r} BS</span><br>`; }
+                                    } else { modAtt += difMimetism; dettAtt += `<span style="color:#ff3333">Mimetismo: ${difMimetism} BS</span><br>`; }
+                                }
+                            }
+
+                            // Terreni
+                            let attTerrain = bersaglioSpecifico.terrain || "NESSUNO";
+                            if (attTerrain === "TER_01") { if(burstAtt>1)burstAtt-=1; dettAtt += `<span style="color:#ff3333">Saturazione: -1 B</span><br>`; }
+                            else if (attTerrain === "TER_02") { if(!attHasMSV1 && !attHasMSV2) { modAtt -= 3; dettAtt += `<span style="color:#ff3333">Bassa Visibilità: -3 BS</span><br>`; } }
+                            else if (attTerrain === "TER_03") { if(!attHasMSV2) { modAtt -= 6; dettAtt += `<span style="color:#ff3333">Pessima Visibilità: -6 BS</span><br>`; } }
+                            else if (attTerrain === "TER_04") { modAtt -= 3; if(burstAtt>1)burstAtt-=1; dettAtt += `<span style="color:#ff3333">Nimbus: -3 BS, -1 B</span><br>`; }
+                            else if (attTerrain === "TER_05" && (attHasMSV1 || attHasMSV2 || attHasMarksmanship)) { modAtt -= 99; dettAtt += `<span style="color:#ff0000">White Noise acceca Visore!</span><br>`; }
+                            else if (attTerrain === "TER_06") { modAtt -= 99; dettAtt += `<span style="color:#ff0000">Fumo Eclipse: No LoF!</span><br>`; }
+
+                            // Tiro in Mischia
+                            if (reazione && reazione.azione === 'CC_ATTACK') { modAtt -= 6; dettAtt += `<span style="color:#ff0000; font-weight:bold;">⚠️ Tiro in Mischia: -6 BS!</span><br>`; }
+                        }
+                        
+                        // CC
+                        if (isCCAttacker) dettAtt += `<span style="color:#ff9900">⚔️ Mischia (Applica Arti Marziali a mente)</span><br>`;
+
+                        // Stati Comuni
+                        if (trueDif.states && trueDif.states.targeted && !isGuided && !isCCAttacker && !isHackingAtt) { modAtt += 3; dettAtt += `<span style="color:#00ff00">Nemico Bersagliato: +3 BS</span><br>`; }
+                        if (trueAtt.states && trueAtt.states.stunned) { modAtt -= 3; dettAtt += `<span style="color:#ff3333">Stato Stordito: -3</span><br>`; }
+
+                        let tgNumberAtt = (statAtt === "Auto (Sagoma)") ? "Auto" : (statAtt + modAtt);
+
+                        // --- 2. MATEMATICA DIFENSORE (REAZIONE ARO) ---
+                        let phDif = parseInt(trueDif.ph) || 11; let bsDif = parseInt(trueDif.bs) || 11;
+                        let ccDif = parseInt(trueDif.cc) || 11; let wipDif = parseInt(trueDif.wip) || 12;
+                        
+                        let isCCDDefender = (reazione && (reazione.azione === 'CC_ATTACK' || (reazione.arma && reazione.arma.isCC)));
+                        let isHackingDif = (reazione && reazione.azione === 'HACKING');
+
+                        let tgNumberDif = 10; let dettReazione = ``; let burstDif = 0; 
+                        let azioneReazione = "Nessuna Reazione"; let damDif = 13; let ammoDif = "NORMALE";
+
+                        if (reazione && reazione.azione !== "Nessun ARO" && reazione.azione !== "Passa") {
+                            azioneReazione = reazione.azione;
+                            burstDif = 1;
+                            ammoDif = reazione.ammo || "NORMALE";
+
+                            if (reazione.azione === 'DODGE') { tgNumberDif = phDif; dettReazione = `Statistica Base (PH): ${phDif}<br>`; damDif = 0;}
+                            else if (reazione.azione === 'RESET') { tgNumberDif = wipDif; dettReazione = `Statistica Base (WIP): ${wipDif}<br>`; damDif = 0;}
+                            else if (isCCDDefender) { tgNumberDif = ccDif; dettReazione = `Statistica Base (CC): ${ccDif}<br><span style="color:#ff9900">⚔️ Mischia (Applica Arti Marziali a mente)</span><br>`;}
+                            else if (isHackingDif) { 
+                                tgNumberDif = wipDif; dettReazione = `<span style="color:#00ffff">💻 INFOGUERRA (WIP)</span><br>Base: ${tgNumberDif}<br>`; 
+                                if (attHasTinBot) { tgNumberDif -= 3; dettReazione += `<span style="color:#ff3333">Firewall nemico: -3 WIP</span><br>`; }
+                                if (difFTCount >= 5) { tgNumberDif += 1; dettReazione += `<span style="color:#00ff00">Bonus Fireteam: +1 WIP</span><br>`; }
+                            }
+                            else if (reazione.azione === 'BS_ATTACK') { 
+                                tgNumberDif = bsDif; dettReazione = `Statistica Base (BS): ${tgNumberDif}<br>`;
+                                
+                                if (difHasTR || difHasNeuro || difInSuppressive) { burstDif = 3; dettReazione += `<span style="color:#00ffff">Total Reaction/Soppressione: B3</span><br>`; }
+                                if (difFTCount >= 4) { tgNumberDif += 1; dettReazione += `<span style="color:#00ff00">Bonus Fireteam: +1 BS</span><br>`; }
+
+                                if (reazione.rangeMod) {
+                                    let dRange = reazione.rangeMod;
+                                    if (difHasXVisor && dRange < 0) { dRange += 3; if(dRange>0)dRange=0; }
+                                    tgNumberDif += dRange; dettReazione += `<span style="color:#00ff00">Gittata: ${dRange>0?'+'+dRange:dRange}</span><br>`;
+                                }
+
+                                if (attInSuppressive) { tgNumberDif -= 3; dettReazione += `<span style="color:#ff3333">Bersaglio in Soppressione: -3 BS</span><br>`; }
+                                
+                                // Visori e Mimetismo in Reazione (Sesto senso annulla mimetismo!)
+                                if (attMimetism < 0) {
+                                    if (difHasSixthSense) dettReazione += `<span style="color:#00ffff">Sesto Senso ignora Mimetismo!</span><br>`;
+                                    else if (difHasMSV2) dettReazione += `<span style="color:#00ffff">Visore MSV2 ignora Mimetismo!</span><br>`;
+                                    else if (difHasMSV1) {
+                                        let r = attMimetism + 3;
+                                        if (r < 0) { tgNumberDif += r; dettReazione += `<span style="color:#ff3333">MSV1 riduce Mimetismo: ${r} BS</span><br>`; }
+                                    } else { tgNumberDif += attMimetism; dettReazione += `<span style="color:#ff3333">Mimetismo: ${attMimetism} BS</span><br>`; }
+                                }
+
+                                let defTerrain = reazione.terrain || "NESSUNO";
+                                if (defTerrain === "TER_01") { if(burstDif>1)burstDif-=1; dettReazione += `<span style="color:#ff3333">Saturazione: -1 B</span><br>`;}
+                                else if (defTerrain === "TER_02" && !difHasMSV1 && !difHasMSV2) { tgNumberDif -= 3; dettReazione += `<span style="color:#ff3333">Bassa Visibilità: -3 BS</span><br>`; }
+                                else if (defTerrain === "TER_03" && !difHasMSV2) { tgNumberDif -= 6; dettReazione += `<span style="color:#ff3333">Pessima Visibilità: -6 BS</span><br>`; }
+                                else if (defTerrain === "TER_04") { tgNumberDif -= 3; if(burstDif>1)burstDif-=1; dettReazione += `<span style="color:#ff3333">Nimbus: -3 BS, -1 B</span><br>`; }
+                                else if (defTerrain === "TER_05" && (difHasMSV1 || difHasMSV2 || difHasMarksmanship)) { tgNumberDif -= 99; dettReazione += `<span style="color:#ff0000">White Noise acceca Visore!</span><br>`; }
+                                else if (defTerrain === "TER_06") { tgNumberDif -= 99; dettReazione += `<span style="color:#ff0000">Fumo Eclipse: No LoF!</span><br>`; }
+                            }
+
+                            // Sesto Senso vs Sorpresa e Linea di Tiro
+                            if (difHasSixthSense) dettReazione += `<span style="color:#00ffff">👁️ Sesto Senso Attivo!</span><br>`;
+                            if (isSurpriseAttack) {
+                                if (difHasSixthSense) dettReazione += `<span style="color:#00ffff">Sesto Senso annulla Attacco a Sorpresa!</span><br>`;
+                                else { tgNumberDif -= 3; dettReazione += `<span style="color:#ff3333">Attacco a Sorpresa: -3</span><br>`; }
+                            }
+                            if (reazione.azione === "DODGE" && reazione.hasLoF === false) {
+                                if (difHasSixthSense || isTemplateAtt) dettReazione += `<span style="color:#00ffff">Sesto Senso/Sagoma ignora malus LoF in Schivata</span><br>`;
+                                else { tgNumberDif -= 3; dettReazione += `<span style="color:#ff3333">Schivata senza LoF: -3 PH</span><br>`; }
+                            }
+
+                            if (trueDif.states && trueDif.states.stunned) { tgNumberDif -= 3; dettReazione += `<span style="color:#ff3333">Stato Stordito: -3</span><br>`; }
+                        }
+
+                        // --- 3. RISOLUZIONE FACCIA A FACCIA O NORMALE ---
+                        // Le sagome sono normali per l'attaccante, ma la schivata del difensore gli si oppone.
+                        let isF2F = false;
+                        if (reazione && burstDif > 0 && burstAtt > 0) {
+                            if (reazione.azione === 'DODGE' || reazione.azione === 'RESET') isF2F = true;
+                            else if (reazione.bersaglio && att.attaccante === reazione.bersaglio) isF2F = true;
+                        }
+
+                        // Calcolo Salvezze Reali
+                        let difSaveText = "<span style='color:#555;'>Nessun danno</span>";
+                        if (burstAtt > 0 && damAtt > 0 && !isTemplateAtt) {
+                            let isHack = (att.azione === 'HACKING');
+                            difSaveText = window.calcolaSalvezza(ammoAtt, damAtt, trueDif.arm || 1, trueDif.bts || 0, trueDif.ph || 11, coverDifensore, trueDif, isHack, window.currentOrder ? window.currentOrder.weapon : "");
+                        } else if (isTemplateAtt) {
+                            difSaveText = window.calcolaSalvezza(ammoAtt, damAtt, trueDif.arm || 1, trueDif.bts || 0, trueDif.ph || 11, false, trueDif, false, ""); // Template ignora sempre cover
+                        }
+
+                        let attSaveText = "<span style='color:#555;'>Nessun danno</span>";
+                        if (burstDif > 0 && damDif > 0 && reazione && (reazione.azione === 'BS_ATTACK' || reazione.azione === 'CC_ATTACK' || isHackingDif)) {
+                            attSaveText = window.calcolaSalvezza(ammoDif, damDif, trueAtt.arm || 1, trueAtt.bts || 0, trueAtt.ph || 11, false, trueAtt, isHackingDif, reazione.arma);
+                        }
+
+                        scontri.push({
+                            titolo: isF2F ? "TIRO FACCIA A FACCIA" : "TIRO NORMALE",
+                            attivo: {
+                                nome: att.attaccante, fazione: fazAttiva, azione: isTemplateAtt ? 'ATTACCO A SAGOMA' : att.azione, 
+                                mod: tgNumberAtt, burst: burstAtt, dettagliMod: dettAtt, salvezza: attSaveText
+                            },
+                            reattivo: {
+                                nome: nomeDifensore, fazione: fazReattiva, azione: azioneReazione, 
+                                mod: tgNumberDif, burst: burstDif, dettagliMod: dettReazione, salvezza: difSaveText
+                            }
+                        });
+                    });
+                } 
+                // CASO B: Tiro Libero Reattivo (Senza attaccanti diretti)
+                else if (reazione && reazione.azione !== "Nessun ARO" && reazione.azione !== "Passa") {
+                    scontri.push({
+                        titolo: "TIRO NORMALE",
+                        attivo: {
+                            nome: dati.isCoordinated ? "Squadra Coordinata" : (arrayAttacchi[0] ? arrayAttacchi[0].attaccante : "Attaccante"), 
+                            fazione: fazAttiva, azione: "Nessuna Azione Diretta", mod: "-", burst: 0,
+                            dettagliMod: "Ignorato dal difensore o non bersagliato.",
+                            salvezza: reazione.azione.includes("ATTACK") ? window.calcolaSalvezza(reazione.ammo||"NORMALE", 13, 3, 0, 11, false, null, false, "") : "Nessun danno"
+                        },
+                        reattivo: {
+                            nome: nomeDifensore, fazione: fazReattiva, azione: reazione.azione, 
+                            mod: reazione.azione === "DODGE" ? (parseInt(window.gameState.panoceania.find(u=>u.alias===nomeDifensore)?.ph)||11) : 11, 
+                            burst: 1, dettagliMod: "Tiro in ARO libero.", salvezza: "<span style='color:#555;'>Nessun danno</span>"
+                        }
+                    });
+                }
+            });
+
+            return scontri;
+        };
+
+        // 2. DISEGNA L'INTERFACCIA
+        window.mostraSchermataRisoluzione = (scontri) => {
+            document.querySelector('.turn-controller').style.display = 'none';
+            document.querySelector('.status-grid').style.display = 'none';
+            document.querySelector('.log-container').style.display = 'none';
+            
+            document.getElementById('step-resolution').style.display = 'block';
+
+            let container = document.getElementById('clash-container');
+            container.innerHTML = "";
+
+            if (!scontri || scontri.length === 0) {
+                container.innerHTML = `<h2 style="color:red; text-align:center;">NESSUN TIRO DI DADO DA EFFETTUARE.</h2>`;
+                return;
+            }
+
+            scontri.forEach((scontro, index) => {
+                let dadiDifensoreHtml = scontro.reattivo.burst > 0 
+                    ? `<div style="margin-top:15px; font-size:18px; color:#fff;">Dadi da lanciare: <span style="color:#ff3333; font-weight:bold; font-size:28px;">${scontro.reattivo.burst}</span></div>`
+                    : `<div style="margin-top:15px; font-size:18px; color:#555;">Nessun dado</div>`;
+
+                let dadiAttaccanteHtml = scontro.attivo.burst > 0 
+                    ? `<div style="margin-top:15px; font-size:18px; color:#fff;">Dadi da lanciare: <span style="color:#00ccff; font-weight:bold; font-size:28px;">${scontro.attivo.burst}</span></div>`
+                    : `<div style="margin-top:15px; font-size:18px; color:#555;">Nessun dado</div>`;
+
+                container.innerHTML += `
+                    <div style="background:#111; border:2px solid #444; border-radius:10px; padding:15px; margin-bottom:20px; box-shadow: 0 0 15px rgba(255,255,255,0.05);">
+                        <h3 style="color:#00ff00; text-align:center; margin-top:0; font-family:'Teko'; font-size:32px; letter-spacing:1px;">${scontro.titolo}</h3>
+                        
+                        <div style="display:flex; justify-content:space-between; background:#000; border-radius:8px; overflow:hidden;">
+                            
+                            <div style="flex:1; border-right:2px solid #333; padding:15px; background:linear-gradient(90deg, #001a33, #000);">
+                                <b style="color:#00ccff; font-size:22px;">${scontro.attivo.fazione} ${scontro.attivo.nome}</b><br>
+                                <span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${scontro.attivo.azione}</span><br>
+                                <span style="color:#aaa; font-size:14px;">Successo al:</span> <span style="color:#00ff00; font-weight:bold; font-size:24px;">${scontro.attivo.mod}</span> <span style="color:#888; font-size:12px;">(o meno)</span><br>
+                                ${dadiAttaccanteHtml}
+                            </div>
+                            
+                            <div style="flex:1; padding:15px; text-align:right; background:linear-gradient(-90deg, #330000, #000);">
+                                <b style="color:#ff3333; font-size:22px;">${scontro.reattivo.fazione} ${scontro.reattivo.nome}</b><br>
+                                <span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${scontro.reattivo.azione}</span><br>
+                                <span style="color:#aaa; font-size:14px;">Successo al:</span> <span style="color:#00ff00; font-weight:bold; font-size:24px;">${scontro.reattivo.mod}</span> <span style="color:#888; font-size:12px;">(o meno)</span><br>
+                                ${dadiDifensoreHtml}
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; margin-top:10px; background:#0a0a0a; border-radius:5px; padding:10px; font-size:14px; border: 1px solid #333;">
+                            <div style="flex:1; border-right:1px dashed #333; padding-right:10px;">
+                                <b style="color:#aaa;">🛡️ SE COLPITO DAL NEMICO:</b><br>
+                                ${scontro.attivo.salvezza}
+                            </div>
+                            <div style="flex:1; padding-left:10px; text-align:right;">
+                                <b style="color:#aaa;">🛡️ SE COLPITO DALL'ATTACCANTE:</b><br>
+                                ${scontro.reattivo.salvezza}
+                            </div>
+                        </div>
+
+                        <div style="text-align:center; margin-top:15px;">
+                            <button onclick="window.toggleDettagli('dettagli-${index}')" style="background:#222; border:1px dashed #555; color:#aaa; font-family:'Share Tech Mono'; padding:5px 15px; cursor:pointer; font-size:12px; border-radius:5px;">🔍 MOSTRA DETTAGLI CALCOLI</button>
+                        </div>
+
+                        <div id="dettagli-${index}" style="display:none; margin-top:10px; padding:10px; background:#0a0a0a; border:1px solid #333; border-radius:5px; font-size:14px;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <div style="flex:1; border-right:1px solid #333; padding-right:10px; color:#ddd;">
+                                    ${scontro.attivo.dettagliMod || "-"}
+                                </div>
+                                <div style="flex:1; padding-left:10px; text-align:right; color:#ddd;">
+                                    ${scontro.reattivo.dettagliMod || "-"}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        };
+
+        window.chiudiRisoluzione = () => {
+            document.getElementById('step-resolution').style.display = 'none';
+            document.querySelector('.turn-controller').style.display = 'block';
+            document.querySelector('.status-grid').style.display = 'grid'; 
+            document.querySelector('.log-container').style.display = 'block';
+        };
+
+        // Ascolto finale
+        setInterval(() => {
+            let calcolo = localStorage.getItem('canale_hub_calcolo');
+            if(calcolo) {
+                window.updateLog("🎲 Ricevuti i parametri finali! Calcolo in corso...");
+                
+                let datiReali = JSON.parse(calcolo);
+                let scontriCalcolati = window.generaRisoluzioneDaDati(datiReali);
+                
+                window.mostraSchermataRisoluzione(scontriCalcolati);
+                
+                localStorage.removeItem('canale_hub_calcolo');
+            }
+        }, 1000);
+
+    </script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registrato con successo: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('Errore ServiceWorker: ', err);
+                    });
+            });
+        }
+    </script>
+
+<script>
+        // ==========================================
+        // 1. TRAPPOLA TASTO INDIETRO (Previeni uscita)
+        // ==========================================
+        // Spinge uno stato fittizio nella cronologia
+        window.history.pushState(null, null, window.location.href);
+        
+        // Se l'utente preme "Indietro" o fa lo swipe, intercetta e ributta lo stato fittizio
+        window.addEventListener('popstate', function(event) {
+            window.history.pushState(null, null, window.location.href);
+            console.log("Swipe/Tasto Indietro bloccato per sicurezza!");
+            // Opzionale: puoi decommentare la riga sotto se vuoi far apparire un avviso
+            // alert("Usa i bottoni dell'App per navigare!");
+        });
+
+        // ==========================================
+        // 2. SCHERMO SEMPRE ACCESO (Wake Lock API)
+        // ==========================================
+        let wakeLock = null;
+
+        const requestWakeLock = async () => {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Schermo bloccato sempre acceso.');
+                }
+            } catch (err) {
+                console.error('Errore Wake Lock:', err.name, err.message);
+            }
+        };
+
+        // Richiede il blocco schermo appena si carica la pagina
+        window.addEventListener('load', requestWakeLock);
+
+        // Se l'app va in background (es. rispondi a un messaggio) e torna attiva, ricarica il blocco schermo
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
+
+        // Fallback di sicurezza: alcuni browser richiedono un tocco sullo schermo per attivare il Wake Lock
+        document.addEventListener('pointerdown', requestWakeLock, { once: true });
+    </script>
+    
+</body>
+
+</html>
+
