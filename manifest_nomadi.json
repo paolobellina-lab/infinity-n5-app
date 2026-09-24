@@ -1,13 +1,20 @@
 {
- "id": "app-nomadi",
-  "name": "Nomads Tactical Terminal",
+  "id": "infinity-nomadi",
+  "name": "Infinity N5 — Nomads",
   "short_name": "Nomads",
-  "start_url": "./nomadi.html",
+  "description": "Calcolatore ordini Infinity N5 — fazione Nomads.",
+  "start_url": "app.html?fazione=nomadi",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#0b0c10",
+  "orientation": "portrait",
   "theme_color": "#cc0000",
-  "icons": [{"src": "img/icona_nomadi.png", "sizes": "192x192", "type": "image/png"}]
-
+  "background_color": "#0b0c10",
+  "icons": [
+    {
+      "src": "img/icona_nomadi.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }
-
-

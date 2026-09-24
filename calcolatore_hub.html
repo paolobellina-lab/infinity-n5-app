@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<!-- @versione 2026-09-23.1 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>HUB CENTRALE - REGISTA N5</title>
+    <link rel="manifest" href="manifest_hub.json">
+    <link rel="icon" type="image/png" href="img/icona_hub.png">
+    <link rel="apple-touch-icon" href="img/icona_hub.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Teko:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #111; color: #00ff00; font-family: 'Share Tech Mono', monospace; padding: 20px; }
+        .turn-controller { text-align: center; background: #222; padding: 15px; border: 2px solid #00ff00; margin-bottom: 20px; border-radius: 10px; }
+        .btn-turn { background: #00ff00; color: #000; font-family: 'Teko', sans-serif; font-size: 24px; padding: 10px 30px; cursor: pointer; border: none; font-weight: bold; border-radius: 5px; }
+        .active-label { font-size: 1.5em; margin-bottom: 10px; display: block; color: #aaa; }
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .faction-panel { border: 1px solid #555; padding: 10px; background: #222; border-radius: 5px; }
+        .log-container { background: #000; border: 1px solid #444; height: 200px; overflow-y: scroll; padding: 10px; font-size: 12px; margin-top: 20px; color: #888; }
+        .state-tag { display:inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin: 2px 4px 2px 0; text-transform: uppercase; background: #444; color: #fff; white-space: nowrap; letter-spacing: 0.5px; }
+        .state-tags-row { display:flex; flex-wrap:wrap; margin-top:4px; }
+    </style>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+
+</head>
+<body>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #00ff00; padding-bottom: 10px; margin-bottom: 20px;">
+        <h1 style="margin: 0; text-shadow: 0 0 10px #00ff00;">HUB CENTRALE - REGISTA N5</h1>
+        <button class="btn-turn" style="background:#8b0000; color:#fff; border: 2px solid #ff0000; font-size: 16px; padding: 8px 15px; margin: 0; box-shadow: 0 0 10px #ff0000;" onclick="window.resetPartita()">⚠️ RESET PARTITA</button>
+    </div>
+
+    <div class="turn-controller">
+        <span class="active-label">TURNO ATTIVO:</span>
+        <h2 id="current-active-text" style="font-family: 'Teko', sans-serif; font-size: 48px; margin: 10px 0; color: #ff0000; text-shadow: 0 0 10px currentColor;">NOMADI</h2>
+        <button class="btn-turn" onclick="window.toggleTurn()">🔄 CAMBIA TURNO ATTIVO</button>
+    </div>
+
+    <div class="status-grid">
+        <div class="faction-panel">
+            <h2 style="color: #ff0000;">NOMADS</h2>
+            <div id="status-nomads">In attesa...</div>
+        </div>
+        <div class="faction-panel">
+            <h2 style="color: #00ccff;">PANOCEANIA</h2>
+            <div id="status-pano">In attesa...</div>
+        </div>
+    </div>
+
+    <div class="faction-panel" style="margin-top:20px;">
+        <h2 style="color: #aaaaaa;">TAVOLO: SCENOGRAFIA E TERRENO</h2>
+        <div id="status-scenario">Nessun elemento dichiarato.</div>
+    </div>
+
+    <div id="battle-log" class="log-container"></div>
+
+    <div id="step-resolution" style="display:none; padding-bottom:40px; margin-top: 20px;">
+        <h1 style="text-align:center; color:#00ff00; font-family:'Teko'; font-size:52px; text-shadow:0 0 15px #00ff00; margin-bottom: 5px;">RISOLUZIONE SCONTRI</h1>
+        <p style="text-align:center; color:#aaa; margin-top:0; margin-bottom:20px;">Elaborazione tiri Faccia a Faccia e Normali</p>
+        
+        <div id="clash-container"></div>
+        
+        <div style="text-align:center; margin-top:30px;">
+            <button class="btn-turn" style="background:#004400; border:2px solid #00ff00; color:#fff;" onclick="window.chiudiRisoluzione()">✅ APPLICA RISULTATI E TORNA AL RADAR</button>
+        </div>
+    </div>
+
+    <!-- ORDINE OBBLIGATO, non riordinare per estetica:
+         calcolatore_cloud.js legge M.CANALI appena caricato, quindi DEVE
+         stare dopo motore_regole_n5.js. E deve stare PRIMA di
+         calcolatore_controller.js, perche` il controller scrive sui canali
+         e l'intercettazione di localStorage dev'essere gia` attiva.
+         Caricato prima del motore, l'Hub muore all'avvio:
+         "Cannot read properties of undefined". -->
+    <script src="database_comune.js"></script>
+    <script src="catalogo_n5.js"></script>
+    <script src="motore_regole_n5.js"></script>
+    <script src="calcolatore_cloud.js"></script>
+    <script src="calcolatore_math.js"></script>
+    <script src="calcolatore_controller.js"></script>
+
+    <script>
+        // ==========================================
+        // 📌 DICHIARAZIONE DI VERSIONE
+        // ==========================================
+        // La riga @versione in testa al file e` un commento HTML: il browser la
+        // ignora e MotoreN5.versioni() non la vede. Senza questo blocco la pagina
+        // resta l'unico file del progetto che non si dichiara, cioe` proprio
+        // quello dove una copia vecchia (cache del telefono) e` piu` probabile.
+        (function () {
+            var g = (typeof window !== 'undefined') ? window : globalThis;
+            var v = { file: 'calcolatore_hub.html', versione: '2026-09-23.1', proprieta: 'INTERFACCIA' };
+            if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
+            else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
+        })();
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Error: ', err));
+            });
+        }
+
+        let wakeLock = null;
+        const requestWakeLock = async () => {
+            try {
+                if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+            } catch (err) {}
+        };
+        window.addEventListener('load', requestWakeLock);
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') requestWakeLock();
+        });
+        document.addEventListener('pointerdown', requestWakeLock, { once: true });
+    </script>
+</body>
+</html>

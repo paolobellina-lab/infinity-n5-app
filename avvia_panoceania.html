@@ -1,0 +1,27 @@
+<!-- @versione 2026-09-24.1 | avvia_panoceania.html | proprieta`: chat INTERFACCIA -->
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#00ccff">
+<title>PANOCEANIA</title>
+<script>
+// Avviatore: l'app e` una sola (app.html). Non contiene logica: apre
+// app.html passando la fazione.
+//
+// NON serve piu` alle icone in home: dal 24 settembre e` app.html a
+// scegliere manifest, icona e colore in base alla fazione, durante il
+// parsing della testa. Le due icone si creano aprendo
+// app.html?fazione=... e usando "Aggiungi a schermata Home".
+//
+// Questo file resta come indirizzo comodo da mandare in un messaggio:
+// piu` corto da leggere e da dettare di app.html col parametro.
+location.replace('app.html?fazione=panoceania');
+</script>
+</head>
+<body style="background:#000;color:#888;font-family:sans-serif;padding:24px;">
+Avvio dell'app per PANOCEANIA in corso.
+<a href="app.html?fazione=panoceania" style="color:#fff;">Apri a mano</a> se non succede nulla.
+</body>
+</html>

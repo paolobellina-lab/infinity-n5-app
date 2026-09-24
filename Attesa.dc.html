@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Attesa ARO e seconda metà</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Teko:wght@400;600;700&amp;family=Barlow+Condensed:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0a0604}
+a{color:#ff8a3d}a:hover{color:#ffb27a}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0a0604; color: #f2e9e2; font-family: 'Barlow Condensed', sans-serif; display: flex; flex-direction: column;">
+
+  <div style="height: 8px; background: {{accent}}; flex-shrink: 0;"></div>
+
+  <div style="padding: 10px 14px; background: #120b07; border-bottom: 1px solid #2a1b13; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+    <span style="font-size: 15px; letter-spacing: 1px; color: #c9b8ad; background: #2a1b13; padding: 4px 8px;">ALGUACIL</span>
+    <span style="font-size: 15px; color: #6b5a50;">›</span>
+    <span style="font-size: 15px; letter-spacing: 1px; color: #c9b8ad; background: #2a1b13; padding: 4px 8px;">MOVIMENTO</span>
+    <span style="font-size: 15px; color: #6b5a50;">›</span>
+    <span style="font-size: 15px; letter-spacing: 1px; color: #6b5a50; border: 1px dashed #4a3327; padding: 4px 8px;">2ª METÀ</span>
+  </div>
+
+  <div style="padding: 20px 18px 10px 18px;">
+    <div style="font-family: 'Teko', sans-serif; font-size: 34px; line-height: 1; letter-spacing: 1px; color: {{accent}};">ARO DICHIARATO</div>
+    <div style="font-size: 17px; color: #c9b8ad; margin-top: 6px;">PanOceania ha risposto. Puoi completare l'ordine.</div>
+  </div>
+
+  <div style="padding: 0 18px 12px 18px;">
+    <div style="border: 2px solid #4a3327; background: #140e0a; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-size: 15px; letter-spacing: 2px; color: #a08f84;">REAZIONI IN ARRIVO</div>
+      <div style="font-size: 18px; color: #f2e9e2;">Fusilier &laquo;Ponte&raquo; — Attacco BS</div>
+      <div style="font-size: 18px; color: #f2e9e2;">Akal &laquo;Angolo&raquo; — Schivata</div>
+    </div>
+  </div>
+
+  <div style="padding: 0 18px 8px 18px;">
+    <div style="font-family: 'Teko', sans-serif; font-size: 26px; line-height: 1; letter-spacing: 1px;">SECONDA META&#768;</div>
+    <div style="font-size: 16px; color: #a08f84; margin-top: 4px;">Arma e bersagli si scelgono qui: la prima metà era un Movimento.</div>
+  </div>
+
+  <div style="padding: 0 18px; display: flex; flex-direction: column; gap: 10px; flex-grow: 1;">
+    <button style="min-height: 62px; background: #062012; border: 2px solid #3fae5a; color: #e8ffee; text-align: left; padding: 8px 14px; font-family: 'Barlow Condensed', sans-serif; cursor: pointer; display: flex; flex-direction: column; justify-content: center;">
+      <span style="font-family: 'Teko', sans-serif; font-size: 26px; line-height: 1;">ATTACCO BS</span>
+      <span style="font-size: 15px; color: #a8d8b4;">Sceglierai arma e bersagli.</span>
+    </button>
+    <button style="min-height: 62px; background: #062012; border: 2px solid #3fae5a; color: #e8ffee; text-align: left; padding: 8px 14px; font-family: 'Barlow Condensed', sans-serif; cursor: pointer; display: flex; flex-direction: column; justify-content: center;">
+      <span style="font-family: 'Teko', sans-serif; font-size: 26px; line-height: 1;">ATTACCO CC</span>
+      <span style="font-size: 15px; color: #a8d8b4;">Sceglierai l'arma da mischia.</span>
+    </button>
+    <button style="min-height: 62px; background: #06202e; border: 2px solid #2f9bd6; color: #e6f6ff; text-align: left; padding: 8px 14px; font-family: 'Barlow Condensed', sans-serif; cursor: pointer; display: flex; flex-direction: column; justify-content: center;">
+      <span style="font-family: 'Teko', sans-serif; font-size: 26px; line-height: 1;">MOVIMENTO</span>
+      <span style="font-size: 15px; color: #9ec9dd;">Nessun tiro da calcolare.</span>
+    </button>
+  </div>
+
+  <div style="padding: 10px 18px 18px 18px; border-top: 1px solid #2a1b13; display: flex; gap: 10px;">
+    <a href="Main.dc.html" style="min-height: 56px; width: 130px; background: #140e0a; border: 2px solid #6b2020; color: #e0a0a0; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px; letter-spacing: 1px;">ANNULLA</a>
+    <a href="Bersagli.dc.html" style="min-height: 56px; flex-grow: 1; background: {{accent}}; border: 2px solid {{accent}}; color: #1a0e06; display: flex; align-items: center; justify-content: center; text-decoration: none; font-family: 'Teko', sans-serif; font-size: 28px; letter-spacing: 1px;">PROCEDI</a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#ff8a3d","options":["#ff8a3d","#e03c31","#2f9bd6","#c9a227"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#ff8a3d' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Stati della truppa</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Teko:wght@400;600;700&amp;family=Barlow+Condensed:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0a0604}
+a{color:#ff8a3d}a:hover{color:#ffb27a}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0a0604; color: #f2e9e2; font-family: 'Barlow Condensed', sans-serif; display: flex; flex-direction: column;">
+
+  <div style="height: 8px; background: {{accent}}; flex-shrink: 0;"></div>
+
+  <div style="padding: 14px 18px 10px 18px; border-bottom: 1px solid #2a1b13;">
+    <div style="font-family: 'Teko', sans-serif; font-size: 32px; line-height: 1; letter-spacing: 1px;">MORAN &laquo;Sentinella&raquo;</div>
+    <div style="font-size: 16px; color: #a08f84; margin-top: 4px;">Gli stati si applicano subito e arrivano al tabellone.</div>
+  </div>
+
+  <div style="padding: 12px 18px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; overflow: hidden;">
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-size: 15px; letter-spacing: 2px; color: #e08a8a;">VITALI</div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+        <button style="min-height: 54px; background: #4a0f0f; border: 2px solid #ff6b6b; color: #ffdede; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer;">INCOSCIENTE</button>
+        <button style="min-height: 54px; background: #140e0a; border: 2px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer;">MORTO</button>
+        <button style="min-height: 54px; background: #140e0a; border: 2px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer;">RITIRATA</button>
+        <button style="min-height: 54px; background: #140e0a; border: 2px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer;">FERITE +1</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-size: 15px; letter-spacing: 2px; color: #8ab4e0;">POSTURA</div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+        <button style="min-height: 54px; background: #140e0a; border: 2px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer;">PRONO</button>
+        <button style="min-height: 54px; background: #140e0a; border: 2px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer;">IN MISCHIA</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-size: 15px; letter-spacing: 2px; color: #b48ae0;">INFOGUERRA</div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+        <button style="min-height: 54px; background: #140e0a; border: 2px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer;">BERSAGLIATO</button>
+        <button style="min-height: 54px; background: #140e0a; border: 2px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer;">ISOLATO</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-size: 15px; letter-spacing: 2px; color: #ecec8a;">OCCULTAMENTO</div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+        <button style="min-height: 54px; background: #140e0a; border: 2px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer;">CAMO</button>
+        <button style="min-height: 54px; background: #140e0a; border: 2px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer;">IMPERSONAZIONE</button>
+      </div>
+      <div style="font-size: 16px; color: #f0e2b0; border-left: 0; border: 1px solid #5a4a12; background: #1d1804; padding: 8px 10px;">Rientrare in Mimetizzato costa un Ordine: ricordati di scalarlo.</div>
+    </div>
+
+  </div>
+
+  <div style="padding: 10px 18px 18px 18px; border-top: 1px solid #2a1b13; display: flex; gap: 10px;">
+    <a href="Main.dc.html" style="min-height: 56px; width: 130px; background: #140e0a; border: 2px solid #4a3327; color: #c9b8ad; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px; letter-spacing: 1px;">ANNULLA</a>
+    <a href="Main.dc.html" style="min-height: 56px; flex-grow: 1; background: {{accent}}; border: 2px solid {{accent}}; color: #1a0e06; display: flex; align-items: center; justify-content: center; text-decoration: none; font-family: 'Teko', sans-serif; font-size: 28px; letter-spacing: 1px;">SALVA STATI</a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#ff8a3d","options":["#ff8a3d","#e03c31","#2f9bd6","#c9a227"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#ff8a3d' };
+  }
+}
+</script>
+</body>
+</html>
