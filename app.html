@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<!-- @versione 2026-09-24.2 | app.html | proprieta`: chat INTERFACCIA -->
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TACTICAL TERMINAL</title>
+
+    <!-- ==========================================================
+         RISOLUTORE DI FAZIONE  —  deve girare PRIMA di ogni altro
+         script, perche` dieci file del progetto stabiliscono la
+         fazione leggendo la stringa "NOMADS" nel titolo della
+         pagina (roster_manager, motore_core, motore_regole_n5,
+         logica_aro, logica_stati, fase_schieramento, fireteam,
+         ordine_coordinato, ordine_attacco_bs, ordine_difesa).
+         Quel contratto non e` documentato da nessuna parte ma e`
+         portante: qui lo si RISPETTA, non lo si aggira.
+         roster_manager.js inoltre si inizializza da solo al
+         caricamento, quindi la fazione deve essere gia` decisa.
+         ========================================================== -->
+    <script>
+    (function risolviFazione() {
+        var FAZIONI = {
+            nomadi: {
+                titolo: 'NOMADS TACTICAL TERMINAL', tema: 'nomadi',
+                coloreTema: '#cc0000', sfondo: '#0b0c10',
+                icona: 'img/icona_nomadi.png'
+            },
+            panoceania: {
+                titolo: 'PANOCEANIA TACTICAL TERMINAL', tema: 'panoceania',
+                coloreTema: '#00ccff', sfondo: '#000a14',
+                icona: 'img/icona_panoceania.png'
+            }
+        };
+
+        // Ordine: parametro nell'indirizzo, poi la scelta salvata sul
+        // dispositivo. Il parametro vince, cosi` le due icone in home
+        // continuano ad aprire ciascuna la propria fazione.
+        var daUrl = (location.search.match(/[?&]fazione=([a-z]+)/i) || [])[1];
+        if (daUrl) daUrl = daUrl.toLowerCase();
+
+        var scelta = FAZIONI[daUrl] ? daUrl : null;
+        if (!scelta) {
+            try {
+                var salvata = localStorage.getItem('fazione_app');
+                if (FAZIONI[salvata]) scelta = salvata;
+            } catch (e) {}
+        }
+
+        window.FAZIONE_CORRENTE = scelta;
+
+        if (!scelta) {
+            // Senza fazione questa pagina NON deve girare. Il contratto del
+            // titolo non ha un "non lo so": nove file fanno
+            // document.title.includes('NOMADS') e uno fa .toUpperCase(),
+            // quindi qualunque titolo senza NOMADS in maiuscolo vale
+            // PANOCEANIA, in silenzio. Tenere qui una schermata di scelta
+            // significava lasciare roster_manager (che si inizializza da
+            // solo) partito sulla fazione sbagliata per tutto il tempo della
+            // scelta. Si esce subito verso una pagina che non carica nulla.
+            location.replace('scegli_fazione.html');
+            return;
+        }
+
+        try { localStorage.setItem('fazione_app', scelta); } catch (e) {}
+        var F = FAZIONI[scelta];
+        document.title = F.titolo;
+        document.documentElement.setAttribute('data-fazione', F.tema);
+
+        // Favicon e colore della barra cambiano con la fazione; il MANIFEST no.
+        // Il manifest e` uno solo e identico su tutte e tre le pagine
+        // (scegli_fazione, app, hub): e` quello che decide l'identita`
+        // dell'app installata, e Chrome ne riconosce UNA per id. Con tre
+        // manifest diversi, installata la prima, sulle altre rispondeva
+        // "gia` installata". Percio` il link al manifest sta scritto fisso
+        // nell'HTML qui sotto, non qui dentro.
+        //
+        // Questi due invece si scrivono durante il parsing e non dopo: si
+        // vedono nella scheda del browser mentre si gioca, e cambiarli a
+        // caricamento finito li farebbe lampeggiare.
+        document.write(
+            '<link rel="icon" type="image/png" href="' + F.icona + '">' +
+            '<meta name="theme-color" content="' + F.coloreTema + '">'
+        );
+    })();
+
+    // Torna al menu iniziale. Se c'e` un ordine a meta` lo dice, perche`
+    // uscire lo perde: la dichiarazione non e` ancora arrivata all'Hub.
+    window.tornaAlMenu = function () {
+        var inCorso = false;
+        try {
+            var o = window.currentOrder || {};
+            inCorso = !!(o.action1 || o.action2 || window.spearheadUnit ||
+                         (window.combatTargets && window.combatTargets.length));
+        } catch (e) { inCorso = true; }   // nel dubbio si chiede
+
+        if (inCorso && !confirm('Hai un ordine a meta`: uscendo si perde e non viene spedito all\'Hub.\n\nTorni al menu?')) return;
+        location.href = 'scegli_fazione.html';
+    };
+
+    window.cambiaFazione = function (nome) {
+        try { localStorage.setItem('fazione_app', nome); } catch (e) {}
+        location.search = '?fazione=' + nome;
+    };
+    </script>
+    <!-- UNO SOLO, IDENTICO in scegli_fazione.html, app.html e
+         calcolatore_hub.html: e` cosi` che Chrome vede una sola app
+         installabile, da qualunque pagina la si installi. Non renderlo
+         dipendente dalla fazione. -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="img/icona_infinity.png">
+
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Teko:wght@500;700&display=swap" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+
+    <script src="catalogo_n5.js"></script>
+    <script src="database_comune.js"></script>
+    <script src="database_nomad.js"></script>
+    <script src="database_panoceania.js?v=1"></script>
+    <script src="motore_regole_n5.js"></script>
+    <script src="motore_core.js"></script>
+    <script src="roster_manager.js"></script>
+    <script src="fase_schieramento.js"></script>
+    <script src="fireteam.js"></script>
+    <script src="logica_stati.js"></script>
+    <script src="logica_aro.js"></script>
+    
+    <script src="ordine_coordinato.js"></script>
+    <script src="ordine_movimento.js"></script>
+    <script src="ordine_attacco_bs.js"></script>
+    <script src="ordine_attacco_cc.js"></script>
+    <script src="ordine_attacco_guidato.js"></script>
+    <script src="ordine_attacco_intuitivo.js"></script>
+    <script src="ordine_fuoco_speculativo.js"></script>
+    <script src="ordine_hacking.js"></script>
+    <script src="ordine_scoprire.js"></script>
+    <script src="ordine_supporto.js"></script>
+    <script src="ordine_difesa.js"></script>
+    <script src="ordine_scenografia.js"></script>
+    <script src="ordine_piazzamento.js"></script>
+    <script src="ordine_osservazione.js"></script>
+    <script src="ordine_trincerarsi.js"></script>
+    <script src="ordine_logistica.js"></script>
+
+    <style>
+        html { overscroll-behavior: none; }
+        /* Nomadi: il tema di partenza. Perche` i nomi delle variabili
+           restano --nomad-* anche nel tema PanOceania: vedi il commento
+           qui sotto, che e` l'unico a dare i numeri. */
+        :root {
+            --bg-color: #0b0c10; --panel-bg: #1f1f1f; --nomad-red: #cc0000; 
+            --nomad-darkred: #8b0000; --nomad-orange: #ff6600; 
+            --text-main: #f0f0f0; --text-dim: #aaaaaa;
+        }
+
+        /* PanOceania: blu profondo, azzurro e arancione per gli accenti.
+
+           ATTENZIONE A CHI PASSA DI QUI: i nomi --nomad-* in un tema azzurro
+           sembrano un copia-incolla dimenticato. NON LO SONO, e non vanno
+           rinominati.
+
+           Fuori dalle pagine HTML questi nomi compaiono 18 volte in 7 file
+           (conteggio della chat DATABASE, 21 settembre, ricontrollato):
+             roster_manager.js 5, ordine_attacco_bs.js 5, logica_aro.js 3,
+             logica_stati.js 2, ordine_scoprire.js 1, ordine_coordinato.js 1,
+             fireteam.js 1.
+           Sono quei 7 file a rompersi se si rinomina: le pagine si
+           aggiornerebbero insieme alla definizione, loro no. Si cambiano i
+           VALORI, mai i nomi. La rinomina si fa, se si fa, insieme a quei
+           file e alle chat che li possiedono. */
+        :root[data-fazione="panoceania"] {
+            --bg-color: #000a14; --panel-bg: #001a33; --nomad-red: #00ccff;
+            --nomad-darkred: #003366; --nomad-orange: #0088ff;
+            --text-main: #e6f2ff; --text-dim: #88aacc;
+        }
+
+        /* Fascia di fazione: due centimetri di colore in cima allo schermo.
+           Serve a non prendere il telefono sbagliato al tavolo. */
+        #fascia-fazione {
+            position: fixed; top: 0; left: 0; right: 0; height: 6px;
+            background: var(--nomad-red); z-index: 9998;
+        }
+
+        body { background: var(--bg-color); color: var(--text-main); font-family: 'Share Tech Mono', monospace; padding: 10px; border: 2px solid var(--nomad-red); min-height: 100vh; box-sizing: border-box; margin: 0; display: flex; flex-direction: column; overscroll-behavior-y: none; touch-action: pan-x pan-y; }
+        h2 { font-family: 'Teko', sans-serif; font-size: 28px; color: #fff; text-shadow: 2px 2px 0px var(--nomad-red); text-align: center; text-transform: uppercase; border-bottom: 2px solid var(--nomad-red); padding-bottom: 5px; margin-top: 0; margin-bottom: 15px;}
+        
+        .section { background: var(--panel-bg); border-left: 4px solid var(--nomad-red); padding: 10px; margin-bottom: 10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.5); }
+        input, select { background: #000; color: var(--text-main); border: 1px solid var(--nomad-red); width: 100%; padding: 15px; margin: 5px 0; font-size: 16px; box-sizing: border-box; }
+        
+        .btn-nomad { width: 100%; background: linear-gradient(135deg, var(--nomad-red) 0%, var(--nomad-darkred) 100%); color: #fff; padding: 15px; margin-top: 5px; cursor: pointer; font-family: 'Teko', sans-serif; font-size: 22px; font-weight: bold; text-transform: uppercase; border: none; clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%); }
+        .btn-status { width: 100%; background: #222; color: var(--nomad-red); border: 2px solid var(--nomad-red); padding: 15px; margin-top: 15px; font-family: 'Teko', sans-serif; font-size: 22px; font-weight: bold; cursor: pointer; }
+        .btn-small { padding: 10px; font-size: 18px; margin-top: 5px; clip-path: none; border-radius: 3px; }
+        
+        .grid-buttons { display: flex; flex-direction: column; gap: 10px; flex-grow: 1; overflow-y: auto; padding-bottom: 10px;}
+        .huge-btn { flex: 1; min-height: 80px; background: #1a0000; border: 2px solid var(--nomad-red); color: #fff; font-family: 'Teko', sans-serif; font-size: 32px; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; transition: 0.2s; border-radius: 5px; padding: 10px; text-align: center; line-height: 1.1; }
+        .huge-btn:active { background: var(--nomad-orange); color: #000; transform: scale(0.98); }
+        .huge-btn span { font-family: 'Share Tech Mono', monospace; font-size: 14px; color: var(--nomad-orange); font-weight: normal; margin-top: 5px; }
+
+        .flex-row { display: flex; gap: 10px; align-items: center; }
+        .step-container { display: none; flex-direction: column; height: 100%; flex-grow: 1;}
+        .active-step { display: flex; }
+        
+        #battle-header { text-align: center; color: var(--nomad-orange); font-size: 18px; font-weight: bold; margin-bottom: 10px; padding: 10px; background: #222; border: 1px dashed var(--nomad-orange); }
+        .roster-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 8px; margin-bottom: 5px; border-left: 2px solid var(--nomad-orange); font-size: 12px; }
+        .del-btn { color: var(--nomad-red); font-weight: bold; cursor: pointer; padding: 5px 10px; background: #222; border-radius: 3px; }
+        
+        #calc-result { margin-top:15px; font-size:16px; border:2px solid #00ff00; background:#001a00; padding:15px; display:none; box-shadow: 0 0 15px rgba(0,255,0,0.2); }
+
+        .range-bar { display: flex; width: 100%; height: 40px; border: 2px solid #fff; border-radius: 5px; overflow: hidden; margin-top: 5px; }
+        .range-seg { display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000; font-size: 18px; cursor: pointer; transition: 0.2s; opacity: 0.4; }
+        .range-seg.active { opacity: 1; color: #fff; text-shadow: 1px 1px 2px #000; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        .seg-1 { background: #4CAF50; flex: 1; } 
+        .seg-2 { background: #03A9F4; flex: 1; } 
+        .seg-3 { background: #FFC107; flex: 1; } 
+        .seg-4 { background: #D32F2F; flex: 1; } 
+        
+        .target-card { background: #111; border: 1px solid var(--nomad-orange); padding: 15px; margin-bottom: 15px; border-radius: 5px; }
+        .burst-ctrl { display: flex; align-items: center; gap: 15px; background: #000; padding: 5px 15px; border-radius: 5px; border: 1px solid #444;}
+        .burst-btn { background: var(--nomad-orange); color: #000; border: none; font-size: 24px; font-weight: bold; width: 40px; height: 40px; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding-bottom: 4px; }
+        
+        .status-token { width: 55px; height: 55px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 0 5px rgba(0,0,0,0.8)); border-radius: 50%; }
+        .spearhead-token { width: 34px; height: 34px; object-fit: contain; margin-left: 10px; vertical-align: middle; filter: drop-shadow(0 0 5px #00ffff); border-radius: 50%; }
+        
+        .state-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(5px, 2vw, 15px); justify-items: center; align-items: center; padding: 10px 0; }
+        .state-label { cursor: pointer; text-align: center; width: 100%; display: flex; justify-content: center; }
+        .state-checkbox { display: none; }
+        
+        .state-icon { width: clamp(50px, 22vw, 110px); height: clamp(50px, 22vw, 110px); object-fit: contain; border-radius: 50%; transition: all 0.3s ease; filter: grayscale(100%) opacity(30%); }
+        .fallback-emoji { font-size: clamp(35px, 15vw, 75px); line-height: clamp(50px, 22vw, 110px); transition: all 0.3s ease; filter: grayscale(100%) opacity(30%); }
+        
+        .state-checkbox:checked + .state-icon { filter: drop-shadow(0 0 10px var(--nomad-red)) drop-shadow(0 0 20px #ff0000); transform: scale(1.15); }
+        .state-checkbox:checked + .fallback-emoji { filter: grayscale(0%) opacity(100%) drop-shadow(0 0 10px var(--nomad-red)); transform: scale(1.15); }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div id="fascia-fazione"></div>
+
+    <!-- Torna al menu. Piccolo e sempre raggiungibile: in basso a
+         sinistra, sopra ogni schermata, lontano dai pulsanti grandi
+         che si premono al tavolo. Chiede conferma solo se c'e` un
+         ordine a meta` (vedi tornaAlMenu). -->
+    <button id="btn-menu" onclick="window.tornaAlMenu()"
+        style="position:fixed; left:10px; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); z-index:9000;
+               background:rgba(0,0,0,.75); color:#888; border:1px solid #444; border-radius:6px;
+               padding:8px 12px; font-size:13px; letter-spacing:1px;">☰ MENU</button>
+
+
+
+    <div id="setup">
+        <div style="position: relative;">
+            <h2>-- NOMAD DATANET --</h2>
+            <span style="position: absolute; right: 5px; bottom: 20px; font-size: 14px; font-family: 'Share Tech Mono', monospace; color: var(--nomad-orange); font-weight: bold; text-shadow: none; letter-spacing: normal;">v23.1</span>
+        </div>
+
+        <div class="section">
+            <h3 style="margin-top:0; color: var(--nomad-orange);">SCHIERAMENTO TRUPPE</h3>
+            
+            <div style="background:#111; padding:10px; border:1px solid #444; border-radius:5px; margin-bottom:15px;">
+                <span style="color:var(--nomad-lightblue); font-size:14px; display:block; margin-bottom:5px; color:#00ffff;">Copia/Incolla la tua lista "Plain Text" dall'Army Builder:</span>
+                <textarea id="army-import-text" placeholder="Incolla il testo qui..." style="width:100%; height:80px; background:#000; color:#00ff00; border:1px solid #005500; font-family:monospace; padding:5px; box-sizing:border-box;"></textarea>
+                <button class="huge-btn" style="background:#004400; border-color:#00ff00; margin-top:5px; min-height:40px; font-size:18px;" onclick="window.importaDaTesto()">⚡ IMPORTA DA TESTO (AUTO-COMPLETA)</button>
+            </div>
+            <div style="text-align:center; color:#aaa; font-size:12px; margin-bottom:10px;">- OPPURE INSERISCI MANUALMENTE -</div>
+            <div class="flex-row">
+                <select id="savedRostersSelect" style="flex:2;"><option value="">-- SQUADRE SALVATE --</option></select>
+                <button class="btn-nomad btn-small" style="flex: 1;" onclick="loadRoster()">CARICA</button>
+            </div>
+            <button class="btn-status btn-small" style="width: 100%; margin-top: 5px; padding: 10px;" onclick="deleteRoster()">ELIMINA</button>
+            
+            <div class="flex-row" style="margin-top:15px;">
+                <input type="text" id="saveName" placeholder="NOME NUOVA SQUADRA" style="flex: 2;">
+                <button class="btn-nomad btn-small" style="flex: 1;" onclick="saveRoster()">SALVA LISTA</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3 style="margin-top:0; color: var(--nomad-orange);">AGGIUNGI UNITÀ</h3>
+            <div class="flex-row">
+                <select id="groupSelect" style="flex:2;" onchange="window.updateProfileSelect()"><option value="">-- 1. TRUPPA --</option></select>
+                <select id="combatGroupSelect" class="huge-btn" style="background:#111; color:#fff; padding:10px;">
+                    <option value="1">Gruppo Combattimento 1</option>
+                    <option value="2">Gruppo Combattimento 2</option>
+                    <option value="3">Gruppo Combattimento 3</option>
+                    <option value="4">Gruppo Combattimento 4</option>
+                </select>
+            </div>
+            <select id="profileSelect" disabled><option value="">-- 2. SELEZIONA PROFILO --</option></select>
+            <input type="text" id="unitAlias" placeholder="3. ASSEGNA SOPRANNOME (Opzionale)">
+            <button class="btn-nomad" onclick="window.addUnitToRoster()">SCHIERA UNITÀ</button>
+            
+            <div id="localRoster" style="margin-top:10px; border-top:1px dashed red; padding-top:10px;"><i>Nessuna unità schierata.</i></div>
+            
+        </div>
+
+        <div class="section">
+            <h3 style="margin:0; color:var(--nomad-orange);">TERRENI E ZONE DI GIOCO:</h3>
+            <div style="display:flex; gap:10px; margin-top:5px;">
+                <select id="terrainSelect" style="flex:2; padding:10px; background:#222; color:#fff; border:1px solid #444;">
+                    <option value="">-- Seleziona Terreno --</option>
+                </select>
+                <button class="btn-nomad" style="flex:1;" onclick="addTerrain()">AGGIUNGI</button>
+            </div>
+            <div id="activeTerrainsList" style="margin-top:10px; font-size:14px; color:#aaa;"><i>Nessun terreno speciale impostato.</i></div>
+
+            <hr style="border-color:#333; margin: 15px 0;">
+            <h3 style="margin:0 0 8px 0; color:var(--nomad-orange);">ELEMENTI SCENICI</h3>
+            <p style="margin:0 0 8px 0; font-size:13px; color:#888;">Torrette, console, antenne, porte: stanno sul tavolo e non appartengono a nessuno dei due giocatori.</p>
+            <div class="flex-row">
+                <select id="structureSelect" style="flex:2; padding:10px; background:#222; color:#fff; border:1px solid #444;">
+                    <option value="">-- Seleziona Elemento --</option>
+                </select>
+                <button class="btn-nomad" style="flex:1;" onclick="window.aggiungiStruttura()">AGGIUNGI</button>
+            </div>
+            <div id="activeStructuresList" style="margin-top:10px; font-size:14px; color:#aaa;"><i>Nessuna struttura schierata.</i></div>
+            <br>
+            <button class="huge-btn" style="background:#440000; border-color:var(--nomad-orange); margin-top:10px; width: 100%;" onclick="window.apriSchieramento()">VAI ALLO SCHIERAMENTO</button>
+        </div>
+    </div>
+	
+    <div id="step-deploy-groups" class="step-container">
+        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-orange); letter-spacing:2px; margin-top:0;">DISPIEGAMENTO</h1>
+        <p style="text-align:center; color:#aaa; font-size:14px; margin-top:-10px; margin-bottom:15px;">Scegli il gruppo da schierare</p>
+        <div class="grid-buttons" id="deploy-groups-container"></div>
+        <button class="huge-btn" style="background:#004400; border-color:#00ff00; margin-top:20px; min-height:60px; max-height:80px; flex:none; width:100%;" onclick="window.confermaSchieramento()">CONCLUDI SCHIERAMENTO <span>(Inizia Partita)</span></button>
+        <button class="btn-status" onclick="window.tornaAlSetup()">TORNA ALLA LISTA</button>
+    </div>
+
+    <div id="step-deploy-units" class="step-container">
+        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-orange); letter-spacing:2px; margin-top:0;">UNITÀ DA SCHIERARE</h1>
+        <div class="grid-buttons" id="deploy-units-container" style="flex-grow:1; overflow-y:auto; padding:5px;"></div>
+        <button class="btn-status" onclick="window.goToStep('step-deploy-groups')">INDIETRO</button>
+    </div>
+
+    <div id="step-deploy-states" class="step-container">
+        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-orange); letter-spacing:2px; margin-top:0;">FOG OF WAR</h1>
+        <div id="deploy-states-content" style="text-align:left; flex-grow:1; overflow-y:auto;"></div>
+        <button class="btn-status" onclick="window.goToStep('step-deploy-units')">INDIETRO</button>
+    </div>
+
+    <div id="step-deploy-actions" class="step-container">
+        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-orange); letter-spacing:2px; margin-top:0;">AZIONI DISPIEGAMENTO</h1>
+        <div id="deploy-action-list-container" style="overflow-y:auto; flex-grow:1; padding:5px; border:1px solid #444; background:#111; border-radius:5px;"></div>
+        <button class="btn-status" onclick="window.goToStep('step-deploy-units')">INDIETRO</button>
+    </div>
+
+    <div id="step-sync" class="step-container" style="flex-grow: 1; flex-direction: column; text-align:center; padding: 20px;">
+        <h2 style="color:#00ffff; font-family:'Teko'; font-size:32px;">CONNESSIONE STABILITA</h2>
+        <p id="sync-status-msg" style="color:#aaa;">Squadra inviata al PC Centrale.<br>In attesa dispiegamento avversario...</p>
+    </div>
+
+    <div id="step-reactive-turn" class="step-container" style="text-align:center; padding: 20px 10px;">
+        <h2 style="color:#ff3333; font-family:'Teko'; font-size:36px; animation: pulse 2s infinite; text-shadow: 0 0 10px #ff0000;">⚠️ TURNO AVVERSARIO</h2>
+        <p style="color:#aaa; font-size:14px; margin-top:-10px;">(Tocco prolungato = Modifica Stati)</p>
+        
+        <div id="aro-alert-banner" style="display:none; background:#8b0000; border:2px solid #ff0000; padding:15px; margin:15px 0; border-radius:8px; box-shadow:0 0 15px #ff0000;">
+            <h3 id="aro-alert-text" style="color:#fff; margin:0 0 10px 0;">⚠️ AZIONE NEMICA RILEVATA!</h3>
+            <button class="huge-btn" style="background:#cc0000; font-size:24px; padding:10px; margin-top:0; min-height: 50px;" onclick="window.apriSelezioneAro()">🚨 GESTISCI ARO</button>
+        </div>
+
+        <div class="grid-buttons" id="reactive-roster-list" style="margin-top:10px; padding-bottom:20px; text-align:left;"></div>
+    </div>
+
+    <div id="step-aro-selection" class="step-container" style="padding:20px;">
+        <h2 style="color:#ff0000; text-align:center; font-family:'Teko'; font-size:36px; margin-top:0; text-shadow: 0 0 10px #ff0000;">SELEZIONA ARO</h2>
+        <p style="text-align:center; color:#aaa; margin-top:-10px;">(Seleziona chi ha Linea di Tiro o si attiva in ZoC)</p>
+        <div id="aro-selection-list" class="grid-buttons" style="margin-top:10px;"></div>
+        <button class="huge-btn" style="background:#004400; border-color:#00ff00; margin-top:20px; min-height: 60px;" onclick="window.confermaSelezioneAro()">AVANTI ➔</button>
+        <button class="huge-btn" style="background:#330000; border-color:#ff0000; margin-top:10px; min-height: 50px;" onclick="window.annullaAro()">❌ PASSA (NESSUN ARO)</button>
+    </div>
+
+    <div id="step-aro-action" class="step-container" style="padding:20px;">
+        <div id="aro-header-action" style="text-align:center; color:var(--nomad-orange); font-size:24px; font-weight:bold; margin-bottom:10px; background:#222; border:1px dashed var(--nomad-orange); padding:10px;"></div>
+        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-red); margin-top:0;">SCEGLI REAZIONE</h1>
+        <div id="aro-action-list" class="grid-buttons"></div>
+        <button class="btn-status" onclick="window.apriSelezioneAro()">⬅️ RICOMINCIA SELEZIONE</button>
+    </div>
+
+    <div id="step-aro-weapon" class="step-container" style="padding:20px;">
+        <div id="aro-header-weapon" style="text-align:center; color:var(--nomad-orange); font-size:24px; font-weight:bold; margin-bottom:10px; background:#222; border:1px dashed var(--nomad-orange); padding:10px;"></div>
+        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-red); margin-top:0;">SCEGLI ARMA</h1>
+        <div id="aro-weapon-list" class="grid-buttons"></div>
+        <button class="btn-status" onclick="window.goToAroStep('step-aro-action')">INDIETRO</button>
+    </div>
+
+    <div id="step-aro-target" class="step-container" style="padding:20px;">
+        <div id="aro-header-target" style="text-align:center; color:var(--nomad-orange); font-size:24px; font-weight:bold; margin-bottom:10px; background:#222; border:1px dashed var(--nomad-orange); padding:10px;"></div>
+        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-red); margin-top:0;">BERSAGLIO</h1>
+        <div id="aro-target-list" class="grid-buttons"></div>
+        <button class="btn-status" onclick="window.goToAroStep('step-aro-weapon')">INDIETRO</button>
+    </div>
+
+    <div id="step-aro-modifiers" class="step-container" style="padding:20px;">
+        <div id="aro-header-mods" style="text-align:center; color:var(--nomad-orange); font-size:24px; font-weight:bold; margin-bottom:10px; background:#222; border:1px dashed var(--nomad-orange); padding:10px;"></div>
+        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-red); margin-top:0;">MODIFICATORI ARO</h1>
+        <div id="aro-modifiers-content"></div>
+        <button class="huge-btn" style="background:#004400; border-color:#00ff00; margin-top:20px; min-height: 80px;" onclick="window.salvaAroCorrente()">✅ CONFERMA E PROCEDI</button>
+        <button class="btn-status" onclick="window.goToAroStep('step-aro-target')">INDIETRO</button>
+    </div>
+
+    <div id="step-states" class="step-container" style="padding:20px;">
+        <h2 id="states-header" style="color:#00ffff; text-align:center; font-family:'Teko'; font-size:32px; margin-top:0;">STATI UNITÀ</h2>
+        <div id="states-content" style="text-align:left;"></div>
+    </div>
+
+    <div id="battle" class="step-container">
+        <p style="text-align:center; color:#aaa; font-size:14px; margin-top:-10px;">
+            (Tocco rapido = Ordine Normale | Tocco prolungato = Ordine Coordinato)
+        </p>
+        <div class="grid-buttons"></div>
+    </div>
+
+    <div id="step-unit" class="step-container">
+        <div class="grid-buttons" id="unit-buttons-container"></div>
+        <button class="btn-status" onclick="window.goToStep('step-group')">INDIETRO</button>
+    </div>
+
+    <div id="step-action" class="step-container">
+        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-red); letter-spacing:2px; text-shadow: 0 0 10px var(--nomad-red); margin-top:0;">1° METÀ ORDINE</h1>
+        <div id="fireteam-banner" style="display:none; background:#8b4500; color:#fff; padding:10px; text-align:center; margin-bottom:15px; border-radius:5px; border:2px solid #ffa500; font-weight:bold; box-shadow: 0 0 10px #ffa500;"></div>
+        <div id="action-list-container" style="overflow-y:auto; flex-grow:1; padding:5px; border:1px solid #444; background:#111; border-radius:5px;"></div>
+        <button class="btn-status" onclick="window.goToStep('step-unit')">ANNULLA E CAMBIA UNITÀ</button>
+    </div>
+        
+
+    <div id="step-weapon" class="step-container">
+        <div class="grid-buttons" id="weapon-buttons-container"></div>
+        <button class="btn-status" onclick="window.goToStep('step-action')">INDIETRO</button>
+    </div>
+
+    <div id="step-wait-aro" class="step-container">
+        <div class="grid-buttons" id="enemy-target-buttons" style="flex-grow:1; overflow-y:auto; padding:5px;"></div>
+        <button class="huge-btn" style="background:#004400; border-color:#00ff00; min-height: 60px; margin-top:10px; flex:none;" onclick="window.confirmMultiAro(false)">CONFERMA BERSAGLI <span>(Vai al Calcolo)</span></button>
+        <button class="btn-status" onclick="window.tornaAlRadar()">ANNULLA ORDINE</button>
+    </div>
+
+    <div id="step-second-half" class="step-container">
+        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-red); letter-spacing:2px; text-shadow: 0 0 10px var(--nomad-red); margin-top:0;">2° METÀ ORDINE</h1>
+        
+        <div id="wait-aro-msg" style="text-align:center; padding:20px; border:1px dashed var(--nomad-orange); margin-bottom:15px;">
+            <h3 style="color:var(--nomad-orange); font-family:'Teko'; font-size:28px;">IN ATTESA DI ARO...</h3>
+            <p style="color:#aaa;">Il nemico sta decidendo se e come reagire.</p>
+        </div>
+
+        <div id="second-half-wrapper" style="display:none; overflow-y:auto; flex-grow:1;">
+            <p style="color:#00ff00; text-align:center; margin-bottom:10px; font-weight:bold;">Reazione Dichiarata! Completa l'ordine:</p>
+            <div id="second-half-buttons-container" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+        
+        <button class="btn-status" onclick="window.tornaAlRadar()">ANNULLA ORDINE</button>
+    </div>
+
+    <div id="step-modifiers" class="step-container">
+        <div id="targets-allocation-container" style="overflow-y:auto; flex-grow:1;"></div>
+        <!-- id stabile: i moduli ordine_*.js riassegnano il calcolo a questo
+             pulsante. Prima lo cercavano con querySelector('#step-modifiers .huge-btn'),
+             che dopo l'iniezione delle schede bersaglio prende il PRIMO huge-btn
+             del DOM, cioe` il pulsante COPERTURA del primo bersaglio: quello
+             veniva rinominato "ESEGUI CALCOLO" e la copertura spariva. -->
+        <button id="btn-esegui-calcolo" class="huge-btn" style="background:var(--nomad-orange); color:#000; margin-top:15px; min-height:60px;" onclick="executeCalculation()">ESEGUI CALCOLO FINALE</button>
+        <!-- L'uscita per il Passo di Risoluzione: l'ordine e` dichiarato ma
+             sul tavolo il requisito non c'e`. Non annulla niente. -->
+        <button class="btn-status" style="margin-top:10px; border-color:#ffaa00; color:#ffaa00;" onclick="window.dichiaraRequisitoFallito()">REQUISITO NON SODDISFATTO → IDLE</button>
+        <div id="calc-result"></div>
+        <button class="btn-status" style="margin-top:20px;" onclick="window.tornaAlRadar()">FINE ORDINE (TORNA AL RADAR)</button>
+    </div>
+
+    <script>
+        // ==========================================
+        // 📌 DICHIARAZIONE DI VERSIONE
+        // ==========================================
+        // La riga @versione in testa al file e` un commento HTML: il browser la
+        // ignora e MotoreN5.versioni() non la vede. Senza questo blocco la pagina
+        // resta l'unico file del progetto che non si dichiara, cioe` proprio
+        // quello dove una copia vecchia (cache del telefono) e` piu` probabile.
+        (function () {
+            var g = (typeof window !== 'undefined') ? window : globalThis;
+            var v = { file: 'app.html', versione: '2026-09-24.2', proprieta: 'INTERFACCIA' };
+            if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
+            else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
+        })();
+
+        // Database Azioni base per popolare i bottoni delle fasi
+        window.dbAzioniN5 = {
+            movimento: [
+                { id: 'MOVIMENTO', nome: 'MUOVERE', desc: 'Sposta il modello fino al suo primo valore MOV.', type: 'MOVE' }
+            ],
+            brevi: [
+                { id: 'ATTACCO BS', nome: 'ATTACCO BS', desc: 'Attacco con arma a distanza.', type: 'WEAPON' },
+                { id: 'ATTACCO CC', nome: 'ATTACCO CC', desc: 'Attacco in corpo a corpo.', type: 'WEAPON_CC' },
+                { id: 'HACKING', nome: 'HACKING', desc: 'Esegui programma Infoguerra.', type: 'HACKING' },
+                { id: 'SCOPRIRE', nome: 'SCOPRIRE', desc: 'Tenta di rivelare un Marker nemico.', type: 'DISCOVER' },
+                { id: 'MEDICO_INGEGNERE', nome: 'SUPPORTO (MED / ING)', desc: 'Cura o Ripara truppe alleate.', type: 'SUPPORT' },
+                { id: 'SCHIVATA', nome: 'SCHIVATA', desc: 'Difesa fisica. Permette un piccolo movimento.', type: 'DEFENSE' },
+                { id: 'RESET', nome: 'RESET', desc: 'Difesa Infoguerra o liberazione da stati.', type: 'DEFENSE' },
+                { id: 'FORWARD OBSERVER', nome: 'FORWARD OBSERVER', desc: 'Attacco speciale per applicare Targeted.', type: 'WEAPON' },
+                { id: 'SENSOR', nome: 'SENSOR', desc: 'Scopri automaticamente i mimetici in ZoC.', type: 'DISCOVER' },
+                { id: 'DEACTIVATOR', nome: 'DEACTIVATOR', desc: 'Disattiva equipaggiamenti schierati nemici.', type: 'WEAPON' },
+                { id: 'PIAZZARE EQUIPAGGIAMENTO', nome: 'PIAZZARE EQUIPAGGIAMENTO', desc: 'Piazza Mine, Koala o altri deployables.', type: 'SHORT_SKILL' },
+                { id: 'RICARICARE', nome: 'RICARICARE', desc: 'Ricarica armi Disposable (richiede Baggage).', type: 'SHORT_SKILL' },
+                { id: 'INTERAGIRE OBIETTIVO', nome: 'INTERAGIRE (OBIETTIVO)', desc: 'Hack Console / Pick up Supply Box.', type: 'SHORT_SKILL' },
+                // L'Idle SCELTO: non si fa niente, ma la truppa si attiva e
+                // l'avversario ha diritto al suo ARO. Senza questa voce non
+                // c'era modo di dichiararlo. L'Idle da requisito fallito e`
+                // un'altra cosa e sta sulla schermata dei modificatori.
+                { id: 'IDLE', nome: 'IDLE (NESSUNA AZIONE)', desc: 'Attiva la truppa senza agire. Genera ARO.', type: 'SHORT_SKILL' }
+            ],
+            lunghe: [
+                { id: 'CAUTO', nome: 'MOVIMENTO CAUTO', desc: 'Muovi fuori LoF senza generare ARO.', type: 'LONG_MOVE' },
+                { id: 'SALTO', nome: 'SALTO / SCALATA', desc: 'Supera ostacoli verticali o buchi.', type: 'LONG_MOVE' },
+                { id: 'BERSERK', nome: 'ATTACCO BERSERK', desc: 'Carica suicida in CC (Tiro Normale).', type: 'LONG_CC' },
+
+                { id: 'ATTACCO GUIDATO', nome: 'ATTACCO GUIDATO', desc: 'Spara missili a un bersaglio Targeted.', type: 'LONG_WEAPON' },
+                { id: 'ATTACCO INTUITIVO', nome: 'ATTACCO INTUITIVO', desc: 'Lancia arma a Sagoma contro un Marker.', type: 'LONG_WEAPON' },
+                { id: 'FUOCO SPECULATIVO', nome: 'FUOCO SPECULATIVO', desc: 'Tiro parabolico senza LoF (-6 BS).', type: 'LONG_WEAPON' },
+                { id: 'TRIANGULATED FIRE', nome: 'TRIANGULATED FIRE', desc: 'Attacco BS che ignora i malus.', type: 'LONG_WEAPON' },
+                { id: 'TRINCERARSI', nome: 'TRINCERARSI (FOXHOLE)', desc: 'Entra in stato Foxhole.', type: 'LONG_SKILL' },
+                { id: 'INGRESSO IN CAMPO', nome: 'INGRESSO IN CAMPO (AD)', desc: 'Schieramento aereo consumando l\'ordine.', type: 'LONG_MOVE' },
+                { id: 'REQUEST SPEEDBALL', nome: 'REQUEST SPEEDBALL', desc: 'Richiedi lancio di rifornimenti.', type: 'LONG_SKILL' }
+            ]
+        };
+
+        // ==========================================
+        // 🛣️  ORDINI CHE HANNO DAVVERO UNA STRADA
+        // ==========================================
+        // Un ordine offerto nella lista e non instradabile e` un vicolo
+        // chiuso: il giocatore lo dichiara e riceve "Azione non riconosciuta",
+        // con l'Ordine perso. Qui non si giudica nulla in autonomia: si
+        // interrogano le DUE STESSE FONTI che consulta selectAction in
+        // motore_core.js — la tabella ROUTER_AZIONI e M.azioneSenzaTiro() —
+        // nello stesso ordine. Se cambia il router, cambia anche questo
+        // controllo, perche` legge il router e non una sua copia.
+        let ordiniNascosti = null;
+        window.ordineInstradabile = (actionId) => {
+            const azione = String(actionId || '').trim();
+
+            // Se il router non c'e`, il controllo non e` in grado di
+            // giudicare: NON si filtra. Nascondere tutto darebbe una lista
+            // vuota senza spiegazione, mentre lasciando passare l'ordine e`
+            // il motore stesso a dire quale modulo manca.
+            if (!Array.isArray(window.ROUTER_AZIONI)) {
+                console.error('\u26d4 ROUTER_AZIONI assente: impossibile verificare gli ordini instradabili. ' +
+                              'Controlla che motore_core.js sia caricato.');
+                return true;
+            }
+
+            const voce = window.ROUTER_AZIONI.find(v => v.test(azione));
+            if (voce) return typeof window[voce.modulo] === 'function';
+
+            const M = window.MotoreN5;
+            if (M && typeof M.azioneSenzaTiro === 'function' && M.azioneSenzaTiro(azione)) {
+                return typeof window.avviaFaseMovimento === 'function';
+            }
+
+            return false;
+        };
+
+        // L'app resta pulita per il giocatore, ma non si perde traccia:
+        // l'elenco di cosa e` stato nascosto, e perche`, finisce in console
+        // una volta per sessione.
+        window.riepilogaOrdiniNascosti = () => {
+            if (ordiniNascosti !== null || !window.dbAzioniN5) return;
+            const tutti = [].concat(window.dbAzioniN5.movimento || [], window.dbAzioniN5.brevi || [],
+                                    window.dbAzioniN5.lunghe || []);
+            ordiniNascosti = tutti.map(a => a.id).filter(id => !window.ordineInstradabile(id));
+            if (ordiniNascosti.length) {
+                console.warn('\u26a0\ufe0f Ordini nascosti dalla lista perche` nessun modulo li gestisce: ' +
+                             ordiniNascosti.join(', ') +
+                             '. Torneranno visibili da soli quando il motore li instradera`.');
+            }
+        };
+
+        // ==========================================
+        // 🚫 CHI PUO` RICEVERE UN ORDINE
+        // ==========================================
+        // La regola sta TUTTA nel motore (M.puoRicevereOrdine). Qui c'e` solo
+        // l'adattatore che traduce la sua risposta nella forma usata dalle
+        // schermate: il motore risponde {puo, blocchi, motivo, ...}, l'interfaccia
+        // ragiona per {ok, stato, motivo}.
+        // Senza motore NON si indovina: tutto non attivabile, ben visibile.
+        // Meglio un'app che non parte che una che attiva un morto.
+        window.puoRicevereOrdine = (u) => {
+            // `stato` e` l'ID (morto, incosciente): serve alla logica.
+            // `nome` e` quello che legge il giocatore (Morto, Incosciente):
+            // lo da` il motore, e dal 23 settembre i due sono diversi.
+            const negato = (stato, motivo, nome) => ({ ok: false, stato: stato, nome: nome || stato, motivo: motivo, annullaSoppressione: false, nota: null });
+
+            if (!u) return negato('NESSUNA UNITA`', 'Nessuna unita` selezionata.');
+
+            const M = window.MotoreN5;
+            if (!M || typeof M.puoRicevereOrdine !== 'function') {
+                console.error('\u26d4 M.puoRicevereOrdine assente: nessuna unita` e` attivabile finche` motore_regole_n5.js non e` caricato.');
+                return negato('MOTORE ASSENTE', 'motore_regole_n5.js non caricato.');
+            }
+
+            const r = M.puoRicevereOrdine(u);
+            return {
+                // === true e non semplicemente "vero": se un domani il campo
+                // cambiasse nome, si blocca invece di lasciar passare tutti.
+                ok: r.puo === true,
+                stato: (r.blocchi && r.blocchi.length) ? r.blocchi[0].stato : null,
+                nome: (r.blocchi && r.blocchi.length) ? (r.blocchi[0].nome || r.blocchi[0].stato) : null,
+                motivo: r.motivo || null,
+                annullaSoppressione: !!r.annullaSoppressione,
+                nota: r.notaSoppressione || null
+            };
+        };
+
+        // Chiede al motore se l'unita` ha almeno un'arma buona per l'azione.
+        // Senza motore NON si indovina dal nome dell'arma: si dice che manca.
+        let avvisoArmiDato = false;
+        window.armiPerAzione = (nomeFunzione, unit) => {
+            const M = window.MotoreN5;
+            if (!M || typeof M[nomeFunzione] !== 'function') {
+                if (!avvisoArmiDato) {
+                    console.error('\u26d4 M.' + nomeFunzione + ' assente: l\'azione resta nascosta. ' +
+                                  'Controlla che motore_regole_n5.js sia caricato.');
+                    avvisoArmiDato = true;
+                }
+                return false;
+            }
+            try {
+                const esito = M[nomeFunzione](unit);
+                // Le escluse col motivo restano a disposizione del renderer di
+                // targetsScartati: sono la spiegazione di perche` un'arma non
+                // compare, e non vanno buttate.
+                if (esito && Array.isArray(esito.escluse) && esito.escluse.length) {
+                    window.armiEscluse = window.armiEscluse || {};
+                    window.armiEscluse[nomeFunzione] = esito.escluse;
+                }
+                return !!(esito && Array.isArray(esito.armi) && esito.armi.length > 0);
+            } catch (errore) {
+                console.error('\u26d4 M.' + nomeFunzione + ' ha sollevato:', errore);
+                window.ultimaEccezione = errore;
+                return false;
+            }
+        };
+
+        window.puoFareAzione = (unit, actionId) => {
+            if (!unit) return false;
+
+            // Prima di ogni altra regola: se l'unita` non puo` ricevere
+            // ordini, nessuna azione le e` offerta. Senza questo, a una
+            // truppa morta veniva proposta la lista completa.
+            const ordinabile = window.puoRicevereOrdine(unit);
+            if (!ordinabile.ok) return false;
+
+            // Niente vicoli chiusi nella lista: se nessun modulo gestisce
+            // l'ordine, non lo si offre affatto.
+            if (!window.ordineInstradabile(actionId)) return false;
+
+            // L'Idle e` cio` che si dichiara quando non si puo` o non si vuole
+            // fare altro: non ha requisiti d'arma ne` di skill, e il catalogo
+            // lo ammette anche in mischia. Va offerto sempre, altrimenti una
+            // truppa senza opzioni resterebbe senza nulla da dichiarare e
+            // l'avversario perderebbe l'ARO che gli spetta.
+            if (actionId === 'IDLE') return true;
+
+            let skills = (unit.skills || "").toUpperCase();
+            let equip = (unit.equip || "").toUpperCase();
+            let weapons = (unit.weapon || "").toUpperCase();
+            let type = (unit.tipo || "").toUpperCase();
+            let state = unit.states || {};
+
+            // ==========================================
+            // 🚨 OVERRIDE STATI ALTERATI (ENGAGED, RETREAT, FOXHOLE)
+            // ==========================================
+
+            // 1. ENGAGED (Ingaggiato in CC)
+            if (state.engaged) {
+                const allowedEngaged = ['ATTACCO CC', 'BERSERK', 'SCHIVATA', 'RESET'];
+                // Se l'azione non è tra quelle consentite in mischia, nascondi il bottone
+                if (!allowedEngaged.includes(actionId)) return false;
+            }
+
+            // 2. RETREAT! (Ritirata)
+            if (state.retreat) {
+                // Ammette solo Short Skills base, Dodge, Reset o Cautious Movement
+                const allowedRetreat = ['MOVIMENTO', 'SCOPRIRE', 'SCHIVATA', 'RESET', 'CAUTO'];
+                if (!allowedRetreat.includes(actionId)) return false;
+            }
+
+            // 3. FOXHOLE (Trincerato)
+            if (state.foxhole) {
+                // Impedisce le azioni con l'etichetta Movement (non può muoversi a meno che non cancelli lo stato)
+                const movementActions = ['MOVIMENTO', 'SALTO', 'CAUTO', 'INGRESSO IN CAMPO'];
+                if (movementActions.includes(actionId)) return false;
+            }
+
+            // 4. IMMOBILIZED-A: può dichiarare SOLO Schivata (regola ufficiale N5, Game States Module)
+            if (state.immobilizedA) {
+                if (actionId !== 'SCHIVATA') return false;
+            }
+
+            // 5. IMMOBILIZED-B: può dichiarare SOLO Reset (ancora più restrittivo di IMM-A)
+            if (state.immobilizedB) {
+                if (actionId !== 'RESET') return false;
+            }
+
+            // 6. STUNNED (Stordito): non può dichiarare Attacchi (BS/CC/Berserk/Protheion/Hacking)
+            if (state.stunned) {
+                const azioniAttacco = ['ATTACCO BS', 'ATTACCO CC', 'BERSERK', 'PROTHEION', 'HACKING'];
+                if (azioniAttacco.includes(actionId)) return false;
+            }
+
+            // ==========================================
+            // 🔍 FUNZIONE DI SUPPORTO PER TRATTI ARMI
+            // ==========================================
+            // In RULES_WEAPONS il campo traits e` a volte una stringa e a
+            // volte un array (178 armi su quelle censite). Chiamare
+            // .toUpperCase() su un array solleva, e l'eccezione partiva da
+            // qui durante la costruzione della lista ordini — fuori dal
+            // router, quindi senza rete: la schermata restava a meta`.
+            // Provato sui profili dei database: 408 su 449 la innescavano.
+            const traitsComeTesto = (t) => {
+                if (Array.isArray(t)) return t.join(',');
+                if (t === null || t === undefined) return '';
+                return String(t);
+            };
+
+            const hasWeaponWithTrait = (trait) => {
+                let dbArmi = window.RULES_WEAPONS || {};
+                let unitWeapons = weapons.replace(/\//g, ',').split(',');
+                const cercato = trait.toUpperCase();
+
+                // Ventuno voci di RULES_WEAPONS sono CONTENITORI: non hanno
+                // Tratti propri (traits e` undefined) ma un campo modalita`,
+                // perche` i Tratti cambiano fra una modalita` e l'altra — il
+                // Plasma Carbine in Blast ha Impact Template, in Hit non ha
+                // nulla. Leggere traits sul nome base non trova niente, e
+                // centosessantotto profili su 442 portano un'arma di questo
+                // tipo: leggere solo il nome base li escluderebbe in silenzio.
+                const tratti = (chiave) => {
+                    const voce = dbArmi[chiave];
+                    if (!voce) return '';
+                    if (Array.isArray(voce.modalita)) {
+                        // Basta che UNA modalita` abbia il Tratto: l'arma
+                        // quel Tratto ce l'ha, usandola in quel modo.
+                        return voce.modalita.map(m => traitsComeTesto((dbArmi[m] || {}).traits)).join(',');
+                    }
+                    return traitsComeTesto(voce.traits);
+                };
+
+                for (let w of unitWeapons) {
+                    let wName = w.trim().split('(')[0].trim().toUpperCase();
+                    let profileKey = Object.keys(dbArmi).find(k => k.toUpperCase() === wName);
+                    if (!profileKey) {
+                        profileKey = Object.keys(dbArmi).find(k => wName.includes(k.toUpperCase()) || k.toUpperCase().includes(wName));
+                    }
+                    if (profileKey && tratti(profileKey).toUpperCase().includes(cercato)) return true;
+                    if (w.toUpperCase().includes(cercato)) return true;
+                }
+                return false;
+            };
+
+            // ==========================================
+            // ⚙️ CONTROLLI SPECIFICI PER AZIONE
+            // ==========================================
+            switch(actionId) {
+                case 'CAUTO':
+                    if (type === 'TAG' || type === 'REM' || type === 'VH' || equip.includes('MOTORCYCLE') || skills.includes('AERIAL') || state.targeted) return false;
+                    return true;
+
+                case 'SALTO':
+                    return true;
+
+                case 'FORWARD OBSERVER':
+                    return skills.includes('FORWARD OBSERVER');
+
+                case 'SENSOR':
+                    return skills.includes('SENSOR') || skills.includes('SENSORE');
+
+                case 'TRIANGULATED FIRE':
+                    return skills.includes('TRIANGULATED FIRE');
+
+                case 'DEACTIVATOR':
+                    return equip.includes('DEACTIVATOR');
+
+                case 'PIAZZARE EQUIPAGGIAMENTO':
+                    return weapons.includes('MINE') || equip.includes('MINE') || equip.includes('KOALA') || 
+                           equip.includes('PANDA') || equip.includes('PARROT') || equip.includes('DROPBEAR') || 
+                           weapons.includes('D-CHARGES') || equip.includes('DEPLOYABLE') || equip.includes('MADTRAPS');
+
+                case 'RICARICARE':
+                    // Leggeva anche state.unloaded, che dal 23 settembre nessuno
+                    // puo` piu` impostare: lo Stato Scarico e` uscito dalla pagina
+                    // stati (non da` MOD, e gli usi Disposable li conta il motore).
+                    // Un flag letto e mai scritto: vale sempre false, quindi la
+                    // condizione era gia` solo la seconda meta`.
+                    return hasWeaponWithTrait('DISPOSABLE');
+
+                case 'TRINCERARSI':
+                    return skills.includes('SAPPER');
+
+                case 'INGRESSO IN CAMPO':
+                    return skills.includes('COMBAT JUMP') || skills.includes('PARACHUTIST') || skills.includes('AIRBORNE DEPLOYMENT') || skills.includes('AD:');
+
+                case 'REQUEST SPEEDBALL':
+                    return true;
+
+                case 'INTERAGIRE OBIETTIVO':
+                    let isSpecialist = skills.includes('DOCTOR') || skills.includes('ENGINEER') || 
+                                       skills.includes('FORWARD OBSERVER') || skills.includes('HACKER') || 
+                                       skills.includes('PARAMEDIC') || skills.includes('SPECIALIST OPERATIVE') || 
+                                       skills.includes('CHAIN OF COMMAND');
+                    let hasObjectives = window.activeStructures && window.activeStructures.some(s => s.skills && (s.skills.toUpperCase().includes('OBJECTIVE') || s.skills.toUpperCase().includes('CONSOLE') || s.skills.toUpperCase().includes('HACKABLE')));
+                    return isSpecialist && hasObjectives;
+
+                case 'HACKING':
+                    return skills.includes('HACKER') || equip.includes('HACKING DEVICE');
+                
+                case 'MEDICO_INGEGNERE':
+                    return skills.includes('DOCTOR') || skills.includes('PARAMEDIC') || 
+                           skills.includes('ENGINEER') || equip.includes('MEDIKIT') || 
+                           equip.includes('GIZMOKIT');
+                
+                // Le tre azioni qui sotto NON si decidono piu` dal nome
+                // dell'arma. Il nome sbagliava in entrambi i versi, misurato
+                // sui database:
+                //   - ATTACCO GUIDATO cercava la parola GUIDED in skills o
+                //     weapon, dove non compare mai: sta in equip come
+                //     "ECM (Guided -6)", che e` il malus del DIFENSORE e non
+                //     un requisito dell'attaccante. Zero profili su 442
+                //     potevano dichiararlo; il motore ne abilita 40 Nomadi
+                //     e 68 PanOceania.
+                //   - FUOCO SPECULATIVO compariva per un Missile Launcher solo
+                //     perche` il nome contiene "Launcher", ma quell'arma non ha
+                //     il Tratto Speculative Attack e il modulo poi la rifiuta:
+                //     ordine offerto e non eseguibile, dichiarazione buttata.
+                //   - ATTACCO INTUITIVO non compariva per Shock Mine e PARA
+                //     Mine, che il Tratto Intuitive Attack ce l'hanno.
+                // Il Tratto lo sa il motore, che legge anche le modalita` delle
+                // armi contenitore e restituisce le escluse col motivo.
+                case 'FUOCO SPECULATIVO':
+                    return window.armiPerAzione('armiSpeculative', unit);
+
+                case 'ATTACCO INTUITIVO':
+                    return window.armiPerAzione('armiIntuitive', unit);
+
+                case 'ATTACCO GUIDATO':
+                    return window.armiPerAzione('armiGuidate', unit);
+
+                case 'BERSERK':
+                    return skills.includes('BERSERK');
+
+                default:
+                    return true;
+            }
+        };
+
+// ==========================================
+        // 🖥️ LOGICA INTERFACCIA PARTITA (UI_PARTITA)
+        // ==========================================
+
+        // 1. FUNZIONE ICONE STATI
+        window.generaIconeStati = (u) => {
+            if (!u) return "";
+            let s = u.states || {};
+            let isDead = u.state === 'DEAD';
+            let icone = "";
+            
+            // Icone più grandi (45px) e allineate. Corretto l'errore degli apici in onerror.
+            const iconStyle = `style="width: 45px; height: 45px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(0,0,0,0.8)); margin-left: 5px; margin-bottom: 5px;"`;
+            const getOnErr = (emoji) => `onerror="this.outerHTML='<span style=&quot;font-size:30px; margin-left:5px;&quot;>${emoji}</span>'"`;
+
+            if(s.immobilizedA || s.immobilizedB) icone += `<img src="img/icon_imma.png" ${iconStyle} ${getOnErr('🛑')}>`;
+            if(s.isolated) icone += `<img src="img/icon_isolated.png" ${iconStyle} ${getOnErr('📵')}>`;
+            if(s.targeted) icone += `<img src="img/icon_targeted.png" ${iconStyle} ${getOnErr('🎯')}>`;
+            if(s.stunned) icone += `<img src="img/icon_stunned.png" ${iconStyle} ${getOnErr('😵')}>`;
+            if(s.suppressive) icone += `<img src="img/icon_suppressive.png" ${iconStyle} ${getOnErr('🔥')}>`;
+            if(s.camo) icone += `<img src="img/icon_camo.png" ${iconStyle} ${getOnErr('👻')}>`;
+            if(s.disconnected) icone += `<img src="img/icon_disconnected.png" ${iconStyle} ${getOnErr('🔌')}>`;
+            if(s.possessed) icone += `<img src="img/icon_possessed.png" ${iconStyle} ${getOnErr('👾')}>`;
+            if(s.sepsitorized) icone += `<img src="img/icon_sepsitorized.png" ${iconStyle} ${getOnErr('👽')}>`;
+            
+            if(s.engaged) icone += `<img src="img/icon_engaged.png" ${iconStyle} ${getOnErr('⚔️')}>`;
+            if(s.retreat) icone += `<img src="img/icon_retreat.png" ${iconStyle} ${getOnErr('🏳️')}>`;
+            if(s.foxhole) icone += `<img src="img/icon_foxhole.png" ${iconStyle} ${getOnErr('🕳️')}>`;
+            if(s.unconscious) icone += `<img src="img/icon_unc.png" ${iconStyle} ${getOnErr('💤')}>`;
+            
+            if(isDead) icone = `<img src="img/icon_dead.png" ${iconStyle} ${getOnErr('☠️')}>`;
+            
+            return icone;
+        };
+
+        // 2. MENU GRUPPI (TURNO ATTIVO - SCHERMATA PRINCIPALE)
+        window.aggiornaMenuGruppi = () => {
+            const container = document.querySelector('#battle .grid-buttons');
+            if(!container || !window.roster) return;
+
+            let gruppiAttivi = [...new Set(window.roster.map(u => parseInt(u.combatGroup) || 1))].sort();
+            if(gruppiAttivi.length === 0) gruppiAttivi = [1];
+
+            let bottoniHtml = "";
+            gruppiAttivi.forEach(g => {
+                let truppeNelGruppo = window.roster.filter(u => parseInt(u.combatGroup) === g && u.state !== 'DEAD').length;
+                bottoniHtml += `<button class="huge-btn" style="min-height:80px; margin-bottom:15px; width:100%; border-color:var(--nomad-red); background:#1a0000;" 
+                    onpointerdown="if(window.startGroupPress) window.startGroupPress(${g})" 
+                    onpointerup="if(window.endGroupPress) window.endGroupPress(${g})" 
+                    onpointerleave="if(window.cancelPress) window.cancelPress()" 
+                    oncontextmenu="return false;">
+                    GRUPPO ${g} <br><span style="font-size:14px; color:#aaa;">(${truppeNelGruppo} Unità Operative)</span>
+                </button>`;
+            });
+
+            container.innerHTML = bottoniHtml;
+        };
+
+        // Variabili timer sicurezza (lasciate vuote nell'ARO perché usiamo onclick)
+        let reactivePressTimer = null;
+        window.startReactivePress = (index) => {};
+        window.endReactivePress = () => {};
+        window.cancelReactivePress = () => {};
+
+        // 3. ROSTER ARO (TURNO REATTIVO)
+        window.renderReactiveRoster = () => {
+            const container = document.getElementById('reactive-roster-list');
+            if(!container) return;
+            container.innerHTML = "";
+            
+            let truppeVisibili = window.roster.filter(u => u.deployState !== "HIDDEN" && u.deployState !== "RESERVE" && u.tipo !== "MARKER");
+
+            truppeVisibili.forEach(u => {
+                let originalIndex = window.roster.indexOf(u); 
+                let s = u.states || {};
+                let isDead = u.state === 'DEAD';
+                let isUnconscious = s.unconscious;
+                
+                let bg = isDead ? '#000000' : (isUnconscious ? '#220000' : '#110000');
+                let border = isDead ? '2px dashed #550000' : (isUnconscious ? '2px solid #880000' : '2px solid var(--nomad-red)');
+                let opacity = isDead ? '0.3' : (isUnconscious ? '0.6' : '1');
+                
+                let nomePuro = (u.nome || u.name || "").split('(')[0].trim(); 
+                let testoNome = isDead ? `<s>${nomePuro}</s>` : nomePuro;
+                
+                if (s.fireteam) testoNome += ` <br><span style="color:#00ffff; font-size:14px; font-weight:bold;">[ TEAM ${s.fireteam} ]</span>`;
+
+                let variant = u.imgVariant && u.imgVariant !== "0" ? `_${u.imgVariant}` : "";
+                let imgSrc = `img/${nomePuro.replace(/\s+/g, '_')}${variant}.png`;
+                
+                let iconeVisuali = window.generaIconeStati(u);
+                
+                container.innerHTML += `
+                    <button class="huge-btn" style="background:${bg}; border:${border}; opacity:${opacity}; padding:10px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; text-align:left; width:100%; min-height:95px;"
+                        onclick="if(window.apriPaginaStati) window.apriPaginaStati(${originalIndex})"
+                        oncontextmenu="return false;">
+                        
+                        <img src="${imgSrc}" style="width:70px; height:70px; flex-shrink:0; object-fit:contain; margin-right:15px; background: rgba(0,0,0,0.5); border-radius:5px; border: 1px solid #444;" onerror="this.style.display='none';">
+                        
+                        <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
+                            <div style="font-size:22px; line-height:1; color:#fff; font-weight:bold;">${testoNome}</div>
+                            ${u.alias ? `<div style="color:var(--nomad-orange); font-size:15px; font-style:italic;">"${u.alias}"</div>` : ''}
+                        </div>
+                        
+                        <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; max-width:45%;">
+                            ${iconeVisuali}
+                        </div>
+                    </button>
+                `;
+
+            });
+        };
+
+        // 4. ROSTER ATTIVO (QUANDO CLICCHI UN GRUPPO)
+        window.aggiornaGraficaRoster = () => {
+            const container = document.getElementById('unit-buttons-container'); 
+            if(!container) return;
+            container.innerHTML = "";
+            
+            let truppeDelGruppo = window.roster.filter(u => parseInt(u.combatGroup) === parseInt(window.currentGroup));
+
+            truppeDelGruppo.forEach(u => {
+                let originalIndex = window.roster.indexOf(u); 
+                let isSelected = window.selectedCoordinatedUnits && window.selectedCoordinatedUnits.includes(u);
+                let isSpearhead = window.spearheadUnit === u;
+                
+                let s = u.states || {};
+                let isDead = u.state === 'DEAD';
+                let isUnconscious = s.unconscious;
+                
+                let bg = isSelected ? '#440000' : (isDead ? '#000000' : (isUnconscious ? '#220000' : '#110000'));
+                let border = isSpearhead ? '2px solid #00ffff' : (isSelected ? '2px solid #ff9900' : '2px solid var(--nomad-red)');
+                let opacity = isDead ? '0.3' : (isUnconscious ? '0.6' : '1');
+
+                // Un'unita` che non puo` ricevere ordini non si seleziona:
+                // resta visibile (sapere chi hai perso conta) ma senza gestori.
+                const ordinabile = window.puoRicevereOrdine(u);
+                if (!ordinabile.ok) { opacity = '0.45'; border = '2px dashed #777'; }
+                
+                let nomePuro = (u.nome || u.name || "").split('(')[0].trim(); 
+                let testoNome = isDead ? `<s>${nomePuro}</s>` : nomePuro;
+                if (!ordinabile.ok) testoNome += ` <span style="color:#ff6666; font-size:13px; font-weight:bold;" title="${ordinabile.motivo || ''}">[${ordinabile.nome || ordinabile.stato} \u2014 NON ATTIVABILE]</span>`;
+                // Attivare una truppa in Fuoco di Soppressione annulla lo stato:
+                // va detto PRIMA che spenda l'Ordine, non dopo.
+                if (ordinabile.ok && ordinabile.annullaSoppressione) testoNome += ` <br><span style="color:#ff9900; font-size:13px; font-weight:bold;" title="${ordinabile.nota || ''}">\u26a0\ufe0f ATTIVARLA ANNULLA LA SOPPRESSIONE</span>`;
+                
+                if (s.fireteam) testoNome += ` <br><span style="color:#00ffff; font-size:14px; font-weight:bold;">[ TEAM ${s.fireteam} ]</span>`;
+                
+                let variant = u.imgVariant && u.imgVariant !== "0" ? `_${u.imgVariant}` : "";
+                let imgSrc = `img/${nomePuro.replace(/\s+/g, '_')}${variant}.png`;
+                
+                let iconeVisuali = window.generaIconeStati(u);
+                
+                container.innerHTML += `
+                    <button class="huge-btn" style="background:${bg}; border:${border}; opacity:${opacity}; padding:10px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; text-align:left; width:100%; min-height:95px;"
+                        ${ordinabile.ok ? `onpointerdown="if(window.startUnitPress) window.startUnitPress(${originalIndex})" onpointerup="if(window.endUnitPress) window.endUnitPress(${originalIndex})" onpointerleave="if(window.cancelUnitPress) window.cancelUnitPress()"` : ''}
+                        oncontextmenu="return false;">
+                        
+                        <img src="${imgSrc}" style="width:70px; height:70px; flex-shrink:0; object-fit:contain; margin-right:15px; background: rgba(0,0,0,0.5); border-radius:5px; border: 1px solid #444;" onerror="this.style.display='none';">
+                        
+                        <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
+                            <div style="font-size:22px; line-height:1; color:#fff; font-weight:bold;">${testoNome}</div>
+                            ${u.alias ? `<div style="color:var(--nomad-orange); font-size:15px; font-style:italic;">"${u.alias}"</div>` : ''}
+                        </div>
+                        
+                        <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; max-width:45%;">
+                            ${iconeVisuali}
+                        </div>
+                    </button>
+                `;
+                // Un'unita` non attivabile non riceve Ordini, ma i suoi stati
+                // devono restare modificabili: se la curi devi poter togliere
+                // Incosciente. Qui gli stati si aprono col tocco lungo, che a
+                // un'unita` non attivabile abbiamo tolto insieme agli altri
+                // gestori, quindi serve un pulsante.
+                if (!ordinabile.ok) {
+                    container.innerHTML += `
+                        <button class="huge-btn" style="background:#1a1a1a; border:2px solid var(--nomad-orange); color:var(--nomad-orange); margin: -6px 0 12px 0; padding:10px; font-size:16px; width:100%;"
+                            onclick="if(window.apriPaginaStati) window.apriPaginaStati(${originalIndex})">
+                            \u{1FA7A} MODIFICA STATI DI ${nomePuro.toUpperCase()}
+                        </button>
+                    `;
+                }
+            });
+
+            if (window.isCoordinated) {
+                container.innerHTML += `
+                    <button class="huge-btn" style="background:#cc0000; border-color:#ff9900; margin-top:10px; min-height:60px; max-height:80px; flex:none; width:100%;" onclick="if(window.confermaCoordinato) window.confermaCoordinato()">
+                        CONFERMA SQUADRA E PROCEDI
+                    </button>
+                `;
+            }
+        };
+        // 4. Genera la lista delle Azioni in base al profilo dell'unità
+        window.procediAlleAzioni = () => {
+            window.currentOrder = window.currentOrder || {};
+            window.currentOrder.unit = window.spearheadUnit;
+            window.currentOrder.coordinatedUnits = window.selectedCoordinatedUnits;
+            window.currentOrder.isLongSkill = false;
+            
+            window.coordMode = window.isCoordinated;
+            window.coordUnits = window.coordMode ? [window.spearheadUnit, ...window.selectedCoordinatedUnits.filter(u=>u!==window.spearheadUnit)] : [window.spearheadUnit];
+            window.coordIndex = 0;
+            window.coordPayloads = []; 
+                    
+            const container = document.getElementById('action-list-container');
+            container.innerHTML = "";
+
+            window.riepilogaOrdiniNascosti();
+
+            // Stesso avvertimento sulla schermata dove l'Ordine si spende davvero.
+            const attivazione = window.puoRicevereOrdine(window.spearheadUnit);
+            if (attivazione.annullaSoppressione) {
+                container.innerHTML += `<div style="background:#3a2400; border:2px solid #ff9900; color:#ffcc66; padding:10px; margin-bottom:10px; font-size:15px; text-align:center;">
+                    \u26a0\ufe0f Questa truppa è in FUOCO DI SOPPRESSIONE.<br>Attivarla annulla lo stato.${attivazione.nota ? `<br><span style="font-size:13px; color:#ffaa66;">${attivazione.nota}</span>` : ''}</div>`;
+            }
+            
+            // AZZURRO = Movimento
+            window.dbAzioniN5.movimento.filter(a => window.puoFareAzione(window.spearheadUnit, a.id)).forEach(a => container.innerHTML += window.creaBottoneAzione(a, false, '#002244', '#00ffff'));
+            
+            // VERDE = Abilità Brevi
+            window.dbAzioniN5.brevi.filter(a => window.puoFareAzione(window.spearheadUnit, a.id)).forEach(a => container.innerHTML += window.creaBottoneAzione(a, false, '#003300', '#00ff00'));
+            
+            // ROSSO = Abilità Lunghe (Ordini Interi)
+            window.dbAzioniN5.lunghe.filter(a => window.puoFareAzione(window.spearheadUnit, a.id)).forEach(a => container.innerHTML += window.creaBottoneAzione(a, false, '#440000', '#ff0000'));
+            
+            if(window.calcolaEMostraFireteam) window.calcolaEMostraFireteam();
+            window.goToStep('step-action');
+        };
+
+        // Crea il singolo bottone e lo collega al Router del Motore Core
+        window.creaBottoneAzione = function(act, isSecondHalf, bg, border) {
+            return `<button class="huge-btn" style="min-height:60px; font-size:20px; background:${bg}; border-color:${border}; margin-bottom:5px; width:100%;" 
+                    onclick="window.selectAction('${act.id}', ${isSecondHalf})">
+                    ${act.nome} <br><span style="color:#aaa; font-size:12px;">${act.desc}</span></button>`;
+        };
+ 
+        // ==========================================
+        // 🎯 GESTIONE UI SELEZIONE BERSAGLI
+        // ==========================================
+
+        window.renderTargetButtons = () => {
+            const container = document.getElementById('enemy-target-buttons'); 
+            if (!container) return;
+            container.innerHTML = "";
+            
+            if (!window.validTargets || window.validTargets.length === 0) {
+                container.innerHTML = "<p style='color:red; text-align:center; font-size:18px;'>Nessun bersaglio valido o in vista!</p>";
+                return;
+            }
+
+            window.validTargets.forEach(t => { 
+                // Controlla se il bersaglio è già stato cliccato
+                window.pendingTargets = window.pendingTargets || [];
+                let isSelected = window.pendingTargets.some(pt => pt.id === t.id);
+                
+                // Cambia colore se selezionato
+                let bg = isSelected ? '#8b0000' : '#111';
+                let border = isSelected ? '2px solid #ff0000' : '2px solid var(--nomad-orange)';
+                
+                // Trova il nome corretto
+                let nomeBersaglio = t.alias || t.name || t.nome || "Sconosciuto";
+                
+                container.innerHTML += `
+                    <button class="huge-btn" style="min-height:70px; font-size:22px; background:${bg}; border:${border}; margin-bottom:10px; display:flex; justify-content:flex-start; align-items:center; padding:0 15px;" 
+                        onclick="window.toggleTargetSelection('${t.id}')">
+                        <span style="color:#aaa; font-size:16px; margin-right:10px;">[${t.tipo || 'LI'}]</span> 
+                        <span style="color:#fff;">${nomeBersaglio}</span>
+                    </button>
+                `; 
+            });
+        };
+
+        window.toggleTargetSelection = (id) => {
+            window.pendingTargets = window.pendingTargets || [];
+            let existingIndex = window.pendingTargets.findIndex(pt => pt.id === id);
+            
+            if (existingIndex >= 0) {
+                // Se c'era già, lo toglie (Deseleziona)
+                window.pendingTargets.splice(existingIndex, 1);
+            } else {
+                // Se non c'era, lo cerca nei bersagli validi e lo aggiunge
+                const targetProfile = window.validTargets.find(u => u.id === id); 
+                if (targetProfile) window.pendingTargets.push(targetProfile);
+            }
+            // Aggiorna la grafica
+            window.renderTargetButtons();
+        };
+
+
+        // ==========================================
+        // 🚨 PONTE ALLARME ARO (ui_partita.js)
+        // ==========================================
+        window.confirmMultiAro = (isMovementOnly = false) => {
+            if(!isMovementOnly && window.pendingTargets.length === 0) return alert("Seleziona almeno un bersaglio per continuare!");
+            
+            if(isMovementOnly) window.combatTargets = [];
+            else {
+                window.combatTargets = window.pendingTargets.map(t => {
+                    let nomeBersaglio = t.alias || t.name || t.nome || "Sconosciuto";
+                    return { id: t.id, name: nomeBersaglio, skills: (t.skills || "").toLowerCase(), rangeIndex: 0, rangeMod: 0, burst: 0, cover: false, terrain: "NESSUNO" };
+                });
+            }
+
+            // Se siamo già nella SECONDA metà dell'ordine, saltiamo l'allarme e andiamo ai calcoli
+            if (window.currentOrder.isSecondHalf) {
+                window.selectAction(window.currentOrder.action, true); // Rilancia la palla al Vigile Urbano
+                return;
+            }
+            
+            // --- 1° METÀ: INVIA L'ALLARME ARO ALL'HUB ---
+            let listaAttaccanti = window.coordMode ? window.coordUnits.map(u => u.alias) : [window.currentOrder.unit.alias];
+            const payload = { 
+                attaccante: window.currentOrder.unit.alias, 
+                attaccanti: listaAttaccanti, 
+                azione: window.currentOrder.action, 
+                bersagli: window.pendingTargets.map(t => t.alias || t.name || t.nome)
+            };
+            
+            // Usa lo spedizioniere del Core!
+            if(window.inviaAllarmeAro) window.inviaAllarmeAro(payload);
+            else console.error("Funzione window.inviaAllarmeAro mancante nel motore_core.js!");
+            
+            // Costruisci l'interfaccia di attesa per la seconda metà
+            const container = document.getElementById('second-half-buttons-container'); 
+            if (container) {
+                container.innerHTML = ""; 
+                if (window.currentOrder.isLongSkill) {
+                    container.innerHTML = `<button class="huge-btn" style="background:#440000; border-color:#ff0000; margin-top:20px;" onclick="window.selectAction('${window.currentOrder.action}', true)">ABILITÀ LUNGA DICHIARATA <span>(Procedi al Calcolo)</span></button>`;
+                }
+                else if (window.dbAzioniN5.movimento.find(a => a.id === window.currentOrder.action1)) {
+                    // Se ha mosso per primo, ora può sparare, hackerare, ecc.
+                    window.dbAzioniN5.movimento.filter(a => window.puoFareAzione(window.currentOrder.unit, a.id)).forEach(a => container.innerHTML += window.creaBottoneAzione(a, true, '#002244', '#00ccff'));
+                    window.dbAzioniN5.brevi.filter(a => window.puoFareAzione(window.currentOrder.unit, a.id)).forEach(a => container.innerHTML += window.creaBottoneAzione(a, true, '#003300', '#00ff00'));
+                } else {
+                    // Se ha sparato per primo, ora può solo muovere
+                    window.dbAzioniN5.movimento.filter(a => window.puoFareAzione(window.currentOrder.unit, a.id)).forEach(a => container.innerHTML += window.creaBottoneAzione(a, true, '#002244', '#00ccff'));
+                }
+            }
+            
+            document.getElementById('battle-header').style.display = 'none';
+            document.getElementById('wait-aro-msg').style.display = 'block';
+            document.getElementById('second-half-wrapper').style.display = 'none';
+            window.goToStep('step-second-half');
+        };
+
+        // Navigazione basilare tra le schermate
+
+        // ==========================================
+        // ↩️  RITORNO AL RADAR / FINE ORDINE
+        // ==========================================
+
+        // Svuota tutto lo stato dell'ordine appena concluso, così il successivo
+        // non eredita bersagli, armi o dati dell'ordine coordinato precedente.
+        window.resetOrdineCorrente = () => {
+            window.currentOrder = {};
+            window.combatTargets = [];
+            window.pendingTargets = [];
+            window.validTargets = [];
+            window.spearheadUnit = null;
+            window.selectedCoordinatedUnits = [];
+            window.isCoordinated = false;
+            window.coordMode = false;
+            window.coordUnits = [];
+            window.coordIndex = 0;
+            window.coordPayloads = [];
+
+            const svuota = (id) => { const el = document.getElementById(id); if (el) el.innerHTML = ""; };
+            svuota('calc-result');
+            svuota('targets-allocation-container');
+            svuota('second-half-buttons-container');
+            svuota('enemy-target-buttons');
+
+            const wait = document.getElementById('wait-aro-msg');
+            if (wait) wait.style.display = 'block';
+            const wrapper = document.getElementById('second-half-wrapper');
+            if (wrapper) wrapper.style.display = 'none';
+            const banner = document.getElementById('fireteam-banner');
+            if (banner) banner.style.display = 'none';
+        };
+
+        // Riporta l'app alla schermata iniziale (scelta gruppo), pronta per un nuovo ordine.
+        window.tornaAlRadar = () => {
+            window.resetOrdineCorrente();
+            if (window.aggiornaMenuGruppi) window.aggiornaMenuGruppi();
+            window.goToStep('step-group');
+        };
+
+        // ==========================================
+        // 🛡️  DA QUALE COPERTURA
+        // ==========================================
+        // Il motore sa quanto vale una copertura, non chi sta dietro cosa:
+        // quello lo vede solo chi guarda il tavolo. Qui si chiede al
+        // giocatore DA COSA il bersaglio prende copertura, e si passa la
+        // variante nel campo `copertura`, accanto a `cover` che resta il
+        // sì/no. Da un Cutting Foam i nemici non possono reclamarla: il
+        // gettone porta varianteCopertura e proprietario, e il bersaglio di
+        // un tiro — in ARO come nell'ordine attivo — e` sempre avversario.
+        // Quindi i Cutting Foam del NOSTRO schieramento non sono scegliibili.
+
+        // Compone la chiamata dell'onchange. Un numero si scrive com'e`,
+        // una stringa fra apici singoli perche` l'attributo usa i doppi.
+        window.chiamataConValore = (comando, argomento) => {
+            if (argomento === undefined || argomento === null) return `${comando}(this.value)`;
+            const a = (typeof argomento === 'number') ? argomento : `'${String(argomento).replace(/'/g, "\\'")}'`;
+            return `${comando}(${a}, this.value)`;
+        };
+
+        window.coperturePresenti = () => {
+            const eCover = (t) => t && t.varianteCopertura;
+            const mie = (window.roster || []).filter(eCover);
+
+            let nemiche = [];
+            try {
+                const grezzo = localStorage.getItem(window.MotoreN5.CANALI.STATO_PARTITA);
+                if (grezzo) {
+                    const stato = JSON.parse(grezzo);
+                    const altra = window.isNomadsApp() ? 'panoceania' : 'nomads';
+                    nemiche = (stato[altra] || []).filter(eCover);
+                }
+            } catch (e) {
+                // Lo stato non e` leggibile: si mostrano solo le nostre, e si
+                // dice perche` — meglio una lista corta e spiegata che una
+                // lista che sembra completa e non lo e`.
+                window.ultimaEccezione = e;
+            }
+            return { mie: mie, nemiche: nemiche };
+        };
+
+        // `comando` e` il NOME di una funzione, non un pezzo di chiamata.
+        // `argomento`, se c'e`, viene passato prima del valore scelto: serve
+        // a chi deve dire ANCHE su quale bersaglio sta scegliendo.
+        //   sceltaCopertura(v, 'window.setAroCopertura')
+        //      -> onchange="window.setAroCopertura(this.value)"
+        //   sceltaCopertura(v, 'window.setTargetCoperturaBS', 2)
+        //      -> onchange="window.setTargetCoperturaBS(2, this.value)"
+        // La prima versione accettava solo il nome, e chi doveva passare un
+        // indice se lo chiudeva dentro la stringa: veniva fuori
+        // "...BS(2,(this.value)", parentesi sbilanciate e tendina morta.
+        window.sceltaCopertura = (valoreAttuale, comando, argomento) => {
+            const c = window.coperturePresenti();
+
+            // Le nostre in Cutting Foam restano fuori: la regola e` che il
+            // nemico non puo` reclamarle, e il bersaglio e` il nemico.
+            const scegliibili = []
+                .concat(c.nemiche.map(t => ({ t: t, da: 'sua' })))
+                .concat(c.mie.filter(t => t.varianteCopertura !== 'CUTTING_FOAM').map(t => ({ t: t, da: 'nostra' })));
+
+            const escluse = c.mie.filter(t => t.varianteCopertura === 'CUTTING_FOAM');
+
+            if (!scegliibili.length && !escluse.length) return '';
+
+            const opzioni = ['<option value="">Terreno o scenografia del tavolo</option>']
+                .concat(scegliibili.map(x =>
+                    `<option value="${x.t.varianteCopertura}" ${x.t.varianteCopertura === valoreAttuale ? 'selected' : ''}>${x.t.nome || x.t.alias} (${x.da})</option>`))
+                .join('');
+
+            const nota = escluse.length
+                ? `<div style="color:#aa8866; font-size:13px; margin-top:4px;">Non scegliibili: ${escluse.map(t => t.nome || t.alias).join(', ')} \u2014 dal Cutting Foam il nemico non reclama Copertura.</div>`
+                : '';
+
+            return `<div style="margin-top:10px;">
+                    <div style="color:#aaa; font-size:13px; margin-bottom:4px;">Da cosa prende copertura:</div>
+                    <select class="huge-btn" style="width:100%; min-height:50px; font-size:15px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;"
+                        onchange="${window.chiamataConValore(comando, argomento)}">${opzioni}</select>
+                    ${nota}
+                </div>`;
+        };
+
+        // ==========================================
+        // ⚠️  AVVISI DEL MOTORE, PRIMA DELL'INVIO
+        // ==========================================
+        // Il motore produce avvisi e finora non ne compariva nessuno a
+        // schermo. Quelli di gravita` 'azione' — modalita` dell'arma da
+        // scegliere, arma risolta per corrispondenza parziale, dato non
+        // verificato — servono mentre si puo` ancora cambiare scelta.
+        //
+        // L'aggancio e` su M.creaPayload perche` e` il passaggio obbligato:
+        // ci passa anche M.inviaCalcolo, quindi un gancio solo copre tutti
+        // e quattordici i moduli senza toccarne nessuno.
+        //
+        // La gravita` sta sull'oggetto avviso; M.gravitaAvviso(codice) resta
+        // il ripiego per un avviso che non la portasse.
+        window.avvisiUltimoCalcolo = { azione: [], nota: [] };
+
+        window.gravitaDiAvviso = (a) => {
+            if (a && a.gravita) return a.gravita;
+            const M = window.MotoreN5;
+            if (M && typeof M.gravitaAvviso === 'function' && a && a.codice) {
+                try { return M.gravitaAvviso(a.codice); } catch (e) { /* vedi sotto */ }
+            }
+            // Qui si arriva solo se M.gravitaAvviso manca o solleva: in quel
+            // caso si tratta come 'azione', perche` disturbare per un avviso
+            // innocuo costa un tocco mentre nasconderne uno che chiedeva una
+            // scelta costa l'Ordine.
+            //
+            // ATTENZIONE: se la funzione c'e`, decide lei, e per un codice
+            // che non conosce risponde 'nota' — quindi un avviso nuovo resta
+            // nascosto al giocatore finche` il motore non lo censisce.
+            // Segnalato alla chat MOTORE.
+            return 'azione';
+        };
+
+        (function agganciaAvvisi() {
+            const M = window.MotoreN5;
+            if (!M || typeof M.creaPayload !== 'function') {
+                console.error('\u26d4 M.creaPayload assente: gli avvisi del motore non verranno mostrati.');
+                return;
+            }
+            const creaOriginale = M.creaPayload.bind(M);
+
+            M.creaPayload = function (attacchi, opzioni) {
+                const risultato = creaOriginale(attacchi, opzioni);
+
+                const avvisi = (risultato && risultato.avvisi) || [];
+                const daAgire = avvisi.filter(a => window.gravitaDiAvviso(a) === 'azione');
+                const note = avvisi.filter(a => window.gravitaDiAvviso(a) !== 'azione');
+                window.avvisiUltimoCalcolo = { azione: daAgire, nota: note };
+
+                // Se il payload e` gia` fallito, gli errori li mostra il modulo:
+                // non si aggiunge una finestra sopra un'altra.
+                if (!risultato || risultato.ok === false || !daAgire.length) return risultato;
+
+                const testo = daAgire.map(a => {
+                    const dettaglio = a.dettaglio ? '\n     ' + a.dettaglio : '';
+                    return '  \u2022 ' + (a.messaggio || a.codice) + dettaglio;
+                }).join('\n');
+
+                const procedi = confirm(
+                    'Prima di calcolare:\n\n' + testo +
+                    '\n\nQuesti avvisi si possono ancora correggere tornando indietro.\n' +
+                    'Calcolare lo stesso?'
+                );
+
+                if (procedi) return risultato;
+
+                // Rifiuto: si restituisce un esito fallito con un motivo
+                // riconoscibile, cosi` il modulo annulla e NON spedisce.
+                return Object.assign({}, risultato, {
+                    ok: false,
+                    errori: (risultato.errori || []).concat([{
+                        codice: 'UI01',
+                        messaggio: 'Calcolo annullato dal giocatore dopo gli avvisi del motore.',
+                        gravita: 'azione'
+                    }])
+                });
+            };
+        })();
+
+        // ==========================================
+        // 🛑 IDLE DA REQUISITO FALLITO
+        // ==========================================
+        // Nasce nel Passo di Risoluzione: l'ordine e` gia` dichiarato e si
+        // scopre sul tavolo che il requisito non c'e` — lo spazio per
+        // Trincerarsi, la distanza, la linea di vista. L'app non puo`
+        // accorgersene da sola, quindi lo dichiara il giocatore.
+        //
+        // NON e` un annullamento: l'ARO resta, l'Ordine e` speso, e due
+        // conseguenze si applicano comunque. Le calcola il motore con
+        // M.convertiInIdle, che restituisce anche l'unita` gia` aggiornata:
+        // rivelare un Marker tocca tre campi, e scriverne uno solo
+        // lascerebbe la truppa per meta` Marker senza che nessuno se ne
+        // accorga finche` qualcuno non prova a bersagliarla.
+        window.dichiaraRequisitoFallito = () => {
+            const M = window.MotoreN5;
+            if (!M || typeof M.convertiInIdle !== 'function') {
+                console.error('\u26d4 M.convertiInIdle assente: serve motore_regole_n5.js dalla 2026-09-20.1 in su.');
+                return;
+            }
+
+            const unita = window.spearheadUnit;
+            const azione = (window.currentOrder && (window.currentOrder.action2 || window.currentOrder.action1)) || null;
+            if (!unita || !azione) return;
+
+            const motivo = prompt('Quale requisito non e` soddisfatto?\n(resta scritto nel calcolo)', '');
+            if (motivo === null) return;
+
+            let convertito;
+            try {
+                const arma = (window.currentOrder && window.currentOrder.weapon) || null;
+                convertito = M.convertiInIdle({ azione: azione, attaccante: unita.alias || unita.nome, attaccanteId: unita.id },
+                                              unita, arma, motivo.trim() || 'Requisito non soddisfatto.');
+            } catch (errore) {
+                console.error('\u26d4 convertiInIdle ha sollevato:', errore);
+                window.ultimaEccezione = errore;
+                return;
+            }
+
+            const regole = convertito.regole || {};
+            // Le mutazioni a vuoto (da false a false) non si mostrano: sono
+            // rumore e fanno sembrare che sia cambiato qualcosa.
+            const cambi = (regole.mutazioni || []).filter(m => JSON.stringify(m.da) !== JSON.stringify(m.a));
+
+            const conferma = confirm(
+                'IDLE da requisito non soddisfatto\n\n' +
+                'Ordine dichiarato: ' + (regole.convertitoDa || azione) + '\n' +
+                'Motivo: ' + (regole.motivo || '') + '\n\n' +
+                'L\'Ordine resta speso e l\'ARO avversario resta valido.\n' +
+                (cambi.length ? 'Cambia sulla truppa:\n' + cambi.map(m => '  ' + m.campo + ': ' + JSON.stringify(m.da) + ' -> ' + JSON.stringify(m.a)).join('\n') + '\n' : '') +
+                (regole.note || []).map(n => '  - ' + n).join('\n') +
+                '\n\nConfermi?'
+            );
+            if (!conferma) return;
+
+            // L'unita` aggiornata la calcola il motore: qui si sostituisce e basta.
+            if (regole.daApplicare !== false && regole.unitaAggiornata) {
+                const i = window.roster.indexOf(unita);
+                if (i >= 0) {
+                    window.roster[i] = Object.assign({}, window.roster[i], regole.unitaAggiornata);
+                    window.spearheadUnit = window.roster[i];
+                    if (window.sincronizzaStatiConHub) window.sincronizzaStatiConHub(i);
+                }
+            }
+
+            // NESSUN pannello dopo l'invio: appena il payload parte, il ponte
+            // di uscita riporta al radar e resetOrdineCorrente svuota
+            // calc-result. Un riepilogo scritto qui verrebbe cancellato nello
+            // stesso istante. Le conseguenze stanno nella conferma qui sopra,
+            // cioe` prima di premere — che e` l'unico momento in cui servono:
+            // il giocatore deve sapere che sta per perdere un uso Disposable
+            // e rivelare un Marker PRIMA di confermare, non dopo.
+            if (window.inviaCalcoloAllHub) window.inviaCalcoloAllHub(convertito);
+        };
+
+        // (Il ponte che riportava allo schieramento chiudendo la pagina stati
+        //  non c'e` piu`: dalla logica_stati.js 2026-09-21.2 lo fa annullaStati
+        //  stessa, compreso il ridisegno della lista. Il flag che lo attiva,
+        //  window.statiApertiDalloSchieramento, lo mette ancora
+        //  roster_manager.js in apriStatiDaSchieramento.)
+
+
+        // ==========================================
+        // 🗺️  TERRENI DEL TAVOLO, CONDIVISI
+        // ==========================================
+        // Scenografia e terreno li inserisce un solo giocatore. Per la
+        // scenografia basta: l'Hub la mostra a tutti. Per i terreni no —
+        // il menu "terreno del bersaglio" che appare durante un attacco e`
+        // costruito da generaOpzioniTerreni() leggendo window.activeTerrains
+        // dell'app di CHI AGISCE. Chi non li ha inseriti vedrebbe solo
+        // "Nessun Terreno Speciale" e perderebbe la Zona di Saturazione dai
+        // propri calcoli, in silenzio.
+        //
+        // L'Hub trasmette gia` tutto in global_game_state: qui si versano i
+        // terreni dichiarati da chiunque nella lista locale, senza duplicare
+        // quelli che questo giocatore ha inserito di persona.
+        window.assorbiTerreniDalTavolo = (statoGrezzo) => {
+            let stato;
+            try {
+                stato = typeof statoGrezzo === 'string' ? JSON.parse(statoGrezzo) : statoGrezzo;
+            } catch (e) {
+                console.error('\u26d4 global_game_state illeggibile, terreni non aggiornati:', e);
+                return;
+            }
+            if (!stato || !stato.scenario) return;
+
+            window.activeTerrains = window.activeTerrains || [];
+            const giaPresenti = window.activeTerrains.map(t => t.id);
+            let aggiunti = 0;
+
+            ['nomads', 'panoceania'].forEach(fonte => {
+                const terreni = (stato.scenario[fonte] || {}).terreni || [];
+                terreni.forEach(t => {
+                    if (!t || !t.id || giaPresenti.indexOf(t.id) >= 0) return;
+                    window.activeTerrains.push(t);
+                    giaPresenti.push(t.id);
+                    aggiunti++;
+                });
+            });
+
+            if (aggiunti) {
+                console.log('\U0001f5fa\ufe0f Terreni del tavolo ricevuti dall\'Hub:', aggiunti);
+                if (window.renderTerrains && document.getElementById('activeTerrainsList')) window.renderTerrains();
+            }
+        };
+
+        window.addEventListener('storage', (evento) => {
+            if (evento.key === window.MotoreN5.CANALI.STATO_PARTITA) window.assorbiTerreniDalTavolo(evento.newValue);
+        });
+
+        // ==========================================
+        // 🔔 FINE DEL TURNO REATTIVO
+        // ==========================================
+        // motore_core.js tiene memoria degli allarmi ARO gia` mostrati, per
+        // non ripetere banner e scrollTo mentre la cancellazione del canale
+        // fa il giro di rete. Quella memoria va svuotata quando il turno
+        // cambia: gli allarmi appartengono al turno che si chiude, e un
+        // attacco identico nel turno successivo — stesso attaccante, stessa
+        // azione — verrebbe altrimenti scartato come gia` visto e il banner
+        // non comparirebbe.
+        //
+        // Agganciato al cambio turno e non alla chiusura degli ARO, perche`
+        // nello stesso turno reattivo possono arrivare piu` attacchi: svuotare
+        // prima farebbe ricomparire banner gia` visti.
+        window.addEventListener('storage', (evento) => {
+            if (evento.key !== window.MotoreN5.CANALI.HUB_TURNO) return;
+
+            if (typeof window.azzeraAllarmiConsumati === 'function') {
+                window.azzeraAllarmiConsumati();
+            } else {
+                console.warn('\u26a0\ufe0f azzeraAllarmiConsumati non disponibile: ' +
+                             'serve motore_core.js dalla 2026-09-14.2 in su. ' +
+                             'Senza, un attacco ripetuto identico non mostra il banner.');
+            }
+        });
+
+        // Aggancio all'invio del calcolo: appena i dati partono verso l'Hub,
+        // l'app chiude l'ordine ed esce da sola.
+        //
+        // I moduli spediscono per due strade diverse:
+        //   - ordine_movimento.js usa window.inviaCalcoloAllHub (motore_core)
+        //   - gli altri usano M.inviaCalcolo, che restituisce false se non ha
+        //     spedito (e in quel caso il modulo annulla e resta dov'e`)
+        // Le copro entrambe. Il ciclo dell'Ordine Coordinato non va guardato:
+        // i moduli spediscono una volta sola, quando l'ultima unita` ha finito.
+        (function agganciaUscitaDopoInvio() {
+            let uscitaGiaProgrammata = false;
+            const esciDallOrdine = () => {
+                if (uscitaGiaProgrammata) return;
+                uscitaGiaProgrammata = true;
+                // setTimeout: lascia finire al modulo chiamante il suo codice
+                // (compresi eventuali goToStep) prima di uscire.
+                setTimeout(() => {
+                    uscitaGiaProgrammata = false;
+                    window.tornaAlRadar();
+                }, 0);
+            };
+
+            const invioCore = window.inviaCalcoloAllHub;
+            if (typeof invioCore === 'function') {
+                window.inviaCalcoloAllHub = function (payload) {
+                    const esito = invioCore(payload);
+                    esciDallOrdine();
+                    return esito;
+                };
+            } else {
+                console.error("\u26a0\ufe0f inviaCalcoloAllHub non trovata: controlla motore_core.js.");
+            }
+
+            const M = window.MotoreN5;
+            if (M && typeof M.inviaCalcolo === 'function') {
+                const invioMotore = M.inviaCalcolo.bind(M);
+                M.inviaCalcolo = function (payloads, opzioni) {
+                    const spedito = invioMotore(payloads, opzioni);
+                    if (spedito) esciDallOrdine();
+                    return spedito;
+                };
+            } else {
+                console.error("\u26a0\ufe0f MotoreN5.inviaCalcolo non trovata: motore_regole_n5.js non caricato?");
+            }
+        })();
+
+        window.goToStep = (stepId) => {
+            let header = document.getElementById('battle-header');
+            
+            if (stepId === 'step-group') {
+                document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
+                document.getElementById('battle').style.display = 'flex';
+                if(header) header.style.display = 'none';
+                return;
+            }
+
+            document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
+            const targetStep = document.getElementById(stepId);
+            if(targetStep) targetStep.style.display = 'flex';
+            if(header) header.style.display = 'block';
+        };
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => console.log('SW registrato: ', registration.scope))
+                    .catch(err => console.log('Errore SW: ', err));
+            });
+        }
+
+        // Sicurezza: Wake Lock e blocco Tasto Indietro
+        window.history.pushState(null, null, window.location.href);
+        window.addEventListener('popstate', function(event) {
+            window.history.pushState(null, null, window.location.href);
+        });
+
+        let wakeLock = null;
+        const requestWakeLock = async () => {
+            try {
+                if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+            } catch (err) {}
+        };
+        window.addEventListener('load', requestWakeLock);
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') requestWakeLock();
+        });
+        document.addEventListener('pointerdown', requestWakeLock, { once: true });
+    </script>
+</body>
+</html>

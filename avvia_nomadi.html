@@ -1,0 +1,26 @@
+<!-- @versione 2026-09-24.2 | avvia_nomadi.html | proprieta`: chat INTERFACCIA -->
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#cc0000">
+<title>NOMADS</title>
+<script>
+// Avviatore: l'app e` una sola (app.html). Non contiene logica: apre
+// app.html passando la fazione.
+//
+// NON serve alle icone in home. Dal 24 settembre c'e` UN solo manifest
+// e una sola app installabile, "Infinity N5", che si apre sul menu
+// (scegli_fazione.html) da cui si scelgono Nomadi, PanOceania o Hub.
+//
+// Questo file resta come indirizzo comodo da mandare in un messaggio:
+// piu` corto da leggere e da dettare di app.html col parametro.
+location.replace('app.html?fazione=nomadi');
+</script>
+</head>
+<body style="background:#000;color:#888;font-family:sans-serif;padding:24px;">
+Avvio dell'app per NOMADS in corso.
+<a href="app.html?fazione=nomadi" style="color:#fff;">Apri a mano</a> se non succede nulla.
+</body>
+</html>
