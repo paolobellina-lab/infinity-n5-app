@@ -1,6 +1,6 @@
-<!-- @versione 2026-09-24.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-09-26.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 4)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 5)
 
 Sostituisce la revisione 3 del 23 settembre. In mezzo ci sono stati sei giri
 di correzioni, e il difetto che stava in cima alla revisione 3 — l'ARO perso
@@ -172,7 +172,10 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 - Atteso: **nessuno**. Tutte le azioni del vocabolario hanno un modulo e `verificaRouter()` è verde. Se un ordine compare e poi dà "Azione non riconosciuta", segnalalo: significa `<script>` mancante in `app.html`.
 
 **A-11 — Requisiti di menu**
-- SOPPRESSIONE solo a chi ha un'arma col Tratto Suppressive Fire — Alguacil sì col Combi, **Morlock no**; HACKING solo a chi ha Hacker o un Hacking Device; SUPPORTO solo a Doctor/Paramedic/Engineer o a chi porta MediKit/GizmoKit; **PIAZZARE EQUIPAGGIAMENTO** solo a chi ha un'arma col Tratto Deployable.
+- SOPPRESSIONE solo a chi ha un'arma col Tratto Suppressive Fire. Attenzione al profilo, non alla truppa: **Alguacil (Combi Rifle) sì**, **Morlock (Combi Rifle) sì** — ha la stessa arma — **Morlock (Assault Pistol), (Kobra Pistol × 2) e (Boarding Shotgun) no**. La revisione 4 diceva "Morlock no" su cinque profili di cui uno si comporta al contrario.
+- HACKING solo a chi ha Hacker o un Hacking Device; con **due** dispositivi, i programmi si sommano (Mary Problems).
+- SUPPORTO solo a Doctor/Paramedic/Engineer o a chi porta MediKit/GizmoKit.
+- **PIAZZARE EQUIPAGGIAMENTO** solo a chi ha un'arma col Tratto Deployable.
 
 **A-12 — Io muovo, tu mi spari** *(era il difetto che bloccava)*
 - Attivo: Alguacil (Combi Rifle) · MUOVERE → MUOVERE

@@ -1,4 +1,4 @@
-// @versione 2026-09-23.4 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-09-26.1 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -54,16 +54,146 @@ window.resetPartita = () => {
     }
 };
 
+// ==========================================================================
+//  PRIMA LETTURA DAL CLOUD: NIENTE PARTE PRIMA
+// ==========================================================================
+// L'Hub partiva con gameState vuoto e non rileggeva mai global_game_state.
+// Chiuso a meta` partita e riaperto, ricominciava da zero — e il primo
+// broadcastState() cancellava la partita anche su Firebase, per tutti.
+// Bastava riaprire la pagina per distruggere il tavolo.
+//
+// Ora finche` cloudPronto non si risolve non si trasmette e non si
+// elabora: il ciclo gira a vuoto. Poi, se sul cloud c'e` una partita, la
+// si RIPRENDE, senza chiedere niente. Per iniziarne una nuova resta il
+// solo pulsante di reset, che non e` stato toccato.
+window.hubPronto = false;
+
 window.broadcastState = () => {
+    if (!window.hubPronto) {
+        // Non e` un errore: e` il cancello. Trasmettere adesso sovrascriverebbe
+        // col vuoto la partita che sta ancora arrivando.
+        console.warn('\u23f8 broadcastState ignorato: prima lettura dal cloud non ancora conclusa.');
+        return;
+    }
     localStorage.setItem(window.MotoreN5.CANALI.STATO_PARTITA, JSON.stringify(window.gameState));
+};
+
+window.avvisoHub = (testo, colore) => {
+    const box = document.getElementById('avviso-hub');
+    if (!box) return;
+    if (!testo) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    box.style.background = colore || '#3a2a00';
+    box.innerHTML = testo;
+    box.style.display = 'block';
+};
+
+// Riprende la partita che sta sul cloud. Non chiede conferma: riaprire
+// l'Hub a meta` partita significa voler continuare, non ricominciare.
+window.riprendiPartitaHub = () => {
+    let stato = null;
+    try { stato = JSON.parse(localStorage.getItem(window.MotoreN5.CANALI.STATO_PARTITA) || 'null'); }
+    catch (e) { window.ultimaEccezione = e; }
+
+    const unita = stato ? ((stato.nomads || []).length + (stato.panoceania || []).length) : 0;
+    if (!unita) return false;
+
+    window.gameState = {
+        nomads: stato.nomads || [],
+        panoceania: stato.panoceania || [],
+        activeFaction: stato.activeFaction || 'NOMADI',
+        scenario: stato.scenario || { nomads: { strutture: [], terreni: [] }, panoceania: { strutture: [], terreni: [] } }
+    };
+    window.updateLog('\u21a9\ufe0f Partita ripresa: ' + unita + ' unit\u00e0 sul tavolo, turno ' + window.gameState.activeFaction + '.');
+    if (window.refreshUI) window.refreshUI();
+    if (window.aggiornaScenario) window.aggiornaScenario();
+    return true;
+};
+
+// Il cancello vero e proprio.
+(async function apriQuandoIlCloudRisponde() {
+    const riprova = async () => {
+        let esito = { confermato: false };
+        try { esito = await window.cloudPronto; } catch (e) { window.ultimaEccezione = e; }
+
+        if (!esito || !esito.confermato) {
+            // NON si parte vuoti in silenzio: chi guarda l'Hub deve sapere che
+            // quello che vede non e` la partita, ma una pagina che non ha
+            // ancora letto niente.
+            window.avvisoHub('\u26a0\ufe0f PARTITA NON LETTA DAL SERVER' +
+                '<div style="font-size:14px; color:#ffcc88; margin-top:4px;">L\'Hub non trasmette e non elabora finch\u00e9 non riesce a leggere. Riprovo da solo.</div>', '#3a2a00');
+            if (typeof window.riprovaCloud === 'function') {
+                setTimeout(async () => {
+                    let nuovo = { confermato: false };
+                    try { nuovo = await window.riprovaCloud(); } catch (e) { window.ultimaEccezione = e; }
+                    if (nuovo && nuovo.confermato) { window.avvisoHub(null); apri(); }
+                    else riprova();
+                }, 4000);
+            }
+            return;
+        }
+        window.avvisoHub(null);
+        apri();
+    };
+
+    const apri = () => {
+        const ripresa = window.riprendiPartitaHub();
+        window.hubPronto = true;
+        if (!ripresa) window.updateLog('\u2705 Hub pronto. Nessuna partita in corso sul server: in attesa degli schieramenti.');
+    };
+
+    riprova();
+})();
+
+// Le reazioni dell'avversario sono arrivate?
+//
+// NON si guardano i canali ARO: nello stesso giro del ciclo il ramo delle
+// reazioni li legge e li CANCELLA, mettendo il contenuto in latestAroData,
+// e gira prima del calcolo. Guardando i canali si troverebbe sempre vuoto.
+// Il segnale vero e` latestAroData, che vale anche quando il reattivo non
+// ha dichiarato nulla: un elenco vuoto e` una risposta, l'assenza no.
+window.reazioniPronte = () => {
+    if (window.latestAroData !== null && window.latestAroData !== undefined) return true;
+    const C = window.MotoreN5.CANALI;
+    return !!(localStorage.getItem(C.ARO_NOMADI) || localStorage.getItem(C.ARO_PANOCEANIA));
+};
+window.attesaAroDetta = false;
+
+// Un setup che arriva mentre quella fazione ha gia` unita` in gioco NON si
+// applica in silenzio: sarebbe un tocco sul pulsante "invia all'Hub" a
+// distruggere ferite e stati di tutta la squadra. Si chiede a chi arbitra.
+window.setupAccettabile = (fazione, quante, motivo) => {
+    const chiave = (fazione === 'NOMADI') ? 'nomads' : 'panoceania';
+    const inGioco = (window.gameState[chiave] || []).length;
+    if (!inGioco) return true;
+
+    // Il canale di setup lo usano DUE cose diverse: una lista nuova, che
+    // sostituisce la squadra, e un aggiornamento della stessa partita —
+    // uno stato salvato, il Fuoco di Soppressione, un token piazzato.
+    // Chiedere per entrambe significa mettere "Sostituisco?" davanti
+    // all'arbitro a ogni ferita segnata. Il motivo arriva nella busta.
+    if (motivo === 'AGGIORNAMENTO') return true;
+    const nome = (fazione === 'NOMADI') ? 'Nomads' : 'PanOceania';
+    window.updateLog('\u26a0\ufe0f ' + nome + ' ha rimandato la lista (' + quante + ' unit\u00e0) mentre ne ha gi\u00e0 ' + inGioco + ' in gioco.');
+    return confirm(nome + ' ha rimandato la lista mentre la partita e` in corso.\n\n' +
+        'In gioco ora: ' + inGioco + ' unit\u00e0. In arrivo: ' + quante + '.\n\n' +
+        'Sostituire quella in gioco significa perdere ferite e stati di quella fazione.\n\nSostituisco?');
 };
 
 // --- 2. LOOP DI ASCOLTO (IL VIGILE URBANO) ---
 setInterval(() => {
+    // Finche` la prima lettura non e` conclusa il ciclo gira a vuoto: i
+    // canali restano dove sono e verranno letti al giro dopo.
+    if (!window.hubPronto) return;
+
     // Ascolto Setup Nomadi
     let sNom = localStorage.getItem(window.MotoreN5.CANALI.SETUP_NOMADI);
     if(sNom) {
         const datiNom = JSON.parse(sNom);
+        if (!window.setupAccettabile('NOMADI', (datiNom.roster || []).length, datiNom.motivo)) {
+            localStorage.removeItem(window.MotoreN5.CANALI.SETUP_NOMADI);
+            window.updateLog('\u21a9\ufe0f Lista dei Nomads ignorata: resta quella in gioco.');
+            return;
+        }
         window.gameState.nomads = datiNom.roster;
         // Il pacchetto di schieramento porta da sempre anche strutture e
         // terreni: qui si leggeva solo .roster e il resto finiva nel nulla.
@@ -81,6 +211,11 @@ setInterval(() => {
     let sPano = localStorage.getItem(window.MotoreN5.CANALI.SETUP_PANOCEANIA);
     if(sPano) {
         const datiPano = JSON.parse(sPano);
+        if (!window.setupAccettabile('PANOCEANIA', (datiPano.roster || []).length, datiPano.motivo)) {
+            localStorage.removeItem(window.MotoreN5.CANALI.SETUP_PANOCEANIA);
+            window.updateLog('\u21a9\ufe0f Lista di PanOceania ignorata: resta quella in gioco.');
+            return;
+        }
         window.gameState.panoceania = datiPano.roster;
         window.gameState.scenario.panoceania = {
             strutture: datiPano.strutture || [],
@@ -145,9 +280,24 @@ setInterval(() => {
     // Ascolto Calcoli (Innesca il Motore Matematico)
     let calcolo = localStorage.getItem(window.MotoreN5.CANALI.HUB_CALCOLO);
     if(calcolo) {
-        window.updateLog("🎲 Ricevuti i parametri finali! Calcolo in corso...");
         let datiReali = JSON.parse(calcolo);
-        
+
+        // Una busta con aroAtteso dice: "il movimento ha chiesto un ARO, le
+        // reazioni stanno arrivando". Calcolarla subito darebbe un movimento
+        // senza opposizione, e l'ARO arriverebbe quando il risultato e` gia`
+        // a schermo. Si aspetta: la busta resta sul canale e si rilegge al
+        // giro dopo, insieme alle reazioni.
+        if (datiReali.aroAtteso && !window.reazioniPronte()) {
+            if (!window.attesaAroDetta) {
+                window.updateLog('\u23f3 Movimento ricevuto: si aspettano le reazioni dichiarate.');
+                window.attesaAroDetta = true;
+            }
+            return;
+        }
+        window.attesaAroDetta = false;
+
+        window.updateLog("🎲 Ricevuti i parametri finali! Calcolo in corso...");
+
         // 1. ELIMINIAMO SUBITO IL DATO: così se il calcolo esplode, non entriamo nel loop infinito
         localStorage.removeItem(window.MotoreN5.CANALI.HUB_CALCOLO);
         
@@ -558,7 +708,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-09-14.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-09-26.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

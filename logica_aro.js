@@ -1,4 +1,4 @@
-// @versione 2026-09-23.2 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-09-26.3 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -156,26 +156,34 @@
 
             const nemico = attivo ? { alias: attivo, states: (window.currentAttackData.statiAttaccante || {}) }
                                   : { alias: 'attaccante', states: {} };
+            // scatta: false  la regola dice no — fuori dall'elenco, col motivo.
+            // scatta: null   mancano le risposte del giocatore — e` il caso
+            //                NORMALE di una mina prima di chiedere. Trattarlo
+            //                come un no la faceva sparire dall'elenco, e una
+            //                mina che non compare non detona mai.
             const pre = M.innescoDeployable(arma, nemico, {});
-            if (!pre.scatta) {
+            if (pre.scatta === false) {
                 escluse.push({ nome: M.nomeUnita(u), motivo: pre.motivo });
                 return;
             }
 
-            window.deployableInnescabili.push({ unita: u, arma: arma, nemico: nemico });
-            const dom = M.domandeDeployable('ATTIVAZIONE')[0];
+            // Una mina non sceglie: scatta da sola. Ma l'app non vede il
+            // tavolo, quindi e` il giocatore reattivo a dichiarare cosa e`
+            // successo, rispondendo alle domande del motore — tre per una
+            // mina, una sola (la Zona di Controllo) per un koala.
+            const mina = (typeof M.eMina === 'function') && M.eMina(u);
+            const domande = M.domandeDeployable(mina ? 'INNESCO_MINA' : 'ATTIVAZIONE') || [];
+
+            window.deployableInnescabili.push({ unita: u, arma: arma, nemico: nemico, mina: mina, domande: domande });
+            window.risposteInnesco = window.risposteInnesco || {};
+            window.risposteInnesco[u.id] = {};
             container.innerHTML += `
                 <div id="dep-${u.id}" style="background:#2a1a33; border:1px solid #cc88ff; border-radius:5px; padding:12px; margin-bottom:10px;">
                     <div style="color:#fff; font-size:20px; font-weight:bold;">📦 ${M.nomeUnita(u)}</div>
-                    <div style="color:#cc88ff; font-size:13px; margin:4px 0 10px;">
-                        Si attiva per Zona di Controllo: la Linea di Tiro non serve.</div>
-                    <div style="color:#ccc; font-size:14px; margin-bottom:8px;">${dom ? dom.testo : ''}</div>
-                    <div style="display:flex; gap:8px;">
-                        <button class="huge-btn" style="flex:1; min-height:46px; background:#111;"
-                            onclick="window.attivaDeployable('${String(u.id).replace(/'/g, "\\'")}', true)">SÌ, DETONA</button>
-                        <button class="huge-btn" style="flex:1; min-height:46px; background:#111;"
-                            onclick="window.attivaDeployable('${String(u.id).replace(/'/g, "\\'")}', false)">NO</button>
-                    </div>
+                    <div style="color:#cc88ff; font-size:13px; margin:4px 0 10px;">${mina
+                        ? 'Non lo sceglie la mina: dichiara cosa e` successo al tavolo.'
+                        : 'Si attiva per Zona di Controllo: la Linea di Tiro non serve.'}</div>
+                    <div id="dom-${u.id}">${window.domandeInnescoHtml(u.id)}</div>
                 </div>`;
         });
 
@@ -186,15 +194,65 @@
         }
     };
 
-    // Il giocatore ha risposto alla domanda sulla ZdC.
+    // Le domande ancora aperte, una alla volta: si risponde in ordine, cosi`
+    // chi legge non deve tenerne a mente tre. Ogni risposta e` un fatto del
+    // tavolo, non una scelta: per questo non c'e` un "forse".
+    window.domandeInnescoHtml = function (id) {
+        const voce = (window.deployableInnescabili || []).find(x => String(x.unita.id) === String(id));
+        if (!voce) return '';
+        const date = (window.risposteInnesco || {})[id] || {};
+        const aperta = (voce.domande || []).find(d => date[d.id] === undefined);
+
+        const fatte = (voce.domande || []).filter(d => date[d.id] !== undefined)
+            .map(d => `<div style="color:#888; font-size:12px;">\u2713 ${date[d.id] ? 'S\u00cc' : 'NO'} \u2014 ${d.testo.slice(0, 60)}\u2026</div>`).join('');
+
+        if (!aperta) return fatte;   // tutte risposte: la risoluzione e` gia` partita
+
+        const sic = String(id).replace(/'/g, "\\'");
+        return fatte + `
+            <div style="color:#ccc; font-size:14px; margin:8px 0;">${aperta.testo}</div>
+            <div style="display:flex; gap:8px;">
+                <button class="huge-btn" style="flex:1; min-height:46px; background:#111;"
+                    onclick="window.rispondiInnesco('${sic}', '${aperta.id}', true)">S\u00cc</button>
+                <button class="huge-btn" style="flex:1; min-height:46px; background:#111;"
+                    onclick="window.rispondiInnesco('${sic}', '${aperta.id}', false)">NO</button>
+            </div>`;
+    };
+
+    window.rispondiInnesco = function (id, idDomanda, risposta) {
+        window.risposteInnesco = window.risposteInnesco || {};
+        window.risposteInnesco[id] = window.risposteInnesco[id] || {};
+        window.risposteInnesco[id][idDomanda] = !!risposta;
+
+        const voce = (window.deployableInnescabili || []).find(x => String(x.unita.id) === String(id));
+        if (!voce) return;
+
+        const date = window.risposteInnesco[id];
+        const mancano = (voce.domande || []).some(d => date[d.id] === undefined);
+        const div = document.getElementById('dom-' + id);
+
+        if (mancano) {
+            if (div) div.innerHTML = window.domandeInnescoHtml(id);
+            return;
+        }
+        window.attivaDeployable(id);
+    };
+
+    // Tutte le domande hanno una risposta: si chiede al motore.
     window.attivaDeployable = function (id, dentroZdC) {
         const M = motore(); if (!M) return;
         const voce = (window.deployableInnescabili || []).find(x => String(x.unita.id) === String(id));
         if (!voce) return;
 
-        const e = M.innescoDeployable(voce.arma, voce.nemico, {
-            percorsoLibero: dentroZdC, dentroZdC: dentroZdC
-        });
+        // Le risposte del giocatore, come le ha date. Per un koala la vecchia
+        // chiamata passava un booleano: si accetta ancora, cosi` una chiamata
+        // dall'esterno non si rompe.
+        const date = (window.risposteInnesco || {})[id] || {};
+        const risposte = (dentroZdC === undefined)
+            ? date
+            : Object.assign({ percorsoLibero: dentroZdC, dentroZdC: dentroZdC }, date);
+
+        const e = M.innescoDeployable(voce.arma, voce.nemico, risposte);
 
         const div = document.getElementById('dep-' + id);
         if (!e.scatta) {
@@ -215,12 +273,27 @@
             note: [e.difesa, e.rimozione].filter(Boolean)
         });
 
+        // Detonato: se la regola lo toglie dal gioco, se ne occupa il motore.
+        // Questa e` l'app del PROPRIETARIO del token, l'unica che tiene la
+        // lista di cio` che ha sul tavolo. Per le mine il motore risponde
+        // rimuovi: null — non sa se detonano, e "non lo so" non e` "no":
+        // in quel caso lo si dice al giocatore, che la toglie a mano.
+        let esitoRimozione = { rimosso: false, motivo: '' };
+        if (typeof window.rimuoviTokenPiazzato === 'function') {
+            try { esitoRimozione = window.rimuoviTokenPiazzato(voce.unita.id, 'INNESCO') || esitoRimozione; }
+            catch (errore) { window.ultimaEccezione = errore; }
+        }
+
         if (div) {
             div.style.borderColor = '#00ff00';
             div.innerHTML = `<div style="color:#00ff00; font-size:18px; font-weight:bold;">
                 📦 ${M.nomeUnita(voce.unita)} DETONA</div>
                 <div style="color:#ccc; font-size:13px; margin-top:6px;">${e.difesa}</div>
-                <div style="color:#cc9955; font-size:12px; margin-top:4px;">${e.rimozione || ''}</div>`;
+                <div style="color:#cc9955; font-size:12px; margin-top:4px;">${e.rimozione || ''}</div>
+                <div style="color:${esitoRimozione.rimosso ? '#888' : '#ffaa66'}; font-size:12px; margin-top:6px;">
+                    ${esitoRimozione.rimosso
+                        ? 'Tolto dal tavolo: ' + esitoRimozione.motivo
+                        : 'RESTA sul tavolo. ' + (esitoRimozione.motivo || '') + ' Se \u00e8 esploso, toglilo a mano dalla sua riga.'}</div>`;
         }
     };
 
@@ -429,6 +502,7 @@
         if (arma && window.aroSfMode) Object.assign(arma, M.profiloSF(arma));
 
         let corpo = '';
+        let sceltaMunizioni = '';   // riempita solo se l'arma ha munizioni da scegliere
         let esito = null;
 
         if (difensivo) {
@@ -493,7 +567,10 @@
 
             const ammoOpts = (arma.ammoOpzioni || ['N'])
                 .map(o => `<option value="${o}" ${o === cfg.ammo ? 'selected' : ''}>Munizioni: ${o}</option>`).join('');
-            corpo += `<select class="huge-btn" style="width:100%; margin-top:15px; min-height:55px; font-size:16px; background:#002233; color:#fff; border-color:${accento()}; text-align:center; padding:0 10px;"
+            // Le munizioni NON si scrivono qui: vanno sulla stessa riga della
+            // copertura, piu` sotto, come nell'ordine attivo. Qui si prepara
+            // soltanto la tendina.
+            sceltaMunizioni = `<select class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; background:#002233; color:#fff; border-color:${accento()}; text-align:center; padding:0 10px;"
                 onchange="window.setAroAmmo(this.value)">${ammoOpts}</select>`;
         }
 
@@ -509,10 +586,21 @@
                 ${burst.voci.length > 1 ? `<div style="color:#888; font-size:12px; margin-bottom:12px;">` + burst.voci.map(v => v.motivo).join(' · ') + `</div>` : ''}
                 ${corpo}
                 ${burst.note.length ? `<div style="margin-top:10px; color:#ff9900; font-size:12px;">• ` + burst.note.join('<br>• ') + `</div>` : ''}
-                ${(cfg.azione === 'BS_ATTACK')
-                    ? `<button type="button" class="huge-btn" style="width:100%; margin-top:14px; min-height:55px; font-size:16px; ${cfg.cover ? 'background:#003300; color:#00ff00; border-color:#00ff00;' : 'background:#111; color:#aaa; border-color:#555;'}"
-                        onclick="window.toggleAroCover()">${cfg.cover ? '🛡️ BERSAGLIO IN COPERTURA (-3 a te, +3 alla sua ARM)' : '⬜ BERSAGLIO NON IN COPERTURA'}</button>
-                       ${cfg.cover ? window.sceltaCopertura(cfg.copertura, 'window.setAroCopertura') : ''}`
+                <!-- Munizioni e copertura sulla stessa riga, come nella scheda
+                     bersaglio dell'ordine attivo: sono le due scelte che si
+                     fanno insieme guardando il tavolo, e separarle costava uno
+                     scorrimento. Se l'arma non ha munizioni da scegliere, la
+                     copertura occupa la riga intera. -->
+                ${(sceltaMunizioni || cfg.azione === 'BS_ATTACK')
+                    ? `<div style="display:flex; gap:10px; margin-top:14px;">
+                        ${sceltaMunizioni}
+                        ${(cfg.azione === 'BS_ATTACK')
+                            ? `<button type="button" class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:15px; ${cfg.cover ? 'background:#003300; color:#00ff00; border-color:#00ff00;' : 'background:#111; color:#aaa; border-color:#555;'}"
+                                onclick="window.toggleAroCover()">${cfg.cover ? '🛡️ IN COPERTURA' : '⬜ NO COPERTURA'}</button>`
+                            : ''}
+                       </div>
+                       ${(cfg.azione === 'BS_ATTACK' && cfg.cover) ? window.sceltaCopertura(cfg.copertura, 'window.setAroCopertura') : ''}
+                       ${(cfg.azione === 'BS_ATTACK' && cfg.cover) ? '<div style="color:#888; font-size:12px; margin-top:4px;">-3 al tuo tiro, +3 alla sua ARM.</div>' : ''}`
                     : ''}
                 <div style="display:flex; margin-top:20px; margin-bottom:5px;">
                     <select class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;"
@@ -603,7 +691,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-09-23.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-09-26.3', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

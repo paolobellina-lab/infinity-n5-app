@@ -43,14 +43,8 @@ function prova(pagina){
   g.localStorage={getItem:k=>canali[k]||null,setItem:(k,v)=>canali[k]=v,removeItem:k=>delete canali[k]};
   g.location={search:'?fazione=nomadi',replace:()=>{}};
   let t=(h.match(/<title>([^<]*)<\/title>/)||[])[1]||'';
-  // document.write ESISTE nel browser e serve a scrivere la testa durante
-  // il parsing (app.html sceglie li` manifest e icona della fazione).
-  // Senza, il banco dava un falso ROSSO: "document.write is not a function".
-  // Qui si raccoglie quello che viene scritto invece di eseguirlo.
-  const scrittoInTesta=[];
   g.document={get title(){return t;},set title(v){t=v;},documentElement:{setAttribute:()=>{}},scripts:[],
-    write:(x)=>scrittoInTesta.push(String(x)), writeln:(x)=>scrittoInTesta.push(String(x)),
-    getElementById:finto,createElement:()=>finto('n'),querySelector:()=>finto('q'),querySelectorAll:()=>[],addEventListener:()=>{}};
+    write: () => {}, writeln: () => {}, getElementById:finto,createElement:()=>finto('n'),querySelector:()=>finto('q'),querySelectorAll:()=>[],addEventListener:()=>{}};
   ['alert','scrollTo','addEventListener'].forEach(k=>g[k]=()=>{});
   g.setInterval=()=>0; g.setTimeout=()=>0; g.prompt=()=>null; g.confirm=()=>true;
   // history e navigator servono davvero: senza, l'ultimo blocco inline si

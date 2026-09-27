@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | calcolatore_cloud.js | proprieta`: chat MOTORE
+// @versione 2026-09-25.1 | calcolatore_cloud.js | proprieta`: chat MOTORE
 // Trasporto dell'Hub: rispecchia su Firebase gli 11 canali di localStorage,
 // in entrambe le direzioni. Gemello di motore_core.js per l'app giocatore.
 // Misurato il 23 settembre prima di prenderlo in carico: 60 righe, zero
@@ -32,6 +32,17 @@ const canaliCloud = Object.values(window.MotoreN5.CANALI);
 const originalSetItem = localStorage.setItem;
 const originalRemoveItem = localStorage.removeItem;
 
+// PRIMA LETTURA DAL CLOUD — per la ripresa della partita.
+// window.cloudPronto si risolve quando OGNI canale ha ricevuto il primo valore
+// da Firebase (anche null) e la copia locale e` aggiornata; oppure dopo 8
+// secondi con { confermato: false }. window.riprovaCloud() da` una nuova
+// Promise della stessa forma. La logica sta in M.creaAttesaCloud (motore),
+// una volta sola per app e Hub. (Chat INTERFACCIA, 25 settembre.)
+const attesaCloud = window.MotoreN5.creaAttesaCloud(canaliCloud, { tempoMassimo: 8000 });
+window.cloudPronto  = attesaCloud.pronto;
+window.riprovaCloud = attesaCloud.riprova;
+window.statoCloud   = attesaCloud.stato;
+
 canaliCloud.forEach(canale => {
     db.ref(canale).on('value', (snapshot) => {
         const dati = snapshot.val();
@@ -44,6 +55,8 @@ canaliCloud.forEach(canale => {
         } else {
             originalRemoveItem.call(localStorage, canale);
         }
+        // Si segna DOPO la scrittura: "arrivato" vuol dire "copia locale pronta".
+        attesaCloud.segna(canale);
     });
 });
 

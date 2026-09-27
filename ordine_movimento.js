@@ -1,4 +1,4 @@
-// @versione 2026-09-23.2 | ordine_movimento.js | proprieta`: chat MOTORE
+// @versione 2026-09-26.3 | ordine_movimento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏃 MOVIMENTO E INSTRADAMENTO (N5) - ordine_movimento.js
 // ------------------------------------------
@@ -52,11 +52,20 @@
 
         // Abilità Lunga: il catalogo lo sa, non serve interrogare dbAzioniN5.
         const info = M.azioneSenzaTiro(actionId, window.currentOrder.unit);
-        if (info && (info.tipo === 'LONG_SKILL' || info.tipo === 'ENTIRE_ORDER')) {
-            window.currentOrder.isLongSkill = true;
+        // 🔴 Se il motore RISPONDE, decide lui — anche quando dice "Breve".
+        // Prima il ripiego sul menu partiva ogni volta che la risposta non era
+        // Lunga: leggeva il type 'LONG_MOVE' scritto a mano in app.html, e
+        // l'arrampicata di Mary Problems (Climbing Plus: Abilita` Breve)
+        // tornava Lunga. Il ripiego vale SOLO se il motore non conosce
+        // l'azione. (26 settembre, verificando il menu nuovo di INTERFACCIA.)
+        if (info) {
+            window.currentOrder.isLongSkill = (info.tipo === 'LONG_SKILL' || info.tipo === 'ENTIRE_ORDER');
         } else if (window.dbAzioniN5) {
             const a = [].concat(window.dbAzioniN5.movimento || [], window.dbAzioniN5.lunghe || [])
                         .find(x => x.id === actionId);
+            // Ripiego SOLO per un'azione che il motore non conosce — e lo dice:
+            // un ripiego silenzioso e` come e` nato il difetto di ARRAMPICARSI.
+            console.warn(`⚠️ "${actionId}": il motore non la conosce, Abilita Lunga decisa dal type del menu.`);
             if (a && a.type && String(a.type).indexOf('LONG') >= 0) window.currentOrder.isLongSkill = true;
         }
 
@@ -144,7 +153,8 @@
 
         // Nessun attacco: la busta va comunque spedita, così l'Hub sa che
         // l'ordine è finito e può risolvere gli eventuali ARO nemici.
-        const esito = M.creaPayload([], { isCoordinated: window.coordMode, consentiVuoto: true });
+        const esito = M.creaPayload([], { isCoordinated: window.coordMode, consentiVuoto: true,
+                                          aroAtteso: !!(aro && aro.genera) });
         if (esito.ok && typeof window.inviaCalcoloAllHub === 'function') {
             window.inviaCalcoloAllHub(esito.payload);
         }

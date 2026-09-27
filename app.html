@@ -1,10 +1,25 @@
 <!DOCTYPE html>
-<!-- @versione 2026-09-24.2 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-09-26.4 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TACTICAL TERMINAL</title>
+
+    <!-- Manifest UNO SOLO, identico in scegli_fazione.html e
+         calcolatore_hub.html: e` quello che decide l'identita` dell'app
+         installata, e Chrome ne riconosce una per id. Non renderlo
+         dipendente dalla fazione. -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="img/icona_infinity.png">
+    <!-- Favicon e colore della barra cambiano con la fazione: stanno qui
+         coi valori dei Nomadi, e il risolutore qui sotto li aggiorna. Sono
+         PRIMA di lui apposta, cosi` li trova gia` nel documento e bastano
+         due setAttribute. Prima li scriveva con document.write, che fa lo
+         stesso lavoro ma solo durante il parsing: chiamato un istante piu`
+         tardi cancella la pagina, e i banchi non sanno simularlo. -->
+    <link rel="icon" id="favicon-fazione" type="image/png" href="img/icona_nomadi.png">
+    <meta name="theme-color" id="colore-fazione" content="#cc0000">
 
     <!-- ==========================================================
          RISOLUTORE DI FAZIONE  —  deve girare PRIMA di ogni altro
@@ -67,21 +82,12 @@
         document.title = F.titolo;
         document.documentElement.setAttribute('data-fazione', F.tema);
 
-        // Favicon e colore della barra cambiano con la fazione; il MANIFEST no.
-        // Il manifest e` uno solo e identico su tutte e tre le pagine
-        // (scegli_fazione, app, hub): e` quello che decide l'identita`
-        // dell'app installata, e Chrome ne riconosce UNA per id. Con tre
-        // manifest diversi, installata la prima, sulle altre rispondeva
-        // "gia` installata". Percio` il link al manifest sta scritto fisso
-        // nell'HTML qui sotto, non qui dentro.
-        //
-        // Questi due invece si scrivono durante il parsing e non dopo: si
-        // vedono nella scheda del browser mentre si gioca, e cambiarli a
-        // caricamento finito li farebbe lampeggiare.
-        document.write(
-            '<link rel="icon" type="image/png" href="' + F.icona + '">' +
-            '<meta name="theme-color" content="' + F.coloreTema + '">'
-        );
+        // Favicon e colore della barra: i tag esistono gia` sopra, qui si
+        // aggiornano. Niente document.write (vedi il commento lassu`).
+        var ic = document.getElementById('favicon-fazione');
+        if (ic) ic.setAttribute('href', F.icona);
+        var col = document.getElementById('colore-fazione');
+        if (col) col.setAttribute('content', F.coloreTema);
     })();
 
     // Torna al menu iniziale. Se c'e` un ordine a meta` lo dice, perche`
@@ -103,12 +109,6 @@
         location.search = '?fazione=' + nome;
     };
     </script>
-    <!-- UNO SOLO, IDENTICO in scegli_fazione.html, app.html e
-         calcolatore_hub.html: e` cosi` che Chrome vede una sola app
-         installabile, da qualunque pagina la si installi. Non renderlo
-         dipendente dalla fazione. -->
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="img/icona_infinity.png">
 
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Teko:wght@500;700&display=swap" rel="stylesheet">
 
@@ -252,6 +252,10 @@
 
 
     <div id="setup">
+        <!-- Compare solo se su QUESTO dispositivo c'e` una partita salvata.
+             Lo riempie mostraRipresaPartita() dopo cloudPronto. -->
+        <div id="riprendi-partita" style="display:none;"></div>
+
         <div style="position: relative;">
             <h2>-- NOMAD DATANET --</h2>
             <span style="position: absolute; right: 5px; bottom: 20px; font-size: 14px; font-family: 'Share Tech Mono', monospace; color: var(--nomad-orange); font-weight: bold; text-shadow: none; letter-spacing: normal;">v23.1</span>
@@ -479,7 +483,7 @@
         // quello dove una copia vecchia (cache del telefono) e` piu` probabile.
         (function () {
             var g = (typeof window !== 'undefined') ? window : globalThis;
-            var v = { file: 'app.html', versione: '2026-09-24.2', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-09-26.4', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -511,7 +515,16 @@
             ],
             lunghe: [
                 { id: 'CAUTO', nome: 'MOVIMENTO CAUTO', desc: 'Muovi fuori LoF senza generare ARO.', type: 'LONG_MOVE' },
-                { id: 'SALTO', nome: 'SALTO / SCALATA', desc: 'Supera ostacoli verticali o buchi.', type: 'LONG_MOVE' },
+                { id: 'SALTO', nome: 'SALTO', desc: 'Supera un buco o un ostacolo orizzontale.', type: 'LONG_MOVE' },
+                // Separato dal Salto: Climbing Plus vale SOLO sulla scalata, e
+                // chi arrampica non beneficia della Copertura Parziale.
+                // Diventa Abilita` Breve con Climbing Plus (catalogo N5).
+                { id: 'ARRAMPICARSI', nome: 'ARRAMPICARSI', desc: 'Scala una superficie verticale. Niente Copertura Parziale.', type: 'LONG_MOVE' },
+                // Fuoco di Soppressione: Ordine Intero, arma obbligatoria e
+                // nessun bersaglio (M.SPEC). Era stato tolto dal menu quando si
+                // attivava solo dalla pagina stati; ora si dichiara come un
+                // ordine, ed e` li` che il giocatore lo cerca.
+                { id: 'SOPPRESSIONE', nome: 'FUOCO DI SOPPRESSIONE', desc: 'Ordine Intero: entra in Soppressione con l\'arma scelta.', type: 'LONG_SKILL' },
                 { id: 'BERSERK', nome: 'ATTACCO BERSERK', desc: 'Carica suicida in CC (Tiro Normale).', type: 'LONG_CC' },
 
                 { id: 'ATTACCO GUIDATO', nome: 'ATTACCO GUIDATO', desc: 'Spara missili a un bersaglio Targeted.', type: 'LONG_WEAPON' },
@@ -1007,7 +1020,10 @@
                 
                 container.innerHTML += `
                     <button class="huge-btn" style="background:${bg}; border:${border}; opacity:${opacity}; padding:10px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; text-align:left; width:100%; min-height:95px;"
-                        ${ordinabile.ok ? `onpointerdown="if(window.startUnitPress) window.startUnitPress(${originalIndex})" onpointerup="if(window.endUnitPress) window.endUnitPress(${originalIndex})" onpointerleave="if(window.cancelUnitPress) window.cancelUnitPress()"` : ''}
+                        onpointerdown="window.avvioPressioneUnita(${originalIndex}, event)"
+                        onpointerup="window.finePressioneUnita(${originalIndex}, ${ordinabile.ok})"
+                        onpointermove="window.movimentoPressioneUnita(event)"
+                        onpointercancel="if(window.cancelUnitPress) window.cancelUnitPress()"
                         oncontextmenu="return false;">
                         
                         <img src="${imgSrc}" style="width:70px; height:70px; flex-shrink:0; object-fit:contain; margin-right:15px; background: rgba(0,0,0,0.5); border-radius:5px; border: 1px solid #444;" onerror="this.style.display='none';">
@@ -1023,17 +1039,27 @@
                     </button>
                 `;
                 // Un'unita` non attivabile non riceve Ordini, ma i suoi stati
-                // devono restare modificabili: se la curi devi poter togliere
-                // Incosciente. Qui gli stati si aprono col tocco lungo, che a
-                // un'unita` non attivabile abbiamo tolto insieme agli altri
-                // gestori, quindi serve un pulsante.
+                // restano modificabili col tocco lungo, come per tutte le
+                // altre: e` proprio su un'Incosciente che serve, per togliere
+                // lo stato quando la curi.
+                //
+                // Prima i gestori di pressione si mettevano solo se
+                // l'unita` era attivabile, e col tocco breve se ne andava
+                // anche il lungo; al suo posto c'era un pulsante. Ora il
+                // gesto e` uno solo e vale sempre: il breve lo blocca
+                // finePressioneUnita, il lungo apre gli stati.
                 if (!ordinabile.ok) {
+                    container.innerHTML += `<div style="color:#888; font-size:13px; margin:-6px 0 12px 4px;">Tieni premuto per modificarne gli stati.</div>`;
+                }
+
+                // Un token sul tavolo si toglie quando esplode o viene
+                // distrutto: la riga ce l'ha, e la regola la dice il motore.
+                if (u.deployable) {
                     container.innerHTML += `
-                        <button class="huge-btn" style="background:#1a1a1a; border:2px solid var(--nomad-orange); color:var(--nomad-orange); margin: -6px 0 12px 0; padding:10px; font-size:16px; width:100%;"
-                            onclick="if(window.apriPaginaStati) window.apriPaginaStati(${originalIndex})">
-                            \u{1FA7A} MODIFICA STATI DI ${nomePuro.toUpperCase()}
-                        </button>
-                    `;
+                        <button class="btn-status" style="margin:-6px 0 12px 0; border-color:#aa6644; color:#cc9955;"
+                            onclick="if(confirm('Togliere ${(u.alias || u.nome || 'questo token').replace(/'/g, '')} dal tavolo?')) window.togliTokenDalTavolo('${u.id}', 'MANUALE')">
+                            \u{1F4E6} TOGLI DAL TAVOLO
+                        </button>`;
                 }
             });
 
@@ -1238,6 +1264,177 @@
             window.resetOrdineCorrente();
             if (window.aggiornaMenuGruppi) window.aggiornaMenuGruppi();
             window.goToStep('step-group');
+        };
+
+        // ==========================================
+        // 📦  TOGLIERE UN TOKEN DAL TAVOLO
+        // ==========================================
+        // Dal 26 settembre l'elenco dei Deployable e` UNO SOLO: window.roster,
+        // dove stanno a tutti gli effetti come unita` (decisione di Paolo).
+        // rimuoviTokenPiazzato del motore cerca li` — e in tokenPiazzati solo
+        // per le copie salvate prima — quindi qui non si guarda piu` nessuna
+        // lista: si chiede e si ridisegna.
+        //
+        // Prima questa funzione doveva cercare in due posti, perche` il motore
+        // ne conosceva uno solo e un koala SCHIERATO non si poteva togliere.
+        window.togliTokenDalTavolo = (id, evento) => {
+            if (typeof window.rimuoviTokenPiazzato !== 'function') {
+                return { rimosso: false, motivo: 'Core non caricato.' };
+            }
+            const r = window.rimuoviTokenPiazzato(id, evento || 'MANUALE') || {};
+            if (!r.rimosso) alert('\u26a0\ufe0f Non rimosso.\n\n' + (r.motivo || ''));
+            if (window.aggiornaGraficaRoster) window.aggiornaGraficaRoster();
+            if (window.renderDeployUnits) window.renderDeployUnits();
+            return r;
+        };
+
+
+        // ==========================================
+        // 👆  PRESSIONE SULLA RIGA DELL'UNITA`
+        // ==========================================
+        // Un gesto per una cosa sola, senza eccezioni da ricordare:
+        //   tocco breve      seleziona l'unita` — bloccato se non e` attivabile
+        //   tocco prolungato apre gli stati — SEMPRE, anche su un'Incosciente
+        //
+        // La pressione la contano startUnitPress/endUnitPress in
+        // ordine_coordinato.js: qui non si duplica quella logica, si decide
+        // solo se lasciar passare il tocco breve. Per un'unita` non
+        // attivabile, al rilascio si chiama cancelUnitPress, che ferma il
+        // timer senza selezionare: il lungo ha gia` fatto il suo lavoro se e`
+        // scattato, e il breve non fa niente.
+        //
+        // onpointerleave e` sostituito da onpointercancel piu` una tolleranza
+        // di movimento: leave scatta al primo pixel di scorrimento, e faceva
+        // annullare la pressione lunga mentre si scorreva la lista. E` lo
+        // stesso difetto corretto sullo schieramento il 19 settembre.
+        window.TOLLERANZA_PRESSIONE_UNITA = 12;
+        window.origineePressioneUnita = null;
+
+        window.avvioPressioneUnita = (index, evento) => {
+            window.origineePressioneUnita = evento ? { x: evento.clientX, y: evento.clientY } : null;
+            if (window.startUnitPress) window.startUnitPress(index);
+        };
+
+        window.movimentoPressioneUnita = (evento) => {
+            const o = window.origineePressioneUnita;
+            if (!o || !evento) return;
+            if (Math.abs(evento.clientX - o.x) > window.TOLLERANZA_PRESSIONE_UNITA ||
+                Math.abs(evento.clientY - o.y) > window.TOLLERANZA_PRESSIONE_UNITA) {
+                if (window.cancelUnitPress) window.cancelUnitPress();
+                window.origineePressioneUnita = null;
+            }
+        };
+
+        window.finePressioneUnita = (index, attivabile) => {
+            window.origineePressioneUnita = null;
+            if (attivabile) {
+                if (window.endUnitPress) window.endUnitPress(index);
+            } else {
+                // Niente selezione: si ferma solo il conteggio.
+                if (window.cancelUnitPress) window.cancelUnitPress();
+            }
+        };
+
+        // ==========================================
+        // ↩️  RIPRENDI PARTITA
+        // ==========================================
+        // Riaprire l'app a meta` partita riportava alla composizione lista, con
+        // il roster vuoto: ricaricare la squadra e rimandarla all'Hub azzerava
+        // ferite e stati della propria fazione. Ora, se sul dispositivo c'e`
+        // una partita salvata, si riprende da li`.
+        //
+        // Dall'Hub NON si puo` ricostruire la propria squadra: quello che gli
+        // arriva e` filtrato per l'avversario. Vedi il commento in
+        // roster_manager, sopra salvaPartitaLocale.
+
+        window.mostraRipresaPartita = async () => {
+            const box = document.getElementById('riprendi-partita');
+            if (!box) return;
+
+            const locale = window.leggiPartitaLocale && window.leggiPartitaLocale();
+            if (!locale) return;                      // niente da riprendere
+
+            // Si aspetta la prima lettura dal cloud: prima di quella non si sa
+            // se la partita esiste ancora (un reset dall'Hub la cancella).
+            let esito = { confermato: false };
+            try { esito = await window.cloudPronto; } catch (e) { window.ultimaEccezione = e; }
+
+            // Lo stato si legge SEMPRE, non solo a lettura confermata: se e`
+            // presente ed e` vuoto, e` la prova che qualcuno ha premuto reset
+            // sull'Hub, e vale comunque. Se invece e` ASSENTE non si sa niente,
+            // e allora la copia locale si mostra con l'avviso.
+            //
+            // Prima questo controllo stava dentro il ramo "confermato", e
+            // senza rete il pulsante ricompariva anche dopo un reset.
+            let stato = null, letto = false;
+            try {
+                const grezzo = localStorage.getItem(window.MotoreN5.CANALI.STATO_PARTITA);
+                if (grezzo !== null) { stato = JSON.parse(grezzo); letto = true; }
+            } catch (e) { window.ultimaEccezione = e; }
+
+            if (letto) {
+                const viva = stato && (((stato.nomads || []).length) || ((stato.panoceania || []).length));
+                if (!viva) {
+                    // Partita azzerata: la copia locale e` di una partita che
+                    // non esiste piu`, e tenerla confonderebbe al giro dopo.
+                    window.scordaPartitaLocale();
+                    return;
+                }
+            }
+
+            const quando = new Date(locale.timestamp || Date.now());
+            const avvisoRete = (esito && esito.confermato)
+                ? ''
+                : `<div style="color:#ffaa66; font-size:13px; margin-top:6px;">Partita non letta dal server: quello che segue viene da questo dispositivo.</div>`;
+
+            box.innerHTML = `
+                <div class="section" style="border-color:#00ff00;">
+                    <h3 style="margin-top:0; color:#00ff00;">PARTITA IN CORSO</h3>
+                    <div style="color:#aaa; font-size:14px;">${locale.roster.length} unit\u00e0${(locale.tokenPiazzati || []).length ? ' e ' + locale.tokenPiazzati.length + ' piazzati sul tavolo' : ''}, salvate il ${quando.toLocaleDateString()} alle ${quando.toLocaleTimeString()}.</div>
+                    ${avvisoRete}
+                    <button class="huge-btn" style="background:#004400; border-color:#00ff00; margin-top:10px; min-height:70px;"
+                        onclick="window.riprendiPartita()">\u21a9\ufe0f RIPRENDI PARTITA</button>
+                    <div style="color:#888; font-size:13px; margin-top:6px;">Oppure componi una lista nuova qui sotto: la partita salvata resta finch\u00e9 non la invii all'Hub.</div>
+                </div>`;
+            box.style.display = 'block';
+        };
+
+        window.riprendiPartita = () => {
+            const locale = window.leggiPartitaLocale && window.leggiPartitaLocale();
+            if (!locale) return;
+
+            window.roster = locale.roster;
+            // I token stanno nel roster. Una copia salvata PRIMA del 26
+            // settembre li teneva a parte: si fondono qui, per id, senza
+            // doppioni — e` la copia che Paolo ha gia` sul telefono.
+            const gia = new Set(window.roster.map(u => u && u.id));
+            (locale.tokenPiazzati || []).forEach(t => {
+                if (t && !gia.has(t.id)) { window.roster.push(t); gia.add(t.id); }
+            });
+            window.tokenPiazzati = [];
+            window.activeStructures = locale.strutture || [];
+            window.activeTerrains = locale.terreni || [];
+            window.schieramentoCompletato = true;
+
+            // Il turno e la schermata li decide il motore: applicaCambioTurno
+            // qui cancellerebbe l'allarme ARO anche sul cloud, cioe` l'ordine
+            // a meta` dell'avversario. riprendiDaStato fa la stessa cosa senza
+            // quella cancellazione.
+            let esito = { ripresa: false, motivo: 'window.riprendiDaStato non disponibile.' };
+            if (typeof window.riprendiDaStato === 'function') {
+                try { esito = window.riprendiDaStato(); } catch (e) { window.ultimaEccezione = e; esito = { ripresa: false, motivo: e.message }; }
+            }
+
+            if (!esito.ripresa) {
+                alert('\u26a0\ufe0f Squadra ripresa da questo dispositivo, ma il turno non risulta sul server.\n\n' +
+                      (esito.motivo || '') + '\n\nControlla che l\'Hub sia aperto.');
+                return;
+            }
+
+            const aMeta = Object.keys(esito.ordineAMeta || {});
+            if (aMeta.length) {
+                alert('\u26a0\ufe0f C\'era un ordine in corso quando l\'app si e` chiusa.\n\nControllate l\'Hub per vedere a che punto era: l\'app non lo recupera da sola.');
+            }
         };
 
         // ==========================================

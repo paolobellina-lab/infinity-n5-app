@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | test_schieramento.js | proprieta`: chat TEST
+// @versione 2026-09-25.1 | test_schieramento.js | proprieta`: chat TEST
 // Test del filtro anti-spoiler — node test_schieramento.js
 global.window = global;
 require('./catalogo_n5.js'); require('./database_comune.js');
@@ -132,9 +132,36 @@ ok(conInfiltrazione('HIDDEN'),
 console.log('\n=== 8. Il modulo usa il motore ===');
 const payload = window.faseSchieramento.preparaPayloadHub([croc], [], []);
 ok(payload.roster[0].weapon === undefined, 'il payload verso l Hub è filtrato');
-ok(payload.rosterPrivato[0].weapon, 'ma il roster privato resta completo');
 ok(window.faseSchieramento.validaSchieramento([con({ deployState: 'NORMAL' })]).length >= 2,
    'i promemoria passano dal motore');
+
+console.log('\n=== 9. La busta non porta il roster privato ===');
+// Capovolta il 25 settembre. Prima questa sezione asseriva che il payload
+// contenesse anche `rosterPrivato` completo: era la FUGA, non una
+// caratteristica. Ogni canale passa da Firebase all'app dell'avversario, che
+// ascolta tutti gli 11 canali e se li copia nel proprio localStorage — quei
+// dati finivano sul suo telefono. La copia privata resta sul dispositivo.
+ok(!('rosterPrivato' in payload), `la busta NON porta rosterPrivato (chiavi: ${Object.keys(payload).join(', ')})`);
+ok(JSON.stringify(payload).indexOf('MULTI Sniper Rifle') < 0,
+   'e nel testo della busta non compare l arma del Camuffato');
+
+const TUTTI = [...window.DB_NOMADI, ...window.DB_PANOCEANIA];
+const prof = (re, extra) => Object.assign(JSON.parse(JSON.stringify(TUTTI.find(u => re.test(u.nome)))), extra);
+const camo = prof(/^Croc Man \(MULTI Sniper/, { deployState: 'CAMO', states: { camo: true, wounds: 1 } });
+const nascosto = prof(/^Spektr/, { deployState: 'HIDDEN', states: { hidden: true } });
+const visibile = prof(/^Fusilier \(Combi/, { states: {} });
+const busta = window.faseSchieramento.preparaPayloadHub([camo, nascosto, visibile], [], []);
+ok(busta.roster.length === 2, `l unità in Hidden Deployment non è nella busta (${busta.roster.length} su 3)`);
+ok(!busta.roster.some(u => /Spektr/.test(JSON.stringify(u))), 'e il suo nome non compare da nessuna parte');
+const vistoCamo = busta.roster.find(u => u.states && u.states.camo);
+ok(vistoCamo && JSON.stringify(vistoCamo.states) === JSON.stringify({ camo: true, impersonation: false }),
+   `del Camuffato arrivano solo camo e impersonation (${JSON.stringify(vistoCamo && vistoCamo.states)})`);
+ok(vistoCamo && !vistoCamo.weapon && !(vistoCamo.states || {}).wounds,
+   'né l arma né la ferita');
+// Controprova: l'unità visibile arriva com'è, altrimenti il filtro starebbe
+// solo svuotando tutto.
+const vistoFus = busta.roster.find(u => /Fusilier/.test(JSON.stringify(u)));
+ok(!!vistoFus && vistoFus.weapon === 'Combi Rifle', `l unità visibile arriva intera (${vistoFus && vistoFus.weapon})`);
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

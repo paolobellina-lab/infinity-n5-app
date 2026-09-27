@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Settore Conteso — Regolamento di Campagna N5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0b1620;
+  --paper:#e9e7e2;
+  --panel:#f4f3f0;
+  --steel:#5a6a75;
+  --hair:#c3c5c2;
+  --alert:#b8362a;
+  --comms:#1f8fa4;
+  --amber:#b07d20;
+
+  --bg:var(--paper);
+  --fg:var(--ink);
+  --surface:var(--panel);
+  --line:var(--hair);
+  --muted:var(--steel);
+
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+:root:not([data-theme="light"]){
+  @media (prefers-color-scheme:dark){
+    --bg:#0b1620; --fg:#e4e6e4; --surface:#132330; --line:#2b3d4b; --muted:#93a3ad;
+    --alert:#e2624f; --comms:#48c0d4; --amber:#d8a63f;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1620; --fg:#e4e6e4; --surface:#132330; --line:#2b3d4b; --muted:#93a3ad;
+  --alert:#e2624f; --comms:#48c0d4; --amber:#d8a63f;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 1rem);-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--fg);
+  font-family:"IBM Plex Sans","Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.62;
+}
+h1,h2,h3,h4,.disp{font-family:"Chakra Petch","Arial Narrow",Arial,sans-serif;font-weight:600;line-height:1.14;letter-spacing:.01em}
+p{margin:0 0 .9em}
+a{color:var(--comms)}
+:focus-visible{outline:2px solid var(--comms);outline-offset:2px}
+
+.wrap{max-width:1120px;margin:0 auto;padding:0 clamp(16px,4vw,40px)}
+
+/* ---- intestazione ---- */
+.top{border-bottom:2px solid var(--fg);padding:clamp(28px,6vw,54px) 0 20px}
+.tag{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;color:var(--muted);font-family:"Chakra Petch",sans-serif;font-size:.86rem}
+.tag b{color:var(--alert);font-weight:600}
+h1{font-size:clamp(2.3rem,7vw,4.2rem);margin:.15em 0 .1em;font-weight:700}
+.sub{font-size:clamp(1rem,2.4vw,1.15rem);color:var(--muted);max-width:60ch;margin:0}
+
+/* ---- mappa ---- */
+.mapzone{padding:26px 0 8px}
+.mapgrid{display:grid;gap:22px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:900px){.mapgrid{grid-template-columns:minmax(0,1fr) 296px}}
+.mapbox{background:var(--surface);border:1px solid var(--line);position:relative;overflow-x:auto}
+.mapbox svg{display:block;width:100%;min-width:560px;height:auto}
+.node{cursor:pointer}
+.node:focus-visible rect,.node:focus-visible polygon,.node:focus-visible circle{stroke:var(--comms);stroke-width:3}
+.node text{font-family:"Chakra Petch",sans-serif;font-size:15px;font-weight:600;fill:var(--fg)}
+.node .sm{font-size:11.5px;font-weight:400;fill:var(--muted)}
+.edge{stroke:var(--line);stroke-width:2.5;fill:none}
+.edge.hostile{stroke:var(--alert);stroke-dasharray:7 6;opacity:.75}
+.plate{fill:var(--bg);stroke:var(--fg);stroke-width:2}
+.plate.r2{stroke:var(--amber)}
+.plate.hq{fill:var(--surface);stroke:var(--comms);stroke-width:2.5}
+.plate.tr{stroke:var(--muted);stroke-width:2;stroke-dasharray:6 5}
+.threat{fill:var(--bg);stroke:var(--alert);stroke-width:2.5}
+.halo{fill:none;stroke:var(--alert);opacity:.2}
+
+.readout{border:1px solid var(--line);background:var(--surface);padding:18px 18px 20px;align-self:start}
+.readout h3{margin:0 0 2px;font-size:1.35rem}
+.readout .kind{color:var(--muted);font-size:.84rem;font-family:"Chakra Petch",sans-serif;margin-bottom:12px}
+.readout dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:.93rem}
+.readout dt{color:var(--muted)}
+.readout dd{margin:0;font-weight:500}
+.hint{color:var(--muted);font-size:.86rem;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:14px 0 0;padding:0;list-style:none;font-size:.86rem;color:var(--muted)}
+.legend li{display:flex;align-items:center;gap:7px}
+.swatch{width:13px;height:13px;border:2px solid var(--fg);flex:none}
+.swatch.r2{border-color:var(--amber)}
+.swatch.th{border-color:var(--alert);border-radius:50%}
+.swatch.hq{border-color:var(--comms)}
+.swatch.tr{border-color:var(--muted);border-style:dashed}
+
+/* ---- corpo ---- */
+main{padding:10px 0 70px}
+section{padding:38px 0 6px;border-top:1px solid var(--line)}
+section:first-of-type{border-top:0}
+.hd{display:flex;gap:14px;align-items:baseline;margin-bottom:6px}
+.num{font-family:"Chakra Petch",sans-serif;font-size:1.05rem;color:var(--alert);font-weight:700;flex:none}
+h2{font-size:clamp(1.55rem,3.6vw,2.15rem);margin:0}
+.lede{color:var(--muted);max-width:66ch;margin-bottom:1.3em}
+h3{font-size:1.16rem;margin:1.8em 0 .5em}
+.cols{column-gap:38px}
+@media(min-width:860px){.cols{column-count:2}}
+.cols p{break-inside:avoid}
+
+/* regola normativa */
+.rule{border-left:3px solid var(--alert);padding:2px 0 2px 16px;margin:0 0 1.4em}
+.rule h4{margin:0 0 .3em;font-size:1.02rem}
+.rule ul{margin:.4em 0 0;padding-left:1.1em}
+.rule li{margin-bottom:.25em}
+.note{background:var(--surface);border:1px solid var(--line);padding:14px 16px;margin:0 0 1.4em;font-size:.95rem}
+.note b{font-family:"Chakra Petch",sans-serif}
+
+table{width:100%;border-collapse:collapse;margin:0 0 1.5em;font-size:.94rem}
+caption{text-align:left;color:var(--muted);font-size:.86rem;padding-bottom:6px}
+th,td{text-align:left;padding:8px 12px 8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:"Chakra Petch",sans-serif;font-weight:600;border-bottom:2px solid var(--fg)}
+td.n,th.n{text-align:right;padding-right:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow-x:auto}
+
+.treebox{border:1px solid var(--line);background:var(--surface);padding:10px;margin-bottom:1.5em;overflow-x:auto}
+.treebox svg{display:block;width:100%;min-width:620px;height:auto}
+.tnode rect{fill:var(--bg);stroke:var(--fg);stroke-width:2}
+.tnode.t1 rect{stroke:var(--comms)}
+.tnode.t3 rect{stroke:var(--alert)}
+.tnode.ext rect{stroke:var(--muted);stroke-dasharray:5 4}
+.tnode.mun rect{stroke:var(--amber)}
+.tnode text{font-family:"Chakra Petch",sans-serif;font-size:14px;font-weight:600;fill:var(--fg)}
+.tnode .cost{font-size:12.5px;font-weight:700;fill:var(--alert)}
+.tnode .un{font-size:11.5px;font-weight:400;fill:var(--muted)}
+.link{fill:none;stroke:var(--muted);stroke-width:2;opacity:.65}
+
+footer{border-top:2px solid var(--fg);padding:22px 0 40px;color:var(--muted);font-size:.88rem}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="tag"><b>Regolamento di campagna</b><span>Infinity N5 · uso privato</span></div>
+    <h1>Settore Conteso</h1>
+    <p class="sub">Dieci installazioni, otto svincoli di terra di nessuno, due eserciti e una periferia che non appartiene a nessuno dei due. Le truppe entrano in servizio impreparate, l'equipaggiamento si sblocca o si strappa di mano al nemico, e i caduti non tornano.</p>
+  </div>
+</header>
+
+<div class="mapzone">
+  <div class="wrap mapgrid">
+    <div class="mapbox">
+      <svg viewBox="0 0 1240 900" role="img" aria-label="Mappa estesa del settore: dieci installazioni, due quartier generali, due avamposti, otto transiti, tre nidi infetti e il comando della milizia">
+        <g class="halo">
+          <circle cx="280" cy="70" r="96" stroke-width="20"/>
+          <circle cx="960" cy="70" r="96" stroke-width="20"/>
+          <circle cx="620" cy="70" r="120" stroke-width="26"/>
+          <circle cx="620" cy="820" r="118" stroke-width="22"/>
+        </g>
+        <g class="edge"><path d="M85 440 L280 310"/><path d="M85 440 L280 440"/><path d="M85 440 L280 570"/><path d="M280 440 L280 339"/><path d="M280 440 L280 541"/><path d="M280 440 L450 375"/><path d="M280 310 L450 375"/><path d="M450 375 L620 440"/><path d="M368 310 L532 310"/><path d="M708 310 L872 310"/><path d="M620 339 L620 411"/><path d="M620 219 L620 281"/><path d="M280 281 L280 211"/><path d="M960 281 L960 211"/><path d="M960 310 L790 375"/><path d="M790 375 L620 440"/><path d="M960 440 L960 339"/><path d="M960 440 L960 541"/><path d="M960 440 L790 375"/><path d="M1155 440 L960 310"/><path d="M1155 440 L960 440"/><path d="M1155 440 L960 570"/><path d="M620 469 L620 484"/><path d="M620 526 L620 541"/><path d="M368 570 L532 570"/><path d="M708 570 L872 570"/><path d="M280 599 L330 679"/><path d="M620 599 L620 679"/><path d="M960 599 L910 679"/></g>
+        <g class="edge hostile"><path d="M280 169 L280 112"/><path d="M960 169 L960 112"/><path d="M620 169 L620 112"/><path d="M330 721 L540 800"/><path d="M620 721 L620 788"/><path d="M910 721 L700 800"/></g>
+
+        <g class="node" tabindex="0" data-id="nido-o" role="button" aria-label="Nido ovest">
+          <polygon class="threat" points="280,24 320,50 320,90 280,116 240,90 240,50"/>
+          <text x="280" y="68" text-anchor="middle">Nido</text>
+          <text x="280" y="86" text-anchor="middle" class="sm">ovest</text>
+        </g>
+        <g class="node" tabindex="0" data-id="nido-madre" role="button" aria-label="Nido Madre">
+          <polygon class="threat" points="620,12 672,44 672,96 620,128 568,96 568,44"/>
+          <text x="620" y="68" text-anchor="middle">Nido</text>
+          <text x="620" y="86" text-anchor="middle" class="sm">Madre</text>
+        </g>
+        <g class="node" tabindex="0" data-id="nido-e" role="button" aria-label="Nido est">
+          <polygon class="threat" points="960,24 1000,50 1000,90 960,116 920,90 920,50"/>
+          <text x="960" y="68" text-anchor="middle">Nido</text>
+          <text x="960" y="86" text-anchor="middle" class="sm">est</text>
+        </g>
+        <g class="node" tabindex="0" data-id="tr1" role="button" aria-label="Transito Cava Esausta">
+          <rect class="plate tr" x="207" y="169" width="146" height="42"/>
+          <text x="280" y="194" text-anchor="middle" class="sm">Cava Esausta</text>
+        </g>
+        <g class="node" tabindex="0" data-id="porto" role="button" aria-label="Porto Spaziale">
+          <rect class="plate" x="532" y="161" width="176" height="58"/>
+          <text x="620" y="188" text-anchor="middle">Porto Spaziale</text>
+          <text x="620" y="206" text-anchor="middle" class="sm">10 PR · 3 DR · resistenza 2</text>
+        </g>
+        <g class="node" tabindex="0" data-id="tr2" role="button" aria-label="Transito Serre Idroponiche">
+          <rect class="plate tr" x="887" y="169" width="146" height="42"/>
+          <text x="960" y="194" text-anchor="middle" class="sm">Serre Idroponiche</text>
+        </g>
+        <g class="node" tabindex="0" data-id="min" role="button" aria-label="Minerario">
+          <rect class="plate" x="192" y="281" width="176" height="58"/>
+          <text x="280" y="308" text-anchor="middle">Minerario</text>
+          <text x="280" y="326" text-anchor="middle" class="sm">15 PR</text>
+        </g>
+        <g class="node" tabindex="0" data-id="lab" role="button" aria-label="Laboratorio Xeno">
+          <rect class="plate" x="532" y="281" width="176" height="58"/>
+          <text x="620" y="308" text-anchor="middle">Laboratorio Xeno</text>
+          <text x="620" y="326" text-anchor="middle" class="sm">4 DR</text>
+        </g>
+        <g class="node" tabindex="0" data-id="raff" role="button" aria-label="Raffineria Idrica">
+          <rect class="plate" x="872" y="281" width="176" height="58"/>
+          <text x="960" y="308" text-anchor="middle">Raffineria Idrica</text>
+          <text x="960" y="326" text-anchor="middle" class="sm">15 PR</text>
+        </g>
+        <g class="node" tabindex="0" data-id="tr6" role="button" aria-label="Transito Viadotto Ovest">
+          <rect class="plate tr" x="377" y="354" width="146" height="42"/>
+          <text x="450" y="379" text-anchor="middle" class="sm">Viadotto Ovest</text>
+        </g>
+        <g class="node" tabindex="0" data-id="tr7" role="button" aria-label="Transito Viadotto Est">
+          <rect class="plate tr" x="717" y="354" width="146" height="42"/>
+          <text x="790" y="379" text-anchor="middle" class="sm">Viadotto Est</text>
+        </g>
+        <g class="node" tabindex="0" data-id="qgn" role="button" aria-label="QG Nomadi">
+          <rect class="plate hq" x="10" y="408" width="150" height="64"/>
+          <text x="85" y="438" text-anchor="middle">QG Nomadi</text>
+          <text x="85" y="456" text-anchor="middle" class="sm">inviolabile</text>
+        </g>
+        <g class="node" tabindex="0" data-id="avo" role="button" aria-label="Avamposto Ovest">
+          <rect class="plate" x="192" y="411" width="176" height="58"/>
+          <text x="280" y="438" text-anchor="middle">Avamposto Ovest</text>
+          <text x="280" y="456" text-anchor="middle" class="sm">10 PR · base secondaria</text>
+        </g>
+        <g class="node" tabindex="0" data-id="hub" role="button" aria-label="Hub">
+          <rect class="plate" x="532" y="411" width="176" height="58"/>
+          <text x="620" y="438" text-anchor="middle">Hub</text>
+          <text x="620" y="456" text-anchor="middle" class="sm">5 PR · 2 DR</text>
+        </g>
+        <g class="node" tabindex="0" data-id="ave" role="button" aria-label="Avamposto Est">
+          <rect class="plate" x="872" y="411" width="176" height="58"/>
+          <text x="960" y="438" text-anchor="middle">Avamposto Est</text>
+          <text x="960" y="456" text-anchor="middle" class="sm">10 PR · base secondaria</text>
+        </g>
+        <g class="node" tabindex="0" data-id="qgp" role="button" aria-label="QG PanO">
+          <rect class="plate hq" x="1080" y="408" width="150" height="64"/>
+          <text x="1155" y="438" text-anchor="middle">QG PanO</text>
+          <text x="1155" y="456" text-anchor="middle" class="sm">inviolabile</text>
+        </g>
+        <g class="node" tabindex="0" data-id="tr8" role="button" aria-label="Transito Tunnel di Servizio">
+          <rect class="plate tr" x="547" y="484" width="146" height="42"/>
+          <text x="620" y="509" text-anchor="middle" class="sm">Tunnel di Servizio</text>
+        </g>
+        <g class="node" tabindex="0" data-id="osp" role="button" aria-label="Ospedale">
+          <rect class="plate" x="192" y="541" width="176" height="58"/>
+          <text x="280" y="568" text-anchor="middle">Ospedale</text>
+          <text x="280" y="586" text-anchor="middle" class="sm">5 PR · 1 DR</text>
+        </g>
+        <g class="node" tabindex="0" data-id="acc" role="button" aria-label="Accademia">
+          <rect class="plate" x="532" y="541" width="176" height="58"/>
+          <text x="620" y="568" text-anchor="middle">Accademia</text>
+          <text x="620" y="586" text-anchor="middle" class="sm">5 PR · 1 DR</text>
+        </g>
+        <g class="node" tabindex="0" data-id="fab" role="button" aria-label="Fabbrica">
+          <rect class="plate" x="872" y="541" width="176" height="58"/>
+          <text x="960" y="568" text-anchor="middle">Fabbrica</text>
+          <text x="960" y="586" text-anchor="middle" class="sm">5 PR · 1 DR</text>
+        </g>
+        <g class="node" tabindex="0" data-id="tr4" role="button" aria-label="Transito Depuratore">
+          <rect class="plate tr" x="257" y="679" width="146" height="42"/>
+          <text x="330" y="704" text-anchor="middle" class="sm">Depuratore</text>
+        </g>
+        <g class="node" tabindex="0" data-id="tr3" role="button" aria-label="Transito Svincolo 7">
+          <rect class="plate tr" x="547" y="679" width="146" height="42"/>
+          <text x="620" y="704" text-anchor="middle" class="sm">Svincolo 7</text>
+        </g>
+        <g class="node" tabindex="0" data-id="tr5" role="button" aria-label="Transito Deposito Rotabili">
+          <rect class="plate tr" x="837" y="679" width="146" height="42"/>
+          <text x="910" y="704" text-anchor="middle" class="sm">Deposito Rotabili</text>
+        </g>
+        <g class="node" tabindex="0" data-id="milizia" role="button" aria-label="Quartier generale della milizia">
+          <rect class="threat" x="512" y="788" width="216" height="64"/>
+          <text x="620" y="816" text-anchor="middle">QG Milizia</text>
+          <text x="620" y="835" text-anchor="middle" class="sm">resistenza 3</text>
+        </g>
+      </svg>
+    </div>
+
+    <aside class="readout" id="readout" aria-live="polite">
+      <h3 id="r-name">Il settore</h3>
+      <p class="kind" id="r-kind">Tocca un nodo per leggerne la scheda</p>
+      <dl id="r-data">
+        <dt>Installazioni</dt><dd>10 contese, di cui 2 avamposti</dd>
+        <dt>Quartier generali</dt><dd>2 principali, inviolabili</dd>
+        <dt>Nodi di transito</dt><dd>8, senza rendita né vantaggi</dd>
+        <dt>Obiettivi ostili</dt><dd>3 nidi a nord, QG Milizia a sud</dd>
+        <dt>Vittoria</dt><dd>7 installazioni su 10, o il QG nemico</dd>
+      </dl>
+      <p class="hint" id="r-hint">I rettangoli tratteggiati sono terra di nessuno: non rendono nulla, ma senza attraversarli non si arriva da nessuna parte. Il Nido Madre, al centro del fronte nord, è il nodo più duro della mappa.</p>
+    </aside>
+  </div>
+  <div class="wrap">
+    <ul class="legend">
+      <li><span class="swatch"></span>Installazione</li>
+      <li><span class="swatch tr"></span>Transito</li>
+      <li><span class="swatch hq"></span>Quartier generale</li>
+      <li><span class="swatch th"></span>Obiettivo ostile</li>
+    </ul>
+  </div>
+</div>
+
+<main class="wrap">
+
+<section id="resistenza">
+  <div class="hd"><span class="num">1</span><h2>Resistenza del settore</h2></div>
+  <p class="lede">Più un'installazione è vicina a un nido o al comando della milizia, più la guarnigione che la difende è numerosa e sveglia. La geografia decide la difficoltà, prima ancora dei dadi.</p>
+
+  <div class="rule">
+    <h4>Determinare la Resistenza</h4>
+    <ul>
+      <li>Un territorio adiacente a un obiettivo ostile ha <b>Resistenza 2</b>.</li>
+      <li>Ogni altro territorio ha <b>Resistenza 1</b>.</li>
+      <li>I due nidi e il QG Milizia hanno <b>Resistenza 3</b>.</li>
+    </ul>
+  </div>
+
+  <div class="scroll">
+  <table>
+    <caption>Effetti della Resistenza sulla guarnigione</caption>
+    <thead><tr><th>Livello</th><th>Nodi</th><th class="n">Punti guarnigione</th><th>Stadio di Minaccia</th></tr></thead>
+    <tbody>
+      <tr><td>1 — Retrovia</td><td>Tutte le installazioni tranne il Porto, e i tre viadotti interni</td><td class="n">+15%</td><td>corrente</td></tr>
+      <tr><td>2 — Terra di nessuno</td><td>Porto Spaziale e i cinque transiti di confine</td><td class="n">+25%</td><td>corrente</td></tr>
+      <tr><td>3 — Roccaforte</td><td>Nido ovest, Nido est, QG Milizia</td><td class="n">+40%</td><td>corrente +1</td></tr>
+      <tr><td>4 — Nido Madre</td><td>il nodo al centro del fronte nord</td><td class="n">+60%</td><td>corrente +2</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>La percentuale si calcola sul formato concordato. Un attacco da 200 punti al Laboratorio incontra 230 punti di difensori; alla Cava Esausta ne incontra 250, contro un nido 280, e contro il Nido Madre 320 con due stadi tecnologici di vantaggio.</p>
+
+  <p>Il carico pesante sta sui transiti e sul Porto Spaziale, non sulle installazioni ordinarie: la terra di nessuno è dove si muore, i punti strategici si prendono dopo averla attraversata. Il Porto è l'unica installazione a Resistenza 2, ed è anche la più redditizia della mappa: è l'unico posto dove il premio e il prezzo stanno nello stesso nodo.</p>
+
+  <div class="note"><b>Variante senza geografia.</b> Se preferite che la difficoltà non sia leggibile in anticipo, ignorate la tabella e tirate 1d20 davanti all'avversario subito dopo la dichiarazione, prima di comporre le liste: 1‑8 Resistenza 1, 9‑16 Resistenza 2, 17‑20 Resistenza 3. È più teso e meno pianificabile. Non mescolate i due sistemi nella stessa campagna: o la mappa significa qualcosa, o non significa niente.</div>
+
+  <h3>Nodi di transito</h3>
+  <p>Sei nodi non producono PR né DR e non danno alcun vantaggio: sono svincoli, viadotti e capannoni che separano i punti strategici. Esistono perché senza di loro ogni installazione confinerebbe con un quartier generale o con un obiettivo ostile, e il fronte non si muoverebbe mai. Vanno comunque controllati, perché si attacca solo un nodo adiacente a uno che già si controlla.</p>
+
+  <div class="rule">
+    <h4>Due modi di prenderli</h4>
+    <ul>
+      <li><b>Giocarli.</b> Missione normale, di norma al formato immediatamente inferiore a quello di campagna. È l'unica opzione per i transiti a Resistenza 2.</li>
+      <li><b>Pattugliarli.</b> Si risolvono ai dadi, senza scendere in campo. Solo per i tre viadotti interni: Viadotto Ovest, Viadotto Est e Tunnel di Servizio.</li>
+    </ul>
+  </div>
+
+  <div class="rule">
+    <h4>Pattugliamento</h4>
+    <ul>
+      <li>Costa 10 PR e consuma la tua seconda dichiarazione del Turno: su ventiquattro nodi, una sola azione a testa non basterebbe a chiudere la campagna in un anno.</li>
+      <li>Tira 1d20. Successo con un risultato pari o inferiore a 10, più 1 per ogni Veterano attivo nel roster fino a un massimo di +5.</li>
+      <li><b>Successo:</b> prendi il controllo del nodo.</li>
+      <li><b>Fallimento:</b> il nodo resta neutrale e un Trooper a tua scelta, fra quelli che avresti potuto schierare, finisce in Infermeria come Ferito Grave.</li>
+      <li>Nessuno muore mai in un pattugliamento. Fuori dal tavolo non si perde un soldato: una campagna in cui un dado cancella un Veterano che non hai nemmeno giocato è una campagna che si smette di giocare.</li>
+    </ul>
+  </div>
+
+  <p>L'avversario può intercettare un pattugliamento esattamente come un attacco, se il transito confina con un suo territorio: in quel caso il dado non si tira più e la missione si gioca sul tavolo, in PvP, alle condizioni dell'Intercettazione.</p>
+
+  <div class="note"><b>Il pattugliamento non placa nessuno.</b> Non è una missione PvE: se in quel Turno nessuno affronta davvero le forze neutrali, lo Stato di Minaccia sale lo stesso. Attraversare la mappa a colpi di dado è comodo e lascia crescere ciò che vive ai margini.</div>
+
+  <h3>Avamposti</h3>
+  <p>Ogni giocatore inizia la campagna controllando il proprio avamposto, la base secondaria alle spalle del fronte. A differenza del quartier generale, si conquista.</p>
+  <div class="rule">
+    <h4>Effetti</h4>
+    <ul>
+      <li>Rende 10 PR, e dà +1 slot Infermeria e +1 slot Addestramento finché lo controlli.</li>
+      <li>Perderlo li toglie all'istante: i feriti in eccesso vanno gestiti in quello stesso dopo‑partita, con le regole dell'infermeria piena.</li>
+      <li>È l'unica strada per il quartier generale avversario: finché il suo avamposto regge, il suo QG non è dichiarabile.</li>
+    </ul>
+  </div>
+  <p>Conquistare un avamposto nemico è la mossa che decide una campagna, e proprio per questo è la più difesa: aspettati un'Intercettazione ogni volta che ti avvicini.</p>
+
+  <h3>Colpire gli obiettivi ostili</h3>
+  <p>Nidi e QG Milizia non si conquistano e non producono risorse: si distruggono. Puoi dichiararli come bersaglio solo se controlli un territorio adiacente — la Cava Esausta per il nido ovest, le Serre Idroponiche per quello est, il Porto Spaziale per il Nido Madre, e uno fra Depuratore, Svincolo 7 e Deposito Rotabili per la milizia.</p>
+  <div class="rule">
+    <h4>Effetti della distruzione</h4>
+    <ul>
+      <li><b>Nido laterale.</b> Lo Stato di Minaccia scende di 1 e non sale per i due Turni successivi. Abbatterli entrambi nello stesso Turno lo fa scendere di 2.</li>
+      <li><b>Nido Madre.</b> Lo Stato di Minaccia scende di 2, non sale per quattro Turni, e i nidi laterali distrutti non vengono ricostruiti finché il Madre resta abbattuto.</li>
+      <li><b>QG Milizia.</b> Ricevi 20 PR di bottino, e per due Turni la Polizia Locale perde la regola Allarme.</li>
+      <li>Nidi laterali e QG Milizia vengono ricostruiti al quarto Turno dopo la distruzione; il Nido Madre al sesto.</li>
+    </ul>
+  </div>
+  <p>Sono le missioni più dure della campagna e non danno territorio: si affrontano quando la pressione è diventata insostenibile, non per ambizione.</p>
+
+  <div class="note"><b>Il nido è un problema di tutti e due.</b> Ogni giocatore ha il nido dalla propria parte della mappa, ma lo Stato di Minaccia è condiviso: chi spende un Turno a ripulirlo paga da solo un prezzo di cui beneficia anche l'avversario, che intanto conquista in pace. Aspettare che sia l'altro a farlo è la mossa razionale per entrambi, ed è esattamente per questo che gli Infetti crescono.</div>
+</section>
+
+<section id="reclute">
+  <div class="hd"><span class="num">2</span><h2>Reclute</h2></div>
+  <p class="lede">Ogni Trooper entra in servizio impreparato. I malus si eliminano solo giocando, e nessuno può superare il profilo ufficiale: il tetto della progressione è il soldato che avrebbe dovuto essere fin dall'inizio.</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Attributo</th><th class="n">Malus</th><th>Applicazione</th></tr></thead>
+    <tbody>
+      <tr><td>BS</td><td class="n">−2</td><td>MOD al tiro, cumulativo con copertura e distanza</td></tr>
+      <tr><td>WIP</td><td class="n">−2</td><td>Hacking, Dottore, Ingegnere, Osservazione Diretta, console</td></tr>
+      <tr><td>PH</td><td class="n">−2</td><td>Schivata, Salto, Scalata, Salto di Combattimento</td></tr>
+      <tr><td>ARM</td><td class="n">−2</td><td>minimo 0, non scende sotto</td></tr>
+      <tr><td>Tiro Salvezza avversario</td><td class="n">+2</td><td>vale su ARM, su BTS e sui tiri con MOD fisso</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note"><b>Perché un bonus al difensore e non un malus al danno.</b> I due valori sono aritmeticamente identici, perché il valore di successo di un Tiro Salvezza è l'attributo del bersaglio più il Punteggio Salvezza dell'arma. Ma esistono armi senza PS da cui sottrarre: le PARA CC Weapon (−3) e (−6) e l'Adesiva impongono un Tiro Normale su PH con MOD fisso. Con questa formulazione la regola resta definita ovunque — contro una PARA (−6) il bersaglio di una Recluta tira PH−4.</div>
+
+  <div class="rule">
+    <h4>Eccezione: armi a Sagoma</h4>
+    <ul>
+      <li>Il bonus al Tiro Salvezza non si applica a Chain Rifle, Lanciafiamme, Nanopulser e mine.</li>
+      <li>Senza questa eccezione una Recluta con Chain Rifle risulterebbe più efficace di una con Combi, perché quelle armi non fanno tiro per colpire e l'inesperienza non le tocca.</li>
+    </ul>
+  </div>
+
+  <h3>Recupero</h3>
+  <div class="scroll">
+  <table>
+    <caption>Punti Addestramento assegnati a fine partita</caption>
+    <thead><tr><th>Condizione</th><th class="n">PA</th></tr></thead>
+    <tbody>
+      <tr><td>Schierato e non in stato Nullo a fine partita</td><td class="n">2</td></tr>
+      <tr><td>Ha realizzato un obiettivo di scenario o ucciso un nemico</td><td class="n">+1</td></tr>
+      <tr><td>In stato Nullo a fine partita, oppure non schierato</td><td class="n">0</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Ogni PA rimuove 1 punto di malus a scelta, senza obbligo di concentrarsi sullo stesso attributo. Il debito è di 10 PA: quattro partite per chi combatte, cinque per chi resta in copertura. I PA si spendono subito e non si accumulano fra un Turno e l'altro.</p>
+  <p>Un Trooper con tutti i malus azzerati è <b>Veterano</b>: gioca il profilo ufficiale, non accumula più PA, e può accedere al Centro di Addestramento.</p>
+</section>
+
+<section id="albero">
+  <div class="hd"><span class="num">3</span><h2>Albero tecnologico</h2></div>
+  <p class="lede">Venti nodi, un solo albero, un solo progetto per volta. I Dati di Ricerca si accumulano senza decadere, si paga durante la Fase di Mantenimento e non si anticipa nulla a credito.</p>
+
+<div class="treebox">
+<svg viewBox="0 0 990 700" role="img" aria-label="Albero tecnologico unico: sei nodi di base, otto di secondo livello, quattro di terzo e due terminali">
+<g class="link"><path d="M230 58 C 244.0 58, 244.0 48, 258 48"/><path d="M230 168 C 244.0 168, 244.0 128, 258 128"/><path d="M230 168 C 244.0 168, 244.0 208, 258 208"/><path d="M230 278 C 244.0 278, 244.0 208, 258 208"/><path d="M230 278 C 244.0 278, 244.0 288, 258 288"/><path d="M230 278 C 244.0 278, 244.0 368, 258 368"/><path d="M230 388 C 244.0 388, 244.0 448, 258 448"/><path d="M230 388 C 244.0 388, 244.0 528, 258 528"/><path d="M230 388 C 244.0 388, 244.0 608, 258 608"/><path d="M478 208 C 492.0 208, 492.0 148, 506 148"/><path d="M478 128 C 492.0 128, 492.0 148, 506 148"/><path d="M478 608 C 492.0 608, 492.0 328, 506 328"/><path d="M478 128 C 492.0 128, 492.0 328, 506 328"/><path d="M478 448 C 492.0 448, 492.0 468, 506 468"/><path d="M478 608 C 492.0 608, 492.0 468, 506 468"/><path d="M478 368 C 492.0 368, 492.0 608, 506 608"/><path d="M726 468 C 740.0 468, 740.0 408, 754 408"/><path d="M726 328 C 740.0 328, 740.0 408, 754 408"/><path d="M726 608 C 740.0 608, 740.0 588, 754 588"/><path d="M478 618 C 570 706, 670 706, 752 600"/></g>
+<g class="tnode t1"><rect x="10" y="30" width="220" height="56"/><text x="24" y="54">Supporto da Campo</text><text x="24" y="72" class="un">MediKit, kit, D‑Charges</text><text x="214" y="54" text-anchor="end" class="cost">2</text></g>
+<g class="tnode t1"><rect x="10" y="140" width="220" height="56"/><text x="24" y="164">Ottica Avanzata</text><text x="24" y="182" class="un">X‑Visor, MSV L1</text><text x="214" y="164" text-anchor="end" class="cost">3</text></g>
+<g class="tnode t1"><rect x="10" y="250" width="220" height="56"/><text x="24" y="274">Guerra Elettronica</text><text x="24" y="292" class="un">hacking base, ripetitori</text><text x="214" y="274" text-anchor="end" class="cost">3</text></g>
+<g class="tnode t1"><rect x="10" y="360" width="220" height="56"/><text x="24" y="384">Balistica Pesante</text><text x="24" y="402" class="un">HMG, Spitfire, Red Fury</text><text x="214" y="384" text-anchor="end" class="cost">4</text></g>
+<g class="tnode t1"><rect x="10" y="500" width="220" height="56"/><text x="24" y="524">Simulatore Tattico</text><text x="24" y="542" class="un">+1 slot addestramento</text><text x="214" y="524" text-anchor="end" class="cost">4</text></g>
+<g class="tnode t1"><rect x="10" y="590" width="220" height="56"/><text x="24" y="614">Deposito Logistico</text><text x="24" y="632" class="un">+5 PR a fine partita</text><text x="214" y="614" text-anchor="end" class="cost">4</text></g>
+<g class="tnode"><rect x="258" y="20" width="220" height="56"/><text x="272" y="44">Traumatologia</text><text x="272" y="62" class="un">+1 infermeria, cure a 8 PR</text><text x="462" y="44" text-anchor="end" class="cost">4</text></g>
+<g class="tnode"><rect x="258" y="100" width="220" height="56"/><text x="272" y="124">Analisi Spettrale</text><text x="272" y="142" class="un">MSV L2 e L3</text><text x="462" y="124" text-anchor="end" class="cost">5</text></g>
+<g class="tnode"><rect x="258" y="180" width="220" height="56"/><text x="272" y="204">Occultamento Attivo</text><text x="272" y="222" class="un">Mimetismo, Infiltrazione</text><text x="462" y="204" text-anchor="end" class="cost">5</text></g>
+<g class="tnode"><rect x="258" y="260" width="220" height="56"/><text x="272" y="284">Contromisure</text><text x="272" y="302" class="un">Hacking Device Plus</text><text x="462" y="284" text-anchor="end" class="cost">4</text></g>
+<g class="tnode"><rect x="258" y="340" width="220" height="56"/><text x="272" y="364">Baia Robotica</text><text x="272" y="382" class="un">arruolamento REM</text><text x="462" y="364" text-anchor="end" class="cost">5</text></g>
+<g class="tnode mun"><rect x="258" y="420" width="220" height="56"/><text x="272" y="444">Munizioni Perforanti</text><text x="272" y="462" class="un">AP, Shock</text><text x="462" y="444" text-anchor="end" class="cost">3</text></g>
+<g class="tnode"><rect x="258" y="500" width="220" height="56"/><text x="272" y="524">Tiro di Precisione</text><text x="272" y="542" class="un">cecchini, MULTI Sniper</text><text x="462" y="524" text-anchor="end" class="cost">4</text></g>
+<g class="tnode"><rect x="258" y="580" width="220" height="56"/><text x="272" y="604">Artiglieria Portatile</text><text x="272" y="622" class="un">lanciamissili, panzerfaust</text><text x="462" y="604" text-anchor="end" class="cost">5</text></g>
+<g class="tnode t3"><rect x="506" y="120" width="220" height="56"/><text x="520" y="144">Termo‑ottica</text><text x="520" y="162" class="un">TO, Salto di Combattimento</text><text x="710" y="144" text-anchor="end" class="cost">7</text></g>
+<g class="tnode t3"><rect x="506" y="300" width="220" height="56"/><text x="520" y="324">Armi Esotiche</text><text x="520" y="342" class="un">Monofilo, CC avanzato</text><text x="710" y="324" text-anchor="end" class="cost">7</text></g>
+<g class="tnode mun"><rect x="506" y="440" width="220" height="56"/><text x="520" y="464">Munizioni Pesanti</text><text x="520" y="482" class="un">DA, T2, E/M</text><text x="710" y="464" text-anchor="end" class="cost">5</text></g>
+<g class="tnode"><rect x="506" y="580" width="220" height="56"/><text x="520" y="604">Officina Corazzata</text><text x="520" y="622" class="un">Fanteria Pesante</text><text x="710" y="604" text-anchor="end" class="cost">8</text></g>
+<g class="tnode mun"><rect x="754" y="380" width="220" height="56"/><text x="768" y="404">Munizioni Esotiche</text><text x="768" y="422" class="un">EXP, Viral, Plasma, K1, Fuoco</text><text x="958" y="404" text-anchor="end" class="cost">8</text></g>
+<g class="tnode t3"><rect x="754" y="560" width="220" height="56"/><text x="768" y="584">Hangar</text><text x="768" y="602" class="un">arruolamento TAG</text><text x="958" y="584" text-anchor="end" class="cost">12</text></g>
+</svg>
+</div>
+
+  <p>I nodi con il bordo chiaro non hanno prerequisiti e si possono aprire dal primo Turno. Quelli in ambra sono le munizioni; quelli in rosso sono terminali, e nessuna campagna ne vedrà più di due o tre.</p>
+
+  <p>Prima degli sblocchi il roster accetta solo Fanteria Leggera, Fanteria Media, Skirmisher e Guerrieri; REM, Fanteria Pesante e TAG arrivano dalla catena Baia Robotica → Officina Corazzata → Hangar.</p>
+
+  <h3>Munizioni</h3>
+  <p>Le munizioni diverse da Normale hanno tre nodi propri, separati dalle armi che le portano. Finché il nodo è chiuso, l'arma si schiera e si paga per intero in Punti e SWC, ma <b>la sua munizione speciale è trattata come Normale</b> — la stessa formulazione che N5 usa per Immunity (Ammunition). Un MULTI Rifle senza sblocchi è un Combi costoso, e un MULTI Sniper resta un fucile di precisione ordinario.</p>
+
+  <div class="rule">
+    <h4>Sempre disponibili</h4>
+    <ul>
+      <li>Fumo, Flash, Stun e Adesiva, a prescindere da qualunque sblocco.</li>
+      <li>Non sono munizioni offensive nel senso che conta qui: bloccarle non crea tensione, rende solo le partite statiche.</li>
+    </ul>
+  </div>
+
+  <div class="note"><b>Squilibrio di fazione, da sorvegliare.</b> Le munizioni non pesano uguale sui due eserciti. I Nomadi vivono di Viral ed E/M, che stanno nei due nodi più alti; PanOceania vive di MULTI, e sente il blocco più tardi perché la sua fanteria di linea spara Normale comunque. In pratica il ramo munizioni penalizza i Nomadi subito e PanOceania al secondo scaglione. Se la cosa si fa sentire, tenete costi diversi per giocatore: Perforanti a 3 DR per i Nomadi e 5 per PanOceania, ed Esotiche al contrario.</div>
+
+  <h3>Dottrine</h3>
+  <div class="scroll">
+  <table>
+    <caption>L'albero completo costa 102 DR, e in dodici Turni ne vedrai passare fra 35 e 45</caption>
+    <thead><tr><th>Dottrina</th><th>Catena</th><th class="n">DR</th><th>Cosa ottieni</th></tr></thead>
+    <tbody>
+      <tr><td>Proiettile pesante</td><td>Balistica Pesante → Munizioni Perforanti</td><td class="n">7</td><td>il salto di potenza più economico dell'albero: AP e Shock su tutto</td></tr>
+      <tr><td>Volume di fuoco</td><td>Balistica Pesante → Tiro di Precisione → Artiglieria Portatile</td><td class="n">13</td><td>armi pesanti presto, corridoi controllati</td></tr>
+      <tr><td>Guerra occulta</td><td>Ottica Avanzata → Guerra Elettronica → Occultamento Attivo → Analisi Spettrale</td><td class="n">16</td><td>mimetismo, visori e hacking: si gioca sull'informazione</td></tr>
+      <tr><td>Ferro</td><td>Guerra Elettronica → Baia Robotica → Officina Corazzata</td><td class="n">16</td><td>REM e Fanteria Pesante mentre il nemico ha ancora reclute</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>L'albero non è completabile, ed è la sua funzione: costringe a scegliere una dottrina entro il terzo o quarto Turno e a conviverci, invece di convergere sullo stesso arsenale completo che rende ogni campagna uguale alla precedente. Le Munizioni Perforanti sono la deviazione più tentante da qualunque percorso, perché costano poco e si sentono subito su ogni singolo Trooper.</p>
+</section>
+
+<section id="armeria">
+  <div class="hd"><span class="num">4</span><h2>Armeria e addestramento</h2></div>
+  <p class="lede">L'hardware è fisico e si scambia fra i soldati; il software è interiore e non si cede. È la distinzione che regge tutta la fase gestionale.</p>
+
+  <div class="cols">
+    <p><b>Armeria Base.</b> Sempre disponibile senza sblocchi: Combi Rifle, Fucile, Carabina, Pistola, Fucile a Pompa, Chain Rifle, granate, armi CC base, Coperture Dispiegabili.</p>
+    <p><b>Assegnazione.</b> Un pezzo si monta su un Trooper solo se il suo profilo ufficiale prevede quell'opzione. Non si inventano profili: se il Fusilier non ha l'opzione HMG, l'HMG resta in magazzino. Punti e SWC sono quelli dell'opzione corrispondente.</p>
+    <p><b>Looting sui nemici.</b> Un Trooper in contatto di Silhouette con una miniatura nemica in stato Nullo spende un'Abilità Breve e tira un Tiro Normale su WIP. Con successo prende un pezzo per il resto della partita, se il profilo lo consente. Massimo 1 pezzo permanente per Trooper e 3 per partita.</p>
+    <p><b>Recupero dei propri caduti.</b> Gratuito e illimitato: basta che un Trooper si trovi in contatto di Silhouette con il caduto in un qualsiasi momento della partita. Segnalo con un token.</p>
+    <p><b>Sorte dell'equipaggiamento.</b> Morto sul tavolo senza che nessuno lo raggiunga: perso. Incosciente alla fine del terzo Round, uscito dal proprio lato, o mai schierato: torna in Armeria.</p>
+    <p><b>Centro di Addestramento.</b> Un solo Trooper alla volta, solo Veterani, 10 PR e una partita saltata per una Abilità permanente fra Sesto Senso, Coraggio, Arti Marziali, Cinematica, Fuoco di Copertura, Doppia Arma, Stealth, Terreno, Specialista Operativo.</p>
+    <p><b>Fuori portata.</b> Non si addestrano Tenente, Catena di Comando, Impetuoso, né Dottore, Ingegnere, Hacker, Paramedico e Osservatore Diretto: le ultime quattro dipendono da un dispositivo, quindi sono hardware.</p>
+  </div>
+</section>
+
+<section id="perdite">
+  <div class="hd"><span class="num">5</span><h2>Perdite</h2></div>
+  <p class="lede">A fine partita ogni Trooper in stato Nullo o mai schierato tira 1d20. Chi è uscito dal tavolo dal proprio lato non tira: è sano.</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th class="n">1d20</th><th>Esito</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1‑5</td><td><b>Caduto in azione.</b> Cancellato dal roster.</td></tr>
+      <tr><td class="n">6‑12</td><td><b>Ferito grave.</b> Infermeria, salta una partita.</td></tr>
+      <tr><td class="n">13‑20</td><td><b>Recuperato.</b> Pronto per la missione successiva.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="scroll">
+  <table>
+    <caption>Modificatori</caption>
+    <thead><tr><th>Condizione</th><th class="n">MOD</th></tr></thead>
+    <tbody>
+      <tr><td>Curato da Dottore o MediKit durante la partita, poi ricaduto</td><td class="n">+5</td></tr>
+      <tr><td>Non era in stato Nullo, solo non schierato</td><td class="n">+5</td></tr>
+      <tr><td>Dottore o Paramedico in lista e sopravvissuto</td><td class="n">+2</td></tr>
+      <tr><td>Entrato in stato Morto per Munizione Shock, Dogged o NWI esaurito</td><td class="n">−3</td></tr>
+      <tr><td>Ucciso in CC da un Infetto</td><td class="n">nessun tiro: morto</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="rule">
+    <h4>Infermeria piena</h4>
+    <ul>
+      <li>Due slot di base, più quelli da Ospedale e Traumatologia.</li>
+      <li>Per ogni ferito in eccesso scegli: cure d'urgenza a 15 PR, dimissione forzata con 2 punti di malus rimessi in modo permanente, oppure lo lasci morire.</li>
+    </ul>
+  </div>
+  <p>Dai un nome a ogni miniatura. È l'unica regola del documento senza effetti meccanici, ed è quella che cambia davvero come giocherai.</p>
+</section>
+
+<section id="turno">
+  <div class="hd"><span class="num">6</span><h2>Turno di campagna</h2></div>
+  <p class="lede">Due partite, una per giocatore, e una fase gestionale condivisa. Si attacca solo un nodo adiacente a uno già controllato.</p>
+
+  <div class="rule">
+    <h4>Sequenza</h4>
+    <ul>
+      <li><b>Mantenimento.</b> Riscuoti PR e DR, paga un progetto di ricerca.</li>
+      <li><b>Assegnazione.</b> Monta l'hardware, manda chi vuoi in addestramento.</li>
+      <li><b>Dichiarazione.</b> Ogni giocatore nomina <b>due</b> bersagli adiacenti: uno da giocare sul tavolo e uno da pattugliare ai dadi. Chi non ha viadotti interni da pattugliare ne dichiara uno solo. Nel primo Turno l'ordine si decide con un tiro contrapposto di 1d20, poi si alterna.</li>
+      <li><b>Missione.</b> Territorio neutrale: PvE contro la guarnigione. Territorio avversario: PvP.</li>
+      <li><b>Dopo‑partita.</b> Conquista, poi Tabella Perdite, poi PA, poi bottino, poi rientri.</li>
+    </ul>
+  </div>
+  <p>L'ordine del dopo‑partita non è decorativo: il tiro perdite viene prima dei PA, perché un soldato morto non guadagna esperienza.</p>
+
+  <h3>Intercettazione</h3>
+  <p>Se il territorio neutrale dichiarato confina con un territorio dell'avversario, quello può intercettare: al posto della guarnigione scendono in campo le sue truppe vere.</p>
+  <div class="rule">
+    <h4>Condizioni</h4>
+    <ul>
+      <li>Si dichiara subito dopo l'attacco e prima che chiunque componga la lista.</li>
+      <li>Costa 10 PR di mobilitazione, pagati anche perdendo.</li>
+      <li>Entrambi giocano al formato concordato, senza bonus di Resistenza: non è una guarnigione locale, è una colonna mandata a fermarti.</li>
+      <li>Tabella Perdite e looting valgono in entrambe le direzioni.</li>
+      <li>Se vince l'intercettatore, il territorio resta neutrale: ha negato l'espansione, non ha condotto una conquista. Se vince l'attaccante, conquista e guadagna 1 DR.</li>
+    </ul>
+  </div>
+  <div class="note"><b>La conseguenza da non dimenticare.</b> Una missione intercettata è PvP a tutti gli effetti: se in quel Turno nessuno affronta davvero i neutrali, lo Stato di Minaccia sale lo stesso. Intercettare sempre significa lasciar crescere gli Infetti alle spalle di entrambi.</div>
+</section>
+
+<section id="neutrali">
+  <div class="hd"><span class="num">7</span><h2>Forze neutrali</h2></div>
+  <p class="lede">Nelle missioni PvE il difensore gioca una guarnigione usa e getta: le sue perdite non contano, quindi può giocare senza pietà. In compenso l'attaccante ha un obiettivo e lui no.</p>
+
+  <h3>Stato di Minaccia</h3>
+  <p>Le forze neutrali hanno un proprio albero di ricerca che avanza da solo. Alla fine di ogni Turno in cui non è stata giocata nessuna missione PvE, lo Stato di Minaccia sale di 1. Non scende mai col tempo: solo distruggere un Nido lo fa arretrare. Quando sale, chi gioca i neutrali lo annuncia.</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th class="n">Stadio</th><th>Infetti</th><th>Polizia Locale</th></tr></thead>
+    <tbody>
+      <tr><td class="n">0</td><td>profili base, armi CC e Sagome</td><td>Fanteria Leggera, Boarding Shotgun, Flash</td></tr>
+      <tr><td class="n">1</td><td>un Impetuoso oltre l'AVA, armi da tiro base</td><td>2 REM, Fuoco di Soppressione già attivo su 2 modelli</td></tr>
+      <tr><td class="n">2</td><td>munizioni Shock e Viral, una Sagoma Grande</td><td>munizioni Stun ed E/M, ripetitori e un Hacker</td></tr>
+      <tr><td class="n">3</td><td>un profilo pesante</td><td>una Fanteria Pesante e un TAG leggero</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Gli stadi sono cumulativi. Chi gioca i neutrali non ha bisogno delle miniature giuste: basta dichiarare i profili come Informazione Aperta prima dello schieramento e non cambiarli a partita iniziata.</p>
+
+  <div class="cols">
+    <p><b>Infetti.</b> Orde veloci, corpo a corpo letale, nessun uso della copertura. Obiettivo dell'attaccante: raggiungere il centro del tavolo, piazzare la carica con un Tiro Normale su WIP in contatto di Silhouette, e uscire dal proprio lato entro il terzo Round. Un Trooper portato in stato Nullo da un Attacco CC infetto non tira sulla Tabella Perdite: è morto.</p>
+    <p><b>Polizia Locale.</b> Posizioni difensive e munizioni non letali. Obiettivo dell'attaccante: hackerare o aprire 2 delle 3 console con Truppe Specialiste, e finire con almeno un Trooper vivo entro 8" dal bordo avversario. <b>Allarme:</b> il difensore schiera il 60% dei punti e alla fine di ogni Round fa entrare fino a 2 Trooper dai bordi laterali, mai entro 8" da una miniatura avversaria.</p>
+  </div>
+</section>
+
+<section id="quadro">
+  <div class="hd"><span class="num">8</span><h2>Quadro dei valori</h2></div>
+  <div class="scroll">
+  <table>
+    <tbody>
+      <tr><td>Roster iniziale</td><td class="n">200 PR</td></tr>
+      <tr><td>Entrata per missione giocata</td><td class="n">20 PR</td></tr>
+      <tr><td>Bonus vittoria</td><td class="n">+10 PR</td></tr>
+      <tr><td>Costo di arruolamento</td><td class="n">1 PR per Punto Armata</td></tr>
+      <tr><td>Debito della Recluta</td><td class="n">10 PA</td></tr>
+      <tr><td>Slot infermeria di base</td><td class="n">2</td></tr>
+      <tr><td>Slot addestramento di base</td><td class="n">1</td></tr>
+      <tr><td>Cure d'urgenza</td><td class="n">15 PR</td></tr>
+      <tr><td>Addestramento</td><td class="n">10 PR + 1 partita</td></tr>
+      <tr><td>Mobilitazione per intercettare</td><td class="n">10 PR</td></tr>
+      <tr><td>Pattugliamento di un transito</td><td class="n">10 PR + 1d20</td></tr>
+      <tr><td>Costo totale dell'albero</td><td class="n">102 DR</td></tr>
+      <tr><td>Vittoria di campagna</td><td class="n">7 installazioni su 10, o il QG nemico</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Questi numeri sono un punto di partenza, non un equilibrio dimostrato. I due che più probabilmente andranno corretti: l'entrata di 20 PR, da alzare a 25‑30 se le perdite superano le entrate per tre partite di fila; e la fascia 1‑5 della Tabella Perdite, da stringere a 1‑3 se vi ritrovate a rifare il roster da zero.</p>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p>Regolamento casalingo per uso privato. Tutti i riferimenti di regola — formati, SWC, stati Nulli, Ritirata!, Truppe Specialiste, Tiri Salvezza — vengono dal regolamento ufficiale Infinity N5 v5.1.1. Infinity è un marchio di Corvus Belli S.L.; questo documento non è affiliato né autorizzato, e i diagrammi sono originali.</p>
+</footer>
+
+<script>
+(function(){
+  var data = {
+    "nido-o":{n:"Nido ovest",k:"Obiettivo ostile · resistenza 3",d:[["Guarnigione","+40% punti, stadio +1"],["Se distrutto","Minaccia −1, ferma 2 Turni"],["Accesso","Cava Esausta"]],h:"Chi muore in corpo a corpo qui non tira sulla Tabella Perdite: è morto."},
+    "nido-e":{n:"Nido est",k:"Obiettivo ostile · resistenza 3",d:[["Guarnigione","+40% punti, stadio +1"],["Se distrutto","Minaccia −1, ferma 2 Turni"],["Accesso","Serre Idroponiche"]],h:"Abbattere entrambi i nidi laterali nello stesso Turno fa scendere la Minaccia di 2."},
+    "nido-madre":{n:"Nido Madre",k:"Obiettivo ostile · resistenza 4",d:[["Guarnigione","+60% punti, stadio +2"],["Se distrutto","Minaccia −2, ferma 4 Turni"],["Accesso","solo dal Porto Spaziale"],["Ricostruito","al sesto Turno"]],h:"Il nodo più duro della mappa. Finché resta abbattuto, i nidi laterali distrutti non ricrescono."},
+    milizia:{n:"QG Milizia",k:"Obiettivo ostile · resistenza 3",d:[["Guarnigione","+40% punti, stadio +1"],["Se distrutto","20 PR, Allarme sospeso 2 Turni"],["Accesso","tre transiti del fronte sud"]],h:"Tre strade ci arrivano, e nessuna si può pattugliare ai dadi."},
+    porto:{n:"Porto Spaziale",k:"Installazione · resistenza 2",d:[["Rendita","10 PR, 3 DR"],["Vantaggio","la sola via al Nido Madre"],["Adiacenze","Laboratorio, Nido Madre"]],h:"Il nodo più redditizio e l'unico che si prende pagando il sovrapprezzo di una zona ostile."},
+    tr1:{n:"Cava Esausta",k:"Transito · resistenza 2",d:[["Rendita","nessuna"],["Pattugliamento","non consentito"],["Adiacenze","Minerario, Nido ovest"]],h:"L'unica via al nido occidentale. Si gioca sempre sul tavolo."},
+    tr2:{n:"Serre Idroponiche",k:"Transito · resistenza 2",d:[["Rendita","nessuna"],["Pattugliamento","non consentito"],["Adiacenze","Raffineria, Nido est"]],h:"L'unica via al nido orientale. Si gioca sempre sul tavolo."},
+    tr3:{n:"Svincolo 7",k:"Transito · resistenza 2",d:[["Rendita","nessuna"],["Pattugliamento","non consentito"],["Adiacenze","Accademia, QG Milizia"]],h:"La strada diritta al comando della milizia, e la più sorvegliata."},
+    tr4:{n:"Depuratore",k:"Transito · resistenza 2",d:[["Rendita","nessuna"],["Pattugliamento","non consentito"],["Adiacenze","Ospedale, QG Milizia"]],h:"Vasche, passerelle e pochissima copertura alta."},
+    tr5:{n:"Deposito Rotabili",k:"Transito · resistenza 2",d:[["Rendita","nessuna"],["Pattugliamento","non consentito"],["Adiacenze","Fabbrica, QG Milizia"]],h:"Vagoni fermi e corridoi lunghi fra un binario e l'altro."},
+    tr6:{n:"Viadotto Ovest",k:"Transito · resistenza 1",d:[["Rendita","nessuna"],["Pattugliamento","10 PR, 1d20"],["Adiacenze","Minerario, Avamposto Ovest, Hub"]],h:"Si può prendere ai dadi: nessun obiettivo ostile lo tocca."},
+    tr7:{n:"Viadotto Est",k:"Transito · resistenza 1",d:[["Rendita","nessuna"],["Pattugliamento","10 PR, 1d20"],["Adiacenze","Raffineria, Avamposto Est, Hub"]],h:"Il gemello orientale del Viadotto Ovest."},
+    tr8:{n:"Tunnel di Servizio",k:"Transito · resistenza 1",d:[["Rendita","nessuna"],["Pattugliamento","10 PR, 1d20"],["Adiacenze","Hub, Accademia"]],h:"Collega il crocevia al fronte sud senza passare dall'esterno."},
+    min:{n:"Complesso Minerario",k:"Installazione · resistenza 1",d:[["Rendita","15 PR"],["Vantaggio","nessuno: è il motore economico"],["Adiacenze","QG Nomadi, Avamposto Ovest, Laboratorio, Viadotto Ovest, Cava Esausta"]],h:"Container, nastri trasportatori, torri di trivellazione."},
+    raff:{n:"Raffineria Idrica",k:"Installazione · resistenza 1",d:[["Rendita","15 PR"],["Vantaggio","nessuno: è il motore economico"],["Adiacenze","QG PanO, Avamposto Est, Laboratorio, Viadotto Est, Serre"]],h:"Il gemello orientale del Minerario: cisterne, pompe, tubazioni sopraelevate."},
+    lab:{n:"Laboratorio Xeno",k:"Installazione · resistenza 1",d:[["Rendita","4 DR"],["Vantaggio","raddoppia i DR dalle missioni contro gli Infetti"],["Adiacenze","Minerario, Raffineria, Hub, Porto"]],h:"Il nodo per cui vale la pena combattere se punti a una dottrina lunga."},
+    acc:{n:"Accademia Militare",k:"Installazione · resistenza 1",d:[["Rendita","5 PR, 1 DR"],["Vantaggio","+1 slot addestramento"],["Adiacenze","Tunnel, Ospedale, Fabbrica, Svincolo 7"]],h:"Zone di addestramento urbano, bersagli di cartone, trincee prefabbricate."},
+    osp:{n:"Ospedale da Campo",k:"Installazione · resistenza 1",d:[["Rendita","5 PR, 1 DR"],["Vantaggio","+1 slot infermeria, +2 alla Tabella Perdite"],["Adiacenze","QG Nomadi, Avamposto Ovest, Accademia, Depuratore"]],h:"Interni stretti e linee di tiro cortissime. Perderlo con l'infermeria piena è un disastro."},
+    fab:{n:"Fabbrica Armamenti",k:"Installazione · resistenza 1",d:[["Rendita","5 PR, 1 DR"],["Vantaggio","1 pezzo di hardware gratuito a fine partita"],["Adiacenze","QG PanO, Avamposto Est, Accademia, Deposito Rotabili"]],h:"Casse di munizioni esplosive, linee di assemblaggio, carrelli elevatori."},
+    hub:{n:"Hub Comunicazioni",k:"Installazione · resistenza 1",d:[["Rendita","5 PR, 2 DR"],["Vantaggio","vinci il Tiro Iniziativa attaccando o difendendo qui"],["Adiacenze","Laboratorio, Tunnel, Viadotto Ovest, Viadotto Est"]],h:"Quattro strade passano di qui: chi lo tiene decide dove si combatte il Turno dopo."},
+    avo:{n:"Avamposto Ovest",k:"Base secondaria · resistenza 1",d:[["Rendita","10 PR"],["Vantaggio","+1 infermeria, +1 addestramento"],["Adiacenze","QG Nomadi, Minerario, Ospedale, Viadotto Ovest"]],h:"Finché regge, il QG Nomadi non è dichiarabile. Perderlo toglie gli slot all'istante."},
+    ave:{n:"Avamposto Est",k:"Base secondaria · resistenza 1",d:[["Rendita","10 PR"],["Vantaggio","+1 infermeria, +1 addestramento"],["Adiacenze","QG PanO, Raffineria, Fabbrica, Viadotto Est"]],h:"Finché regge, il QG PanO non è dichiarabile. Perderlo toglie gli slot all'istante."},
+    qgn:{n:"QG Nomadi",k:"Quartier generale",d:[["Rendita","20 PR"],["Dotazione","2 infermeria, 1 addestramento"],["Dichiarabile","solo caduto l'Avamposto Ovest"]],h:"Se cade, la campagna è finita."},
+    qgp:{n:"QG PanOceania",k:"Quartier generale",d:[["Rendita","20 PR"],["Dotazione","2 infermeria, 1 addestramento"],["Dichiarabile","solo caduto l'Avamposto Est"]],h:"Se cade, la campagna è finita."}
+  };
+  var name=document.getElementById('r-name'),kind=document.getElementById('r-kind'),
+      dl=document.getElementById('r-data'),hint=document.getElementById('r-hint');
+  function show(id){
+    var o=data[id]; if(!o) return;
+    name.textContent=o.n; kind.textContent=o.k;
+    dl.textContent='';
+    o.d.forEach(function(row){
+      var dt=document.createElement('dt'); dt.textContent=row[0];
+      var dd=document.createElement('dd'); dd.textContent=row[1];
+      dl.appendChild(dt); dl.appendChild(dd);
+    });
+    hint.textContent=o.h;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.node'),function(g){
+    g.addEventListener('click',function(){show(g.dataset.id)});
+    g.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();show(g.dataset.id)}
+    });
+  });
+})();
+</script>
+</body>
+</html>

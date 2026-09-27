@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | calcolatore_math.js | proprieta`: chat MOTORE
+// @versione 2026-09-26.1 | calcolatore_math.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧮 CALCOLATORE N5 — adattatore sopra MotoreN5
 // ------------------------------------------
@@ -207,40 +207,57 @@
 
         // --- traduzione nella forma che l'interfaccia già legge ---
         return scontri.map(function (s) {
+            // 🔴 A SINISTRA SEMPRE LA FAZIONE ATTIVA, A DESTRA LA REATTIVA.
+            // Nello scontro orfano ("io muovo, tu mi spari") il motore mette il
+            // reattivo nello slot `attivo` — e` lui che tira — e chi ha speso
+            // l'Ordine nello slot `reattivo`, senza tiro. Prima la fazione era
+            // corretta in un riquadro e fissa nell'altro: entrambi PANOCEANIA,
+            // e l'Alguacil a destra in azzurro. Qui si scambiano gli slot.
+            // (Collaudo al tavolo di Paolo, 26 settembre.)
+            const orfano = !!s.reattivoNonBersagliato;
+            const sx = orfano ? s.reattivo : s.attivo;   // fazione attiva
+            const dx = orfano ? s.attivo : s.reattivo;   // fazione reattiva
             const out = {
                 titolo: s.titolo,
                 tipo: s.tipo,
                 motivoConfronto: s.motivoConfronto,
-                attivo: {
-                    nome: s.attivo.nome,
-                    // 🔴 Nel ramo "reagisce senza essere bersaglio" — e in "io
-                    // muovo, tu mi spari" — nello slot attivo c'e` il REATTIVO:
-                    // la fazione fissa lo metteva sotto la parte sbagliata del
-                    // tabellone. (Chat TEST, 23 settembre.)
-                    fazione: s.reattivoNonBersagliato ? fazReattiva : fazAttiva,
-                    azione: s.attivo.azione,
-                    mod: s.attivo.mod,
-                    burst: s.attivo.burst,
-                    dettagliMod: rendiVoci(s.attivo),
+                attivo: (orfano ? {
+                    // Ha speso l'Ordine senza tirare; sotto di lui la salvezza
+                    // che deve fare se il tiro del reattivo lo colpisce.
+                    nome: sx ? sx.nome : '-',
+                    fazione: fazAttiva,
+                    azione: 'Nessun tiro',
+                    mod: '-', burst: 0, dettagliMod: '',
+                    salvezza: rendiSalvezza((sx && sx.salvezzaSubita) || (dx && dx.salvezzaInflitta)),
+                    dati: sx
+                } : {
+                    nome: sx.nome,
+                    fazione: fazAttiva,
+                    azione: sx.azione,
+                    mod: sx.mod,
+                    burst: sx.burst,
+                    dettagliMod: rendiVoci(sx),
                     // 🔴 Sotto la truppa attiva va la salvezza che LEI deve
                     // superare se perde il confronto, non quella che infligge.
-                    // Erano invertite: il giocatore leggeva sotto il proprio
-                    // nome il numero dell'avversario.
-                    salvezza: rendiSalvezza(s.attivo.salvezzaSubita || s.attivo.salvezzaInflitta),
-                    salvezzaInflitta: rendiSalvezza(s.attivo.salvezzaInflitta),
-                    // dati grezzi, per chi vuole costruirsi la propria vista
-                    dati: s.attivo
-                },
-                reattivo: s.reattivo ? {
-                    nome: s.reattivo.nome,
+                    salvezza: rendiSalvezza(sx.salvezzaSubita || sx.salvezzaInflitta),
+                    salvezzaInflitta: rendiSalvezza(sx.salvezzaInflitta),
+                    dati: sx
+                }),
+                reattivo: dx ? {
+                    nome: dx.nome,
                     fazione: fazReattiva,
-                    azione: s.reattivo.azione,
-                    mod: s.reattivo.mod,
-                    burst: s.reattivo.burst,
-                    dettagliMod: rendiVoci(s.reattivo),
-                    salvezza: rendiSalvezza(s.reattivo.salvezzaSubita || s.reattivo.salvezzaInflitta),
-                    salvezzaInflitta: rendiSalvezza(s.reattivo.salvezzaInflitta),
-                    dati: s.reattivo
+                    // L'etichetta leggibile: dal 23 settembre le reazioni
+                    // viaggiano come id ('BS_ATTACK'), e il tabellone lo
+                    // mostrava cosi` al giocatore.
+                    azione: (window.MotoreN5 && window.MotoreN5.aroAdAzione && window.MotoreN5.aroAdAzione(dx.azione)) || dx.azione,
+                    mod: dx.mod,
+                    burst: dx.burst,
+                    dettagliMod: rendiVoci(dx),
+                    // Nell'orfano il reattivo non subisce nulla: tira da solo.
+                    salvezza: orfano ? '<span style="color:#555;">Nessun danno</span>'
+                                     : rendiSalvezza(dx.salvezzaSubita || dx.salvezzaInflitta),
+                    salvezzaInflitta: rendiSalvezza(dx.salvezzaInflitta),
+                    dati: dx
                 } : {
                     nome: '-', fazione: fazReattiva, azione: 'Nessuna Reazione',
                     mod: '-', burst: 0, dettagliMod: '', salvezza: '<span style="color:#555;">Nessun danno</span>'
@@ -261,7 +278,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_math.js', versione: '2026-09-23.1', proprieta: 'MOTORE' };
+    var v = { file: 'calcolatore_math.js', versione: '2026-09-26.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

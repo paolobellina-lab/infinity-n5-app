@@ -1,4 +1,4 @@
-// @versione 2026-09-23.5 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-09-26.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -1194,6 +1194,24 @@ window.CATALOGO_N5.RISOLUZIONI = {
 // ------------------------------------------------------------------
 window.CATALOGO_N5.REGOLE_DEPLOYABLE = {
 
+    // LE MINE (chat REGOLE, 26 settembre). NON sono unita` e NON dichiarano
+    // ARO: scattano da sole, senza tiro, nella Risoluzione dell'ordine. L'app
+    // non vede il tavolo, quindi l'innesco lo dichiara il giocatore reattivo
+    // rispondendo alle domande (decisione di Paolo, come il Movimento Cauto).
+    mina: {
+        innesco: 'Scatta quando un Modello O Marker nemico dichiara o esegue una Skill o un ARO dentro la Trigger Area: il raggio della Goccia Piccola dal bordo della base, esclusa ogni zona in Copertura Totale dal punto di scoppio. Niente LoF, arco 360 gradi. (righe 6222, 6229-6236)',
+        nonSchivataGuts: 'Il movimento di una Schivata o di un Guts fallito non fa scattare la mina (riga 6251). Il Movimento Cauto SI`: non genera ARO ma la innesca.',
+        nonSeAlleato: 'Non detona se la Sagoma toccherebbe un alleato, anche Incosciente (riga 6227).',
+        fuoriArea: 'Se il bersaglio e` fuori dalla Trigger Area, non detona e non si rivela.',
+        attacco: 'Sagoma Diretta, nessun tiro per colpire, piazzata su chi ha innescato; PS e munizione dal Weapon Chart (righe 6223-6226, 6232).',
+        difesa: 'Schivata a PH-3 (Sagoma + Deployable), come Tiro Normale.',
+        difesaCybermine: 'Reset a WIP-3 (riga 6240), oppure Schivata a PH-3.',
+        dueSoglie: 'UNA sola Schivata vale contro tutto, con DUE soglie: PH pieno in Faccia a Faccia contro gli spari del nemico, PH-3 contro la mina (esempio, righe 7397-7423).',
+        sottoSagoma: 'Chi e` sotto la Sagoma senza averla innescata e` colpito, e puo` schivare alle stesse condizioni (lettura della chat REGOLE).',
+        dueInnescano: 'Se due truppe innescano insieme, sceglie il giocatore su chi piazzare la Sagoma.',
+        rivela: 'Scattando la mina si rivela (righe 6218-6221).',
+        rimozione: 'Una volta scattata, la mina e` rimossa dal gioco (riga 6231).'
+    },
     boost: {
         innesco: 'Scatta quando un Modello nemico dichiara o esegue un Ordine o un ARO nella sua Zona di Controllo. L\'arma si muove fino al contatto di Silhouette e detona.',
         esclusi: ['CAMO', 'IMP-1', 'IMP-2'],
@@ -2280,7 +2298,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-09-23.5', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-09-26.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

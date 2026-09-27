@@ -1,4 +1,4 @@
-// @versione 2026-09-21.1 | ordine_difesa.js | proprieta`: chat MOTORE
+// @versione 2026-09-26.1 | ordine_difesa.js | proprieta`: chat MOTORE
 // ==========================================
 // 🛡️ DIFESA: SCHIVATA, RESET E SOPPRESSIONE - ordine_difesa.js
 // ------------------------------------------
@@ -273,11 +273,15 @@
         if (window.inviaAllarmeAro) window.inviaAllarmeAro(payloadInfo);
 
         const fazione = document.title.includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA';
+        // 🔴 Qui partiva window.roster INTERO — il privato — sul canale di
+        // setup, ogni volta che un'unita` entrava in Fuoco di Soppressione.
+        // Ora il mittente unico riceve il roster e manda solo il pubblico.
         if (window.inviaSchieramentoAllHub) {
-            window.inviaSchieramentoAllHub({
-                roster: window.roster, strutture: window.activeStructures,
-                terreni: window.activeTerrains, timestamp: Date.now()
-            }, fazione);
+            window.inviaSchieramentoAllHub(fazione, {
+                roster: window.roster, strutture: window.activeStructures || [],
+                terreni: window.activeTerrains || [],
+            motivo: 'AGGIORNAMENTO'   // la stessa partita: nessuna conferma all'Hub
+            });
         }
 
         const avvisoSF = (sf.avvisi && sf.avvisi.length)

@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-09-26.3 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -26,6 +26,17 @@ const canaliCloud = Object.values(window.MotoreN5.CANALI);
 const originalSetItem = localStorage.setItem;
 const originalRemoveItem = localStorage.removeItem;
 
+// PRIMA LETTURA DAL CLOUD — per la ripresa della partita.
+// window.cloudPronto si risolve quando OGNI canale ha ricevuto il primo valore
+// da Firebase (anche null) e la copia locale e` aggiornata; oppure dopo 8
+// secondi con { confermato: false }. window.riprovaCloud() da` una nuova
+// Promise della stessa forma. La logica sta in M.creaAttesaCloud (motore),
+// una volta sola per app e Hub. (Chat INTERFACCIA, 25 settembre.)
+const attesaCloud = window.MotoreN5.creaAttesaCloud(canaliCloud, { tempoMassimo: 8000 });
+window.cloudPronto  = attesaCloud.pronto;
+window.riprovaCloud = attesaCloud.riprova;
+window.statoCloud   = attesaCloud.stato;
+
 canaliCloud.forEach(canale => {
     db.ref(canale).on('value', (snapshot) => {
         const dati = snapshot.val();
@@ -38,6 +49,8 @@ canaliCloud.forEach(canale => {
         } else {
             originalRemoveItem.call(localStorage, canale);
         }
+        // Si segna DOPO la scrittura: "arrivato" vuol dire "copia locale pronta".
+        attesaCloud.segna(canale);
     });
 });
 
@@ -66,10 +79,37 @@ localStorage.removeItem = function(key) {
 
 // --- 2. COMUNICAZIONE STANDARD (Spedizionieri) ---
 
-window.inviaSchieramentoAllHub = (payload, fazione) => {
-    let canale = window.MotoreN5.canaleSetup(fazione);
-    localStorage.setItem(canale, JSON.stringify(payload));
+// 🔴 L'UNICO PUNTO CHE SCRIVE I CANALI SETUP_*. Riceve il roster PRIVATO e
+// costruisce lui la busta con M.bustaSchieramento: nessun chiamante puo` piu`
+// passargli un roster non filtrato. Prima riceveva una busta gia` fatta, e un
+// chiamante (il Fuoco di Soppressione) gli dava window.roster intero.
+//   inviaSchieramentoAllHub(fazione, { roster, strutture, terreni, motivo })
+//   motivo: 'SCHIERAMENTO' (default) | 'AGGIORNAMENTO' — vedi M.bustaSchieramento
+//   -> { inviato: true, busta } | { inviato: false, motivo }
+// La copia locale PRIVATA si salva PRIMA dell'invio e FUORI dalla busta.
+// Senza motore non si spedisce: spedire non filtrato e` peggio che non
+// spedire. (Chat INTERFACCIA, 25 settembre.)
+window.inviaSchieramentoAllHub = (fazione, dati) => {
+    const M = window.MotoreN5;
+    if (typeof fazione !== 'string' || !dati || typeof dati !== 'object') {
+        console.error('⛔ inviaSchieramentoAllHub(fazione, { roster, strutture, terreni }): firma sbagliata, niente invio.');
+        return { inviato: false, motivo: 'firma sbagliata' };
+    }
+    if (!M || typeof M.bustaSchieramento !== 'function') {
+        console.error('⛔ Motore non caricato: lo schieramento NON è stato inviato (senza filtro rivelerebbe CAMO e Hidden).');
+        return { inviato: false, motivo: 'motore non caricato' };
+    }
+    if (typeof window.salvaPartitaLocale === 'function') window.salvaPartitaLocale();
+    // I token sul tavolo stanno NEL ROSTER, come le unita` (decisione di
+    // Paolo, 26 settembre): viaggiano con lui. window.tokenPiazzati si legge
+    // ancora, solo per le copie locali salvate prima; i doppioni li toglie
+    // M.bustaSchieramento.
+    const token = dati.token || window.tokenPiazzati || [];
+    const busta = M.bustaSchieramento(dati.roster, dati.strutture, dati.terreni,
+                                      { motivo: dati.motivo, token: token });
+    localStorage.setItem(M.canaleSetup(fazione), JSON.stringify(busta));
     console.log(`📡 Core: Dati di schieramento ${fazione} inviati all'Hub.`);
+    return { inviato: true, busta: busta };
 };
 
 window.inviaAllarmeAro = (payload) => {
@@ -83,7 +123,8 @@ window.inviaCalcoloAllHub = (payload) => {
 };
 
 window.inviaRispostaAro = (payload, fazione) => {
-    const canale = fazione === "NOMADI" ? "canale_aro_nomadi" : "canale_aro_panoceania";
+    // Residuo del 23 settembre: i doppi apici erano sfuggiti al porto su M.CANALI.
+    const canale = window.MotoreN5.canaleAro(fazione);
     localStorage.setItem(canale, JSON.stringify(payload));
     console.log(`🛡️ Core: Risposta ARO (${fazione}) inviata all'Hub.`);
 };
@@ -92,7 +133,8 @@ window.inviaRispostaAro = (payload, fazione) => {
 // --- 3. GESTIONE TURNI E FASI ---
 window.isReactiveMode = false;
 
-window.applicaCambioTurno = (valoreRicevuto) => {
+window.applicaCambioTurno = (valoreRicevuto, opzioni) => {
+    opzioni = opzioni || {};
     if (!window.schieramentoCompletato) return;
     
     let dati;
@@ -119,7 +161,11 @@ window.applicaCambioTurno = (valoreRicevuto) => {
         window.isReactiveMode = true;
         let banner = document.getElementById('aro-alert-banner');
         if (banner) banner.style.display = 'none';
-        localStorage.removeItem(window.MotoreN5.CANALI.ALLARME_ATTACCO);
+        // Al cambio turno l'allarme vecchio si toglie. Alla RIPRESA no: il
+        // localStorage e` intercettato, e toglierlo qui lo cancellerebbe anche
+        // su Firebase, per entrambi — proprio l'ordine a meta` che deve restare
+        // leggibile. (25 settembre.)
+        if (!opzioni.ripresa) localStorage.removeItem(window.MotoreN5.CANALI.ALLARME_ATTACCO);
 
         document.getElementById('step-reactive-turn').style.display = 'flex';
         if(window.renderReactiveRoster) window.renderReactiveRoster(); 
@@ -320,6 +366,57 @@ window.verificaRouter = () => {
             : 'router coerente col motore (lista della pagina non verificata).'];
     }
     return problemi;
+};
+
+// --- UN TOKEN PIAZZATO CHE LASCIA IL TAVOLO ---
+// window.rimuoviTokenPiazzato(id, evento) -> { rimosso, motivo, inviato? }
+// Chiede al motore se la regola lo toglie (M.tokenDaRimuovere); se si`, lo
+// toglie da window.tokenPiazzati e rimanda lo schieramento come
+// AGGIORNAMENTO — il mittente salva prima la copia locale, quindi il token
+// sparisce anche dalla ripresa. Eventi: 'INNESCO', 'DISTRUTTO', 'MANUALE',
+// 'DEACTIVATOR', 'FASE_STATI'. La regola e` del motore, l'array
+// dell'interfaccia: questa funzione sta in mezzo. (26 settembre.)
+window.rimuoviTokenPiazzato = function (id, evento) {
+    const M = window.MotoreN5;
+    // Si cerca nel ROSTER, dove stanno i token (piazzati in schieramento o in
+    // partita), e per compatibilita` in tokenPiazzati. Solo un Deployable si
+    // toglie cosi`: una truppa con lo stesso id no.
+    const liste = [window.roster || [], window.tokenPiazzati || []];
+    let lista = null, i = -1;
+    for (const l of liste) { i = l.findIndex(t => t && t.id === id); if (i >= 0) { lista = l; break; } }
+    if (!lista) return { rimosso: false, motivo: 'Token non trovato sul tavolo.' };
+    if (!lista[i].deployable) return { rimosso: false, motivo: 'Non e` un Deployable: le truppe non si tolgono da qui.' };
+    const r = M.tokenDaRimuovere(lista[i], evento);
+    if (!r.rimuovi) return { rimosso: false, motivo: r.motivo, nonSo: r.rimuovi === null };
+    const togliDa = function (l) { const k = l.findIndex(t => t && t.id === id); if (k >= 0) l.splice(k, 1); };
+    liste.forEach(togliDa);   // da entrambe: un doppione non deve sopravvivere
+    const esito = window.inviaSchieramentoAllHub(document.title.includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA', {
+        roster: window.roster, strutture: window.activeStructures || [],
+        terreni: window.activeTerrains || [], motivo: 'AGGIORNAMENTO'
+    });
+    return { rimosso: true, motivo: r.motivo, inviato: !!(esito && esito.inviato) };
+};
+
+// --- RIPRESA DELLA PARTITA ---
+// Da chiamare DOPO window.cloudPronto (confermato), quando la pagina si riapre
+// su una partita in corso. Mette schieramentoCompletato a true e applica il
+// turno che c'e` sul cloud, come un cambio turno ma SENZA cancellare l'allarme
+// ARO. Restituisce cosa ha trovato, anche un ordine rimasto a meta`: per ora
+// solo LEGGIBILE, il recupero non fa parte di questo. (Chat INTERFACCIA.)
+//   { ripresa: true|false, motivo?, turno, ordineAMeta: { nomeCanale: valore } }
+window.riprendiDaStato = function () {
+    const C = window.MotoreN5.CANALI;
+    const turno = localStorage.getItem(C.HUB_TURNO);
+    if (!turno) return { ripresa: false, motivo: 'Sul cloud non c\'e` un turno: nessuna partita da riprendere.' };
+    const ordineAMeta = {};
+    [C.HUB_CALCOLO, C.COMUNICAZIONE, C.ARO_NOMADI, C.ARO_PANOCEANIA, C.HUB_SBLOCCO, C.ALLARME_ATTACCO].forEach(function (k) {
+        const v = localStorage.getItem(k);
+        if (v !== null && v !== '') ordineAMeta[k] = v;
+    });
+    window.schieramentoCompletato = true;
+    window.applicaCambioTurno(turno, { ripresa: true });
+    let t = turno; try { t = JSON.parse(turno); } catch (e) {}
+    return { ripresa: true, turno: t, ordineAMeta: ordineAMeta };
 };
 
 // --- 5. ASCOLTATORI GLOBALI (Event Listeners) ---

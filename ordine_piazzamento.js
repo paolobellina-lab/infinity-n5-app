@@ -1,4 +1,4 @@
-// @versione 2026-09-21.1 | ordine_piazzamento.js | proprieta`: chat MOTORE
+// @versione 2026-09-26.2 | ordine_piazzamento.js | proprieta`: chat MOTORE
 // ==========================================
 // 📦 PIAZZARE EQUIPAGGIAMENTO (N5) - ordine_piazzamento.js
 // ------------------------------------------
@@ -251,8 +251,22 @@
         window.coordUnits[window.coordIndex] = e.portatoreAggiornato;
         if (window.aggiornaUnitaRoster) window.aggiornaUnitaRoster(e.portatoreAggiornato);
 
-        window.tokenPiazzati = window.tokenPiazzati || [];
-        window.tokenPiazzati.push(e.token);
+        // Nel ROSTER, come le unita`: e` li` che stanno i token dello
+        // schieramento, e un solo elenco dice cosa c'e` sul tavolo. Non puo`
+        // ricevere Ordini (M.puoRicevereOrdine), ma e` bersagliabile e, se
+        // reagisce, risponde in ARO. (Decisione di Paolo, 26 settembre.)
+        window.roster = window.roster || [];
+        window.roster.push(e.token);
+        // 🔴 Il token deve ESISTERE per l'avversario: prima restava in
+        // tokenPiazzati e non partiva — il CrazyKoala non si poteva bersagliare.
+        // Parte col roster, dal mittente unico, filtrato: una mina mimetica
+        // arriva come segnalino. (Collaudo al tavolo, 26 settembre.)
+        if (typeof window.inviaSchieramentoAllHub === 'function') {
+            window.inviaSchieramentoAllHub(document.title.includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA', {
+                roster: window.roster, strutture: window.activeStructures || [],
+                terreni: window.activeTerrains || [], motivo: 'AGGIORNAMENTO'
+            });
+        }
 
         window.coordPayloads.push({
             attaccante: e.portatoreAggiornato,

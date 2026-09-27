@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | fase_schieramento.js | proprieta`: chat MOTORE
+// @versione 2026-09-26.1 | fase_schieramento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🚀 FASE DI SCHIERAMENTO
 // ------------------------------------------
@@ -29,19 +29,12 @@ window.faseSchieramento = {
     // Ora il filtro sta nel motore e lavora per ELENCO dei campi ammessi:
     // quel che non e` in lista non parte, nemmeno se domani il profilo ne
     // guadagna di nuovi.
+    // La busta la costruisce il motore, in un posto solo (M.bustaSchieramento).
+    // Resta qui per chi la chiamava; senza motore restituisce null.
     preparaPayloadHub: function(roster, strutture, terreni) {
         const M = window.MotoreN5;
-        if (!M) {
-            console.error('⛔ motore_regole_n5.js non caricato: schieramento non filtrato, invio annullato.');
-            return null;
-        }
-        return {
-            roster: M.rosterPubblico(roster),   // quello che vede l'avversario
-            rosterPrivato: roster,              // quello che vedi tu
-            strutture: strutture,
-            terreni: terreni,
-            timestamp: Date.now()
-        };
+        if (!M || typeof M.bustaSchieramento !== 'function') return null;
+        return M.bustaSchieramento(roster, strutture, terreni);
     },
 
     // 3. Conclusione Schieramento e Sync
@@ -57,29 +50,23 @@ window.faseSchieramento = {
             if (!conferma) return; // Ferma l'invio, permettendo all'utente di tirare i dadi
         }
 
-        // --- PREPARAZIONE PAYLOAD ---
-        const payload = this.preparaPayloadHub(
-            window.roster,
-            window.activeStructures || [],
-            window.activeTerrains || []
-        );
-        // Senza motore il filtro non gira: meglio non spedire nulla che
-        // spedire il roster in chiaro.
-        if (!payload) {
-            return alert('⛔ Motore non caricato: lo schieramento NON è stato inviato.\n\nSpedirlo senza filtro rivelerebbe all\'avversario le truppe nascoste.');
-        }
-
         // 🟢 RILEVAMENTO DINAMICO DELLA FAZIONE
         let fazioneAttuale = document.title.includes("NOMADS") ? 'NOMADI' : 'PANOCEANIA';
 
-        // 🟢 DELEGA AL CORE L'INVIO DEI DATI
-        if (window.inviaSchieramentoAllHub) {
-            window.inviaSchieramentoAllHub(payload, fazioneAttuale);
-        } else {
-            console.error("Errore critico: Funzione inviaSchieramentoAllHub non trovata nel Core.");
-            // Fallback dinamico in caso di test senza core
-            let fallbackCanale = window.MotoreN5.canaleSetup(fazioneAttuale);
-            localStorage.setItem(fallbackCanale, JSON.stringify(payload));
+        // Si spedisce SOLO dal mittente unico, che costruisce la busta dal
+        // roster privato. Tolto il ripiego "senza core": l'unica pagina che
+        // carica questo file carica anche motore_core, e il ripiego scriveva
+        // il canale a mano. (25 settembre.)
+        const esito = window.inviaSchieramentoAllHub
+            ? window.inviaSchieramentoAllHub(fazioneAttuale, {
+                  roster: window.roster,
+                  strutture: window.activeStructures || [],
+                  terreni: window.activeTerrains || [],
+                  motivo: 'SCHIERAMENTO'
+              })
+            : { inviato: false, motivo: 'inviaSchieramentoAllHub non trovata' };
+        if (!esito.inviato) {
+            return alert('⛔ Lo schieramento NON è stato inviato: ' + esito.motivo + '.');
         }
 
         window.schieramentoCompletato = true;

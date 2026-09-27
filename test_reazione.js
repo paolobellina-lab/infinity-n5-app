@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | test_reazione.js | proprieta`: chat TEST
+// @versione 2026-09-26.1 | test_reazione.js | proprieta`: chat TEST
 // ================================================================
 // Il lato reattivo: chi reagisce quando l'attivo non tira, e quanti dadi
 // tira chi ha Total Reaction o Neurocinetics.
@@ -19,6 +19,7 @@ global.window = global;
 require('./catalogo_n5.js'); require('./database_comune.js');
 require('./database_nomad.js'); require('./database_panoceania.js');
 const M = require('./motore_regole_n5.js');
+require('./calcolatore_math.js');
 const U = (db, n) => Object.assign(JSON.parse(J(db.find(u => u.nome === n))), { states: {} });
 const alg = U(window.DB_NOMADI, 'Alguacil (Combi Rifle)');
 const fus = U(window.DB_PANOCEANIA, 'Fusilier (Combi Rifle)');
@@ -80,6 +81,32 @@ const sc = (dif, arma) => M.risolviScontro(
 ok(sc(U(window.DB_NOMADI, 'Sin-Eater (Mk12)'), 'Mk12') === 3, 'Sin-Eater: B3 nello scontro completo');
 ok(sc(U(window.DB_NOMADI, 'Reaktion Zond (HMG)'), 'Heavy Machine Gun') === 4, 'Reaktion Zond: B4');
 ok(sc(fus, 'Combi Rifle') === 1, 'controprova: un Fusiliere resta a B1');
+
+
+console.log('\n=== 6. Da che parte del tabellone sta chi non tira ===');
+// 🔴 Nel ramo orfano il motore mette il REATTIVO nello slot `attivo`, e
+// calcolatore_math corregge la fazione di quello slot (riga 220) ma NON
+// dell'altro (riga 236, fissa a fazReattiva). Al tavolo si legge PANOCEANIA
+// da tutte e due le parti, e l'Alguacil — che è chi ha speso l'Ordine —
+// compare a destra in azzurro.
+// Le due prove qui sotto guardano il dato, non i colori: due unità di fazioni
+// diverse devono ricevere etichette diverse, e chi ha il tiro deve stare
+// dalla parte della sua fazione.
+const scontroOrfano = M.risolviPayload({ attacchi: [], attivo: 'Alguacil (Combi Rifle)' }, reazione('Combi Rifle'), ctx)[0];
+ok(scontroOrfano && scontroOrfano.reattivoNonBersagliato === true, 'lo scontro è marcato come reazione non bersagliata');
+const nomiSlot = [scontroOrfano.attivo.nome, scontroOrfano.reattivo && scontroOrfano.reattivo.nome];
+ok(/Fusilier/.test(nomiSlot[0]) && /Alguacil/.test(nomiSlot[1]),
+   `oggi il motore mette il reattivo nello slot attivo (${J(nomiSlot)})`);
+// La traduzione per il tabellone: le due fazioni devono essere DIVERSE.
+if (typeof window.generaRisoluzioneDaDati === 'function') {
+    window.gameState = { activeFaction: 'NOMADI', nomads: [alg], panoceania: [fus] };
+    const vista = window.generaRisoluzioneDaDati({ attacchi: [], attivo: 'Alguacil (Combi Rifle)' }, reazione('Combi Rifle'))[0];
+    const fazioni = [vista.attivo.fazione, vista.reattivo && vista.reattivo.fazione];
+    ok(fazioni[0] !== fazioni[1], `i due riquadri portano fazioni diverse (${J(fazioni)})`);
+    const dellAlguacil = /Alguacil/.test(vista.attivo.nome) ? vista.attivo : vista.reattivo;
+    ok(dellAlguacil && dellAlguacil.fazione === 'NOMADI',
+       `l Alguacil è dei NOMADI, qualunque slot occupi (${dellAlguacil && dellAlguacil.fazione})`);
+} else { ok(false, 'generaRisoluzioneDaDati non è disponibile: serve calcolatore_math'); }
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

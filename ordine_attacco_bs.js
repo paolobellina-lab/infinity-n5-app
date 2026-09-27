@@ -1,4 +1,4 @@
-// @versione 2026-09-23.2 | ordine_attacco_bs.js | proprieta`: chat MOTORE
+// @versione 2026-09-26.1 | ordine_attacco_bs.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎯 ATTACCO BS (TIRO A DISTANZA) - ordine_attacco_bs.js
 // ------------------------------------------
@@ -300,7 +300,11 @@
                     </select>
                 </div>
                 ${(tgt.cover && typeof window.sceltaCopertura === 'function')
-                    ? window.sceltaCopertura(tgt.copertura, 'window.setTargetCoperturaBS', i)
+                    // 🔴 `index`, non `i`: `i` e` la variabile del ciclo delle bande,
+                    // gia` chiuso. Valutarla qui sollevava, e renderTargetsAllocationBS
+                    // moriva: tasto copertura "che non fa niente" e gittata bloccata.
+                    // Errore mio del 23 settembre. (Collaudo al tavolo di Paolo.)
+                    ? window.sceltaCopertura(tgt.copertura, 'window.setTargetCoperturaBS', index)
                     : ''}
                 <div style="display:flex; margin-top: 25px; margin-bottom: 5px;">
                     <select class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;" onchange="window.setTargetTerrainBS(${index}, this.value)">

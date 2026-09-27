@@ -1,4 +1,4 @@
-// @versione 2026-09-23.3 | logica_stati.js | proprieta`: chat MOTORE
+// @versione 2026-09-26.1 | logica_stati.js | proprieta`: chat MOTORE
 // ==========================================
 // NOTA: le regole di questo file passano da MotoreN5.
 //  - la cancellazione degli stati Marker (Ritirata!, Ingaggiato, Stati Nulli)
@@ -411,27 +411,34 @@ window.salvaStatiUnita = () => {
     // --- NUOVA LOGICA DI SINCRONIZZAZIONE POTENZIATA ---
     const fazione = document.title.includes("NOMADS") ? "NOMADI" : "PANOCEANIA";
     
-    // Invia il pacchetto completo all'Hub
-    const updatePayload = {
-        fazione: fazione,
-        unitId: window.unitToEdit.id,
-        newState: window.unitToEdit.state,    // Stato vitale (ACTIVE, DEAD, UNCONSCIOUS) [cite: 1810, 1843]
-        fullStates: window.unitToEdit.states, // TUTTI i flag (prone, engaged, camo, ecc.) [cite: 154]
-        timestamp: Date.now()
-    };
-    
-    localStorage.setItem(window.MotoreN5.CANALI.HUB_STATO, JSON.stringify(updatePayload));
-    
-    // Aggiorna anche il roster completo per sicurezza
-    if (typeof window.sendDataToServer === "function") {
-        const setupPayload = { 
-            roster: window.roster, 
-            strutture: window.activeStructures || [], 
-            terreni: window.activeTerrains || [], 
-            timestamp: Date.now() 
+    // 🔴 All'Hub va SOLO la vista PUBBLICA dell'unita`, la stessa di
+    // M.rosterPubblico. L'Hub e` condiviso con l'avversario, e ogni canale
+    // passa da Firebase alla sua app: mandare gli stati completi dava le
+    // ferite di un CAMO, e rivelava per id l'esistenza di un'unita` in Hidden
+    // Deployment. Un'unita` che il pubblico non vede non si manda affatto:
+    // l'Hub non la conosce. (25 settembre.)
+    const M = window.MotoreN5;
+    const pubblica = M.rosterPubblico([window.unitToEdit])[0] || null;
+    if (pubblica) {
+        const updatePayload = {
+            fazione: fazione,
+            unitId: window.unitToEdit.id,
+            newState: pubblica.state,        // stato vitale, se il pubblico lo vede
+            fullStates: pubblica.states,     // solo i flag che il pubblico vede
+            timestamp: Date.now()
         };
-        let canaleStr = window.MotoreN5.canaleSetup(fazione);
-        localStorage.setItem(canaleStr, JSON.stringify(setupPayload));
+        localStorage.setItem(M.CANALI.HUB_STATO, JSON.stringify(updatePayload));
+    }
+    
+    // Aggiorna anche lo schieramento sull'Hub — dal mittente unico, che
+    // riceve il roster privato e manda solo quello pubblico.
+    if (typeof window.inviaSchieramentoAllHub === "function") {
+        window.inviaSchieramentoAllHub(fazione, {
+            roster: window.roster,
+            strutture: window.activeStructures || [],
+            terreni: window.activeTerrains || [],
+            motivo: 'AGGIORNAMENTO'   // la stessa partita: nessuna conferma all'Hub
+        });
     }
 
     // I profili hanno `nome`, non sempre `alias`: stampava "undefined". (Chat TEST.)

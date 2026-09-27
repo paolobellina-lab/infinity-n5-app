@@ -1,4 +1,4 @@
-// @versione 2026-09-23.18 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-09-26.4 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-09-23.18';
+    M.VERSIONE = '2026-09-26.4';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -619,6 +619,12 @@
 
         const payload = {
             isCoordinated: !!opzioni.isCoordinated,
+            // Un ARO e` stato chiesto e la risposta non c'e` ancora: l'Hub NON
+            // deve consumare questa busta finche` le reazioni non arrivano.
+            // Per gli ordini senza tiro (movimento) busta e allarme partono
+            // insieme, e l'Hub calcolava "nessun tiro" e la cancellava prima
+            // dell'ARO. (Collaudo al tavolo, 26 settembre — A-03.)
+            aroAtteso: !!opzioni.aroAtteso,
             attacchi: validati,
             motoreVersione: M.VERSIONE,
             timestamp: Date.now()
@@ -3482,6 +3488,16 @@
         const inArrivo = String(azioneInArrivo || '').toUpperCase();
         const arrivoHacking = inArrivo === String(M.AZIONI.HACKING).toUpperCase();
         const arrivoGuidato = inArrivo === String(M.AZIONI.GUIDATO).toUpperCase();
+
+        // 🔴 UNA MINA non dichiara ARO (chat REGOLE): scatta da sola. Ma l'app
+        // non vede il tavolo, quindi il giocatore reattivo DICHIARA che e`
+        // scattata e risponde alle domande (M.domandeDeployable('INNESCO_MINA'));
+        // M.innescoDeployable decide. Una voce sola, e nessun'altra ARO.
+        // (Decisione di Paolo, 26 settembre.)
+        if (unita && unita.deployable && M.eMina(unita)) {
+            return [{ id: 'DETONAZIONE', nome: 'Detonazione (mina)', ammesso: true, motivo: null,
+                      note: ['Non e` una scelta della mina: dichiari che e` scattata al tavolo. Seguono le domande.'] }];
+        }
 
         const voci = [
             { id: 'BS_ATTACK', nome: 'Attacco BS' },
@@ -7887,6 +7903,15 @@
     // 🔴 L'app non ha la mappa. Queste tre cose non le puo` sapere, e
     // inventarle sarebbe peggio che chiederle: stessa forma della domanda
     // LoF/ZdC che il Movimento Cauto gia` fa.
+    // Una MINA: arma o token la cui chiave finisce in "Mine" (AP Mine, Shock
+    // Mine, E/M Mine, Cybermine...). Il database non ha ancora un modo di
+    // risoluzione per le mine: si riconoscono dal nome.
+    M.eMina = function (x) {
+        const n = String((x && (x.chiaveArma || x.nome)) || x || '');
+        return /mines?\b/i.test(n) && !/minelayer/i.test(n);
+    };
+    M.eCybermine = function (x) { return /cybermine/i.test(String((x && (x.chiaveArma || x.nome)) || x || '')); };
+
     M.domandeDeployable = function (fase) {
         const D = catalogo('REGOLE_DEPLOYABLE');
         const dom = (D && D.domande) || {};
@@ -7906,6 +7931,20 @@
                 blocca: true, rispostaBloccante: false
             }];
         }
+        if (f === 'INNESCO_MINA') {
+            const R = D.mina || {};
+            return [
+                { id: 'nelTriggerArea', blocca: true, rispostaBloccante: false,
+                  testo: 'Un Modello o Marker nemico ha dichiarato o eseguito una Skill o un ARO dentro l\'area di innesco (Goccia Piccola dal bordo della base, esclusa la Copertura Totale)?',
+                  seNo: R.fuoriArea },
+                { id: 'soloSchivataOGuts', blocca: true, rispostaBloccante: true,
+                  testo: 'Era soltanto il movimento di una Schivata o di un Guts fallito?',
+                  seSi: R.nonSchivataGuts },
+                { id: 'alleatoSottoSagoma', blocca: true, rispostaBloccante: true,
+                  testo: 'La Sagoma toccherebbe un tuo alleato, anche Incosciente?',
+                  seSi: R.nonSeAlleato }
+            ];
+        }
         if (f === 'ATTIVAZIONE') {
             return [{
                 id: 'dentroZdC', testo: dom.attivazione,
@@ -7922,6 +7961,39 @@
         const B = (catalogo('REGOLE_DEPLOYABLE') || {}).boost || {};
         const modo = (arma && arma.modoRisoluzione) || null;
         const note = [];
+
+        // 🔴 LE MINE: prima non passavano mai di qui — nessun modo di
+        // risoluzione nel database, "non si attiva per ZdC". Le risposte del
+        // giocatore (ctx) decidono: l'app non vede il tavolo. (Chat REGOLE,
+        // decisione di Paolo, 26 settembre.)
+        if (M.eMina(arma)) {
+            const R = (catalogo('REGOLE_DEPLOYABLE') || {}).mina || {};
+            if (ctx.nelTriggerArea === false) return { scatta: false, rivela: false, motivo: R.fuoriArea };
+            if (ctx.soloSchivataOGuts === true) return { scatta: false, rivela: false, motivo: R.nonSchivataGuts };
+            if (ctx.alleatoSottoSagoma === true) return { scatta: false, rivela: false, motivo: R.nonSeAlleato };
+            // Senza TUTTE le risposte la mina non scatta: "non so" non e` "si`".
+            // Una detonazione al tavolo non si annulla.
+            const mancanti = ['nelTriggerArea', 'soloSchivataOGuts', 'alleatoSottoSagoma'].filter(k => ctx[k] === undefined);
+            if (mancanti.length) {
+                return { scatta: null, mancanti: mancanti,
+                         motivo: 'Mancano risposte (' + mancanti.join(', ') + '): la mina non scatta finche` il giocatore non risponde.' };
+            }
+            if (nemico && nemico.deployable) {
+                return { scatta: false, motivo: B.nonInnescaAltriDeployable || 'Un Deployable non ne attiva un altro.' };
+            }
+            const cyber = M.eCybermine(arma);
+            return {
+                scatta: true, mina: true, rivela: true,
+                attacco: { sagoma: 'DIRETTA', tiroPerColpire: false, nota: R.attacco },
+                difesa: cyber
+                    ? { azioni: ['RESET', 'SCHIVATA'], reset: { attributo: 'WIP', mod: -3 }, schivata: { attributo: 'PH', mod: -3 }, tipo: 'NORMALE', testo: R.difesaCybermine }
+                    : { azioni: ['SCHIVATA'], schivata: { attributo: 'PH', mod: -3 }, tipo: 'NORMALE', testo: R.difesa },
+                dueSoglie: R.dueSoglie,
+                sottoSagoma: R.sottoSagoma,
+                rimozione: R.rimozione,
+                note: note
+            };
+        }
 
         if (!modo || modo.innesco !== 'ZDC') {
             return { scatta: false, motivo: 'Quest\'arma non si attiva per Zona di Controllo.' };
@@ -7982,6 +8054,50 @@
             riattivabileCon: modo.riattivabileCon || null,
             bersagliabile: modo.bersagliabile !== false
         };
+    };
+
+    // QUANDO UN TOKEN PIAZZATO LASCIA IL TAVOLO — la regola, in un posto solo.
+    //   M.tokenDaRimuovere(token, evento) -> { rimuovi, motivo }
+    //   evento 'INNESCO'      un Deployable che scatta per ZdC (mine, CrazyKoala)
+    //                         e` rimosso dopo la detonazione (catalogo
+    //                         REGOLE_DEPLOYABLE.boost.rimozione). Gli altri no.
+    //   evento 'DISTRUTTO'    abbattuto: fuori dal tavolo.
+    //   evento 'DEACTIVATOR'  rimosso da un Deactivator riuscito (Deployable
+    //                         Cover, riga 10672).
+    //   evento 'MANUALE'      lo decide il giocatore: sa cosa e` successo al tavolo.
+    //   Risposta rimuovi: null = il motore NON SA (es. innesco delle mine,
+    //                         non modellato): non e` un "no".
+    //   evento 'FASE_STATI'   MAI: alla Fase Stati si toglie la Sagoma, non il
+    //                         token (M.fineTurnoDeployable).
+    // Prima un koala gia` esploso restava in tokenPiazzati e tornava alla
+    // ripresa. (Chat INTERFACCIA, 26 settembre.)
+    M.tokenDaRimuovere = function (token, evento) {
+        const ev = String(evento || '').toUpperCase();
+        const arma = token && token.chiaveArma ? M.profiloArma(token.chiaveArma) : null;
+        const modo = (arma && arma.modoRisoluzione) || null;
+        if (ev === 'INNESCO') {
+            // "Non so" non e` "no": le mine non hanno nel database il modo di
+            // risoluzione, quindi il motore NON sa se detonano. Rispondere "non
+            // detona" sarebbe falso al tavolo. Si risponde null, col motivo.
+            if (M.eMina(token)) {
+                const R = (catalogo('REGOLE_DEPLOYABLE') || {}).mina || {};
+                return { rimuovi: true, motivo: R.rimozione || 'Una mina scattata e` rimossa dal gioco (riga 6231).' };
+            }
+            if (!modo) {
+                return { rimuovi: null, motivo: 'Il motore non modella ancora l\'innesco di questo token (manca la risoluzione nel database). Se al tavolo e` esploso, toglilo con l\'evento MANUALE.' };
+            }
+            if (modo.innesco === 'ZDC') {
+                const B = (catalogo('REGOLE_DEPLOYABLE') || {}).boost || {};
+                return { rimuovi: true, motivo: B.rimozione || 'Rimosso dopo la detonazione.' };
+            }
+            return { rimuovi: false, motivo: 'Questo token non detona: resta sul tavolo.' };
+        }
+        if (ev === 'DISTRUTTO')   return { rimuovi: true, motivo: 'Distrutto: lascia il tavolo.' };
+        // Il giocatore sa cosa e` successo al tavolo e il motore no.
+        if (ev === 'MANUALE')     return { rimuovi: true, motivo: 'Rimosso dal giocatore.' };
+        if (ev === 'DEACTIVATOR') return { rimuovi: true, motivo: 'Rimosso da un Deactivator riuscito.' };
+        if (ev === 'FASE_STATI')  return { rimuovi: false, motivo: M.fineTurnoDeployable(token).motivo };
+        return { rimuovi: false, motivo: `Evento "${evento}" sconosciuto: il token resta.` };
     };
 
     // Il token nasce dall'ESITO del tiro, non dall'equipaggiamento: nessun
@@ -9308,6 +9424,123 @@
         canale_attacco_allarme:        { scrive: 'hub (controller)',   legge: 'app (motore_core)', cosa: 'allarme: chi e` attaccato' },
         hub_sblocco_attivo:            { scrive: 'hub (controller)',   legge: 'app (motore_core)', cosa: 'sblocco del giocatore attivo' }
     });
+
+    // ------------------------------------------------------------------
+    // PRIMA LETTURA DAL CLOUD — M.creaAttesaCloud(canali, opzioni)
+    // ------------------------------------------------------------------
+    // All'avvio i listener on('value') riempiono il localStorage in modo
+    // asincrono: per un momento la pagina lo vede vuoto o vecchio e crede che
+    // non ci sia una partita. Nell'Hub il primo broadcastState() sovrascriveva
+    // cosi` su Firebase la partita salvata. (Chat INTERFACCIA, ripresa della
+    // partita, 23 settembre.)
+    //
+    // Una sola implementazione, usata da motore_core.js (app) e da
+    // calcolatore_cloud.js (Hub): il trasporto e` gia` duplicato, questa
+    // logica no. Non tocca Firebase: conta i PRIMI eventi dei listener che il
+    // chiamante ha gia`, segnati DOPO che la copia locale e` aggiornata.
+    //
+    // CONTRATTO
+    //   const a = M.creaAttesaCloud(canali, { tempoMassimo: 8000 });
+    //   a.segna(canale)   da chiamare in ogni on('value'), DOPO aver scritto o
+    //                     tolto la copia locale. Conta anche il valore null.
+    //   a.pronto          Promise, si risolve UNA volta con
+    //                       { confermato: true,  ricevuti, mancanti: [], ms }
+    //                     oppure, scaduto il tempo,
+    //                       { confermato: false, ricevuti, mancanti: [...],
+    //                         ms, motivo: 'tempo scaduto' }
+    //                     Non si rifiuta mai: chi aspetta non resta bloccato.
+    //   a.riprova(opz)    NUOVA Promise della stessa forma. Se nel frattempo i
+    //                     valori sono arrivati si risolve subito confermata;
+    //                     altrimenti riaspetta per tempoMassimo. I listener
+    //                     restano attivi: tornata la rete, i primi valori
+    //                     arrivano da soli, e riprova li vede.
+    //   a.stato()         la situazione adesso, senza aspettare.
+    M.creaAttesaCloud = function (canali, opzioni) {
+        opzioni = opzioni || {};
+        const tempoMassimo = opzioni.tempoMassimo != null ? opzioni.tempoMassimo : 8000;
+        const tutti = (canali || []).slice();
+        const ricevuti = {};
+        const inizio = Date.now();
+        let attese = [];   // { risolvi, timer }
+
+        function stato() {
+            const mancanti = tutti.filter(c => !ricevuti[c]);
+            return { confermato: mancanti.length === 0, ricevuti: tutti.length - mancanti.length,
+                     mancanti: mancanti, ms: Date.now() - inizio };
+        }
+        function chiudi(voce, esito) {
+            if (voce.timer) clearTimeout(voce.timer);
+            attese = attese.filter(x => x !== voce);
+            voce.risolvi(esito);
+        }
+        function attendi(tempo) {
+            return new Promise(function (risolvi) {
+                const ora = stato();
+                if (ora.confermato) { risolvi(ora); return; }
+                const voce = { risolvi: risolvi, timer: null };
+                voce.timer = setTimeout(function () {
+                    chiudi(voce, Object.assign(stato(), { confermato: false, motivo: 'tempo scaduto' }));
+                }, tempo);
+                // NIENTE unref(): in Node farebbe uscire il processo prima della
+                // scadenza, e un test sul tempo scaduto finirebbe senza asserire
+                // nulla — un verde falso. Meglio che il test aspetti.
+                attese.push(voce);
+            });
+        }
+        function segna(canale) {
+            if (tutti.indexOf(canale) < 0 || ricevuti[canale]) return;
+            ricevuti[canale] = true;
+            const ora = stato();
+            if (ora.confermato) attese.slice().forEach(v => chiudi(v, ora));
+        }
+        return {
+            segna: segna,
+            pronto: attendi(tempoMassimo),
+            riprova: function (o) { return attendi((o && o.tempoMassimo != null) ? o.tempoMassimo : tempoMassimo); },
+            stato: stato
+        };
+    };
+
+    // ------------------------------------------------------------------
+    // LA BUSTA DI SCHIERAMENTO — un solo costruttore
+    // ------------------------------------------------------------------
+    // Prende il roster PRIVATO e restituisce cio` che puo` viaggiare: il
+    // roster pubblico (CAMO come segnalino, Hidden assenti), strutture,
+    // terreni, timestamp. Il roster privato non ci entra MAI.
+    // Le fughe del 25 settembre venivano da produttori che costruivano la
+    // busta a mano e scavalcavano il filtro: ne sono stati trovati sei.
+    // La spedisce UN solo punto, window.inviaSchieramentoAllHub
+    // (motore_core.js), che chiama questa funzione. (Chat INTERFACCIA.)
+    // `motivo` dice all'Hub PERCHE` arriva la busta (26 settembre, collaudo):
+    //   'SCHIERAMENTO'   una lista nuova: se la fazione e` gia` in gioco,
+    //                    l'Hub chiede conferma prima di sostituire;
+    //   'AGGIORNAMENTO'  la stessa partita, cambiata dal suo unico scrittore
+    //                    (stati salvati, Fuoco di Soppressione, un token
+    //                    piazzato): si applica senza chiedere. Prima l'Hub
+    //                    chiedeva "Sostituisco?" a ogni stato salvato.
+    // `token`: i Deployable sul tavolo viaggiano insieme al roster, filtrati
+    // come lui (una mina mimetica diventa un segnalino).
+    M.bustaSchieramento = function (roster, strutture, terreni, opzioni) {
+        opzioni = opzioni || {};
+        const motivo = opzioni.motivo === 'AGGIORNAMENTO' ? 'AGGIORNAMENTO' : 'SCHIERAMENTO';
+        // Un token non si conta due volte: se sta nel roster E nell'elenco dei
+        // token (copie locali di prima del 26 settembre), resta la copia del
+        // roster. Misurato da INTERFACCIA: 3 unita` in uscita per 2 vere.
+        const visti = {};
+        const tutti = (roster || []).concat(opzioni.token || []).filter(function (u) {
+            const k = u && u.id;
+            if (!k) return true;
+            if (visti[k]) return false;
+            visti[k] = true; return true;
+        });
+        return {
+            roster: M.rosterPubblico(tutti),
+            strutture: strutture || [],
+            terreni: terreni || [],
+            motivo: motivo,
+            timestamp: Date.now()
+        };
+    };
 
     // La scelta fazione -> nome, anch'essa una volta sola.
     M.canaleSetup = function (fazione) { return String(fazione).toUpperCase() === 'NOMADI' ? M.CANALI.SETUP_NOMADI : M.CANALI.SETUP_PANOCEANIA; };

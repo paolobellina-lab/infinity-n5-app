@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-09-24.1 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-09-25.1 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -40,6 +40,11 @@
         style="position:fixed; left:10px; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); z-index:9000;
                background:rgba(0,0,0,.75); color:#888; border:1px solid #444; border-radius:6px;
                padding:8px 12px; font-size:13px; letter-spacing:1px;">☰ MENU</button>
+
+    <!-- Avviso di stato dell'Hub. Lo riempie avvisoHub() nel controller:
+         serve a non lasciar credere che una pagina vuota sia la partita. -->
+    <div id="avviso-hub" style="display:none; margin:10px; padding:12px; border:2px solid #ffaa00;
+         border-radius:6px; color:#ffdd88; font-weight:bold; text-align:center;"></div>
     <script>
     window.tornaAlMenu = function () {
         if (!confirm('Chiudendo l\'Hub nessuno arbitra piu`.\n\nLe due app continueranno a mandare ordini e ARO, ma finche` l\'Hub non viene riaperto quei dati non vengono elaborati: il tabellone e i calcoli si fermano qui.\n\nTorni al menu?')) return;
@@ -111,7 +116,7 @@
         // quello dove una copia vecchia (cache del telefono) e` piu` probabile.
         (function () {
             var g = (typeof window !== 'undefined') ? window : globalThis;
-            var v = { file: 'calcolatore_hub.html', versione: '2026-09-24.1', proprieta: 'INTERFACCIA' };
+            var v = { file: 'calcolatore_hub.html', versione: '2026-09-25.1', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();

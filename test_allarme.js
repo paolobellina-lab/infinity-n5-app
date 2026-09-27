@@ -1,127 +1,117 @@
-// @versione 2026-09-23.1 | test_allarme.js | proprieta`: chat TEST
-// Test dell'allarme ARO ripetuto — node test_allarme.js
-global.window = global;
+// @versione 2026-09-25.1 | test_allarme.js | proprieta`: chat TEST
+// ================================================================
+// La prima lettura dal cloud e la ripresa di una partita.
+// Motore 2026-09-25.1: M.creaAttesaCloud dà le tre funzioni che l'app e
+// l'Hub espongono con gli stessi nomi — cloudPronto, riprovaCloud,
+// statoCloud — e motore_core dà window.riprendiDaStato.
+//
+// Il test sulla scadenza ASPETTA davvero: MOTORE ha tolto un unref() sul
+// timer, che in Node faceva uscire il processo prima della scadenza e
+// chiudeva il test senza asserire niente — un verde falso.
+// ================================================================
 let passati = 0, falliti = 0;
-function ok(c, n, e) { if (c) { passati++; console.log(`  ✅ ${n}`); } else { falliti++; console.log(`  ❌ ${n}${e ? '\n       ' + e : ''}`); } }
+const ok = (c, m) => { if (c) { passati++; console.log('  ✅ ' + m); } else { falliti++; console.log('  ❌ ' + m); } };
+const J = JSON.stringify;
 
-// localStorage finto, con la stessa asimmetria di Firebase: il remoto
-// risponde dopo, la copia locale resta finché non torna il null.
-const store = {};
-let remotoPendente = null;
-global.localStorage = {
-    getItem: (k) => (k in store ? store[k] : null),
-    setItem: (k, v) => { store[k] = String(v); },
-    removeItem: (k) => { delete store[k]; }
-};
-const canaliCloud = ['canale_attacco_allarme'];
-const originalRemoveItem = global.localStorage.removeItem;
-
+global.window = global;
 require('./catalogo_n5.js'); require('./database_comune.js');
 const M = require('./motore_regole_n5.js');
 
-// --- la versione VECCHIA di removeItem: solo il remoto ---
-function removeItemVecchio(key) {
-    if (canaliCloud.includes(key)) {
-        remotoPendente = key;          // Firebase risponderà... fra un po'
-    } else { originalRemoveItem(key); }
-}
-// --- la versione NUOVA: subito anche il locale ---
-function removeItemNuovo(key) {
-    if (canaliCloud.includes(key)) {
-        originalRemoveItem(key);
-        remotoPendente = key;
-    } else { originalRemoveItem(key); }
-}
+(async () => {
+console.log('\n=== 1. Confermato quando tutti i canali hanno risposto ===');
+const canali = ['uno', 'due', 'tre'];
+const a = M.creaAttesaCloud(canali, { tempoMassimo: 2000 });
+ok(a.stato().confermato === false && a.stato().mancanti.length === 3, 'appena creato: nessun canale ricevuto');
+a.segna('uno'); a.segna('due');
+ok(a.stato().ricevuti === 2 && J(a.stato().mancanti) === J(['tre']), 'due su tre: il mancante è nominato');
+a.segna('tre');
+const esito = await a.pronto;
+ok(esito.confermato === true && esito.mancanti.length === 0, `confermato, ${esito.ricevuti} canali in ${esito.ms} ms`);
+ok(typeof esito.ms === 'number', 'e dice quanto ha aspettato');
 
-console.log('\n=== 1. LA CAUSA: removeItem non cancellava il locale ===');
-store['canale_attacco_allarme'] = '{"attaccanti":["Fusilier"]}';
-removeItemVecchio('canale_attacco_allarme');
-ok(localStorage.getItem('canale_attacco_allarme') !== null,
-   'col vecchio removeItem la chiave resta: chi rilegge la trova ancora');
+console.log('\n=== 2. Un canale che risponde null è comunque arrivato ===');
+// "Arrivato" vuol dire copia locale PRONTA, non valore diverso da null: un
+// canale vuoto sul cloud è una risposta, e aspettarlo per sempre sarebbe
+// il difetto.
+const b = M.creaAttesaCloud(['vuoto'], { tempoMassimo: 2000 });
+b.segna('vuoto');
+const eb = await b.pronto;
+ok(eb.confermato === true, 'canale segnato con valore nullo: confermato lo stesso');
 
-store['canale_attacco_allarme'] = '{"attaccanti":["Fusilier"]}';
-removeItemNuovo('canale_attacco_allarme');
-ok(localStorage.getItem('canale_attacco_allarme') === null,
-   'col nuovo sparisce subito, senza attendere il giro di rete');
+console.log('\n=== 3. Scadenza: non si rifiuta mai, e dice chi manca ===');
+const inizio = Date.now();
+const c = M.creaAttesaCloud(['c1', 'c2'], { tempoMassimo: 120 });
+c.segna('c1');
+let rifiutata = false;
+const ec = await c.pronto.catch(() => { rifiutata = true; return null; });
+ok(!rifiutata, 'la Promise non si rifiuta mai');
+ok(ec && ec.confermato === false && J(ec.mancanti) === J(['c2']), `scaduta: manca c2 (${J(ec && ec.mancanti)})`);
+ok(ec.motivo === 'tempo scaduto', `col motivo (${ec.motivo})`);
+ok(Date.now() - inizio >= 110, `e ha aspettato davvero (${Date.now() - inizio} ms, non un'uscita anticipata)`);
 
-console.log('\n=== 2. LA SECONDA CAUSA: il banner si rimostrava ===');
-// Si riproduce il ciclo del setInterval, con la finestra fra invio e null.
-let scrollate = 0;
-window.mostraBannerAllarme = function () { scrollate++; };
-window._allarmiConsumati = [];
-window.isReactiveMode = true;
+console.log('\n=== 4. La riprova si chiude appena arriva l ultimo ===');
+const d = M.creaAttesaCloud(['x', 'y'], { tempoMassimo: 100 });
+await d.pronto;                       // scade: y non è mai arrivato
+ok(d.stato().confermato === false, 'dopo la scadenza lo stato resta non confermato');
+const seconda = d.riprova({ tempoMassimo: 3000 });
+d.segna('x'); d.segna('y');
+const ed = await seconda;
+ok(ed.confermato === true, 'la riprova si chiude appena arrivano i valori, senza aspettare la scadenza');
+ok(ed.ms < 3000, `e non ha aspettato i 3 secondi (${ed.ms} ms)`);
+// Controprova: una riprova senza nuovi valori scade come la prima.
+const e2 = M.creaAttesaCloud(['z'], { tempoMassimo: 80 });
+const terza = await e2.riprova({ tempoMassimo: 80 });
+ok(terza.confermato === false && J(terza.mancanti) === J(['z']), 'controprova: senza valori, la riprova scade');
 
-function unGiro(usaMemoria) {
-    const attacco = localStorage.getItem('canale_attacco_allarme');
-    if (!attacco) return;
-    const firma = M.impronta(attacco);
-    if (usaMemoria && window._allarmiConsumati.indexOf(firma) >= 0) {
-        originalRemoveItem('canale_attacco_allarme');
-        return;
-    }
-    if (usaMemoria) window._allarmiConsumati.push(firma);
-    window.currentAttackData = JSON.parse(attacco);
-    removeItemNuovo('canale_attacco_allarme');
-    window.mostraBannerAllarme();
-}
 
-// rete lenta: la chiave ricompare tre volte prima che il null arrivi
-scrollate = 0;
-for (let i = 0; i < 3; i++) {
-    store['canale_attacco_allarme'] = '{"attaccanti":["Fusilier"]}';
-    unGiro(false);
-}
-ok(scrollate === 3, `senza memoria: 3 giri, 3 banner (quindi 3 scrollTo) — ottenuto ${scrollate}`);
+console.log('\n=== 5. Riprendere una partita senza cancellare l ordine a metà ===');
+// motore_core: nel ramo del REATTIVO applicaCambioTurno toglie l'allarme ARO,
+// e col localStorage intercettato lo toglie anche da Firebase — per ENTRAMBI.
+// riprendiDaStato applica il turno del cloud SENZA quella cancellazione.
+const memoria = {};
+global.localStorage = { getItem: k => (k in memoria ? memoria[k] : null),
+    setItem: (k, v) => { memoria[k] = String(v); }, removeItem: k => { delete memoria[k]; } };
+global.document = { title: 'NOMADS', getElementById: () => ({ style: {}, innerHTML: '', appendChild(){}, addEventListener(){} }),
+    querySelectorAll: () => [], createElement: () => ({ style: {} }), addEventListener(){}, body: { appendChild(){} } };
+global.alert = () => {}; global.setInterval = () => 0;
+global.addEventListener = () => {};   // motore_core registra gli ascoltatori globali
+global.firebase = { initializeApp: () => ({}), database: () => ({ ref: () => ({ on(){}, set(){}, update(){}, remove(){},
+    once: () => Promise.resolve({ val: () => null }) }) }) };
+let coreCaricato = true;
+try { require('./motore_core.js'); } catch (e) { coreCaricato = false; ok(false, 'motore_core non si carica: ' + e.message); }
+ok(coreCaricato && typeof window.riprendiDaStato === 'function', 'motore_core espone riprendiDaStato');
+const C = M.CANALI;
+const prepara = () => { Object.keys(memoria).forEach(k => delete memoria[k]);
+    // `attivo` è la chiave che applicaCambioTurno legge; PANOCEANIA significa
+    // che questa app (NOMADS) è la reattiva — il ramo in cui l'allarme si
+    // cancellerebbe.
+    memoria[C.HUB_TURNO] = J({ attivo: 'PANOCEANIA', turno: 2 });
+    memoria[C.ARO_NOMADI] = J({ stato: 'ARO_PENDING' });
+    // È ALLARME_ATTACCO il canale che il cambio turno cancella (motore_core,
+    // riga 140): con il localStorage intercettato la cancellazione arriva a
+    // Firebase e quindi anche all'altro giocatore.
+    memoria[C.ALLARME_ATTACCO] = J({ attaccante: 'Alguacil' }); };
 
-scrollate = 0;
-window._allarmiConsumati = [];
-for (let i = 0; i < 3; i++) {
-    store['canale_attacco_allarme'] = '{"attaccanti":["Fusilier"]}';
-    unGiro(true);
-}
-ok(scrollate === 1, `con la memoria: 3 giri, UN solo banner — ottenuto ${scrollate}`);
+prepara();
+const r = window.riprendiDaStato();
+ok(r.ripresa === true, `ripresa: ${r.ripresa}`);
+ok(r.turno && r.turno.attivo === 'PANOCEANIA', `col turno del cloud (${J(r.turno)})`);
+ok(r.ordineAMeta && r.ordineAMeta[C.ARO_NOMADI], 'e l ordine a metà è restituito, non perso');
+ok(memoria[C.ALLARME_ATTACCO] != null, 'l allarme d attacco è ANCORA sul cloud dopo la ripresa');
+ok(r.ordineAMeta[C.ALLARME_ATTACCO] && r.ordineAMeta[C.ARO_NOMADI],
+   `e l ordine a metà li elenca entrambi (${Object.keys(r.ordineAMeta).length} canali)`);
 
-console.log('\n=== 3. Un attacco DIVERSO deve passare ===');
-scrollate = 0;
-window._allarmiConsumati = [];
-store['canale_attacco_allarme'] = '{"attaccanti":["Fusilier"]}';
-unGiro(true);
-store['canale_attacco_allarme'] = '{"attaccanti":["Bolt"]}';
-unGiro(true);
-ok(scrollate === 2, 'due attacchi diversi: due banner');
+// Controprova: il cambio turno normale lo toglie. Senza, il "resta" sopra
+// non distinguerebbe la ripresa da un percorso che non cancella mai.
+prepara();
+window.applicaCambioTurno(memoria[C.HUB_TURNO]);
+ok(memoria[C.ALLARME_ATTACCO] == null, 'controprova: il cambio turno normale toglie l allarme d attacco');
 
-console.log('\n=== 4. La firma è sul contenuto, non sul tempo ===');
-// Due attacchi diversi nello stesso secondo avrebbero lo stesso timestamp.
-ok(M.impronta('{"attaccanti":["Fusilier"]}') !== M.impronta('{"attaccanti":["Bolt"]}'),
-   'contenuti diversi, firme diverse');
-ok(M.impronta('{"attaccanti":["Fusilier"]}') === M.impronta('{"attaccanti":["Fusilier"]}'),
-   'contenuto identico, firma identica');
-
-console.log('\n=== 5. La coda non cresce senza fine ===');
-window._allarmiConsumati = [];
-for (let i = 0; i < 60; i++) {
-    store['canale_attacco_allarme'] = '{"n":' + i + '}';
-    unGiro(true);
-    if (window._allarmiConsumati.length > 40) window._allarmiConsumati.splice(0, 20);
-}
-ok(window._allarmiConsumati.length <= 41, `la coda resta limitata (${window._allarmiConsumati.length})`);
-
-console.log('\n=== 6. Un allarme illeggibile non blocca il ciclo ===');
-store['canale_attacco_allarme'] = 'non sono JSON {{{';
-let esploso = false;
-try {
-    const a = localStorage.getItem('canale_attacco_allarme');
-    const f = M.impronta(a);
-    try { JSON.parse(a); } catch (e) { window._allarmiConsumati.push(f); originalRemoveItem('canale_attacco_allarme'); }
-} catch (e) { esploso = true; }
-ok(!esploso, 'si scarta e si prosegue, invece di sollevare a ogni secondo');
-
-console.log('\n=== 7. Il codice vero contiene le due correzioni ===');
-const src = require('fs').readFileSync('./motore_core.js', 'utf8');
-ok(/originalRemoveItem\.call\(localStorage, key\);\s*\n\s*db\.ref\(key\)\.remove\(\)/.test(src),
-   'removeItem: locale PRIMA del remoto');
-ok(/_allarmiConsumati/.test(src), 'la memoria degli allarmi consumati c è');
-ok(/azzeraAllarmiConsumati/.test(src), 'e si può azzerare a fine turno reattivo');
+// E senza turno sul cloud non si inventa una partita.
+Object.keys(memoria).forEach(k => delete memoria[k]);
+const vuoto = window.riprendiDaStato();
+ok(vuoto.ripresa === false && /turno/i.test(vuoto.motivo || ''), `senza turno: ripresa false, col motivo (${vuoto.motivo})`);
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);
+})();

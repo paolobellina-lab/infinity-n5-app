@@ -1,4 +1,4 @@
-// @versione 2026-09-26.2 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-09-19.1 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -40,7 +40,7 @@ window.getPlayerTag = () => {
 };
 
 window.getSetupChannel = () => {
-    return window.isNomadsApp() ? window.MotoreN5.CANALI.SETUP_NOMADI : window.MotoreN5.CANALI.SETUP_PANOCEANIA;
+    return window.isNomadsApp() ? 'canale_setup_nomadi' : 'canale_setup_panoceania';
 };
 
 
@@ -240,7 +240,7 @@ window.renderStructures = () => {
             <div><b style="color:#aaa;">[${u.tipo || 'STRUTTURA'}]</b> <b style="color:#fff;">${u.alias}</b>
                 ${u.weapon && u.weapon !== '-' ? `<span style="color:#aaa; font-size:12px;"> | ${u.weapon}</span>` : ''}
                 ${u.skills && u.skills !== '-' ? `<span style="color:#777; font-size:12px;"> | ${u.skills}</span>` : ''}
-                ${window.modelloStrutturaMancante(u) ? `<div style="color:#ff6666; font-size:13px; font-weight:bold;">\u26a0\ufe0f ${window.cosaFareStrutturaMancante(u)}</div>` : ''}</div>
+                ${window.modelloStrutturaMancante(u) ? `<div style="color:#ff6666; font-size:13px; font-weight:bold;">\u26a0\ufe0f MODELLO NON PIÙ NEL DATABASE (${u.modelId}) \u2014 da rimettere</div>` : ''}</div>
             <div style="display:flex; align-items:center; gap:14px;">
                 <div style="cursor:pointer; font-size:18px;" title="Assegna o cambia il soprannome" onclick="window.rinominaStruttura(${i})">✏️</div>
                 <div class="del-btn" style="color:red; cursor:pointer;" onclick="window.activeStructures.splice(${i}, 1); window.renderStructures();">X</div>
@@ -325,15 +325,10 @@ window.addUnitToRoster = () => {
     let aliasInput = document.getElementById('unitAlias').value.trim(); 
     if (!idProfilo) return;
     
-    // Qui arrivano SOLO truppe. Gli elementi scenici hanno la loro tendina
-    // (aggiungiStruttura) dal 14 settembre, e non passano piu` di qui:
-    // il vecchio ripiego su DB_STRUTTURE e il ramo "STRUTTURA o TORRETTA ->
-    // scenografia" sono stati tolti. Il secondo era anche sbagliato per
-    // regola: una torretta e` un equipaggiamento che una truppa piazza, non
-    // scenografia neutra, e se un giorno fosse rientrata da questa strada
-    // sarebbe tornata a essere trattata come tale (segnalato dalla chat TEST).
     const dbFazione = window.getDbFazione();
-    const dbUnit = dbFazione.find(u => u.id === idProfilo);
+    let dbUnit = dbFazione.find(u => u.id === idProfilo);
+    if (!dbUnit && window.DB_STRUTTURE) dbUnit = window.DB_STRUTTURE.find(u => u.id === idProfilo);
+    
     if (!dbUnit) return;
 
     const unit = { 
@@ -350,9 +345,15 @@ window.addUnitToRoster = () => {
         combatGroup: parseInt(cGroup)
     };
 
-    window.roster.push(unit); 
-    document.getElementById('unitAlias').value = ""; 
-    window.renderRoster();
+    if (dbUnit.tipo === "STRUTTURA" || dbUnit.tipo === "TORRETTA") {
+        window.activeStructures.push(unit); 
+        document.getElementById('unitAlias').value = ""; 
+        window.renderStructures();
+    } else {
+        window.roster.push(unit); 
+        document.getElementById('unitAlias').value = ""; 
+        window.renderRoster();
+    }
     
     if (window.aggiornaMenuGruppi) window.aggiornaMenuGruppi();
 };
@@ -383,19 +384,6 @@ window.rinominaUnita = (index) => {
 window.modelloStrutturaMancante = (u) => {
     if (!u || !u.modelId || !Array.isArray(window.DB_STRUTTURE)) return false;
     return !window.DB_STRUTTURE.some(st => st.id === u.modelId);
-};
-
-// Un avviso che dice solo "manca" lascia il giocatore a chiedersi cosa
-// fare. Se il modello sparito dalla scenografia esiste ora fra i piazzabili,
-// e` cambiato di natura e lo si dice; altrimenti si dice di rimetterlo.
-// Nessuna regola qui: si legge solo dove sta adesso il modello nei dati.
-window.cosaFareStrutturaMancante = (u) => {
-    const piazzabile = (window.DB_DEPLOYABLES || []).find(d => d.id === u.modelId);
-    if (piazzabile) {
-        return `${piazzabile.nome}: non \u00e8 pi\u00f9 scenografia neutra ma un equipaggiamento. ` +
-               `Toglila da qui e piazzala dalla truppa che la porta.`;
-    }
-    return `Modello non pi\u00f9 nel database (${u.modelId}): toglilo e rimettilo dalla tendina.`;
 };
 
 window.rinominaStruttura = (index) => {
@@ -494,100 +482,18 @@ window.refreshSavedRostersList = () => {
 };
 
 // --- SINCRONIZZAZIONE HUB ---
-// ==========================================================================
-//  COPIA LOCALE DELLA PARTITA
-// ==========================================================================
-// Il roster che l'app manda all'Hub e` FILTRATO per l'avversario: un
-// mimetico diventa un segnalino senza profilo ne` ferite, e un'unita` in
-// Hidden Deployment non parte affatto. Riaprendo l'app, quindi, dall'Hub
-// non si puo` ricostruire la propria squadra: si riavrebbero segnalini
-// anonimi e mancherebbero i nascosti.
-//
-// La copia intera resta percio` su QUESTO dispositivo, dove nessun
-// avversario la legge. L'Hub resta l'arbitro di cio` che e` pubblico.
-//
-// SULLE FERITE vince sempre questa copia, per tutte le proprie unita`.
-// Non e` una regola del regolamento: le ferite le scrive un punto solo,
-// la pagina stati dell'app del proprietario, e l'Hub le COPIA senza mai
-// calcolarle. Uno specchio puo` essere uguale o piu` vecchio, mai piu`
-// nuovo. (Misurato dalla chat MOTORE, 25 settembre.)
-//
-// Si salva PRIMA di mandare all'Hub: al contrario, un'interruzione fra i
-// due passi lascerebbe l'Hub piu` aggiornato del dispositivo.
-window.chiavePartitaLocale = () => 'partita_locale_' + (window.isNomadsApp() ? 'nomadi' : 'panoceania');
-
-window.salvaPartitaLocale = () => {
-    try {
-        localStorage.setItem(window.chiavePartitaLocale(), JSON.stringify({
-            versione: 1,
-            roster: window.roster || [],
-            // I token NON si salvano a parte: dal 26 settembre stanno nel
-            // roster come unita`, e di li` vengono salvati insieme a tutto il
-            // resto. Le copie piu` vecchie hanno ancora il campo, e la ripresa
-            // lo fonde nel roster: vedi riprendiPartita in app.html.
-            strutture: window.activeStructures || [],
-            terreni: window.activeTerrains || [],
-            schieramentoCompletato: !!window.schieramentoCompletato,
-            timestamp: Date.now()
-        }));
-        return true;
-    } catch (e) {
-        // Memoria piena o negata: non si blocca la partita per il salvataggio,
-        // ma non si finge nemmeno che sia andato bene.
-        console.error('\u26d4 Copia locale della partita NON salvata:', e);
-        window.ultimaEccezione = e;
-        return false;
-    }
-};
-
-window.leggiPartitaLocale = () => {
-    try {
-        const grezzo = localStorage.getItem(window.chiavePartitaLocale());
-        if (!grezzo) return null;
-        const p = JSON.parse(grezzo);
-        return (p && Array.isArray(p.roster) && p.roster.length) ? p : null;
-    } catch (e) {
-        window.ultimaEccezione = e;
-        return null;
-    }
-};
-
-window.scordaPartitaLocale = () => {
-    try { localStorage.removeItem(window.chiavePartitaLocale()); } catch (e) {}
-};
-
 window.sendDataToServer = () => { 
-    if(window.roster.length === 0 && window.activeStructures.length === 0) return alert("Schiera un'unit\u00e0 o una struttura!");
-
-    // Mandare una lista nuova mentre una partita e` in corso sostituisce
-    // all'Hub ferite e stati della propria fazione. Non deve poter
-    // succedere con un tocco distratto sul pulsante di invio.
-    // Sta PRIMA dell'invio perche` e` una domanda al giocatore, non al motore.
-    const inCorso = window.leggiPartitaLocale && window.leggiPartitaLocale();
-    if (inCorso && inCorso.schieramentoCompletato) {
-        if (!confirm('C\'e` gia` una partita in corso per la tua fazione.\n\nInviando questa lista, all\'Hub sostituisci ferite e stati di quelle unita`.\n\nSe volevi solo riprendere la partita, annulla e usa RIPRENDI PARTITA.\n\nProcedo?')) return;
-    }
-
-    // UN SOLO MITTENTE. Qui si passava il roster al canale a mano, ed era
-    // l'ultimo punto dell'app che lo faceva: bastava dimenticare il filtro
-    // una volta perche` le truppe nascoste finissero sul telefono
-    // dell'avversario, che ascolta tutti i canali. Ora si consegna il roster
-    // PRIVATO al mittente del motore, che costruisce lui la busta filtrata e
-    // scrive lui il canale — cosi` nessun chiamante puo` piu` sbagliare.
-    // Salva anche la copia locale prima di spedire, quindi qui non si
-    // richiama salvaPartitaLocale.
-    if (typeof window.inviaSchieramentoAllHub !== 'function') {
-        return alert('\u26d4 Core non caricato: i dati NON sono stati inviati.\n\nSenza il mittente del motore la busta non verrebbe filtrata, e l\'avversario vedrebbe le truppe nascoste.');
-    }
-
-    const esito = window.inviaSchieramentoAllHub(
-        window.isNomadsApp() ? 'NOMADI' : 'PANOCEANIA',
-        { roster: window.roster, strutture: window.activeStructures, terreni: window.activeTerrains }
-    );
-
-    if (!esito || !esito.inviato) {
-        return alert('\u26d4 Dati NON inviati all\'Hub.\n\nMotivo: ' + ((esito && esito.motivo) || 'sconosciuto') + '\n\nRiprova, o controlla che l\'Hub sia aperto.');
-    }
+    if(window.roster.length === 0 && window.activeStructures.length === 0) return alert("Schiera un'unità o una struttura!");
+    
+    const setupPayload = { 
+        roster: window.roster, 
+        strutture: window.activeStructures, 
+        terreni: window.activeTerrains,
+        timestamp: Date.now() 
+    };
+    
+    const channel = window.getSetupChannel();
+    localStorage.setItem(channel, JSON.stringify(setupPayload));
 
     document.getElementById('setup').style.display = 'none'; 
     document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
@@ -640,60 +546,27 @@ window.cambiaIconaDeploy = (event, index) => {
     window.renderDeployUnits();
 };
 
-// PRESSIONE SULLA RIGA DELL'UNITA` (fase di schieramento)
-//
-//   tocco breve      -> schieramento e piazzamento (una pagina sola)
-//   tocco prolungato -> stati e Fireteam
-//   tocco sull'icona -> cambia foto
-//
-// Il gesto lungo prima si annullava di continuo: la riga aveva
-// onpointerleave, che sul telefono scatta appena il dito esce dal bottone,
-// cioe` al primo pixel di scorrimento. Ora si ascolta onpointercancel, che
-// e` il segnale con cui il BROWSER dichiara di aver preso lui il gesto per
-// scorrere, piu` una tolleranza di movimento: fermo il dito si apre, se
-// scorri non si apre niente.
-window.TOLLERANZA_PRESSIONE = 12;   // pixel
-window.origineePressione = null;
-
-window.startDeployPress = (index, evento) => {
+window.startDeployPress = (index) => {
     window.isDeployPressing = true;
-    window.origineePressione = evento ? { x: evento.clientX, y: evento.clientY } : null;
     window.deployPressTimer = setTimeout(() => {
         if (window.isDeployPressing) {
             window.isDeployPressing = false;
-            window.apriStatiDaSchieramento(index);
+            window.apriDeployStati(index); 
         }
     }, 500);
-};
-
-window.moveDeployPress = (evento) => {
-    if (!window.isDeployPressing || !window.origineePressione || !evento) return;
-    const dx = Math.abs(evento.clientX - window.origineePressione.x);
-    const dy = Math.abs(evento.clientY - window.origineePressione.y);
-    if (dx > window.TOLLERANZA_PRESSIONE || dy > window.TOLLERANZA_PRESSIONE) window.cancelDeployPress();
 };
 
 window.endDeployPress = (index) => {
     if (window.isDeployPressing) {
         clearTimeout(window.deployPressTimer);
         window.isDeployPressing = false;
-        window.apriDeployStati(index);
+        window.apriDeployAzioni(index); 
     }
 };
 
 window.cancelDeployPress = () => {
     clearTimeout(window.deployPressTimer);
     window.isDeployPressing = false;
-    window.origineePressione = null;
-};
-
-// Apre stati e Fireteam SAPENDO di venire dallo schieramento: serve perche`
-// annullaStati e salvaStatiUnita (logica_stati.js, non nostro) tornano
-// sempre alla schermata di battaglia. Il ponte che riporta indietro sta
-// nello script in coda ad app.html.
-window.apriStatiDaSchieramento = (index) => {
-    window.statiApertiDalloSchieramento = true;
-    if (window.apriPaginaStati) window.apriPaginaStati(index);
 };
 
 window.renderDeployUnits = () => {
@@ -702,7 +575,7 @@ window.renderDeployUnits = () => {
     // che sul telefono si annulla appena la lista scorre di un pixel, e che
     // nessuno indovina. Ora ogni unita` ha il suo pulsante, e il tocco lungo
     // resta come scorciatoia per chi lo conosce.
-    container.innerHTML = `<p style="color:#aaa; font-size:14px; text-align:center;">Tocco rapido = Schieramento e piazzamento<br>Tocco prolungato = Stati e Fireteam<br>Tocco sull'icona = Cambia foto</p>`;
+    container.innerHTML = `<p style="color:#aaa; font-size:14px; text-align:center;">Tocco sull'icona = Cambia Foto<br>Tocco rapido = Azioni / Mine<br>Pulsante sotto (o tocco lungo) = Schieramento speciale</p>`;
 
     let isNomads = window.isNomadsApp();
     let aliasColor = isNomads ? 'var(--nomad-orange)' : '#00ffff';
@@ -722,17 +595,16 @@ window.renderDeployUnits = () => {
         let imgSrc = `img/${nomePuro.replace(/\s+/g, '_')}${variant}.png`;
 
         let stateLabel = "";
-        // In N5 il Marker Mimetico e` UNO SOLO (chat REGOLE, regolamento
-        // v5.1.1 riga 13607): il segnalino porta il MOD del Mimetismo della
-        // truppa, se ce l'ha, e nient'altro. I "livelli" CAMO_1/CAMO_2 non
-        // esistono piu`: erano un ricordo del TO Camouflage di N3.
-        // Si riconosce QUALUNQUE deployState che cominci per CAMO — cosi`
-        // le liste salvate prima di oggi (CAMO_0/1/2/3/6) e quello che scrive
-        // ancora logica_stati.js non perdono il segnalino. E` la stessa
-        // regola che usa il motore (indexOf('CAMO') === 0).
-        if (String(u.deployState || '').indexOf('CAMO') === 0) {
-            stateLabel += `<br><span style='color:${markerColor}; font-size:14px;'>[ SEGNALINO CAMO${window.testoMimetismo(u)} ]</span>`;
-        }
+        // CAMO_1 = Camouflage, CAMO_2 = TO Camouflage: il numero e` il LIVELLO
+        // di occultamento, non il malus. Il malus viene da Mimetism (-N) e lo
+        // legge il motore con M.valoreMimetismo(): sono due dati diversi dello
+        // stesso profilo e prima li confondevamo.
+        // Le vecchie etichette CAMO_0/3/6 restano riconosciute in LETTURA,
+        // altrimenti una lista salvata prima di oggi perderebbe il segnalino.
+        if(u.deployState === "CAMO_1") stateLabel += `<br><span style='color:${markerColor}; font-size:14px;'>[ SEGNALINO CAMO ]</span>`;
+        if(u.deployState === "CAMO_2") stateLabel += `<br><span style='color:${markerColor}; font-size:14px;'>[ SEGNALINO TO CAMO ]</span>`;
+        if(u.deployState === "CAMO_0" || u.deployState === "CAMO_3" || u.deployState === "CAMO_6")
+            stateLabel += `<br><span style='color:${markerColor}; font-size:14px;'>[ SEGNALINO CAMO (etichetta vecchia: ${u.deployState}) ]</span>`;
         if(u.deployState === "IMP_1") stateLabel += `<br><span style='color:${markerColor}; font-size:14px;'>[ IMP-1 ]</span>`;
         if(u.deployState === "IMP_2") stateLabel += `<br><span style='color:${markerColor}; font-size:14px;'>[ IMP-2 ]</span>`;
         if(u.deployState === "HIDDEN") stateLabel += `<br><span style='color:${hiddenColor}; font-size:14px;'>[ HIDDEN DEPLOYMENT ]</span>`;
@@ -746,11 +618,9 @@ window.renderDeployUnits = () => {
 
         container.innerHTML += `
             <button class="huge-btn" style="background:#111; border:2px solid ${btnBorder}; padding:10px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; width:100%; max-height:120px; overflow:hidden;"
-                
-                onpointerdown="window.startDeployPress(${originalIndex}, event)" 
+                onpointerdown="window.startDeployPress(${originalIndex})" 
                 onpointerup="window.endDeployPress(${originalIndex})" 
-                onpointermove="window.moveDeployPress(event)"
-                onpointercancel="window.cancelDeployPress()"
+                onpointerleave="window.cancelDeployPress()"
                 oncontextmenu="return false;">
                 
                 <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center; text-align:center;">
@@ -764,69 +634,12 @@ window.renderDeployUnits = () => {
                     onpointerdown="event.stopPropagation()" 
                     onclick="window.cambiaIconaDeploy(event, ${originalIndex})">
             </button>
+            <button class="huge-btn" style="background:#1a1a1a; border:2px solid ${btnBorder}; color:${btnBorder}; margin:-6px 0 14px 0; padding:10px; font-size:16px; width:100%;"
+                onclick="window.apriDeployStati(${originalIndex})">
+                \u{1F441}\uFE0F SCHIERAMENTO SPECIALE (CAMO, NASCOSTO, RISERVA)
+            </button>
         `;
     });
-};
-
-// Il MOD del Mimetismo da scrivere accanto al segnalino, chiesto al motore.
-// Nessun MOD -> niente parentesi: un segnalino senza Mimetismo non ne ha.
-window.testoMimetismo = (u) => {
-    const M = window.MotoreN5;
-    if (!M || typeof M.valoreMimetismo !== 'function') return '';
-    try {
-        const mod = M.valoreMimetismo(u);
-        return (mod && mod !== 0) ? ` (${mod})` : '';
-    } catch (e) {
-        window.ultimaEccezione = e;
-        return '';
-    }
-};
-
-// CAMOUFLAGE (1 USE) E TIRO DI INFILTRAZIONE FALLITO (FAQ F07)
-// Una truppa col CAMO monouso che tenta di schierarsi come Marker e
-// fallisce il Tiro di Infiltrazione ha consumato l'uso. Il tiro si fa al
-// tavolo, quindi l'app non puo` saperlo: lo dichiara il giocatore.
-//
-// Chi e` nel caso lo decide il MOTORE, non una ricerca di parole nelle
-// skill: M.camoUnUso per il CAMO monouso, e per l'Infiltrazione lo
-// stesso promemoriaSchieramento che oggi chiede "hai fatto il Tiro di
-// Infiltrazione?". Chiamato su UNA sola unita`, cosi` non si confrontano
-// soprannomi, che con due truppe uguali sarebbero ambigui.
-window.puoFallireInfiltrazioneCamo = (u) => {
-    const M = window.MotoreN5;
-    if (!u || !M || typeof M.camoUnUso !== 'function' || typeof M.promemoriaSchieramento !== 'function') return false;
-    if (u.camoUsato) return false;
-    if (String(u.deployState || '').indexOf('CAMO') !== 0) return false;
-    try {
-        if (!M.camoUnUso(u)) return false;
-        return (M.promemoriaSchieramento([u]) || []).some(p => p.skill === 'INFILTRATION');
-    } catch (e) {
-        window.ultimaEccezione = e;
-        return false;
-    }
-};
-
-window.infiltrazioneFallita = (index) => {
-    const M = window.MotoreN5;
-    const u = window.roster[index];
-    if (!u || !M || typeof M.consumaCamo !== 'function') {
-        console.error('\u26d4 M.consumaCamo assente: serve motore_regole_n5.js dalla 2026-09-21.25 in su.');
-        return;
-    }
-    const ok = confirm(
-        (u.alias || u.nome) + ': Tiro di Infiltrazione FALLITO.\n\n' +
-        'Con Camouflage (1 Use) l\'uso del CAMO e` consumato (FAQ F07): ' +
-        'per il resto della partita la truppa non potra` rientrare nello stato CAMO.\n\n' +
-        'Confermi?'
-    );
-    if (!ok) return;
-
-    // L'unita` aggiornata la calcola il motore; qui si sostituisce e basta,
-    // come per applicaIdle. Non si toccano altri campi di nostra iniziativa.
-    const esito = M.consumaCamo(u);
-    if (esito && esito.unitaAggiornata) window.roster[index] = esito.unitaAggiornata;
-    window.apriDeployStati(index);
-    if (window.renderDeployUnits) window.renderDeployUnits();
 };
 
 window.apriDeployStati = (index) => {
@@ -852,23 +665,31 @@ window.apriDeployStati = (index) => {
     
     // CAMO
     if (skills.includes('camo') || u.tipo === "MARKER") {
-        // Un solo Marker Mimetico, niente livelli da scegliere. Il MOD mostrato
-        // accanto e` quello di Mimetism (-N) letto dal motore: non si cerca
-        // il numero nella stringa delle skill, che su 54 profili pescava il
-        // -3 di "Surprise Attack (-3)" dell'Helot invece del Mimetismo.
-        // Hidden Deployment e` un'altra cosa \u2014 la truppa non e` sul tavolo \u2014
-        // e ha il suo pulsante qui sotto.
-        const attivoCamo = String(st || '').indexOf('CAMO') === 0;
-        html += `<button class="huge-btn" style="background:${attivoCamo ? markerBg : '#222'}; border-color:${attivoCamo ? markerBorder : '#555'}; min-height:50px;" onclick="window.setDeployState(${index}, 'CAMO')">SEGNALINO CAMO${window.testoMimetismo(u)}</button>`;
-
-        // Solo per chi e` nel caso: camuffato monouso, schierato come segnalino,
-        // infiltratore, e uso non ancora consumato.
-        if (window.puoFallireInfiltrazioneCamo(u)) {
-            html += `<button class="btn-status" style="border-color:#ffaa00; color:#ffaa00; margin:-4px 0 10px 0;" onclick="window.infiltrazioneFallita(${index})">TIRO DI INFILTRAZIONE FALLITO</button>`;
-        }
-        if (u.camoUsato) {
-            html += `<div style="color:#ffaa66; font-size:14px; margin:-4px 0 10px 0;">Camouflage (1 Use) già consumato: niente più stato CAMO in questa partita.</div>`;
-        }
+        // Il livello del segnalino viene dall'abilita` Camouflage:
+        // Camouflage = CAMO_1, TO Camouflage = CAMO_2. NON da Mimetism (-N),
+        // che e` il MOD subito dai nemici ed e` un'altra skill dello stesso
+        // profilo. Prima si cercava "-3"/"-6" in tutta la stringa: su 54
+        // profili 49 pescavano per caso il valore di Mimetism e l'Helot
+        // Militiaman pescava il -3 di "Surprise Attack (-3)".
+        //
+        // Il livello NON si deduce, e qui non si finge il contrario.
+        // "TO Camouflage" non esiste in N5: le schede ufficiali lo hanno
+        // sciolto in Camouflage + Hidden Deployment + Mimetism (-6), e nei
+        // database infatti compare zero volte. Restano due criteri possibili
+        // per riconoscere un TO, e NON danno la stessa risposta:
+        //   Camouflage + Hidden Deployment ....... 25 profili
+        //   Camouflage + Mimetism (-6) ........... 29 profili
+        // I quattro di differenza sono i Locust, che hanno il -6 senza
+        // Hidden Deployment. Quale dei due valga e` una regola e la decide
+        // la chat MOTORE: finche` non risponde, si offrono i due livelli
+        // senza suggerirne uno. Una casella marcata "dal profilo" sarebbe
+        // una risposta inventata, e sarebbe sbagliata su quei quattro.
+        const livelli = [["CAMO_1", "SEGNALINO CAMO"], ["CAMO_2", "SEGNALINO TO CAMO"]];
+        livelli.forEach(([tipo, etichetta]) => {
+            const attivo = (st === tipo);
+            html += `<button class="huge-btn" style="background:${attivo ? markerBg : '#222'}; border-color:${attivo ? markerBorder : '#555'}; min-height:50px;" onclick="window.setDeployState(${index}, '${tipo}')">${etichetta}</button>`;
+        });
+        html += `<div style="color:#888; font-size:14px; margin:2px 0 8px 0;">Il profilo non registra il livello del segnalino: scegli tu.</div>`;
     }
     
     // IMPERSONATION
@@ -909,18 +730,6 @@ window.apriDeployStati = (index) => {
     }
     
     html += `</div>`;
-
-    // Piazzamento nella stessa pagina: schieramento e mine si decidono nello
-    // stesso momento, e tenerli su due schermate costava un gesto in piu` per
-    // sapere se l'unita` aveva qualcosa da piazzare.
-    const piazzabili = window.bottoniDeployables(index);
-    if (piazzabili) {
-        const titleColor = window.isNomadsApp() ? 'var(--nomad-orange)' : '#00ccff';
-        html += `<hr style="border-color:#333; margin:18px 0;">
-            <p style="color:${titleColor}; text-align:center; margin-bottom:10px; letter-spacing:1px;">EQUIPAGGIAMENTO DA PIAZZARE</p>
-            ${piazzabili}`;
-    }
-
     document.getElementById('deploy-states-content').innerHTML = html;
 };
 
@@ -979,103 +788,48 @@ window.apriDeployAzioni = (index) => {
     }
 };
 
+window.mostraMenuDeployables = (parentIndex) => {
+    let container = document.getElementById('deploy-action-list-container');
+    
+    let titleColor = window.isNomadsApp() ? 'var(--nomad-orange)' : '#00ccff';
+    container.innerHTML = `<p style="color:${titleColor}; text-align:center; margin-bottom:10px;">SELEZIONA COSA PIAZZARE:</p>`;
 
+    let u = window.roster[parentIndex];
+    let unitGear = ((u.weapon || u.armi || "") + " " + (u.equip || u.skills || "")).toLowerCase();
 
-// COSA PUO' PIAZZARE UNA TRUPPA, E COME
-//
-// Prima era un elenco di nomi scritto qui, che sbagliava in entrambi i
-// versi: non conosceva la Armed Turret (offerta a 0 dei 3 portatori) ne` i
-// Drop Bears, e a chi aveva una parola "mine" nel profilo offriva TUTTE e
-// sei le mine (Gator col Mine Dispenser, Krakot con la Chest Mine). Il
-// gettone poi lo costruiva a mano: scriveva ancora CAMO_3 e non scalava gli
-// usi, quindi una truppa con una mina ne piazzava quante voleva.
-//
-// Ora: la lista viene da M.armiPiazzabili, il gettone e il portatore con
-// l'uso scalato da M.creaDeployable. E` la stessa strada dell'ordine
-// PIAZZARE EQUIPAGGIAMENTO a partita iniziata, quindi schieramento e partita
-// contano gli usi allo stesso modo.
-window._piazzabiliMostrati = {};
-
-window.bottoniDeployables = (index) => {
-    const M = window.MotoreN5;
-    const u = window.roster[index];
-    if (!u) return '';
-    if (!M || typeof M.armiPiazzabili !== 'function' || typeof M.creaDeployable !== 'function') {
-        return `<p style="color:#ff6666; text-align:center;">\u26d4 Motore assente: impossibile sapere cosa piazza questa truppa.</p>`;
-    }
-
-    let esito;
-    try { esito = M.armiPiazzabili(u) || {}; }
-    catch (e) { window.ultimaEccezione = e; return `<p style="color:#ff6666;">\u26d4 Errore leggendo i piazzabili: ${e.message}</p>`; }
-
-    const armi = esito.armi || [];
-    window._piazzabiliMostrati[index] = armi;
-
-    let html = armi.map((arma, k) => `
-        <button class="huge-btn" style="background:#222; border-color:#888; margin-bottom:8px; min-height:60px;" onclick="window.schieraPiazzabile(${index}, ${k})">
-            ${arma.nome}
-            ${arma.traits ? `<br><span style="font-size:12px; color:#aaa;">${Array.isArray(arma.traits) ? arma.traits.join(', ') : arma.traits}</span>` : ''}
-        </button>`).join('');
-
-    // Le escluse col motivo: "Usi esauriti (Disposable 1)" spiega perche` un
-    // pulsante non c'e` piu` invece di farlo sparire in silenzio.
-    (esito.escluse || []).forEach(x => {
-        html += `<div style="color:#888; font-size:14px; margin:4px 0 8px 0;">${x.nome}: ${x.motivo}</div>`;
+    let allowedDeployables = window.DB_DEPLOYABLES.filter(dep => {
+        let check = false;
+        if (dep.nome.includes("Mina AP") && (unitGear.includes("ap mine") || unitGear.includes("mine ap") || unitGear.includes("mina ap"))) check = true;
+        if (dep.nome.includes("Mina Shock") && (unitGear.includes("shock mine") || unitGear.includes("mine shock") || unitGear.includes("mina shock"))) check = true;
+        if (dep.nome.includes("Mina E/M") && (unitGear.includes("e/m mine") || unitGear.includes("mine e/m") || unitGear.includes("mina e/m"))) check = true;
+        if (dep.nome.includes("Drop Bear") && (unitGear.includes("dropbear") || unitGear.includes("drop bear"))) check = true;
+        if (dep.nome.includes("FastPanda") && (unitGear.includes("fastpanda") || unitGear.includes("fast panda"))) check = true;
+        if (dep.nome.includes("CrazyKoala") && (unitGear.includes("crazykoala") || unitGear.includes("crazy koala"))) check = true;
+        if (dep.nome.includes("WildParrot") && (unitGear.includes("wildparrot") || unitGear.includes("wild parrot"))) check = true;
+        if (dep.nome.includes("Repeater") && (unitGear.includes("deployable repeater") || unitGear.includes("ripetitore schierabile") || unitGear.includes("ripetitore posizionabile"))) check = true;
+        return check;
     });
 
-    return html;
-};
-
-window.schieraPiazzabile = (index, k) => {
-    const M = window.MotoreN5;
-    const portatore = window.roster[index];
-    const arma = (window._piazzabiliMostrati[index] || [])[k];
-    if (!portatore || !arma) return;
-
-    const e = M.creaDeployable(portatore, arma, { ordineId: 'schieramento_' + Date.now(), viaEsito: false });
-    if (e.errori && e.errori.length) {
-        return alert('\u26d4 ' + e.errori.map(x => x.messaggio + (x.dettaglio ? '\n   ' + x.dettaglio : '')).join('\n\n'));
+    if (allowedDeployables.length === 0 && (unitGear.includes("mine") || unitGear.includes("mina") || unitGear.includes("minelayer") || unitGear.includes("posamina"))) {
+        allowedDeployables = window.DB_DEPLOYABLES.filter(dep => dep.nome.includes("Mina"));
     }
 
-    // Il portatore con l'uso scalato: va tenuto, altrimenti app e motore
-    // contano usi diversi e il pulsante resterebbe per sempre.
-    window.roster[index] = Object.assign({}, portatore, e.portatoreAggiornato);
+    if (allowedDeployables.length === 0) {
+         container.innerHTML += `<p style="color:red; text-align:center; margin-top:20px; font-size:18px;">Errore: Nessun equipaggiamento schierabile rilevato nel profilo di questa unità.</p>`;
+         return;
+    }
 
-    // Il gettone del motore ha una forma sua (armi, isCamo, proprietario...):
-    // qui si aggiungono solo i campi che la lista dello schieramento legge.
-    // Se e` mimetico lo dice il motore (isCamo); il valore scritto e`
-    // l'unico segnalino camo che esiste in N5.
-    const g = e.token;
-    window.roster.push(Object.assign({}, g, {
-        name: g.nome,
-        // Il gettone ha DUE campi vicini di nome e diversi di significato:
-        // weapon e` l'arma (la torretta porta qui il Combi o il Marksman del
-        // profilo), armi sulle mine e` la MUNIZIONE ("AP", "Shock"). Leggere
-        // solo armi faceva comparire la munizione al posto dell'arma.
-        // Il ripiego serve perche` la lista chiama weapon.split: un gettone
-        // senza quel campo la farebbe esplodere.
-        weapon: g.weapon || g.armi || '-',
-        combatGroup: portatore.combatGroup,
-        imgVariant: '0',
-        deployState: g.isCamo ? 'CAMO' : 'NORMAL',
-        state: 'ACTIVE',
-        tipo: g.tipo || 'DEPLOYABLE'
-    }));
+    let camoBtnBg = window.isNomadsApp() ? '#8b4500' : '#004466';
 
-    alert(`\u2705 ${g.nome} posizionato sul tavolo.`);
-    window.apriDeployStati(index);
-    if (window.renderDeployUnits) window.renderDeployUnits();
-};
-
-
-window.mostraMenuDeployables = (parentIndex) => {
-    // Stessa lista della pagina di schieramento: una sola fonte, il motore.
-    const container = document.getElementById('deploy-action-list-container');
-    if (!container) return;
-    const titleColor = window.isNomadsApp() ? 'var(--nomad-orange)' : '#00ccff';
-    const bottoni = window.bottoniDeployables(parentIndex);
-    container.innerHTML = `<p style="color:${titleColor}; text-align:center; margin-bottom:10px;">SELEZIONA COSA PIAZZARE:</p>` +
-        (bottoni || `<p style="color:#888; text-align:center; margin-top:20px;">Nessun equipaggiamento piazzabile nel profilo di questa unit\u00e0.</p>`);
+    allowedDeployables.forEach(dep => {
+        let color = dep.isCamo ? camoBtnBg : "#222"; 
+        container.innerHTML += `
+            <button class="huge-btn" style="background:${color}; border-color:#888; margin-bottom:8px; min-height:60px;" onclick="window.schieraDeployableSelezionato(${parentIndex}, '${dep.id}')">
+                ${dep.nome} <br>
+                <span style="font-size:12px; color:#aaa;">[S:${dep.s} | STR:${dep.str} | ARM:${dep.arm} | BTS:${dep.bts}] - ${dep.equip}</span>
+            </button>
+        `;
+    });
 };
 
 window.schieraDeployableSelezionato = (parentIndex, depId) => {
@@ -1089,7 +843,7 @@ window.schieraDeployableSelezionato = (parentIndex, depId) => {
         alias: depBase.nome,
         combatGroup: genitore.combatGroup, 
         imgVariant: "0",
-        deployState: depBase.isCamo ? "CAMO" : "NORMAL", 
+        deployState: depBase.isCamo ? "CAMO_3" : "NORMAL", 
         states: { camo: depBase.isCamo, impersonation: false, hidden: false, reserve: false },
         tipo: depBase.tipo,
         arm: depBase.arm,
@@ -1131,22 +885,16 @@ window.confermaSchieramento = () => {
 
 // Auto-avvio sicuro
 if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function () {
-        window.inizializzaApp();
-        if (window.mostraRipresaPartita) window.mostraRipresaPartita();
-    });
+    document.addEventListener("DOMContentLoaded", window.inizializzaApp);
 } else {
     window.inizializzaApp();
-    // Dopo inizializzaApp: la ripresa aspetta cloudPronto e si mostra da
-    // sola quando sa se la partita esiste ancora. Sta in app.html.
-    if (window.mostraRipresaPartita) window.mostraRipresaPartita();
 }
 // Dichiarazione di versione per il controllo incrociato fra chat.
 // Funziona anche se questo file si carica PRIMA del motore: in quel
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-09-26.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-09-19.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
