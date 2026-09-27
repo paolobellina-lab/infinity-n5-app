@@ -1,4 +1,4 @@
-// @versione 2026-09-26.1 | calcolatore_math.js | proprieta`: chat MOTORE
+// @versione 2026-09-27.1 | calcolatore_math.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧮 CALCOLATORE N5 — adattatore sopra MotoreN5
 // ------------------------------------------
@@ -236,7 +236,9 @@
                     azione: sx.azione,
                     mod: sx.mod,
                     burst: sx.burst,
-                    dettagliMod: rendiVoci(sx),
+                    // 🎲 il Dado Speciale, sul SOLO scontro a cui il motore l'ha dato
+                    dettagliMod: rendiVoci(sx) + (sx.sd > 0 ? `<div style="color:#ffcc00;">🎲 +${sx.sd} Dado Speciale: tira ${sx.sd} dado in più, poi scartane ${sx.sd}</div>` : ''),
+                    sd: sx.sd || 0,
                     // 🔴 Sotto la truppa attiva va la salvezza che LEI deve
                     // superare se perde il confronto, non quella che infligge.
                     salvezza: rendiSalvezza(sx.salvezzaSubita || sx.salvezzaInflitta),
@@ -278,7 +280,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_math.js', versione: '2026-09-26.1', proprieta: 'MOTORE' };
+    var v = { file: 'calcolatore_math.js', versione: '2026-09-27.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

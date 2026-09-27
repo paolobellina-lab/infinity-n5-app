@@ -1,4 +1,4 @@
-// @versione 2026-09-26.1 | test_ripresa_hub.js | proprieta`: chat TEST
+// @versione 2026-09-27.1 | test_ripresa_hub.js | proprieta`: chat TEST
 // ================================================================
 // L'Hub che riapre a metà partita. La trappola che questo banco chiude:
 // il primo broadcastState a stato vuoto cancellava la partita su Firebase
@@ -36,13 +36,22 @@ function apriHub(opzioni) {
     global.document = { title: 'HUB', getElementById: () => el(), querySelector: () => el(),
         querySelectorAll: () => [], createElement: () => el(), addEventListener(){}, body: el() };
     global.alert = () => {}; global.confirm = () => opzioni.conferma !== false;
-    global.setInterval = () => 0; global.addEventListener = () => {}; global.dispatchEvent = () => {};
+    // Il corpo del ciclo dell'Hub è dentro setInterval: si cattura la
+    // richiamata e la si chiama a mano, un giro per volta. Così il banco
+    // guida il ciclo VERO invece di rifarne una copia.
+    let ciclo = null;
+    global.setInterval = (fn) => { ciclo = fn; return 0; };
+    global.addEventListener = () => {}; global.dispatchEvent = () => {};
     global.Event = function (t) { this.type = t; };
     // Firebase finto: registra gli ascoltatori e annota le scritture.
     global.firebase = { initializeApp: () => ({}), database: () => ({ ref: (k) => ({
         on: (evento, f) => { ascolti[k] = f; },
         set: (v) => { scritte.push(k); sulCloud[k] = String(v); },
-        update: () => {}, remove: () => { scritte.push('-' + k); delete sulCloud[k]; },
+        update: () => {},
+        // Il server vero, dopo una remove, annuncia il canale a null: è quello
+        // che fa cancellare la copia locale. Senza l'eco, il banco vedrebbe il
+        // valore ancora lì e chiamerebbe "non consumata" una busta consumata.
+        remove: () => { scritte.push('-' + k); delete sulCloud[k]; if (ascolti[k]) ascolti[k]({ val: () => null }); },
         once: () => Promise.resolve({ val: () => sulCloud[k] || null }) }) }) };
     delete require.cache[require.resolve('./calcolatore_cloud.js')];
     delete require.cache[require.resolve('./calcolatore_math.js')];
@@ -55,7 +64,7 @@ function apriHub(opzioni) {
     const consegna = (elenco) => (elenco || Object.keys(ascolti)).forEach(k => {
         if (ascolti[k]) ascolti[k]({ val: () => (k in sulCloud ? sulCloud[k] : null) });
     });
-    return { sulCloud, locale, scritte, ascolti, consegna };
+    return { sulCloud, locale, scritte, ascolti, consegna, giro: () => ciclo && ciclo() };
 }
 
 global.window = global;
@@ -122,36 +131,67 @@ ok(window.riprendiPartitaHub() === false, 'e riprendiPartitaHub dice di no invec
 
 
 console.log('\n=== 5. La busta senza tiri arriva PRIMA degli ARO ===');
-// 🔴 A-03 al tavolo: Movimento Cauto, risposta "dentro". L'ordine non ha
-// seconda metà, quindi il modulo manda allarme e busta nello stesso passo.
-// L'Hub riceve la busta con latestAroData ancora null, stampa "NESSUN TIRO DI
-// DADO DA EFFETTUARE" e CANCELLA la busta (controller riga 266). Quando poi
-// arriva l'ARO, non c'è più niente da ricalcolare: il giocatore sceglie la
-// reazione e non succede nulla.
-// La prova segue quell'ordine, che è quello vero.
+// A-03 al tavolo: Movimento Cauto, risposta "dentro". L'ordine non ha seconda
+// metà, quindi allarme e busta partono insieme e la busta arriva all'Hub
+// quando le reazioni non ci sono ancora. Prima veniva calcolata subito —
+// "NESSUN TIRO DI DADO DA EFFETTUARE" — e CONSUMATA: l'ARO arrivava dopo e
+// non ricalcolava più niente.
+// Il banco guida il ciclo vero, un giro per volta, nell'ordine in cui le cose
+// arrivano davvero.
 h = apriHub({ cloud: {} });
 h.consegna();
 await attendi(20);
+const C = window.MotoreN5.CANALI;
 window.gameState = { activeFaction: 'NOMADI',
-    nomads: [{ id: 'n1', nome: 'Alguacil (Combi Rifle)', alias: 'Alguacil', bs: 11, arm: 1, states: {} }],
-    panoceania: [{ id: 'p1', nome: 'Fusilier (Combi Rifle)', alias: 'Fusilier', bs: 12, arm: 1, states: {} }] };
-window.latestAroData = null;
+    nomads: [{ id: 'n1', nome: 'Alguacil (Combi Rifle)', alias: 'Alguacil (Combi Rifle)', bs: 11, ph: 10, arm: 1, w: 1, s: 2, skills: '', states: {} }],
+    panoceania: [{ id: 'p1', nome: 'Fusilier (Combi Rifle)', alias: 'Fusilier (Combi Rifle)', bs: 12, ph: 10, arm: 1, w: 1, s: 2, skills: '', states: {} }] };
 let mostrati = null;
 window.mostraSchermataRisoluzione = (s) => { mostrati = s; };
-// 1) la busta di un ordine senza tiri
-window.gestisciBusta
-    ? window.gestisciBusta({ attacchi: [], attivo: 'Alguacil (Combi Rifle)' })
-    : (window.mostraSchermataRisoluzione(window.generaRisoluzioneDaDati({ attacchi: [], attivo: 'Alguacil (Combi Rifle)' })));
-ok(mostrati && mostrati.length === 0, `prima dell ARO non c è niente da tirare (${mostrati && mostrati.length})`);
-// 2) poi arriva l'ARO: qualcosa deve ricalcolare
-window.latestAroData = [{ nome: 'Fusilier (Combi Rifle)', azione: 'BS_ATTACK', arma: 'Combi Rifle',
-    rangeIndex: 1, rangeMod: 3, bersaglio: 'Alguacil (Combi Rifle)' }];
-mostrati = null;
-if (typeof window.ricalcolaConAro === 'function') window.ricalcolaConAro();
-ok(mostrati && mostrati.length === 1,
-   `quando l ARO arriva, lo scontro compare (${mostrati ? mostrati.length : 'nessun ricalcolo'})`);
-ok(mostrati && mostrati[0] && (mostrati[0].attivo.mod === 15 || (mostrati[0].reattivo || {}).mod === 15),
-   'e il reattivo tira a 15');
+// La busta si consegna come fa il trasporto: il server la annuncia sul canale
+// e il listener la scrive nella copia locale. Scriverla con setItem non
+// funzionerebbe — calcolatore_cloud intercetta i canali e la manderebbe a
+// Firebase invece che al localStorage, e il ciclo non la vedrebbe mai.
+const busta = (extra) => JSON.stringify(Object.assign({ attacchi: [], attivo: 'Alguacil (Combi Rifle)' }, extra || {}));
+const consegnaBusta = (testo) => { h.sulCloud[C.HUB_CALCOLO] = testo; h.consegna([C.HUB_CALCOLO]); };
+const reazione = [{ nome: 'Fusilier (Combi Rifle)', azione: 'BS_ATTACK', arma: 'Combi Rifle',
+                    rangeIndex: 1, rangeMod: 3, bersaglio: 'Alguacil (Combi Rifle)' }];
+
+window.latestAroData = null;
+consegnaBusta(busta({ aroAtteso: true }));
+h.giro();
+ok(mostrati === null, 'con aroAtteso e nessuna reazione: non calcola');
+ok(localStorage.getItem(C.HUB_CALCOLO) !== null, 'e la busta RESTA sul canale, non viene consumata');
+
+window.latestAroData = reazione;
+h.giro();
+ok(mostrati && mostrati.length === 1, `arrivate le reazioni, lo scontro compare (${mostrati ? mostrati.length : 'niente'})`);
+const tiro = mostrati && mostrati[0] && [mostrati[0].attivo, mostrati[0].reattivo].find(l => l && l.mod !== '-' && l.mod != null);
+ok(tiro && tiro.mod === 15, `e il reattivo tira a 15 (${tiro && tiro.mod})`);
+ok(localStorage.getItem(C.HUB_CALCOLO) === null, 'e adesso la busta è consumata');
+
+console.log('\n=== 5-bis. Una risposta vuota è una risposta ===');
+// [] vuol dire "il reattivo non ha dichiarato niente": si calcola. null vuol
+// dire "non ha ancora risposto": si aspetta. È la stessa distinzione di
+// cautoFuoriLoF e del pulsante di ripresa — assente non è vuoto — e qui
+// decide se il movimento resta appeso per sempre.
+mostrati = null; window.latestAroData = [];
+consegnaBusta(busta({ aroAtteso: true }));
+h.giro();
+ok(mostrati !== null, 'con un elenco VUOTO di reazioni si calcola lo stesso');
+ok(localStorage.getItem(C.HUB_CALCOLO) === null, 'e la busta si consuma');
+
+mostrati = null; window.latestAroData = null;
+consegnaBusta(busta({ aroAtteso: true }));
+h.giro();
+ok(mostrati === null && localStorage.getItem(C.HUB_CALCOLO) !== null,
+   'controprova: con null si aspetta ancora');
+
+console.log('\n=== 5-ter. Senza aroAtteso si calcola subito, come prima ===');
+mostrati = null; window.latestAroData = null;
+consegnaBusta(busta({}));
+h.giro();
+ok(mostrati !== null, 'una busta senza aroAtteso non aspetta nessuno');
+ok(localStorage.getItem(C.HUB_CALCOLO) === null, 'e viene consumata');
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

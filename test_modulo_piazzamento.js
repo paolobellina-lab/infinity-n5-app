@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | test_modulo_piazzamento.js | proprieta`: chat TEST
+// @versione 2026-09-27.1 | test_modulo_piazzamento.js | proprieta`: chat TEST
 // Passata 3: piazzamento e innesco da ZdC — node test_modulo_piazzamento.js
 global.window = global;
 let passati = 0, falliti = 0;
@@ -23,7 +23,10 @@ function moran() { return { id: 'n1', alias: 'Moran', bs: 11, wip: 12, skills: '
                             weapon: 'Combi Rifle', equip: 'CrazyKoalas' }; }
 function nuovo(u) {
     window.currentOrder = {}; window.coordUnits = [u]; window.coordIndex = 0;
-    window.coordPayloads = []; window.tokenPiazzati = [];
+    // Dal 26 settembre il token piazzato va nel ROSTER, non in una lista a
+    // parte: Paolo ha deciso che i Deployable stanno "a tutti gli effetti
+    // nella lista delle unità". tokenPiazzati resta solo per le copie vecchie.
+    window.coordPayloads = []; window.tokenPiazzati = []; window.roster = [u];
     window.deployableRisposte = {}; window.deployableScelta = null;
     inviato = null; alertUltimo = null;
     Object.keys(el).forEach(k => { el[k].innerHTML = ''; });
@@ -62,7 +65,7 @@ ok(bloc.bloccato === true && !bloc.incompleto, 'col Marker nell area: BLOCCATO')
 ok(/Attacco Intuitivo|NEGATO/i.test(bloc.motivo), 'col motivo del regolamento');
 window.eseguiPiazzamento();
 ok(alertUltimo && /NON è stato eseguito/.test(alertUltimo), 'e l ordine non si esegue');
-ok(window.tokenPiazzati.length === 0, 'nessun token creato');
+ok(window.roster.length === 1, 'nessun token creato: nel roster c e solo il portatore');
 
 console.log('\n=== 5. Rispondendo NO, il token si crea ===');
 nuovo(moran());
@@ -70,8 +73,9 @@ window.scegliArmaDaPiazzare('CrazyKoalas');
 window.deployableDomande.forEach(d => window.rispondiDeployable(d.id, d.rispostaBloccante === false));
 ok(window.piazzamentoBloccato().bloccato === false, 'non più bloccato');
 window.eseguiPiazzamento();
-ok(window.tokenPiazzati.length === 1, 'un token creato');
-const tok = window.tokenPiazzati[0];
+ok(window.roster.length === 2, `un token creato, in coda al roster (${window.roster.length})`);
+const tok = window.roster[window.roster.length - 1];
+ok(tok !== window.roster[0], 'e non è il portatore');
 ok(tok.deployable === true, 'col flag deployable');
 ok(tok.ordineDiPiazzamento != null, 'e l Ordine di piazzamento (riga 5532)');
 ok(tok.categoriaDeployable === 'PERIMETER' && tok.tipo === undefined,

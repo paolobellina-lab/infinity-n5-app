@@ -1,4 +1,4 @@
-<!-- @versione 2026-09-23.1 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-09-27.1 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
 
 # PRONTUARIO ORDINI N5 — richiamo rapido durante la partita
 
@@ -71,9 +71,9 @@ Vale per ogni ordine, sempre.
 | `(+N)` | +N all'**utente**, solo con quella skill/arma |
 | `(-N)` | −N al **nemico**. Se la skill è Automatica (Mimetism, Surprise Attack, ECM) si applica sempre come dice la sua regola; negli altri casi (`Dodge (-3)`, `CC Attack (-3)`) **solo nei Faccia a Faccia** |
 | `(+1B)` | +1 Burst all'utente, **solo in Turno Attivo** |
-| `(+1 SD)` | 1 dado extra, poi se ne scarta uno. **Non** aumenta il Burst, **non** consuma usi Disposable, **non** si applica alle Long Skill né a chi non tira (Sagome Dirette). Nel F2F si scarta dopo che entrambi hanno tirato; sceglie prima l'attivo |
+| `(+1 SD)` | 1 dado extra, poi se ne scarta uno. **Non** aumenta il Burst (né il tetto di 6), **non** consuma usi Disposable, **non** si applica alle Long Skill né a chi non tira (Sagome Dirette). Vale in **Attivo e in Reattivo**. Col Burst diviso, il dado extra va a **un solo** bersaglio e lo scarto avviene su quel tiro. Nel F2F si scarta dopo che entrambi hanno tirato; sceglie prima l'attivo |
 | `(+1B)` in ARO | **mai**, nemmeno col Total Reaction: il testo lo esclude esplicitamente nel Turno Reattivo (righe 6646–6648) |
-| `(ReRoll)` | Ritira un dado del tiro |
+| `(ReRoll)` | Ritira un dado del tiro, solo con quella skill/arma. **N5.2**: la forma dell'Ingegnere è ora `Engineer (ReRoll WIP=X)` — si ritira **usando** il WIP fra parentesi, non applicando un malus. `Doctor (ReRoll −3)` resta nei dati ufficiali: ⚠️ forma pre-N5.2 da verificare |
 | `(SR-1)` / `(SR-2)` | I **bersagli** applicano −1/−2 al proprio Tiro Salvezza. Non è gittata |
 | `(PS=X)` | Fissa il PS dell'arma a X in tutte le modalità |
 | `(PH=X)` / `(WIP=X)` | Usa X al posto dell'attributo del profilo per quel tiro |
@@ -1458,6 +1458,8 @@ casella vale la scheda dell'ordine (§1).
 | **Dogged / NWI** | resta attivo da Incosciente; un'altra Ferita = Morto; Shock = Morto diretto | §4 |
 | **Courage** | passa i Guts; non entra in Ritirata | — |
 | **Sapper** | Long Skill → stato Foxhole | 1.15 |
+| **Tech-Recovery** (N5.2) | riguarda il **bersaglio** del GizmoKit: colpito da un GizmoKit alleato, con un **Tiro Normale di PH** (o il PH di `GizmoKit (PH=X)`) cancella **tutti** i propri stati cancellabili dall'Ingegnere (IMM-A, IMM-B, Isolato, Bersagliato…). **Mai** l'Incosciente. Fallire non ha conseguenze. Attiva anche in stato Null | 1.8 |
+| **RemDriver** (N5.2) | skill di schieramento: si piazza un segnalino REMDRIVER accanto a un REM già schierato, che guadagna i MOD scritti fra parentesi nel profilo dell'utente. Un REM un solo segnalino; il segnalino si toglie a fine dell'Ordine in cui l'utente entra in uno stato Null | — |
 | **Warhorse** | `BS Attack (−X)` dell'avversario non ha effetto su di lui | 1.1 |
 
 ---

@@ -1,4 +1,4 @@
-// @versione 2026-09-26.1 | fase_schieramento.js | proprieta`: chat MOTORE
+// @versione 2026-09-27.1 | fase_schieramento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🚀 FASE DI SCHIERAMENTO
 // ------------------------------------------
@@ -29,6 +29,18 @@ window.faseSchieramento = {
     // Ora il filtro sta nel motore e lavora per ELENCO dei campi ammessi:
     // quel che non e` in lista non parte, nemmeno se domani il profilo ne
     // guadagna di nuovi.
+    // REMDRIVER: il giocatore sceglie il REM accanto a cui piazzare il
+    // segnalino. Il REM nel roster riceve i valori del pilota (M.applicaRemDriver).
+    //   assegnaRemDriver(idPilota, idRem) -> { ok, motivo?, nota? }
+    assegnaRemDriver: function (idPilota, idRem) {
+        const M = window.MotoreN5; const r = window.roster || [];
+        const pilota = r.find(u => u && u.id === idPilota), rem = r.find(u => u && u.id === idRem);
+        if (!pilota || !rem) return { ok: false, motivo: 'Pilota o REM non trovati nel roster.' };
+        const e = M.applicaRemDriver(rem, pilota);
+        if (e.ok) Object.assign(rem, e.rem);   // stesso oggetto: chi lo tiene lo vede
+        return { ok: e.ok, motivo: e.motivo, nota: e.nota };
+    },
+
     // La busta la costruisce il motore, in un posto solo (M.bustaSchieramento).
     // Resta qui per chi la chiamava; senza motore restituisce null.
     preparaPayloadHub: function(roster, strutture, terreni) {

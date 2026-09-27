@@ -1,4 +1,4 @@
-// @versione 2026-09-26.4 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-09-27.4 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-09-26.4';
+    M.VERSIONE = '2026-09-27.4';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -4543,11 +4543,17 @@
         // --- attributo di partenza ---
         const attr = M.attributoArma(arma, azione);
         const nomeAttr = attr.attributo;
-        let base = parseInt((attaccante && attaccante[String(nomeAttr).toLowerCase()]), 10) || 0;
+        const grezzo = attaccante ? attaccante[String(nomeAttr).toLowerCase()] : undefined;
+        let base = parseInt(grezzo, 10) || 0;
+        // 🔴 "-" nel profilo vuol dire: questa truppa NON HA l'attributo
+        // (Robbybot, Turtlemek...). Prima diventava 0 in silenzio, e un attacco
+        // BS impossibile usciva a 3 per il +3 di gittata: un numero plausibile
+        // per un'azione che la truppa non puo` fare. (Database 27.4, 27 sett.)
+        let senzaAttributo = /^\s*[-\u2013]\s*$/.test(String(grezzo == null ? '' : grezzo));
 
         // Sostituzione da profilo, es. "BS Attack (BS=13)"
         const sost = M.attributoEffettivo(attaccante, nomeAttr, spec.etichetta || 'BS Attack');
-        if (sost.sostituito) { base = sost.valore; note.push(sost.motivo); }
+        if (sost.sostituito) { base = sost.valore; note.push(sost.motivo); senzaAttributo = false; }
         if (attr.motivo) note.push(attr.motivo);
 
         let mod = 0;
@@ -4813,6 +4819,11 @@
         // o inferiore a zero significa fallimento automatico, non "5% di
         // probabilita`": portarlo a 1 regalerebbe un tiro che il regolamento
         // non concede. Il minimo di 1 vale sul Tiro Salvezza, non qui.
+        if (senzaAttributo) {
+            note.push(`${M.nomeUnita(attaccante)} non ha ${nomeAttr} (nel profilo: "-"): non pu\u00f2 usare quest'azione.`);
+            return { valore: 0, base: 0, mod, attributo: nomeAttr, impossibile: true, senzaAttributo: true,
+                     critici: M.critici(0), voci, note, avvisi, burstMod };
+        }
         const valore = base + mod;
         const impossibile = (valore < 1);
         if (impossibile) note.push(`Valore di Successo ${valore}: il tiro fallisce automaticamente, non c'è nulla da tirare.`);
@@ -5422,7 +5433,17 @@
             }
 
             // `usate` e` a livello di funzione: serve anche fuori dal ciclo.
-            bersagli.forEach(function (b) {
+            // 🔴 IL DADO SPECIALE arriva allo scontro — prima il motore lo
+            // calcolava e si perdeva: al tavolo nessuno sapeva di tirare un dado
+            // in piu`. Con il Burst diviso fra piu` bersagli va a UNO solo (chat
+            // REGOLE, wiki "Skills and Equipment Module"): quello marcato
+            // `dadoSpeciale: true`, altrimenti il primo con dadi. (27 settembre.)
+            const attSd = ctx.trovaUnita ? ctx.trovaUnita(att.attaccante, att.attaccanteId) : att.attaccante;
+            const armaSd = (typeof att.arma === 'string') ? M.profiloArma(att.arma) : att.arma;
+            const sdAttacco = (attSd && armaSd) ? M.dadiSpeciali(attSd, armaSd, { azione: att.azione }) : 0;
+            const iMarcato = bersagli.findIndex(x => x && x.dadoSpeciale === true && x.burst);
+            const iSd = sdAttacco > 0 ? (iMarcato >= 0 ? iMarcato : bersagli.findIndex(x => x && x.burst)) : -1;
+            bersagli.forEach(function (b, iB) {
                 if (!b.burst) return;   // bersaglio senza dadi assegnati
                 // 🔴 Il nome del bersaglio si legge con M.nomeUnita, che accetta
                 // nome, alias e name. L'app scrive `name` (app.html ~1100), il
@@ -5446,6 +5467,11 @@
                     copertura: b.copertura,
                     rangeIndex: b.rangeIndex, rangeMod: b.rangeMod, terrain: b.terrain
                 }, r ? Object.assign({ difensore: dif }, r) : null, ctx));
+                if (iB === iSd) {
+                    const ultimoSd = scontri[scontri.length - 1];
+                    ultimoSd.attivo.sd = sdAttacco;
+                    ultimoSd.note = (ultimoSd.note || []).concat([`Dado Speciale (+${sdAttacco} SD): su QUESTO bersaglio tira ${sdAttacco} dado in pi\u00f9, poi scartane ${sdAttacco}. Non aumenta il Burst e non consuma usi.`]);
+                }
             });
 
         });
@@ -6308,6 +6334,26 @@
     };
 
     // Il tiro. ctx: { inContatto, rangeIndex, cover }
+    // TECH-RECOVERY: il BERSAGLIO del GizmoKit tira PH e, passando, cancella
+    // tutti i propri stati cancellabili dall'Ingegnere (quelli che il catalogo
+    // degli stati segna cosi`). Non l'Incosciente. Fallire non costa nulla.
+    // Vale anche in stato Null. (Wiki N5.2, chat REGOLE, 27 settembre.)
+    M.techRecovery = function (bersaglio) {
+        if (!bersaglio || !/TECH-?RECOVERY/.test(skillsDi(bersaglio))) return { applicabile: false };
+        const S = catalogo('STATI') || {};
+        const cancellabili = Object.keys(S).filter(id => /Engineer|Ingegner/i.test(JSON.stringify(S[id])) && id !== 'incosciente');
+        const attivi = (M.statiAttivi(bersaglio) || []).map(a => a.id).filter(id => cancellabili.indexOf(id) >= 0);
+        if (!attivi.length) return { applicabile: false, motivo: 'Nessuno stato cancellabile dall\'Ingegnere: la Tech-Recovery non ha niente da fare.' };
+        const gz = String(bersaglio.equip || '').match(/GizmoKit\s*\(PH\s*=\s*(\d+)\)/i);
+        const ph = gz ? parseInt(gz[1], 10) : (parseInt(bersaglio.ph, 10) || 0);
+        return {
+            applicabile: true,
+            tiro: { chi: 'BERSAGLIO', attributo: 'PH', valore: ph, tipo: 'NORMALE', fonte: gz ? 'GizmoKit (PH=' + ph + ')' : 'PH del profilo' },
+            cancella: attivi.map(id => ({ id: id, nome: M.nomeStato(id) })),
+            note: ['Tech-Recovery: tiro Normale di PH ' + ph + '; passando cancella ' + attivi.map(M.nomeStato).join(', ') + '. Fallire non costa nulla: si riprova in un altro Ordine.']
+        };
+    };
+
     M.regoleSupporto = function (utente, bersaglio, strumento, ctx) {
         ctx = ctx || {};
         const S = catalogo('SUPPORTO');
@@ -6342,7 +6388,14 @@
                 base = n.valore;
                 voci[0] = { fonte: 'base', valore: base, motivo: `${R.nome} (${n.raw}): usa ${base}` };
             } else if (n.tipo === 'TESTO' && /RE ?ROLL/i.test(n.testo)) {
-                note.push(`${R.nome} (${n.raw}): consente di ripetere il tiro.`);
+                // N5.2: "ReRoll WIP=X" — si ritira USANDO il WIP indicato, non con
+                // un malus (wiki "Engineer", chat REGOLE, 27 settembre). La forma
+                // vecchia "ReRoll -X" resta per il Doctor, DA VERIFICARE.
+                const wip = String(n.testo).match(/WIP\s*=\s*(\d+)/i);
+                const malus = String(n.testo).match(/RE ?ROLL\s*(-\d+)/i);
+                if (wip) note.push(`${R.nome} (${n.raw}): se il tiro fallisce, puoi ritirarlo usando WIP ${wip[1]}.`);
+                else if (malus) note.push(`${R.nome} (${n.raw}): se il tiro fallisce, puoi ritirarlo con ${malus[1]}. Forma pre-N5.2: DA VERIFICARE.`);
+                else note.push(`${R.nome} (${n.raw}): consente di ripetere il tiro.`);
             }
         });
 
@@ -6371,7 +6424,7 @@
         if (S.proneAnnullato) note.push(S.proneAnnullato);
         if (R.riTiro) note.push(R.riTiro);
 
-        return {
+        const esitoSupporto = {
             valido: true,
             strumento: R.nome,
             chiTira: R.chiTira,
@@ -6384,6 +6437,12 @@
             tiroPerColpire: tiroPerColpire,
             voci: voci, note: note, avvisi: avvisi
         };
+        // Il bersaglio di un GizmoKit con Tech-Recovery ha un tiro suo.
+        if (/GIZMO/i.test(String(strumento || ''))) {
+            const tr = M.techRecovery(bersaglio);
+            if (tr.applicabile) { esitoSupporto.techRecovery = tr; (esitoSupporto.note = esitoSupporto.note || []).push(tr.note[0]); }
+        }
+        return esitoSupporto;
     };
 
 
@@ -7906,9 +7965,24 @@
     // Una MINA: arma o token la cui chiave finisce in "Mine" (AP Mine, Shock
     // Mine, E/M Mine, Cybermine...). Il database non ha ancora un modo di
     // risoluzione per le mine: si riconoscono dal nome.
+    // 1) Se la voce di DB_DEPLOYABLES ha il campo `mina`, decide lui: un fatto,
+    //    un campo. (Chat REGOLE lo chiede a DATABASE, 26 settembre.)
+    // 2) Finche` il campo non c'e`, il nome — ESCLUSI: Chest Mine (righe
+    //    6246-6247: "not applying the Mines rule", non si piazza e non scatta)
+    //    e Mine Dispenser (l'arma che piazza, riga 15574, non il token).
+    //    Le mine vere: AP / Antipersonnel, E/M, Shock, PARA, Monofilament,
+    //    Cybermine; e, fuori dal nome, Drop Bears (Deployable Mode) e WildParrot.
     M.eMina = function (x) {
         const n = String((x && (x.chiaveArma || x.nome)) || x || '');
-        return /mines?\b/i.test(n) && !/minelayer/i.test(n);
+        const D = G.DB_DEPLOYABLES; const db = Array.isArray(D) ? D : Object.keys(D || {}).map(k => Object.assign({ id: k }, D[k]));
+        const voce = db.find(d => d && (d.chiaveArma === n || d.nome === n || d.id === (x && x.idDeployable)));
+        if (voce && typeof voce.mina === 'boolean') return voce.mina;
+        // Funzionano come mine anche se il nome non lo dice (chat REGOLE):
+        // Drop Bears in modo Deployable, riga 6143 ("work just like a Mine");
+        // WildParrot, righe 6537-6538 ("work like E/M Mines"). NON il modo BS
+        // dei Drop Bears, che si lancia e non si piazza.
+        if (/^drop ?bears \(deployable mode\)$/i.test(n) || /^wild ?parrot$/i.test(n)) return true;
+        return /mines?\b/i.test(n) && !/minelayer|chest|dispenser/i.test(n);
     };
     M.eCybermine = function (x) { return /cybermine/i.test(String((x && (x.chiaveArma || x.nome)) || x || '')); };
 
@@ -9540,6 +9614,83 @@
             motivo: motivo,
             timestamp: Date.now()
         };
+    };
+
+    // ------------------------------------------------------------------
+    // GLI USI DISPOSABLE CONSUMATI SPARANDO — prima non si scalavano MAI:
+    // solo piazzando un Deployable, in un Idle e col Minelayer. Un Panzerfaust
+    // tirato restava a 2 usi per sempre. (Chat REGOLE, 27 settembre.)
+    //   Regola, riga 15013: ogni dado di Burst CONSUMA un uso, compresi
+    //   quelli dati da un MOD (Panzerfaust con BS Attack (+1B): B2 = 2 usi).
+    //   Il (+1SD) NON consuma: non e` Burst. Una Sagoma consuma UN uso anche
+    //   se prende piu` bersagli: e` un colpo solo.
+    // ------------------------------------------------------------------
+    const AZIONI_CHE_SPARANO = ['ATTACCO BS', 'CC_ATTACK', 'BERSERK', 'ATTACCO INTUITIVO',
+                                'FUOCO SPECULATIVO', 'ATTACCO GUIDATO', 'TRIANGULATED FIRE',
+                                'BS_ATTACK'];
+    M.usiDaConsumare = function (arma, burstPerBersaglio, azione) {
+        if (!arma || !/DISPOSABLE/i.test(String(arma.traits || ''))) return 0;
+        if (azione && AZIONI_CHE_SPARANO.indexOf(String(azione).toUpperCase()) < 0 &&
+            AZIONI_CHE_SPARANO.indexOf(M.idAro ? M.idAro(azione) : '') < 0) return 0;
+        const b = (burstPerBersaglio || []).map(x => parseInt(x, 10) || 0).filter(x => x > 0);
+        if (!b.length) return 0;
+        return arma.isTemplate ? Math.max.apply(null, b) : b.reduce((a, x) => a + x, 0);
+    };
+    // Restituisce una NUOVA unita` con gli usi scalati (mai oltre i totali).
+    M.consumaUsi = function (unita, arma, n) {
+        if (!unita || !arma || !(n > 0)) return unita;
+        const usi = M.usiResidui(unita, arma);
+        if (!usi) return unita;
+        const k = usi.chiaveUsi;
+        const prima = ((unita.usiSpesi || {})[k]) || 0;
+        return Object.assign({}, unita, { usiSpesi: Object.assign({}, unita.usiSpesi || {}, { [k]: Math.min(usi.totali, prima + n) }) });
+    };
+
+    // ------------------------------------------------------------------
+    // REMDRIVER — un trasferimento di attributi, applicato SUL REM.
+    // Si scrivono sul REM i valori del pilota e si conservano gli originali:
+    // ogni funzione del motore che legge il REM vede i valori giusti senza
+    // saperne niente. Togliere il segnalino = rimettere gli originali.
+    // (Wiki Remdriver N5.2, chat REGOLE, 27 settembre.)
+    // ------------------------------------------------------------------
+    M.valoriRemDriver = function (utente) {
+        const m = String((utente && utente.skills) || '').match(/RemDriver\s*\(([^)]*)\)/i);
+        if (!m) return null;
+        const v = {}; let x; const re = /\b(BS|PH|BTS|CC|WIP|ARM)\s*=\s*(\d+)/gi;
+        while ((x = re.exec(m[1])) !== null) v[x[1].toLowerCase()] = parseInt(x[2], 10);
+        return Object.keys(v).length ? v : null;
+    };
+    M.puoRemDriver = function (utente, rem) {
+        const v = M.valoriRemDriver(utente);
+        if (!v) return { ammesso: false, motivo: `${M.nomeUnita(utente)} non ha RemDriver con valori.` };
+        if (!rem || String(rem.tipo).toUpperCase() !== 'REM') return { ammesso: false, motivo: 'Il segnalino REMDRIVER va accanto a un REM.' };
+        if (rem.remDriver) return { ammesso: false, motivo: `${M.nomeUnita(rem)} ha gi\u00e0 un segnalino REMDRIVER: uno per REM.` };
+        return { ammesso: true, valori: v };
+    };
+    M.applicaRemDriver = function (rem, utente) {
+        const p = M.puoRemDriver(utente, rem);
+        if (!p.ammesso) return { ok: false, motivo: p.motivo, rem: rem };
+        const originali = {}; Object.keys(p.valori).forEach(k => { originali[k] = rem[k]; });
+        const nuovo = Object.assign({}, rem, p.valori, {
+            remDriver: { utenteId: utente.id, utente: M.nomeUnita(utente), valori: p.valori, originali: originali }
+        });
+        return { ok: true, rem: nuovo, nota: `${M.nomeUnita(rem)} ha il segnalino REMDRIVER di ${M.nomeUnita(utente)}: ` +
+                 Object.keys(p.valori).map(k => k.toUpperCase() + ' ' + p.valori[k]).join(', ') + '.' };
+    };
+    M.togliRemDriver = function (rem) {
+        if (!rem || !rem.remDriver) return rem;
+        const r = Object.assign({}, rem, rem.remDriver.originali);
+        delete r.remDriver;
+        return r;
+    };
+    // I REM il cui pilota e` entrato in uno stato Null: il segnalino va tolto
+    // (alla fine dell'Ordine in cui e` successo).
+    M.remDriverDaTogliere = function (roster) {
+        const l = roster || [];
+        return l.filter(u => u && u.remDriver).filter(function (rem) {
+            const pilota = l.find(x => x && x.id === rem.remDriver.utenteId);
+            return !pilota || M.eNullo(pilota);
+        });
     };
 
     // La scelta fazione -> nome, anch'essa una volta sola.

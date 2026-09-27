@@ -1,4 +1,4 @@
-// @versione 2026-09-26.1 | logica_stati.js | proprieta`: chat MOTORE
+// @versione 2026-09-27.1 | logica_stati.js | proprieta`: chat MOTORE
 // ==========================================
 // NOTA: le regole di questo file passano da MotoreN5.
 //  - la cancellazione degli stati Marker (Ritirata!, Ingaggiato, Stati Nulli)
@@ -430,6 +430,15 @@ window.salvaStatiUnita = () => {
         localStorage.setItem(M.CANALI.HUB_STATO, JSON.stringify(updatePayload));
     }
     
+    // REMDRIVER: se il pilota e` entrato in uno stato Null, il suo segnalino
+    // si toglie e il REM torna ai propri valori. (Chat REGOLE, 27 settembre.)
+    (window.MotoreN5.remDriverDaTogliere(window.roster) || []).forEach(function (rem) {
+        const pulito = window.MotoreN5.togliRemDriver(rem);
+        Object.keys(rem).forEach(k => { if (!(k in pulito)) delete rem[k]; });
+        Object.assign(rem, pulito);
+        console.log('REMDRIVER tolto da ' + window.MotoreN5.nomeUnita(rem) + ': il pilota è in uno stato Null.');
+    });
+
     // Aggiorna anche lo schieramento sull'Hub — dal mittente unico, che
     // riceve il roster privato e manda solo quello pubblico.
     if (typeof window.inviaSchieramentoAllHub === "function") {

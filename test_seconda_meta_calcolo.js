@@ -46,8 +46,26 @@ const due = window.generaRisoluzioneDaDati(attacco(), [
 ok(due.length === 2, `due ARO, DUE scontri (ottenuti ${due.length})`);
 ok(due[0].titolo === 'TIRO FACCIA A FACCIA', 'il bersagliato: Faccia a Faccia');
 ok(due[1].titolo === 'TIRO NORMALE', 'chi non è bersaglio: Tiro Normale a sé');
-ok(due[1].attivo.nome === 'Fusilier B', 'e il suo tiro si vede, col suo nome');
-ok(due[1].attivo.mod !== null && due[1].attivo.mod !== undefined, 'con un valore vero');
+// Dal 26 settembre l'adattatore mette SEMPRE a sinistra la fazione attiva:
+// nello scontro orfano scambia i due slot, così chi ha speso l'Ordine resta a
+// sinistra con "Nessun tiro" e chi reagisce va a destra col suo tiro.
+// Prima questa prova cercava il tiro in `attivo`: cercarlo lì oggi vorrebbe
+// dire pretendere il lato sbagliato.
+const chiTira = due[1].reattivo && due[1].reattivo.mod != null ? due[1].reattivo : due[1].attivo;
+const chiNonTira = chiTira === due[1].reattivo ? due[1].attivo : due[1].reattivo;
+ok(chiTira.nome === 'Fusilier B', `e il suo tiro si vede, col suo nome (${chiTira.nome})`);
+ok(chiTira.mod !== null && chiTira.mod !== undefined, 'con un valore vero');
+ok(/Fusilier B/.test(due[1].reattivo.nome), `chi reagisce sta a DESTRA (${due[1].reattivo.nome})`);
+ok(/Alguacil/.test(due[1].attivo.nome), `e a sinistra resta chi ha speso l Ordine (${due[1].attivo.nome})`);
+// Il lato che non tira porta "-", non un numero: per il tabellone è la riga
+// "Nessun tiro". Un null qui diventerebbe una casella vuota, che si legge
+// come "non lo so" invece che come "non deve tirare".
+ok(chiNonTira.mod === '-' || chiNonTira.mod == null,
+   `che infatti non tira (${JSON.stringify(chiNonTira.mod)})`);
+// E le due fazioni devono essere diverse: era il difetto per cui l'Alguacil
+// compariva a destra, azzurro, come se fosse PanOceania.
+ok(due[1].attivo.fazione !== due[1].reattivo.fazione,
+   `i due riquadri portano fazioni diverse (${due[1].attivo.fazione} / ${due[1].reattivo.fazione})`);
 
 // tre ARO, tre scontri
 const tre = window.generaRisoluzioneDaDati(attacco(), [

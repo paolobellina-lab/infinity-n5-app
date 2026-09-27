@@ -1,4 +1,4 @@
-// @versione 2026-09-26.3 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-09-27.1 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -117,15 +117,49 @@ window.inviaAllarmeAro = (payload) => {
     console.log("🚨 Core: Allarme ARO inviato all'Hub.", payload);
 };
 
+// Scala gli usi Disposable delle armi che hanno sparato, sulle unita` del
+// roster di QUESTO giocatore. Un punto solo per tutti i moduli d'attacco
+// (e per le reazioni): prima nessuno li scalava. (27 settembre.)
+function consumaUsiSpari(voci) {
+    const M = window.MotoreN5;
+    if (!M || typeof M.consumaUsi !== 'function' || !Array.isArray(window.roster)) return [];
+    const fatti = [];
+    voci.forEach(function (v) {
+        const i = window.roster.findIndex(u => u && ((v.id && u.id === v.id) || (v.nome && M.nomeUnita(u) === v.nome)));
+        if (i < 0 || !(v.n > 0)) return;
+        const nuova = M.consumaUsi(window.roster[i], v.arma, v.n);
+        Object.assign(window.roster[i], { usiSpesi: nuova.usiSpesi });   // stesso oggetto: chi lo tiene lo vede
+        fatti.push({ unita: M.nomeUnita(window.roster[i]), arma: v.arma.nome, usi: v.n });
+    });
+    if (fatti.length && typeof window.salvaPartitaLocale === 'function') window.salvaPartitaLocale();
+    return fatti;
+}
+
 window.inviaCalcoloAllHub = (payload) => {
-    localStorage.setItem(window.MotoreN5.CANALI.HUB_CALCOLO, JSON.stringify(payload));
+    const M = window.MotoreN5;
+    localStorage.setItem(M.CANALI.HUB_CALCOLO, JSON.stringify(payload));
     console.log("🎲 Core: Dati di calcolo inviati all'Hub.", payload);
+    const voci = ((payload && payload.attacchi) || []).map(function (a) {
+        const arma = (typeof a.arma === 'string') ? M.profiloArma(a.arma) : a.arma;
+        return { id: a.attaccanteId, nome: M.nomeUnita(a.attaccante), arma: arma,
+                 n: M.usiDaConsumare(arma, (a.bersagli || []).map(b => b.burst), a.azione) };
+    });
+    return consumaUsiSpari(voci);
 };
 
 window.inviaRispostaAro = (payload, fazione) => {
     // Residuo del 23 settembre: i doppi apici erano sfuggiti al porto su M.CANALI.
     const canale = window.MotoreN5.canaleAro(fazione);
     localStorage.setItem(canale, JSON.stringify(payload));
+    // Anche in ARO un'arma Disposable si consuma: il Burst reattivo lo dice
+    // il motore (1, o pieno con Neurocinetics / Total Reaction).
+    const M = window.MotoreN5;
+    consumaUsiSpari(((payload && payload.reazioni) || []).map(function (r) {
+        const u = (window.roster || []).find(x => x && x.id === r.id);
+        const arma = r.arma ? ((typeof r.arma === 'string') ? M.profiloArma(r.arma) : r.arma) : null;
+        const b = (u && arma) ? (M.burstReattivo(u, arma).valore || 1) : 0;
+        return { id: r.id, arma: arma, n: arma ? M.usiDaConsumare(arma, [b], r.azione) : 0 };
+    }).filter(v => v.arma));
     console.log(`🛡️ Core: Risposta ARO (${fazione}) inviata all'Hub.`);
 };
 

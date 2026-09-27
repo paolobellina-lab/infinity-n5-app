@@ -1,4 +1,4 @@
-// @versione 2026-09-26.1 | ordine_attacco_bs.js | proprieta`: chat MOTORE
+// @versione 2026-09-27.1 | ordine_attacco_bs.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎯 ATTACCO BS (TIRO A DISTANZA) - ordine_attacco_bs.js
 // ------------------------------------------
@@ -255,6 +255,14 @@
                 window.burstDettaglio.voci.map(v => v.motivo).join(' · ') + `</div>`;
         } else {
             html += `<div style="margin-bottom:15px;"></div>`;
+        }
+        // 🎲 Il DADO SPECIALE: prima si calcolava e nessuno lo mostrava.
+        // Con piu` bersagli va a UNO solo: il primo, o quello marcato
+        // `dadoSpeciale` (il motore lo assegna nello scontro). (27 settembre.)
+        if (window.burstDettaglio && window.burstDettaglio.sd > 0) {
+            const sd = window.burstDettaglio.sd;
+            html += `<div style="text-align:center; color:#ffcc00; font-size:13px; margin:-8px 0 15px;">` +
+                `🎲 +${sd} Dado Speciale: tira ${sd} dado in più su UN bersaglio (il primo), poi scartane ${sd}. Non è un dado di Burst.</div>`;
         }
 
         window.combatTargets.forEach(function (tgt, index) {

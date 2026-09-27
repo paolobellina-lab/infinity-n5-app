@@ -1,4 +1,4 @@
-// @versione 2026-09-22.2 | database_comune.js | proprieta`: chat DATABASE
+// @versione 2026-09-27.3 | database_comune.js | proprieta`: chat DATABASE
 // ==========================================
 // --- database_comune.js ---
 // Regole, armi, equipaggiamenti, strutture e terreni
@@ -21,36 +21,45 @@
 //                 Deployable Repeater dal Pitcher, che e` una BS Weapon che li spara
 //                 (reg. riga 4749). Il Dazer NO: e` Automatic Equipment piazzato
 //                 direttamente dal portatore, quindi resta null.
+// `mina`        = il token segue la regola delle Mine (Trigger Area, reg. righe
+//                 6229-6236)? Campo esplicito perche` il nome inganna in entrambi i
+//                 versi: Drop Bears (Deployable Mode) e WildParrot SONO mine pur non
+//                 chiamandosi cosi` (righe 6143 e 6537-6538), mentre CrazyKoalas e
+//                 Madtraps NON lo sono — usano Boost sulla ZdC (righe 6274-6293).
+//                 Il WildParrot e` l'unica mina che nasce come token e non come
+//                 Marker Camo. Fuori da questa tabella restano Chest Mine, che il
+//                 regolamento esclude esplicitamente (righe 6246-6247), e il Mine
+//                 Dispenser, che e` l'arma che le piazza, non una mina.
 // `armaDalProfilo` = solo per armed_turret: chiaveArma serve a PIAZZARLA (Tratto
 //                 Deployable), ma l'attacco lo fa l'arma fra parentesi nel profilo
 //                 del portatore. tipo TORRETTA e non MARKER: MARKER vuol dire
 //                 mimetizzabile per logica_stati.js e roster_manager.js.
 window.DB_DEPLOYABLES = [
-    { id: "deployable_cover", generatoDa: null, chiaveArma: "Deployable Cover",
+    { id: "deployable_cover", mina: false, generatoDa: null, chiaveArma: "Deployable Cover",
       nome: "Deployable Cover", tipo: "STRUTTURA", isCamo: false,
       arm: null, bts: null, str: null, s: 3,
       equip: "Deployable Cover", armi: null,
       traits: ["Deployable", "Disposable (1)", "Indiscriminate"] },
-    { id: "armed_turret", generatoDa: null, chiaveArma: "Armed Turret", armaDalProfilo: true,
+    { id: "armed_turret", mina: false, generatoDa: null, chiaveArma: "Armed Turret", armaDalProfilo: true,
       nome: "Armed Turret", tipo: "TORRETTA", isCamo: false,
       mov: "-", cc: 5, bs: 10, ph: "-", wip: "-", arm: 2, bts: 3, str: 1, s: 2,
       equip: "360 Visor", skills: "Total Reaction", ccWeapon: "PARA CC Weapon (-3)",
       armi: null, traits: ["Disposable (1)", "Deployable", "Non-Reloadable", "Perimeter"] },
-    { id: "mina_ap", generatoDa: null, chiaveArma: "AP Mine", nome: "Mina AP", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Mina AP", armi: "AP", traits: ["Small Teardrop"] },
-    { id: "mina_shock", generatoDa: null, chiaveArma: "Shock Mine", nome: "Mina Shock", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Mina Shock", armi: "Shock", traits: ["Small Teardrop"] },
-    { id: "mina_em", generatoDa: null, chiaveArma: "E/M Mine", nome: "Mina E/M", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Mina E/M", armi: "E/M", traits: ["Small Teardrop"] },
-    { id: "mina_viral", generatoDa: null, chiaveArma: "Viral Mine", nome: "Mina Virale", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Mina Virale", armi: "N (BTS)", traits: ["Small Teardrop", "BioWeapon"] },
-    { id: "cybermine", generatoDa: null, chiaveArma: "Cybermine", nome: "Cybermina", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Cybermina", armi: "Comms Attack", traits: ["Small Teardrop", "IMM-B/Stunned"] },
-    { id: "mina_monofilamento", generatoDa: null, nome: "Mina Monofilamento", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Mina Monofilamento", armi: "N (ARM=0)", traits: ["Small Teardrop", "State: Dead"], chiaveArma: "Monofilament Mine" },
-    { id: "mina_para", generatoDa: null, nome: "Mina PARA", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Mina PARA", armi: "PARA", traits: ["Small Teardrop", "State: Immobilized-A"], chiaveArma: "PARA Mine" },
-    { id: "crazykoala", generatoDa: null, chiaveArma: "CrazyKoalas", nome: "CrazyKoala", tipo: "PERIMETER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "CrazyKoala", armi: "Shock", traits: ["Boost"] },
-    { id: "fastpanda", generatoDa: null, chiaveArma: "FastPanda", nome: "FastPanda", tipo: "PERIMETER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "Repeater", armi: "-", traits: ["Hacking Area"] },
-    { id: "dropbear", generatoDa: null, chiaveArma: "Drop Bears (Deployable Mode)", nome: "Drop Bear", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Drop Bear", armi: "Shock", traits: ["Small Teardrop"] },
-    { id: "wildparrot", generatoDa: null, chiaveArma: "WildParrot", nome: "WildParrot", tipo: "PERIMETER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "WildParrot", armi: "E/M", traits: ["Small Teardrop"] },
-    { id: "deployable_repeater", generatoDa: "Pitcher", chiaveArma: null, nome: "Deployable Repeater", tipo: "MARKER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "Deployable Repeater", armi: "-", traits: ["Disposable (3)", "Deployable"] },
-    { id: "dazer", generatoDa: null, chiaveArma: null, nome: "Dazer", tipo: "MARKER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "Dazer", armi: "-", traits: ["Disposable (3)", "Deployable", "Zone of Control"] },
-    { id: "disco_ball", generatoDa: "Disco Baller", chiaveArma: "Disco Ball", nome: "Disco Ball", tipo: "MARKER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "Disco Baller", armi: "-", traits: ["Deployable"] },
-    { id: "madtraps", generatoDa: null, chiaveArma: "Madtraps", nome: "MadTraps", tipo: "PERIMETER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "MadTraps", armi: "PARA", traits: ["Boost", "IMM-A"] }
+    { id: "mina_ap", mina: true, generatoDa: null, chiaveArma: "AP Mine", nome: "Mina AP", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Mina AP", armi: "AP", traits: ["Small Teardrop"] },
+    { id: "mina_shock", mina: true, generatoDa: null, chiaveArma: "Shock Mine", nome: "Mina Shock", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Mina Shock", armi: "Shock", traits: ["Small Teardrop"] },
+    { id: "mina_em", mina: true, generatoDa: null, chiaveArma: "E/M Mine", nome: "Mina E/M", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Mina E/M", armi: "E/M", traits: ["Small Teardrop"] },
+    { id: "mina_viral", mina: true, generatoDa: null, chiaveArma: "Viral Mine", nome: "Mina Virale", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Mina Virale", armi: "N (BTS)", traits: ["Small Teardrop", "BioWeapon"] },
+    { id: "cybermine", mina: true, generatoDa: null, chiaveArma: "Cybermine", nome: "Cybermina", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Cybermina", armi: "Comms Attack", traits: ["Small Teardrop", "IMM-B/Stunned"] },
+    { id: "mina_monofilamento", mina: true, generatoDa: null, nome: "Mina Monofilamento", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Mina Monofilamento", armi: "N (ARM=0)", traits: ["Small Teardrop", "State: Dead"], chiaveArma: "Monofilament Mine" },
+    { id: "mina_para", mina: true, generatoDa: null, nome: "Mina PARA", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Mina PARA", armi: "PARA", traits: ["Small Teardrop", "State: Immobilized-A"], chiaveArma: "PARA Mine" },
+    { id: "crazykoala", mina: false, generatoDa: null, chiaveArma: "CrazyKoalas", nome: "CrazyKoala", tipo: "PERIMETER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "CrazyKoala", armi: "Shock", traits: ["Boost"] },
+    { id: "fastpanda", mina: false, generatoDa: null, chiaveArma: "FastPanda", nome: "FastPanda", tipo: "PERIMETER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "Repeater", armi: "-", traits: ["Hacking Area"] },
+    { id: "dropbear", mina: true, generatoDa: null, chiaveArma: "Drop Bears (Deployable Mode)", nome: "Drop Bear", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Drop Bear", armi: "Shock", traits: ["Small Teardrop"] },
+    { id: "wildparrot", mina: true, generatoDa: null, chiaveArma: "WildParrot", nome: "WildParrot", tipo: "PERIMETER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "WildParrot", armi: "E/M", traits: ["Small Teardrop"] },
+    { id: "deployable_repeater", mina: false, generatoDa: "Pitcher", chiaveArma: null, nome: "Deployable Repeater", tipo: "MARKER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "Deployable Repeater", armi: "-", traits: ["Disposable (3)", "Deployable"] },
+    { id: "dazer", mina: false, generatoDa: null, chiaveArma: null, nome: "Dazer", tipo: "MARKER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "Dazer", armi: "-", traits: ["Disposable (3)", "Deployable", "Zone of Control"] },
+    { id: "disco_ball", mina: false, generatoDa: "Disco Baller", chiaveArma: "Disco Ball", nome: "Disco Ball", tipo: "MARKER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "Disco Baller", armi: "-", traits: ["Deployable"] },
+    { id: "madtraps", mina: false, generatoDa: null, chiaveArma: "Madtraps", nome: "MadTraps", tipo: "PERIMETER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "MadTraps", armi: "PARA", traits: ["Boost", "IMM-A"] }
 ];
 
 // ===== TABELLA ARMI — trascritta dal Weapon Chart ufficiale (N5.2 / agg. Mazebreaker) =====
@@ -72,7 +81,17 @@ window.RULES_WEAPONS = {
     "E/M Carbine": { traits: ["Non-Lethal"], b: 2, dam: 7, ammo: "E/M", salvAttr: "BTS/2", salvTiri: 2, bande: [3, 3, -3, -3, -6] },
     "Plasma Carbine (Blast Mode)": { traits: ["Impact Template (Circular)"], b: 2, dam: 7, ammo: "N", salvAttr: "ARM+BTS", salvTiri: "1e1", bande: [3, 3, -3, -3, -6], isTemplate: true, template: "Circular" },
     "Plasma Carbine (Hit Mode)": { traits: [], b: 2, dam: 6, ammo: "N", salvAttr: "ARM+BTS", salvTiri: "1e1", bande: [3, 3, -3, -3, -6] },
-    "CC Weapon": { traits: ["CC"], b: 1, dam: 8, ammo: "N", salvAttr: "ARM", salvTiri: 1, isCC: true },
+    // CC Weapon — il (-N) che alcuni profili scrivono fra parentesi e` un MOD
+    // all'AVVERSARIO nel Faccia a Faccia, non una modifica alla salvezza.
+    // Non e` un'analogia con la PARA: e` la regola generale delle notazioni
+    // (righe 1926, 5948, 6597 del regolamento, wiki "Skills and Equipment Module").
+    // Le skill ed equipaggiamenti AUTOMATICI — Mimetism, Surprise Attack — applicano
+    // sempre il proprio MOD; per tutto il resto, armi comprese, il MOD vale SOLO nel
+    // Faccia a Faccia. La CC Weapon non e` Automatica, quindi ricade nel secondo caso.
+    // Differenza con la PARA: li` il (-N) sembrava toccare la salvezza, che invece e`
+    // fissa a PH-6 perche` la stabilisce la munizione. Qui non c'e` salvezza fissa
+    // da confondere. Confermato dalla chat REGOLE il 2026-09-27.
+    "CC Weapon": { traits: ["CC"], b: 1, dam: 8, ammo: "N", salvAttr: "ARM", salvTiri: 1, isCC: true, modProfiloSu: "F2F_AVVERSARIO" },
     "AP CC Weapon": { traits: ["CC"], b: 1, dam: 8, ammo: "AP", salvAttr: "ARM/2", salvTiri: 1, isCC: true },
     "AP+DA CC Weapon": { traits: ["Anti-materiel","CC"], b: 1, dam: 8, ammo: "AP+DA", salvAttr: "ARM/2", salvTiri: 2, isCC: true },
     "AP+EXP CC Weapon": { traits: ["Anti-materiel","CC"], b: 1, dam: 8, ammo: "AP+EXP", salvAttr: "ARM/2", salvTiri: 3, isCC: true },
@@ -272,6 +291,18 @@ window.RULES_WEAPONS = {
     "Missile Launcher": { modalita: ["Missile Launcher (Blast Mode)", "Missile Launcher (Hit Mode)"] },
     "Heavy Rocket Launcher": { modalita: ["Heavy Rocket Launcher (Blast Mode)", "Heavy Rocket Launcher (Hit Mode)"] },
     "Light Rocket Launcher": { modalita: ["Light Rocket Launcher (Blast Mode)", "Light Rocket Launcher (Hit Mode)"] },
+    // Flammenspeer — ricavato dal Weapon Chart dalla chat REGOLE (righe 15250-15262
+    // per i nomi, 15300-15318 per i valori). L'ancora regge: le righe prima e dopo
+    // sono Akrylat-Kanone, Blitzen e Panzerfaust, che qui hanno gia` esattamente
+    // quelle bande e quei valori. Gittate identiche alle tre voci vicine.
+    // I due usi di Disposable (2) sono CONDIVISI fra le due modalita`: il tratto
+    // appartiene all'ARMA, non al modo (regolamento riga 14999), e le modalita`
+    // sono modi della stessa arma. Le frasi esplicite su D-Charges e Chest Mines
+    // ribadiscono la regola, non creano un'eccezione. Sciolto dalla chat REGOLE
+    // il 2026-09-27; il motore le contava gia` condivise per chiave.
+    "Flammenspeer": { modalita: ["Flammenspeer (Blast Mode)", "Flammenspeer (Hit Mode)"] },
+    "Flammenspeer (Blast Mode)": { traits: ["Continuous Damage", "Disposable (2)", "Impact Template (Circular)"], b: 1, dam: 6, ammo: "N", salvAttr: "ARM", salvTiri: 1, bande: [-3, 0, 3, 3, -3, -3], isTemplate: true },
+    "Flammenspeer (Hit Mode)": { traits: ["Continuous Damage", "Disposable (2)"], b: 1, dam: 6, ammo: "AP", salvAttr: "ARM/2", salvTiri: 1, bande: [-3, 0, 3, 3, -3, -3] },
     "Feuerbach": { modalita: ["Feuerbach (Blast Mode)", "Feuerbach (Burst Mode)"] },
     "Plasma Rifle": { modalita: ["Plasma Rifle (Blast Mode)", "Plasma Rifle (Hit Mode)"] },
     "Plasma Carbine": { modalita: ["Plasma Carbine (Blast Mode)", "Plasma Carbine (Hit Mode)"] },
@@ -300,6 +331,10 @@ window.RULES_WEAPONS_ALIAS = {
     "Mine Dispenser(Cybermines)": "Mine Dispenser (Cybermines)",
     "Chest Mine": "Chest Mines (BS Mode)",
     "Armed Turret (Combi Rifle)": "Combi Rifle",
+    // forme abbreviate: sono quelle che usa il JSON ufficiale di Corvus Belli
+    "Armed Turret (Combi R.)": "Combi Rifle",
+    "Armed Turret (Marksman R.)": "Marksman Rifle",
+    "Mine Dispenser (AP)": "Mine Dispenser (Cybermines)",
     "Armed Turret (Marksman Rifle)": "Marksman Rifle",
     "MULTI Rifle (AP)": "MULTI Rifle (AP Mode)",
     "MULTI Rifle (Shock)": "MULTI Rifle (Shock Mode)",

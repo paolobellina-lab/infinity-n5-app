@@ -1,4 +1,4 @@
-// @versione 2026-09-26.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-09-27.2 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -1778,6 +1778,9 @@ window.CATALOGO_N5.SKILL = {
         // La regola completa sta in CATALOGO_N5.SUPPORTO.DOTTORE.
         effetto: { chiTira: 'UTENTE', tiro: 'WIP', bonus: 0, bersaglio: 'INCOSCIENTE_VITA', fallimento: 'MORTO' },
         interpretaParentesi: {
+            // DA VERIFICARE (chat REGOLE, 27 settembre): per l'Engineer la N5.2 ha
+            // sostituito "ReRoll -X" con "ReRoll WIP=X"; per il Doctor la pagina
+            // wiki trovata era vecchia, e nel database restano due "Doctor (ReRoll -3)".
             'ReRoll -N': { effetto: 'ritiroConMod', suChi: 'utente' },      // es. Doctor (ReRoll -3): ritira il tiro con -3 al WIP
             'ReRoll WIP=N': { effetto: 'ritiroConWipFisso', suChi: 'utente' },
             '2W': { effetto: 'ferriteRecuperate', valore: 2, suChi: 'bersaglio' }  // il bersaglio recupera 2 Ferite invece di 1
@@ -1788,11 +1791,36 @@ window.CATALOGO_N5.SKILL = {
         aliasTesto: ['engineer', 'ingegnere'],
         haValore: true, applica: ['SUPPORTO'], suChi: 'utente',
         effetto: { chiTira: 'UTENTE', tiro: 'WIP', bonus: 0, bersaglio: 'STR_o_STATI', fallimento: '1_FERITA_se_ripara',
-                   rimuoveStati: ['IMM-A','IMM-B','ISOLATO','BERSAGLIATO'] },
+                   rimuoveStati: ['immA', 'immB', 'isolato', 'targeted'] },   // id canonici (vocabolario unico)
+        // N5.2: "Engineer (ReRoll -X)" NON ESISTE PIU`: e` diventato
+        // "Engineer (ReRoll WIP=X)" — si ritira usando il WIP indicato, non
+        // applicando un malus. (Wiki "Engineer", chat REGOLE, 27 settembre.)
         interpretaParentesi: {
-            'ReRoll -N': { effetto: 'ritiroConMod', suChi: 'utente' }
+            'ReRoll WIP=N': { effetto: 'ritiroConWipFisso', suChi: 'utente' }
         },
         note: 'Tiro Normale WIP (nessun bonus). Ripara 1 Ferita STR (Incosciente) o rimuove stati (non Incosciente). Rimuovere stati, se fallisce, non ha conseguenze negative. Engineer (ReRoll -N) = un ritiro col MOD indicato.'
+    },
+    // REMDRIVER (wiki "Remdriver", N5.2 — chat REGOLE, 27 settembre).
+    // DEPLOYMENT SKILL: non tocca chi la porta. Schierando l'utente si piazza
+    // un segnalino REMDRIVER accanto a un REM gia` schierato; quel REM usa i
+    // valori fra parentesi al posto dei suoi. Uno per REM. Il segnalino si
+    // toglie alla fine dell'Ordine in cui l'utente entra in uno stato Null.
+    'RemDriver': {
+        aliasTesto: ['remdriver', 'rem driver'],
+        haValore: true, applica: ['SCHIERAMENTO'], suChi: 'REM',
+        note: 'Il REM con il segnalino REMDRIVER usa i valori fra parentesi del profilo dell\'utente (es. BS=13, PH=13, BTS=6) al posto dei suoi. Uno per REM. Si toglie quando l\'utente entra in uno stato Null.',
+        fonte: 'wiki Remdriver (N5.2), chat REGOLE 27 settembre'
+    },
+    // TECH-RECOVERY (wiki "Tech-Recovery", N5.2 — chat REGOLE, 27 settembre).
+    // Non e` nel regolamento che abbiamo. Riguarda il BERSAGLIO del GizmoKit.
+    'Tech-Recovery': {
+        aliasTesto: ['tech-recovery', 'tech recovery'],
+        haValore: false, applica: ['SUPPORTO'], suChi: 'bersaglio',
+        effetto: { chiTira: 'BERSAGLIO', tiro: 'PH', tipo: 'NORMALE',
+                   cancella: 'TUTTI_GLI_STATI_CANCELLABILI_DALL_INGEGNERE' },
+        requisiti: 'Essere in uno stato cancellabile dall\'Ingegnere; aver ricevuto un colpo riuscito di GizmoKit alleato, o il GizmoKit applicato a contatto di Silhouette.',
+        note: 'Tiro Normale di PH (o il PH di GizmoKit (PH=X) se il profilo lo indica): passando cancella TUTTI i propri stati cancellabili dall\'Ingegnere. NON vale per l\'Incosciente, che segue le regole normali. Fallire non ha conseguenze: si riprova in un altro Ordine. Resta attiva anche in stato Null.',
+        fonte: 'wiki Tech-Recovery (N5.2), chat REGOLE 27 settembre'
     },
     'Paramedic': {
         aliasTesto: ['paramedic', 'paramedico'],
@@ -2298,7 +2326,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-09-26.1', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-09-27.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
