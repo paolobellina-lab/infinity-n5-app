@@ -1,4 +1,4 @@
-// @versione 2026-09-27.5 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-09-28.3 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-09-27.5';
+    M.VERSIONE = '2026-09-28.3';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -2653,6 +2653,25 @@
     // Gli UPGRADE scritti fra parentesi ACCANTO a ciascun dispositivo.
     // Il testo si consuma come in dispositiviHacking: "Killer Hacking Device
     // (...)" non si legge anche come "Hacking Device (...)".
+    // La parentesi che si apre in `da` si chiude dove si chiude DAVVERO,
+    // contando quelle annidate. Prima si leggeva fino alla prima ")", e
+    // "(UPGRADE: TOTAL CONTROL (+1B))" diventava "(+1B": l'upgrade non si
+    // applicava, e Valerya Gromoz tirava B1 invece di B2 nel file dei Nomadi.
+    // (28 settembre, confronto dei mercenari fra le due fazioni.)
+    function parentesiBilanciata(testo, da) {
+        let i = da; while (i < testo.length && /\s/.test(testo[i])) i++;
+        if (testo[i] !== '(') return null;
+        let prof = 0;
+        for (let j = i; j < testo.length; j++) {
+            if (testo[j] === '(') prof++;
+            else if (testo[j] === ')') { prof--; if (prof === 0) return { dentro: testo.slice(i + 1, j), fine: j + 1 }; }
+        }
+        return null;
+    }
+    // "UPGRADE: TOTAL CONTROL (+1B)" e "UPGRADE: TOTAL CONTROL +1B" sono la
+    // stessa cosa: le parentesi annidate attorno al modificatore si sciolgono.
+    function sciogliAnnidate(dentro) { return String(dentro).replace(/\(([^()]*)\)/g, '$1'); }
+
     M.upgradePerDispositivo = function (unita) {
         const D = catalogo('DISPOSITIVI_HACKING');
         let testo = skillsDi(unita);
@@ -2662,10 +2681,10 @@
             let k;
             while ((k = testo.indexOf(N)) >= 0) {
                 let fine = k + N.length;
-                const m = testo.slice(fine).match(/^\s*\(([^)]*)\)/);
-                if (m) {
-                    fine += m[0].length;
-                    M.notazioniAzione(`${N} (${m[1]})`, nome).filter(n => n.tipo === 'UPGRADE')
+                const par = parentesiBilanciata(testo, fine);
+                if (par) {
+                    fine = par.fine;
+                    M.notazioniAzione(`${N} (${sciogliAnnidate(par.dentro)})`, nome).filter(n => n.tipo === 'UPGRADE')
                         .forEach(function (n) { out[nome] = (out[nome] || []).concat(n.voci); });
                 }
                 testo = testo.slice(0, k) + ' '.repeat(fine - k) + testo.slice(fine);
@@ -2699,8 +2718,15 @@
         // DIVERSO da due dispositivi, restano due voci, distinte da `scelta`.
         const perDisp = M.upgradePerDispositivo(unita);
         const perTruppa = [];
-        M.notazioniAzione(skillsDi(unita), 'Hacker').filter(n => n.tipo === 'UPGRADE')
-            .forEach(n => n.voci.forEach(v => perTruppa.push(v)));
+        (function () {
+            const t = skillsDi(unita); const re = /\bHACKER\b/g; let m;
+            while ((m = re.exec(t)) !== null) {
+                const par = parentesiBilanciata(t, m.index + m[0].length);
+                if (!par) continue;
+                M.notazioniAzione(`HACKER (${sciogliAnnidate(par.dentro)})`, 'Hacker').filter(n => n.tipo === 'UPGRADE')
+                    .forEach(n => n.voci.forEach(v => perTruppa.push(v)));
+            }
+        })();
         const upgrade = [];
         const grezze = [];
         dispositivi.forEach(function (d) {
@@ -4550,6 +4576,11 @@
         // (Robbybot, Turtlemek...). Prima diventava 0 in silenzio, e un attacco
         // BS impossibile usciva a 3 per il +3 di gittata: un numero plausibile
         // per un'azione che la truppa non puo` fare. (Database 27.4, 27 sett.)
+        // REGOLA (chat REGOLE, 28 sett.): il "-" e` un DIVIETO di dichiarare
+        // (righe 688-690; per il MOV riga 634). Lo 0 invece e` un valore come
+        // gli altri (riga 620): l'azione si dichiara e il SV si somma — BS 0
+        // con +3 di gittata esce a 3. Se il SV scende sotto 1 e` fallimento
+        // automatico: un esito, non un divieto. Per questo lo 0 NON passa di qui.
         let senzaAttributo = /^\s*[-\u2013]\s*$/.test(String(grezzo == null ? '' : grezzo));
 
         // Sostituzione da profilo, es. "BS Attack (BS=13)"
@@ -6394,8 +6425,11 @@
                 // vecchia "ReRoll -X" resta per il Doctor, DA VERIFICARE.
                 const wip = String(n.testo).match(/WIP\s*=\s*(\d+)/i);
                 const malus = String(n.testo).match(/RE ?ROLL\s*(-\d+)/i);
-                if (wip) note.push(`${R.nome} (${n.raw}): se il tiro fallisce, puoi ritirarlo usando WIP ${wip[1]}.`);
-                else if (malus) note.push(`${R.nome} (${n.raw}): se il tiro fallisce, puoi ritirarlo con ${malus[1]}. Forma pre-N5.2: DA VERIFICARE.`);
+                if (wip) note.push(`${R.nome} (${n.raw}): se il tiro fallisce, puoi ripeterlo usando WIP ${wip[1]}. Una volta per Ordine; il risultato si accetta; nessun nuovo ARO al nemico.`);
+                // Forma pre-N5.2 nel profilo: il motore NON applica il malus e lo
+                // dice. La regola N5.2 e` "ReRoll WIP=X"; il valore lo decide la
+                // scheda ufficiale, non una conversione. (Chat REGOLE, 28 sett.)
+                else if (malus) note.push(`${R.nome} (${n.raw}): forma pre-N5.2 nel profilo — la regola N5.2 è "ReRoll WIP=X", e il valore lo decide la scheda ufficiale. Il ${malus[1]} non viene applicato.`);
                 else note.push(`${R.nome} (${n.raw}): consente di ripetere il tiro.`);
             }
         });
@@ -6438,6 +6472,23 @@
             tiroPerColpire: tiroPerColpire,
             voci: voci, note: note, avvisi: avvisi
         };
+        // IL DOTTORE, N5.2 (wiki "Doctor", chat REGOLE, 28 settembre).
+        if (/DOTTORE|DOCTOR/i.test(String(strumento || ''))) {
+            esitoSupporto.note = esitoSupporto.note || [];
+            const suSeStesso = utente && bersaglio && (utente === bersaglio || (utente.id && utente.id === bersaglio.id));
+            if (suSeStesso && M.eNullo(utente)) {
+                return { valido: false, motivo: R.suSeStesso || 'Il Dottore non puo` usarla su se stesso in uno stato Null.', avvisi: [] };
+            }
+            const stb = M.statoBersaglio(bersaglio);
+            const conStr = bersaglio && typeof bersaglio.str === 'number';
+            if (stb.stordito || stb.stunned) {
+                esitoSupporto.note.push(conStr
+                    ? 'Bersaglio Stordito con STR: lo Stordito lo cancella l\'Ingegnere, non il Dottore.'
+                    : (R.annullaStordito || 'Cancella lo Stordito anche se il bersaglio non e` Incosciente.'));
+            }
+            if (/RE ?ROLL/i.test(skillsDi(utente)) && R.riTiroCommandToken) esitoSupporto.note.push(R.riTiroCommandToken);
+        }
+
         // Il bersaglio di un GizmoKit con Tech-Recovery ha un tiro suo.
         if (/GIZMO/i.test(String(strumento || ''))) {
             const tr = M.techRecovery(bersaglio);
