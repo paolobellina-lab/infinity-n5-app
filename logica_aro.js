@@ -1,4 +1,4 @@
-// @versione 2026-09-26.3 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-09-27.1 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -227,11 +227,23 @@
         const voce = (window.deployableInnescabili || []).find(x => String(x.unita.id) === String(id));
         if (!voce) return;
 
+        // Dopo OGNI risposta si chiede al motore, invece di aspettare che le
+        // domande finiscano: sono bloccanti, e la prima che chiude la
+        // faccenda la chiude davvero. Rispondere "no" alla Trigger Area
+        // significa che la mina non detona: chiedere poi se c'era un alleato
+        // sotto la Sagoma e` far rispondere a vuoto, e ritarda il verdetto.
+        //
+        // Il motore distingue da solo i tre casi: false decide, null vuol
+        // dire che mancano ancora risposte che contano, true fa scattare.
+        // Cosi` non si legge blocca/rispostaBloccante qui: quale risposta
+        // chiuda la domanda lo sa lui.
         const date = window.risposteInnesco[id];
-        const mancano = (voce.domande || []).some(d => date[d.id] === undefined);
         const div = document.getElementById('dom-' + id);
+        const M2 = motore();
+        let esito = { scatta: null };
+        if (M2) { try { esito = M2.innescoDeployable(voce.arma, voce.nemico, date); } catch (err) { window.ultimaEccezione = err; } }
 
-        if (mancano) {
+        if (esito && esito.scatta === null) {
             if (div) div.innerHTML = window.domandeInnescoHtml(id);
             return;
         }
@@ -691,7 +703,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-09-26.3', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-09-27.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

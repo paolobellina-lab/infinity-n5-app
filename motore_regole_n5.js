@@ -1,4 +1,4 @@
-// @versione 2026-09-27.4 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-09-27.5 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-09-27.4';
+    M.VERSIONE = '2026-09-27.5';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -1961,6 +1961,7 @@
             voci.push({ fonte: 'usi', valore: usi.residui - valore,
                         motivo: `Burst limitato agli usi residui: ${usi.residui} su ${usi.totali}` });
             valore = usi.residui;
+            if (usi.residui <= 0) note.push(M.messaggioScarico(unita, arma));
         }
 
         return { valore, base, sd, voci, note, max: valore, usi: usi };
@@ -7950,7 +7951,7 @@
                     if (dentro.some(function (x) { return x.nome === p.nome; })) return;
                     const usi = M.usiResidui(unita, p);
                     if (usi && usi.residui <= 0) {
-                        escluse.push({ nome: p.nome, motivo: `Usi esauriti (Disposable ${usi.totali}).` });
+                        escluse.push({ nome: p.nome, motivo: M.messaggioScarico(unita, p) });
                         return;
                     }
                     dentro.push(Object.assign({}, p, { usi: usi }));
@@ -8400,7 +8401,7 @@
         // --- usi ---
         const usi = M.usiResidui(portatore, arma);
         if (usi && usi.residui <= 0) {
-            errori.push(err('E17', `"${arma.nome}": usi esauriti (Disposable ${usi.totali}).`));
+            errori.push(err('E17', M.messaggioScarico(portatore, arma)));
             return { token: null, portatoreAggiornato: portatore, avvisi, errori };
         }
 
@@ -9691,6 +9692,27 @@
             const pilota = l.find(x => x && x.id === rem.remDriver.utenteId);
             return !pilota || M.eNullo(pilota);
         });
+    };
+
+    // USI ESAURITI = STATO SCARICO, non "Burst 0" (righe 15005-15007): "the
+    // Trooper, OR THE ITEM if the Trooper has several Disposable weapons or
+    // Equipment, will be in Unloaded State". Con UNA sola arma Disposable va in
+    // Scarico la truppa; con piu`, solo l'oggetto e le altre restano usabili.
+    // Si toglie con Reload (righe 14720-14740). L'app non gestisce lo stato
+    // (STATI_NON_GESTITI, decisione di Paolo): lo DICE. (Chat REGOLE, 27 sett.)
+    M.messaggioScarico = function (unita, arma) {
+        const testo = [unita && unita.weapon, unita && unita.equip].filter(Boolean).join(',');
+        const disposable = M.dividiLista(testo).filter(function (v) {
+            const a = M.profiloArma(v);
+            if (!a || a.nonTrovata) return false;
+            const W = (G.RULES_WEAPONS || {})[a.nome] || {};
+            const mod = Array.isArray(W.modalita) ? W.modalita.map(m => M.profiloArma(m)) : [a];
+            return mod.some(x => /DISPOSABLE/i.test(String(x.traits || '')));
+        });
+        const chi = disposable.length > 1
+            ? `l'oggetto (${arma && arma.nome}) è Scarico: le altre armi Disposable restano usabili`
+            : `la truppa è in stato Scarico`;
+        return `${arma && arma.nome}: usi esauriti — ${chi}. Si toglie con Reload: Abilità Breve senza tiro, nella ZdC di un alleato con Baggage in stato non Null (righe 14720-14740, 15005-15007).`;
     };
 
     // La scelta fazione -> nome, anch'essa una volta sola.

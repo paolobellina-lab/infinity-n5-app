@@ -1,4 +1,4 @@
-// @versione 2026-09-26.2 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-09-27.1 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -829,6 +829,62 @@ window.infiltrazioneFallita = (index) => {
     if (window.renderDeployUnits) window.renderDeployUnits();
 };
 
+// REMDRIVER: il pilota guida un REM, e quel REM prende i suoi valori.
+// La regola e i controlli stanno nel motore (M.applicaRemDriver, chiamato
+// da faseSchieramento.assegnaRemDriver): qui si chiede soltanto QUALE REM,
+// perche` e` una cosa che sa solo chi guarda il tavolo.
+//
+// Il pulsante compare nella pagina di schieramento del pilota, e solo se
+// nel roster c'e` almeno un REM. Il motore rifiuta da solo un secondo
+// segnalino sullo stesso REM e un REM che non sia Pesante: qui non si
+// duplica nessuno di quei controlli, si mostra il motivo che risponde.
+window.haRemDriver = (u) => /remdriver/i.test(String((u && u.skills) || '') + ' ' + String((u && u.equip) || ''));
+
+window.remDisponibili = () => (window.roster || []).filter(u => u && u.tipo === 'REM');
+
+window.bottoneRemDriver = (index) => {
+    const pilota = (window.roster || [])[index];
+    if (!pilota || !window.haRemDriver(pilota)) return '';
+
+    const rem = window.remDisponibili();
+    if (!rem.length) {
+        return `<div style="color:#aa8866; font-size:13px; margin:6px 0;">RemDriver: nessun REM nella lista a cui assegnarlo.</div>`;
+    }
+
+    const gia = rem.filter(r => r.remDriverDa === pilota.id);
+    if (gia.length) {
+        return `<div style="color:#88cc88; font-size:14px; margin:6px 0;">RemDriver assegnato a <b>${gia[0].alias || gia[0].nome}</b>.</div>`;
+    }
+
+    return rem.map(r => `
+        <button class="btn-status" style="margin:4px 0; border-color:#8888cc; color:#aab4ff;"
+            onclick="window.assegnaRemDriverA(${index}, '${String(r.id).replace(/'/g, "\\'")}')">
+            \u{1F916} REMDRIVER \u2192 ${r.alias || r.nome}
+        </button>`).join('');
+};
+
+window.assegnaRemDriverA = (indexPilota, idRem) => {
+    const pilota = (window.roster || [])[indexPilota];
+    if (!pilota) return;
+    if (!window.faseSchieramento || typeof window.faseSchieramento.assegnaRemDriver !== 'function') {
+        return alert('\u26d4 fase_schieramento non caricato: il RemDriver non pu\u00f2 essere assegnato.');
+    }
+
+    const e = window.faseSchieramento.assegnaRemDriver(pilota.id, idRem) || {};
+    if (!e.ok) return alert('\u26a0\ufe0f RemDriver non assegnato.\n\n' + (e.motivo || ''));
+
+    // Il REM nel roster e` stato aggiornato sul posto dal motore: qui si
+    // salva e si ridisegna, e si segna chi lo guida per non riproporre il
+    // pulsante. Il segnalino lo toglie il motore quando il pilota va Null.
+    const rem = (window.roster || []).find(u => u && u.id === idRem);
+    if (rem) rem.remDriverDa = pilota.id;
+
+    if (window.salvaPartitaLocale) window.salvaPartitaLocale();
+    if (e.nota) alert('\u2705 ' + e.nota);
+    window.apriDeployStati(indexPilota);
+    if (window.renderDeployUnits) window.renderDeployUnits();
+};
+
 window.apriDeployStati = (index) => {
     window.unitToEdit = window.roster[index];
     document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
@@ -913,6 +969,13 @@ window.apriDeployStati = (index) => {
     // Piazzamento nella stessa pagina: schieramento e mine si decidono nello
     // stesso momento, e tenerli su due schermate costava un gesto in piu` per
     // sapere se l'unita` aveva qualcosa da piazzare.
+    const rem = window.bottoneRemDriver(index);
+    if (rem) {
+        html += `<hr style="border-color:#333; margin:18px 0;">
+            <p style="color:#aab4ff; text-align:center; margin-bottom:6px; letter-spacing:1px;">REMDRIVER</p>
+            ${rem}`;
+    }
+
     const piazzabili = window.bottoniDeployables(index);
     if (piazzabili) {
         const titleColor = window.isNomadsApp() ? 'var(--nomad-orange)' : '#00ccff';
@@ -1146,7 +1209,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-09-26.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-09-27.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
