@@ -1,4 +1,4 @@
-// @versione 2026-09-27.2 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-09-28.6 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -49,7 +49,7 @@ window.CATALOGO_N5.MECCANICHE = {
 window.CATALOGO_N5.MUNIZIONI = {
     'N':      { salvezze: 1, attributo: 'ARM', dimezza: false, dannoPerFallimento: 1, statoFallimento: null, critExtra: 1 },
     'NORMALE':{ alias: 'N' },
-    'AP':     { salvezze: 1, attributo: 'ARM|BTS', dimezza: true,  dannoPerFallimento: 1, statoFallimento: null, critExtra: 1, note: 'ATTRIBUTO DIPENDENTE DALL\'ARMA: AP dimezza ARM o BTS a seconda di cosa usa l\'arma. Il motore eredita l\'attributo dall\'arma, AP applica solo il dimezzamento (arr. ecc.).' },
+    'AP':     { salvezze: 1, attributo: 'ARM|BTS', dimezza: true,  dannoPerFallimento: 1, statoFallimento: null, critExtra: 1, note: 'ATTRIBUTO DIPENDENTE DALL\'ARMA: AP dimezza ARM o BTS a seconda di cosa usa l\'arma. COME SI COMPORTA DAVVERO IL MOTORE: il dimezzamento lo decide SOLO il campo salvAttr dell\'arma (ARM/2, BTS/2). Il dimezza:true qui descrive la regola, non il calcolo: un\'arma AP con salvAttr senza /2 NON viene dimezzata; il motore segue il dato e lo segnala con l\'avviso A86.' },
     'DA':     { salvezze: 2, attributo: 'ARM', dimezza: false, dannoPerFallimento: 1, statoFallimento: null, critExtra: 1, note: 'Entrambe le salvezze obbligatorie. Critico -> 3 salvezze.' },
     'EXP':    { salvezze: 3, attributo: 'ARM', dimezza: false, dannoPerFallimento: 1, statoFallimento: null, critExtra: 1, note: 'Tutte e 3 obbligatorie. Critico -> 4 salvezze.' },
     'SHOCK':  { salvezze: 1, attributo: 'ARM', dimezza: false, dannoPerFallimento: 1, statoFallimento: null, critExtra: 1, note: 'Se bersaglio ha VITA=1 e va Incosciente -> MORTO diretto. Annulla Dogged/NWI/Shasvastii.' },
@@ -929,6 +929,9 @@ window.CATALOGO_N5.SUPPORTO = {
         fallimentoLetale: true,
         ritentabile: 'Si puo` recuperare la stessa truppa quante volte serve, finche` il Dottore passa il tiro.',
         suSeStesso: 'Il Dottore puo` usarla su se stesso, ma NON se e` in uno Stato Nullo.',
+        // N5.2 (wiki "Doctor", chat REGOLE, 28 settembre):
+        annullaStordito: 'Cancella lo Stato Stordito su un bersaglio con VITA anche se non e` Incosciente: Abilita` Breve a contatto, Tiro Normale di WIP. Per chi ha STR serve l\'Ingegnere.',
+        riTiroCommandToken: 'Il Command Token puo` ripetere un tiro del Dottore anche dopo il ReRoll, ma senza applicare il WIP della parentesi.',
         riTiro: 'Se il bersaglio ha un Cubo, si possono spendere Command Token per ripetere un tiro fallito.'
     },
 
@@ -1204,7 +1207,7 @@ window.CATALOGO_N5.REGOLE_DEPLOYABLE = {
         nonSeAlleato: 'Non detona se la Sagoma toccherebbe un alleato, anche Incosciente (riga 6227).',
         fuoriArea: 'Se il bersaglio e` fuori dalla Trigger Area, non detona e non si rivela.',
         attacco: 'Sagoma Diretta, nessun tiro per colpire, piazzata su chi ha innescato; PS e munizione dal Weapon Chart (righe 6223-6226, 6232).',
-        difesa: 'Schivata a PH-3 (Sagoma + Deployable), come Tiro Normale.',
+        difesa: 'Schivata a PH-3, come Tiro Normale: un solo -3 per la Sagoma di un Deployable, anche se si applicano piu` circostanze (righe 7294-7299).',
         difesaCybermine: 'Reset a WIP-3 (riga 6240), oppure Schivata a PH-3.',
         dueSoglie: 'UNA sola Schivata vale contro tutto, con DUE soglie: PH pieno in Faccia a Faccia contro gli spari del nemico, PH-3 contro la mina (esempio, righe 7397-7423).',
         sottoSagoma: 'Chi e` sotto la Sagoma senza averla innescata e` colpito, e puo` schivare alle stesse condizioni (lettura della chat REGOLE).',
@@ -1778,10 +1781,12 @@ window.CATALOGO_N5.SKILL = {
         // La regola completa sta in CATALOGO_N5.SUPPORTO.DOTTORE.
         effetto: { chiTira: 'UTENTE', tiro: 'WIP', bonus: 0, bersaglio: 'INCOSCIENTE_VITA', fallimento: 'MORTO' },
         interpretaParentesi: {
-            // DA VERIFICARE (chat REGOLE, 27 settembre): per l'Engineer la N5.2 ha
-            // sostituito "ReRoll -X" con "ReRoll WIP=X"; per il Doctor la pagina
-            // wiki trovata era vecchia, e nel database restano due "Doctor (ReRoll -3)".
-            'ReRoll -N': { effetto: 'ritiroConMod', suChi: 'utente' },      // es. Doctor (ReRoll -3): ritira il tiro con -3 al WIP
+            // VERIFICATO (wiki "Doctor", N5.3, categoria N5.2 Update — chat REGOLE,
+            // 28 settembre): anche il Dottore e` passato a "ReRoll WIP=X". La forma
+            // "ReRoll -X" resta SOLO per riconoscerla e dirlo: i due Bipandra la
+            // portano dal JSON ufficiale, e un -3 non si converte in un WIP=X
+            // senza la scheda. Il motore non applica il -3.
+            'ReRoll -N': { effetto: 'formaPreN52', suChi: 'utente' },       // es. Doctor (ReRoll -3): ritira il tiro con -3 al WIP
             'ReRoll WIP=N': { effetto: 'ritiroConWipFisso', suChi: 'utente' },
             '2W': { effetto: 'ferriteRecuperate', valore: 2, suChi: 'bersaglio' }  // il bersaglio recupera 2 Ferite invece di 1
         },
@@ -2250,7 +2255,8 @@ window.CATALOGO_N5.STATI_NON_GESTITI = {
         nome: 'Scarico',
         regolamento: 'Unloaded State — REGOLE_N5_v5_1_1.txt righe 14720-14740: arma inutilizzabile finche` non si fa Reload, senza tiro, nella ZdC di un alleato con Baggage in stato non Null. Nessun MOD ai tiri.',
         perche: 'Decisione di Paolo (23 settembre): non da` MOD, impedisce solo di usare l\'arma esaurita — e gli usi Disposable il motore li conta gia`.',
-        promemoria: 'Lo Scarico esiste al tavolo: un\'arma Disposable esaurita non si usa finche` non si ricarica (Reload, Baggage).'
+        promemoria: 'Lo Scarico esiste al tavolo: un\'arma Disposable esaurita non si usa finche` non si ricarica (Reload, Baggage).',
+        cancellazione: ['Reload: Abilita` Breve senza tiro, nella ZdC di un alleato con Baggage in stato non Null (righe 14720-14740).', 'MAI se l\'arma ha il Tratto Non-Reloadable.']
     }
 };
 
@@ -2266,16 +2272,28 @@ window.CATALOGO_N5.CATEGORIE_STATI = ['NULLO', 'IMM', 'INFOGUERRA', 'ALTERAZIONE
 //   chiave         il flag in unit.states (immobilizedA, isolated...)
 //   nome           cio` che legge il giocatore
 //   vecchiaChiave  SOLO per leggere salvataggi vecchi (unit.state = 'IMM-A')
+// cancellazione (28 settembre, chat REGOLE — tutti verificati): i modi di
+// USCIRE da ogni stato, come frasi pronte. [] esplicito = non se ne esce
+// (Morto, Sepsitorizzato): e` un'informazione, non un'assenza. L'app li DICE;
+// quelli automatici non li applica da sola.
 window.CATALOGO_N5.STATI = {
-    immA:       { vecchiaChiave: 'IMM-A', chiave: 'immobilizedA', nome: 'Immobilizzato-A', categoria: 'IMM', azioniPermesse: ['SCHIVATA'], mod: { SCHIVATA: -6, attributo:'PH' }, cancella: ['SCHIVATA','ENGINEER'] },
-    immB:       { vecchiaChiave: 'IMM-B', chiave: 'immobilizedB', nome: 'Immobilizzato-B', categoria: 'IMM', azioniPermesse: ['RESET'],    mod: { RESET: -3, attributo:'WIP' },   cancella: ['RESET','ENGINEER'] },
-    isolato:     { vecchiaChiave: 'ISOLATO', chiave: 'isolated', nome: 'Isolato', categoria: 'INFOGUERRA', nonAttivabile: true, mod: { RESET: -9, attributo:'WIP' }, cancella: ['RESET','ENGINEER'], note:'Disabilita skill/equip Comms; no Fireteam/Coordinato.' },
-    targeted: { vecchiaChiave: 'BERSAGLIATO', chiave: 'targeted', nome: 'Bersagliato', categoria: 'INFOGUERRA', vietaAzioni: ['CAUTO','STEALTH'], modAttaccante: 3, mod: { RESET: -3, attributo:'WIP' }, cancella: ['RESET','ENGINEER'], note:'+3 a chi attacca l\'utente (BS/Comms/Discover).' },
-    stordito:    { vecchiaChiave: 'STORDITO', chiave: 'stunned', nome: 'Stordito', categoria: 'ALTERAZIONE', vietaAzioni: ['ATTACCO BS','ATTACCO CC','BERSERK','PROTHEION','HACKING'], note:'Fallisce automaticamente il Guts Roll successivo.' },
-    suppressive:{ vecchiaChiave: 'SOPPRESSIONE', chiave: 'suppressive', nome: 'Fuoco di Soppressione', categoria: 'POSTURA', modNemiciEntro24: -3, aroSoloBS_SF: true, sfMode: { gittate:{z0:16, m3:24, x96:96}, burst:3 }, note:'Nemici entro 0-24" hanno -3 in tutti i F2F. In ARO usa SF Mode Weapon.' },
-    engaged:     { vecchiaChiave: 'ENGAGED', chiave: 'engaged', nome: 'Ingaggiato', categoria: 'POSTURA', azioniPermesse: ['ATTACCO CC','BERSERK','SCHIVATA','RESET','IDLE'] },
-    retreat:     { vecchiaChiave: 'RETREAT', chiave: 'retreat', nome: 'Ritirata!', categoria: 'NULLO', azioniPermesse: ['MOVIMENTO','CAUTO','SALTO','SCHIVATA','RESET','SCOPRIRE'] },
-    disconnesso: { vecchiaChiave: 'DISCONNESSO', chiave: 'disconnected', statoNullo: true, nome: 'Disconnesso', categoria: 'INFOGUERRA', nonAttivabile: true, note:'Periferiche: no ordini/ARO.' },
+    immA:       { vecchiaChiave: 'IMM-A', chiave: 'immobilizedA', nome: 'Immobilizzato-A', categoria: 'IMM', azioniPermesse: ['SCHIVATA'], mod: { SCHIVATA: -6, attributo:'PH' }, cancella: ['SCHIVATA','ENGINEER'], cancellazione: ['Schivata riuscita (Normale o Faccia a Faccia), applicando il -6 PH.', 'Ingegnere: Abilita` Breve a contatto, WIP Normale.'] },
+    immB:       { vecchiaChiave: 'IMM-B', chiave: 'immobilizedB', nome: 'Immobilizzato-B', categoria: 'IMM', azioniPermesse: ['RESET'],    mod: { RESET: -3, attributo:'WIP' },   cancella: ['RESET','ENGINEER'], cancellazione: ['Reset riuscito, applicando il -3 WIP.', 'Ingegnere.'] },
+    isolato:     { vecchiaChiave: 'ISOLATO', chiave: 'isolated', nome: 'Isolato', categoria: 'INFOGUERRA', nonAttivabile: true, mod: { RESET: -9, attributo:'WIP' }, cancella: ['RESET','ENGINEER'], note:'Disabilita skill/equip Comms; no Fireteam/Coordinato.', cancellazione: ['Reset riuscito, applicando il -9 WIP.', 'Ingegnere.'] },
+    targeted: { vecchiaChiave: 'BERSAGLIATO', chiave: 'targeted', nome: 'Bersagliato', categoria: 'INFOGUERRA', vietaAzioni: ['CAUTO','STEALTH'], modAttaccante: 3, mod: { RESET: -3, attributo:'WIP' }, cancella: ['RESET','ENGINEER'], note:'+3 a chi attacca l\'utente (BS/Comms/Discover).', cancellazione: ['Reset riuscito, applicando il -3 WIP.', 'Ingegnere.'] },
+    stordito:    { vecchiaChiave: 'STORDITO', chiave: 'stunned', nome: 'Stordito', categoria: 'ALTERAZIONE', vietaAzioni: ['ATTACCO BS','ATTACCO CC','BERSERK','PROTHEION','HACKING'], note:'Fallisce automaticamente il Guts Roll successivo. Le Abilita` Speciali e gli Equipaggiamenti Automatici (Mimetismo, ECM, Firewall...) continuano a funzionare, rispettando le restrizioni di dichiarazione.',
+                   // Come si esce dallo Stordito (wiki "Stunned State", N5.2/5.3 — chat
+                   // REGOLE, 28 settembre). La terza e` automatica: l'app non tiene il
+                   // turno in cui lo stato e` nato, quindi lo dice e non lo toglie da sola.
+                   cancellazione: [
+                       'Dottore, su un bersaglio con VITA: Abilita` Breve a contatto, WIP Normale.',
+                       'Ingegnere, su un bersaglio con STR.',
+                       'Automatica: all\'inizio della Fase Stati del Turno del Giocatore in cui e` stato causato.'
+                   ] },
+    suppressive:{ vecchiaChiave: 'SOPPRESSIONE', chiave: 'suppressive', nome: 'Fuoco di Soppressione', categoria: 'POSTURA', modNemiciEntro24: -3, aroSoloBS_SF: true, sfMode: { gittate:{z0:16, m3:24, x96:96}, burst:3 }, note:'Nemici entro 0-24" hanno -3 in tutti i F2F. In ARO usa SF Mode Weapon.', cancellazione: ['Dichiara un Ordine.', 'Dichiara un ARO diverso da BS Attack in SF Mode.', "Usa un'arma senza il Tratto Suppressive Fire.", 'Fallisce un Guts Roll.', 'Entra in Engaged, Isolato, Ritirata!, in qualsiasi stato Null o Immobilizzato.', 'Perdita del Tenente.', 'Entra in un Fireteam.'] },
+    engaged:     { vecchiaChiave: 'ENGAGED', chiave: 'engaged', nome: 'Ingaggiato', categoria: 'POSTURA', azioniPermesse: ['ATTACCO CC','BERSERK','SCHIVATA','RESET','IDLE'], cancellazione: ['Non e` piu` in contatto di Silhouette con nemici.', 'Automatica: alla fase Effetti di un Ordine tutti i nemici in contatto sono Immobilizzati o in uno stato Null (eccetto Posseduto e Sepsitorizzato).', 'Schivata riuscita, Normale o Faccia a Faccia, muovendo fino a 2" per uscire dal contatto. Senza una posizione valida resta Ingaggiato.'] },
+    retreat:     { vecchiaChiave: 'RETREAT', chiave: 'retreat', nome: 'Ritirata!', categoria: 'NULLO', azioniPermesse: ['MOVIMENTO','CAUTO','SALTO','SCHIVATA','RESET','SCOPRIRE'], cancellazione: ['Non si cancella: finisce con la situazione di Ritirata.'] },
+    disconnesso: { vecchiaChiave: 'DISCONNESSO', chiave: 'disconnected', statoNullo: true, nome: 'Disconnesso', categoria: 'INFOGUERRA', nonAttivabile: true, note:'Periferiche: no ordini/ARO.', cancellazione: ['Ingegnere.', 'Il Controller torna in uno stato valido.', 'La truppa rientra in Coerenza.'] },
     // 🔴 Posseduto e Sepsitorizzato NON erano voci del catalogo: vivevano solo
     // come flag dell'unita` (states.possessed / states.sepsitorized). Per
     // leggere la nullita` DAL FLAG servono qui. Sono stati Null (righe 14500,
@@ -2284,18 +2302,18 @@ window.CATALOGO_N5.STATI = {
     // l'avversario (righe 14504-14509, 14584-14589). Nessuna azioniPermesse:
     // non vanno bloccati. (Chat REGOLE, 21 settembre.)
     // ⚠️ categoria di visualizzazione scelta qui, non dal regolamento.
-    posseduto:      { vecchiaChiave: 'POSSEDUTO', chiave: 'possessed',   nome: 'Posseduto',      categoria: 'INFOGUERRA', statoNullo: true },
-    sepsitorizzato: { vecchiaChiave: 'SEPSITORIZZATO', chiave: 'sepsitorized', nome: 'Sepsitorizzato', categoria: 'INFOGUERRA', statoNullo: true },
-    incosciente: { vecchiaChiave: 'INCOSCIENTE', chiave: 'unconscious', nome: 'Incosciente', categoria: 'NULLO', nonAttivabile: true, statoNullo: true },
-    morto:       { vecchiaChiave: 'MORTO', chiave: 'dead', nome: 'Morto', categoria: 'NULLO', nonAttivabile: true, statoNullo: true },
+    posseduto:      { vecchiaChiave: 'POSSEDUTO', chiave: 'possessed',   nome: 'Posseduto',      categoria: 'INFOGUERRA', statoNullo: true, cancellazione: ['Un Command Token.', 'Total Control del proprietario sul proprio TAG (riga 5286).'] },
+    sepsitorizzato: { vecchiaChiave: 'SEPSITORIZZATO', chiave: 'sepsitorized', nome: 'Sepsitorizzato', categoria: 'INFOGUERRA', statoNullo: true, cancellazione: [] },
+    incosciente: { vecchiaChiave: 'INCOSCIENTE', chiave: 'unconscious', nome: 'Incosciente', categoria: 'NULLO', nonAttivabile: true, statoNullo: true, cancellazione: ['Dottore o MediKit, su un bersaglio con VITA.', 'Ingegnere o GizmoKit, su un bersaglio con STR.', 'Con Remote Presence un solo tiro riuscito toglie tutte le Ferite necessarie.'] },
+    morto:       { vecchiaChiave: 'MORTO', chiave: 'dead', nome: 'Morto', categoria: 'NULLO', nonAttivabile: true, statoNullo: true, cancellazione: [] },
     // Gli stati MARKER — erano solo in M.NOMI_STATI. Nessun effetto di regola
     // qui (niente azioniPermesse ne` statoNullo): servono al vocabolario.
-    camo:     { chiave: 'camo',          nome: 'CAMO',                  categoria: 'MARKER' },
-    imp:      { chiave: 'impersonation', nome: 'Impersonation',         categoria: 'MARKER' },
-    holoecho: { chiave: 'holoecho',      nome: 'Holoecho',              categoria: 'MARKER' },
-    holomask: { chiave: 'holomask',      nome: 'HoloMask',              categoria: 'MARKER' },
-    decoy:    { chiave: 'decoy',         nome: 'Decoy',                 categoria: 'MARKER' },
-    hidden:   { chiave: 'hidden',        nome: 'Schieramento Nascosto', categoria: 'MARKER' },
+    camo:     { chiave: 'camo',          nome: 'CAMO',                  categoria: 'MARKER', cancellazione: ['Dichiara un Attacco, Look Out! o qualunque Abilita` che richieda un tiro.', 'Dichiara un\'Abilita` Lunga diversa dal Movimento Cauto.', 'Entra in contatto di Silhouette con un Modello nemico.', 'Viene Scoperto.', 'E` costretto a un Tiro Salvezza.', 'Diventa Impetuoso (Frenzy) o entra in Ritirata!.', 'La cancellazione vale per l\'INTERO Ordine dichiarato, anche se l\'Abilita` che rivela e` l\'ultima (righe 13639-13641).'] },
+    imp:      { chiave: 'impersonation', nome: 'Impersonation',         categoria: 'MARKER', cancellazione: ['Come il Camuffato, ma senza Look Out!.', 'Lo Scoprire cancella solo l\'IMP-2.'] },
+    holoecho: { chiave: 'holoecho',      nome: 'Holoecho',              categoria: 'MARKER', cancellazione: ['Stessa struttura del Decoy: le repliche e l\'utente si cancellano separatamente (riga ~13934).'] },
+    holomask: { chiave: 'holomask',      nome: 'HoloMask',              categoria: 'MARKER', cancellazione: ['Dichiara un Attacco, Look Out! o un\'Abilita` con tiro.', 'Dichiara un\'Abilita` Lunga diversa dal Movimento Cauto.', 'Entra in contatto di Silhouette con un Modello nemico.', 'E` costretto a un Tiro Salvezza.', 'Viene Scoperto.'] },
+    decoy:    { chiave: 'decoy',         nome: 'Decoy',                 categoria: 'MARKER', cancellazione: ['Replica: viene Scoperta.', 'Replica: e` colpita da un attacco riuscito (senza fare la salvezza).', 'Replica: un Modello nemico entra in contatto.', 'Replica: l\'utente si rivela.', 'Utente: dichiara un Attacco, Look Out! o un\'Abilita` con tiro, TRANNE il Combat Jump.', 'Utente: dichiara un\'Abilita` Lunga diversa da Movimento Cauto, Parachutist e Combat Jump.', 'Utente: FALLISCE un tiro di Infiltrazione o di Combat Jump.', 'Utente: entra in contatto di Silhouette con un Modello nemico.', 'Utente: viene Scoperto.', 'Utente: e` costretto a un Tiro Salvezza.'] },
+    hidden:   { chiave: 'hidden',        nome: 'Schieramento Nascosto', categoria: 'MARKER', cancellazione: ['Dichiara un Ordine o un ARO.', 'Viene Scoperto.', 'Resta Marker solo nei tre casi di M.statoDopoAbilita (righe 13914-13921).'] },
     foxhole:  { chiave: 'foxhole',       nome: 'Foxhole',               categoria: 'POSTURA' }
 };
 
@@ -2326,7 +2344,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-09-27.2', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-09-28.6', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-<!-- @versione 2026-09-23.1 | SCHEDE_SKILL_N5_gruppoB.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-09-28.1 | SCHEDE_SKILL_N5_gruppoB.md | proprieta`: chat REGOLE -->
 
 # SCHEDE SKILL — GRUPPO B: le 11 skill a catalogo, mai citate dal codice, che toccano il gioco
 
@@ -148,6 +148,10 @@ l'Isolato non deve poter essere applicato (quindi niente Oblivion né E/M). 36 p
 - Munizione **Shock**, salvezza su **ARM**, **PS 7**.
 - Chi aveva dichiarato **Schivata** e ha passato il PH **evita** l'esplosione.
 - Poi l'utente entra in Morto ed è rimosso.
+
+**Non scatta** se l'utente entra in Morto direttamente (Dogged, munizione Shock, più Ferite nello
+stesso Ordine), né se attiva **Dogged** o **NWI** entrando in Incosciente. Se la sagoma
+toccherebbe alleati l'attacco è annullato, ma l'utente entra in Morto lo stesso.
 
 **Nell'app:** un attacco completo da calcolare, innescato da un esito. 2 profili.
 

@@ -1,4 +1,4 @@
-// @versione 2026-09-14.2 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
+// @versione 2026-09-28.3 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
 // ==========================================
 // ☄️ FUOCO SPECULATIVO (N5) - ordine_fuoco_speculativo.js
 // ------------------------------------------
@@ -261,6 +261,19 @@
         const M = motore(); if (!M) return;
         const unita = window.coordUnits[window.coordIndex];
         const arma = Object.assign({}, M.profiloArma(window.currentOrder.weapon), { burst: 1 });
+
+        // DROP BEAR IN MODO BS: il PUNTO va scelto rispettando la domanda di
+        // piazzamento — prima del tiro, non dopo (wiki "Drop Bears", N5.3).
+        const eDropBearBS = /DROP BEARS \(BS MODE\)/i.test(String(arma.nome || ''));
+        if (eDropBearBS) {
+            const d = (M.domandeDeployable('PIAZZAMENTO') || [])[0];
+            if (d && window.confirm(d.testo)) {
+                if (!window.confirm('C\'e` anche un nemico valido, NON camuffato, dentro l\'area di innesco?')) {
+                    alert('⛔ Punto non ammesso per il Drop Bear.\n\n' + d.seSi + '\n\nScegli un altro punto.');
+                    return;
+                }
+            }
+        }
         const regole = M.regoleSpeculativo(arma, { rangeIndex: window.combatTargets[0].rangeIndex });
 
         window.coordPayloads.push({
@@ -297,15 +310,62 @@
             return;
         }
 
+        // DROP BEAR IN MODO BS: il Mine Token e` l'effetto del SUCCESSO del
+        // tiro, non del lancio (wiki "Drop Bears": "If you pass the Roll..." —
+        // chat REGOLE, 28 settembre). I dadi si tirano al tavolo: dopo l'invio
+        // il giocatore dice com'e` andata. L'uso resta speso in ogni caso
+        // (riga 14999): un lancio fallito costa un uso e non lascia niente.
+        // Vale per tutta la famiglia dei lanci con segnalino: Drop Bear in modo
+        // BS, Pitcher (Ripetitore), Disco Baller (Disco Ball).
+        const lanciati = window.coordPayloads.filter(p => M.lancioConSegnalino(p.arma));
+        window._dropBearInSospeso = lanciati.length
+            ? { lanci: lanciati.map(p => ({ unita: p.attaccante, arma: p.arma })), ordineId: window.currentOrder && window.currentOrder.id,
+                nomeArma: String(lanciati[0].arma.nome).replace(/ \(BS Mode\)/i, '') }
+            : null;
+
         const calcDiv = document.getElementById('calc-result');
         if (calcDiv) {
             calcDiv.innerHTML = `
                 <div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; background:rgba(204,0,255,0.1); margin-top:20px;">
                     <h2 style="color:${COL.bordo}; margin:0;">ATTACCO INVIATO ALL'HUB</h2>
                     <p style="font-size:12px; color:#aaa;">Calcolo Speculativo in corso...</p>
-                </div>`;
+                </div>` + (window._dropBearInSospeso ? `
+                <div id="dropbear-esito" style="text-align:center; margin-top:12px; padding:14px; border:1px dashed ${COL.bordo};">
+                    <p style="margin:0 0 10px;">🎯 Il tiro del ${window._dropBearInSospeso.nomeArma} è <b>riuscito</b>?</p>
+                    <button onclick="window.esitoDropBearBS(true)" style="padding:10px 18px; margin:4px;">SÌ, RIUSCITO — piazza il segnalino</button>
+                    <button onclick="window.esitoDropBearBS(false)" style="padding:10px 18px; margin:4px;">NO, FALLITO</button>
+                </div>` : '');
             calcDiv.style.display = 'block';
         }
+    };
+
+    // L'esito del tiro del Drop Bear in modo BS, detto dal giocatore.
+    //   riuscito -> il Mine Token nasce nel roster (senza un secondo uso) e
+    //               l'Hub lo riceve; non detona in questo stesso Ordine.
+    //   fallito  -> nessun segnalino; l'uso resta speso, e lo si dice.
+    window.esitoDropBearBS = function (riuscito) {
+        const M = motore(); const sosp = window._dropBearInSospeso;
+        if (!M || !sosp) return;
+        window._dropBearInSospeso = null;
+        const box = document.getElementById('dropbear-esito');
+        if (!riuscito) {
+            if (box) box.innerHTML = '<p style="margin:0;">Tiro fallito: <b>nessun segnalino</b>. L\'uso del ' + sosp.nomeArma + ' è comunque speso (riga 14999).</p>';
+            return { piazzati: 0 };
+        }
+        const nomi = [], note = [];
+        sosp.lanci.forEach(function (l) {
+            const e = M.segnalinoDaLancio(l.unita, l.arma, { ordineId: sosp.ordineId });
+            if (e.token && Array.isArray(window.roster)) { window.roster.push(e.token); nomi.push(e.token.nome); note.push.apply(note, (e.note || []).slice(1)); }
+        });
+        if (nomi.length && typeof window.inviaSchieramentoAllHub === 'function') {
+            window.inviaSchieramentoAllHub(document.title.includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA', {
+                roster: window.roster, strutture: window.activeStructures || [],
+                terreni: window.activeTerrains || [], motivo: 'AGGIORNAMENTO'
+            });
+        }
+        if (box) box.innerHTML = '<p style="margin:0;">✅ ' + nomi.join(', ') + ' piazzato.</p>' +
+            note.filter((x, i) => note.indexOf(x) === i).map(x => '<p style="margin:6px 0 0; font-size:12px; color:#aaa;">' + x + '</p>').join('');
+        return { piazzati: nomi.length };
     };
 
     console.log('☄️ ordine_fuoco_speculativo.js riscritto su MotoreN5.');

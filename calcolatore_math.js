@@ -1,4 +1,4 @@
-// @versione 2026-09-27.1 | calcolatore_math.js | proprieta`: chat MOTORE
+// @versione 2026-09-28.2 | calcolatore_math.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧮 CALCOLATORE N5 — adattatore sopra MotoreN5
 // ------------------------------------------
@@ -191,7 +191,12 @@
             }
         };
 
-        const scontri = M.risolviPayload({ attacchi: attacchi }, reazioni.map(function (r) {
+        // 🔴 La busta passa INTERA, non solo gli attacchi. Prima si costruiva
+        // { attacchi } e si perdevano gli altri campi — azioniDichiarate (la
+        // Schivata dichiarata col solo Movimento contro una mina), attivo,
+        // aroAtteso. Un campo scritto dal modulo, letto dal motore, e perso
+        // nel mezzo. (Chat INTERFACCIA, 28 settembre.)
+        const scontri = M.risolviPayload(Object.assign({}, dati || {}, { attacchi: attacchi }), reazioni.map(function (r) {
             return Object.assign({}, r, { difensore: cercaIn(rosterDif, r.nome) });
         }), Object.assign(ctx, {
             // I bonus di Fireteam ora arrivano al calcolo.
@@ -215,8 +220,11 @@
             // e l'Alguacil a destra in azzurro. Qui si scambiano gli slot.
             // (Collaudo al tavolo di Paolo, 26 settembre.)
             const orfano = !!s.reattivoNonBersagliato;
-            const sx = orfano ? s.reattivo : s.attivo;   // fazione attiva
-            const dx = orfano ? s.attivo : s.reattivo;   // fazione reattiva
+            // Anche la Schivata dell'attiva contro un'ARO: lo scontro e` Sparo
+            // contro Schivata, e l'attiva va comunque a sinistra.
+            const invertiti = orfano || !!s.latiInvertiti;
+            const sx = invertiti ? s.reattivo : s.attivo;   // fazione attiva
+            const dx = invertiti ? s.attivo : s.reattivo;   // fazione reattiva
             const out = {
                 titolo: s.titolo,
                 tipo: s.tipo,
@@ -233,7 +241,8 @@
                 } : {
                     nome: sx.nome,
                     fazione: fazAttiva,
-                    azione: sx.azione,
+                    // l'etichetta leggibile anche a sinistra ("DODGE" -> Schivata)
+                    azione: (window.MotoreN5 && window.MotoreN5.aroAdAzione && window.MotoreN5.aroAdAzione(sx.azione)) || sx.azione,
                     mod: sx.mod,
                     burst: sx.burst,
                     // 🎲 il Dado Speciale, sul SOLO scontro a cui il motore l'ha dato
@@ -280,7 +289,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_math.js', versione: '2026-09-27.1', proprieta: 'MOTORE' };
+    var v = { file: 'calcolatore_math.js', versione: '2026-09-28.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

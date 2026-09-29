@@ -1,4 +1,4 @@
-// @versione 2026-09-27.1 | logica_stati.js | proprieta`: chat MOTORE
+// @versione 2026-09-28.1 | logica_stati.js | proprieta`: chat MOTORE
 // ==========================================
 // NOTA: le regole di questo file passano da MotoreN5.
 //  - la cancellazione degli stati Marker (Ritirata!, Ingaggiato, Stati Nulli)
@@ -333,6 +333,12 @@ window.salvaStatiUnita = () => {
 
     // 3. LOGICA ESCLUSIVITÀ E RISOLUZIONE CONFLITTI N5
     if (isDead) s.unconscious = false; 
+    // DEPLOYABLE: "If a Deployable item enters Unconscious State, it
+    // automatically passes directly to Dead State" (wiki "Traits", N5.3 —
+    // chat REGOLE, 28 settembre). Un Deployable non resta mai Incosciente.
+    // (Si imposta isDead: e` lei che decide la morte in questa pagina — scrivere
+    //  s.dead veniva sovrascritto piu` sotto.)
+    if (window.unitToEdit && window.unitToEdit.deployable && s.unconscious) { s.unconscious = false; isDead = true; }
     
     // Ritirata!, Ingaggiato e Stati Nulli cancellano gli stati Marker.
     // La regola sta nel motore: qui si applica soltanto.

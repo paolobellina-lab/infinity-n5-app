@@ -1,4 +1,4 @@
-// @versione 2026-09-27.1 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-09-28.2 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -81,6 +81,32 @@
     // ==============================================================
     // 1. SELEZIONE UNITÀ CHE REAGISCONO
     // ==============================================================
+    // L'UNITA` ATTIVA, per il motore.
+    // Dal 28 settembre azioniAroPossibili accetta un terzo argomento: se
+    // l'attiva e` un Marker (CAMO o Impersonation) cambiano gli ARO
+    // dichiarabili — niente BS, CC o Hacking contro un segnalino, ma
+    // Scoprire, Look Out e Ritarda.
+    //
+    // Di lei sappiamo quello che l'allarme ci manda: il nome e i suoi stati.
+    // Basta: il motore guarda gli stati per sapere se e` un Marker.
+    window.unitaAttivaDiTurno = function () {
+        const d = window.currentAttackData || {};
+        if (!d.attaccante) return null;
+        return { alias: d.attaccante, nome: d.attaccante, states: d.statiAttaccante || {} };
+    };
+
+    // Chi ha scelto RITARDA: per loro non parte nessuna reazione adesso.
+    // Si ridichiara dopo la seconda Abilita` dell'attiva, e solo se quella
+    // l'ha rivelata. La chiave e` l'Ordine, perche` il ritardo vale dentro
+    // l'Ordine in corso e non oltre.
+    window.ritardatari = window.ritardatari || { ordineId: null, ids: [] };
+
+    window.segnaRitardo = function (idUnita) {
+        const ord = (window.currentAttackData || {}).ordineId || null;
+        if (window.ritardatari.ordineId !== ord) window.ritardatari = { ordineId: ord, ids: [] };
+        if (window.ritardatari.ids.indexOf(idUnita) < 0) window.ritardatari.ids.push(idUnita);
+    };
+
     window.apriSelezioneAro = function () {
         const M = motore(); if (!M) return;
         document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
@@ -101,8 +127,26 @@
             const st = M.statoBersaglio(u);
             if (st.hidden) return;   // non è sul tavolo: nemmeno da mostrare
 
-            const possibili = M.azioniAroPossibili(u, inArrivo);
-            const ammesse = possibili.filter(a => a.ammesso);
+            // Chi aveva RITARDATO in questo stesso Ordine non riparte da capo:
+            // la sua dichiarazione dipende da cosa ha fatto l'attiva con la
+            // seconda Abilita`. Se non si e` rivelata, non dichiara nulla, e
+            // il motivo lo dice il motore.
+            const attivaOra = window.unitaAttivaDiTurno();
+            const haRitardato = (window.ritardatari.ordineId === ((window.currentAttackData || {}).ordineId || null))
+                && window.ritardatari.ids.indexOf(u.id) >= 0;
+
+            let possibili, ammesse;
+            if (haRitardato && typeof M.aroDopoRitardo === 'function') {
+                const dopo = M.aroDopoRitardo(u, attivaOra, inArrivo) || {};
+                if (!dopo.puoDichiarare) {
+                    escluse.push({ nome: M.nomeUnita(u) + ' (aveva ritardato)', motivo: dopo.motivo || 'non puo` dichiarare' });
+                    return;
+                }
+                possibili = dopo.azioni || [];
+            } else {
+                possibili = M.azioniAroPossibili(u, inArrivo, { attivo: attivaOra });
+            }
+            ammesse = possibili.filter(a => a.ammesso);
 
             if (ammesse.length === 0) {
                 const motivo = (possibili.find(a => a.motivo) || {}).motivo || 'nessun ARO disponibile';
@@ -111,11 +155,12 @@
             }
 
             const sopp = st.suppressive ? ` <span style="color:#ff6600; font-size:14px;">🔥 SF MODE</span>` : '';
+            const rit = haRitardato ? ` <span style="color:#ffcc66; font-size:13px;">⏳ aveva ritardato</span>` : '';
             container.innerHTML += `
                 <button id="aro-btn-${u.id}" class="huge-btn" style="background:${bg}; border-color:${bordo}; min-height:70px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; text-align:left; width:100%;"
                     onclick="window.toggleAroUnit('${String(u.id).replace(/'/g, "\\'")}')">
                     <div style="font-size:22px; line-height:1; color:#fff; font-weight:bold; margin-left:10px;">
-                        🛡️ ${M.nomeUnita(u)}${sopp}
+                        🛡️ ${M.nomeUnita(u)}${sopp}${rit}
                     </div>
                 </button>`;
         });
@@ -275,11 +320,22 @@
 
         // Il deployable non tira: si muove fino al contatto e detona.
         // L'unica difesa e` una Schivata come TIRO NORMALE.
+        // DETONAZIONE, non DEPLOYABLE_BOOST: dal 28 settembre il motore
+        // costruisce uno scontro suo per questa azione, gia` orientato per il
+        // tabellone — a sinistra chi l'ha innescata con la sua Schivata a
+        // PH-3, a destra la mina che non tira. Con il vecchio nome usciva il
+        // riquadro generico "Nessun tiro" contro "ATTACCO A SAGOMA".
+        // Misurato: vale per le mine E per il koala, quindi si manda per
+        // tutti i deployable che detonano.
+        //
+        // `bersaglio` e` il nome di chi ha innescato: senza, lo scontro non
+        // sa a chi far tirare la Schivata.
         window.aroReactions = window.aroReactions || [];
         window.aroReactions.push({
             nome: M.nomeUnita(voce.unita),
-            azione: 'DEPLOYABLE_BOOST',
+            azione: 'DETONAZIONE',
             arma: voce.arma,
+            bersaglio: (voce.nemico && voce.nemico.alias) || null,
             deployable: true,
             senzaTiro: true,
             note: [e.difesa, e.rimozione].filter(Boolean)
@@ -355,7 +411,7 @@
         window.aggiornaTitoliAro(window.aroCurrentConfig.nome);
 
         const inArrivo = (window.currentAttackData && window.currentAttackData.azione) || null;
-        const possibili = M.azioniAroPossibili(u, inArrivo);
+        const possibili = M.azioniAroPossibili(u, inArrivo, { attivo: window.unitaAttivaDiTurno() });
         const container = document.getElementById('aro-action-list');
         if (!container) return;
         container.innerHTML = '';
@@ -394,6 +450,26 @@
         window.aroCurrentConfig.azione = act;
 
         const u = (window.roster || []).find(x => String(x.id) === String(window.aroCurrentConfig.id));
+
+        // RITARDA non e` una reazione: e` la scelta di NON dichiarare adesso.
+        // Non produce nulla da spedire; l'unita` resta in attesa della
+        // seconda Abilita` dell'attiva, e solo se quella la rivela potra`
+        // dichiarare (M.aroDopoRitardo). Percio` qui si esce senza
+        // aggiungere niente ad aroReactions.
+        if (act === 'RITARDA') {
+            window.segnaRitardo(window.aroCurrentConfig.id);
+            alert('\u23f3 ' + (u ? M.nomeUnita(u) : 'Unita\u0300') + ' RITARDA.\n\n' +
+                  'Nessuna reazione parte adesso. Se la seconda Abilita\u0300 dell\'attiva la rivela, ' +
+                  'potr\u00e0 dichiarare allora; se resta un Marker, non dichiara nulla.');
+            window.aroCurrentConfig.azione = null;
+
+            // Si passa alla prossima unita` che reagisce, o si chiude.
+            if (window.currentAroIndex < window.selectedAroUnits.length - 1) {
+                window.currentAroIndex++;
+                return window.avviaCicloAroUnita();
+            }
+            return window.inviaAro();
+        }
 
         if (act === 'DODGE' || act === 'RESET') {
             // Nessuna arma: qui il vecchio codice chiamava comunque
@@ -703,7 +779,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-09-27.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-09-28.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

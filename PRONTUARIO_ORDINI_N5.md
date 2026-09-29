@@ -1,4 +1,4 @@
-<!-- @versione 2026-09-27.1 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-09-28.4 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
 
 # PRONTUARIO ORDINI N5 — richiamo rapido durante la partita
 
@@ -151,7 +151,7 @@ Bersagliato ✅
 
 | Voce | MOD al PH | Si somma? |
 |---|---|---|
-| Senza LoF verso l'attaccante (o Sagoma senza LoF) | **−3** | ✅ |
+| Senza LoF verso l'attaccante · Sagoma senza LoF · Sagoma di un'arma **Deployable** · in ARO, attivo dentro la ZdC e fuori LoF | **−3** | ✅ ma **uno solo**: anche se più circostanze valgono insieme, il MOD resta −3 (righe 7294–7299) |
 | Immobilizzato-A | **−6** | ✅ (e l'IMM-A può fare **solo** questo) |
 | Stordito | **−3** (ogni tiro tranne le salvezze) | ✅ |
 | Surprise Attack dell'attaccante (partiva da Marker/Hidden) | −3 / −6 dal profilo | ✅ **solo nel Faccia a Faccia** (N5.2, adottata); se `(CC-6)` solo sul CC, non sulla Schivata |
@@ -1012,7 +1012,7 @@ l'attivo con qualcosa che quella difesa può evitare (Schivata: BS/CC/Sagome; Re
 
 | Voce | MOD al PH | Si somma? |
 |---|---|---|
-| Senza LoF verso l'attaccante (o Sagoma senza LoF) | **−3** | ✅ |
+| Senza LoF verso l'attaccante · Sagoma senza LoF · Sagoma di un'arma **Deployable** · in ARO, attivo dentro la ZdC e fuori LoF | **−3** | ✅ ma **uno solo**: anche se più circostanze valgono insieme, il MOD resta −3 (righe 7294–7299) |
 | Immobilizzato-A | **−6** | ✅ (e l'IMM-A può fare **solo** questo) |
 | Stordito | **−3** (ogni tiro tranne le salvezze) | ✅ |
 | Surprise Attack dell'attaccante (partiva da Marker/Hidden) | −3 / −6 dal profilo | ✅ **solo nel Faccia a Faccia** (N5.2, adottata); se `(CC-6)` solo sul CC, non sulla Schivata |
@@ -1374,7 +1374,7 @@ casella vale la scheda dell'ordine (§1).
 
 | Tratto | Effetto sul calcolo | Scheda |
 |---|---|---|
-| **BS Weapon (PH) / (WIP)** | si tira su PH / WIP con **tutti** i MOD di un BS Attack; il Fireteam L4 +1 vale; **non** usabile col Guidato | 1.1, 1.13 |
+| **BS Weapon (PH) / (WIP)** | si tira su PH / WIP con **tutti** i MOD di un BS Attack; il Fireteam L4 +1 vale; **non** usabile col Guidato. Con `BS Weapon (WIP)` non si può usare la skill `BS Attack (Shock)` | 1.1, 1.13 |
 | **Speculative Attack** | abilita il Fuoco Speculativo (−6, Burst 1, niente LoF) | 1.4 |
 | **Intuitive Attack** | abilita l'Attacco Intuitivo (WIP non modificato, Burst 1) | 1.3 |
 | **Direct Template** (Teardrop) | nessun tiro d'attacco: il bersaglio salva o Schiva; niente `+1 SD` | 1.1 |
@@ -1382,14 +1382,19 @@ casella vale la scheda dell'ordine (§1).
 | **Suppressive Fire** | abilita lo stato Fuoco di Soppressione (profilo SF Mode) | 1.10 |
 | **Comms Attack** | è un Attacco Comms: si difende col **Reset**, vale il Firewall | 1.6 |
 | **Non-Lethal** | non causa Ferite dirette | — |
-| **Disposable (X)** | X usi; un requisito fallito o un Idle forzato consuma l'uso | 1.14 |
-| **Deployable** | si piazza con Place Deployable | 1.14 |
+| **Disposable (X)** | X usi; un requisito fallito o un Idle forzato consuma l'uso. **Ogni +1 di Burst da un MOD consuma un uso**, e i MOD al Burst **non possono superare gli usi rimasti**. Modalità diverse della stessa arma **condividono** gli usi. Finiti gli usi: stato **Scarico** (la truppa se ha una sola arma Disposable, l'oggetto se ne ha più d'una) | 1.14 |
+| **Non-Reloadable** | lo Scarico di quell'arma **non si cancella** e gli usi non tornano: il Reload non serve | 1.14 |
+| **Double Shot** | in Turno Attivo +1 al Burst; con `Disposable (2)` si può usare **solo** se entrambi gli usi sono liberi, e li consuma entrambi → Scarico | 1.1 |
+| **Silent (X)** | attaccando dentro la ZdC del bersaglio e fuori dalla sua LoF, il bersaglio applica il MOD fra parentesi alla Schivata in F2F. **Questo sì è cumulativo** con gli altri MOD di Schivata | reazioni |
+| **Targetless** | nessun bersaglio designato, Tiro Normale; in Turno Reattivo serve comunque la **LoF** verso l'attivo | — |
+| **Concealed** | il Marker CAMO che nasconde un'arma ha **Silhouette 2** | 1.14 |
+| **Deployable** | si piazza con Place Deployable; ha profilo e attributi propri e si può bersagliare. Se entra in **Incosciente passa subito a Morto**, senza Ferita extra. Non attiva altri Deployable | 1.14 |
 | **Targetless** | nessun bersaglio: Tiro **Normale** (es. Disco Baller) | — |
 | **Anti-materiel** | effetti contro strutture e scenografia | 1.16 |
 | **Continuous Damage** | ripete il danno | — |
-| **Improvised** | CC −6 all'utente | 1.2 |
+| **Improvised** | **−6 all'attributo corrispondente dell'utente** (CC per un'arma da CC, BS per una BS) | 1.2 |
 | **Concealed** | il Deployable è un Marker CAMO | — |
-| **Target (Attributo)** | l'arma può colpire solo chi ha quell'attributo (es. VITA) | ⚠️ nomi delle armi da abbinare |
+| **Target (Attributo)** | l'arma ha effetto **solo** su chi ha l'attributo indicato (VITA o STR); chi non ce l'ha **non fa nemmeno il Tiro Salvezza**. Le due armi con `Target (VITA)` sono **PT: Endgame** (PS7 · B1 · AP · BTS÷2 · 1 · Double Shot, No LoF, ZoC) e **PT: Eraser** (PS6 · B2 · DA · BTS · 2 · Isolato, No LoF, ZoC), della sezione **Pheroware Tactics** | — |
 | **Reflective** | blocca MSV e Marksmanship (5.2) | — |
 
 ## 3.3 Armi "speciali" già verificate
@@ -1489,10 +1494,10 @@ casella vale la scheda dell'ordine (§1).
 | Stato | Null? | Cosa può fare | MOD ai propri tiri | Effetto su chi lo attacca | Si cancella con |
 |---|---|---|---|---|---|
 | **Bersagliato** | no | tutto tranne Movimento Cauto e Stealth | Reset −3 | **+3** a BS Attack, Comms, Discover | Reset riuscito, Ingegnere |
-| **IMM-A** | no | solo Schivata | Schivata −6 | — | Schivata riuscita (anche F2F), Ingegnere |
-| **IMM-B** | no | solo Reset | Reset −3 | — | Reset riuscito, Ingegnere |
+| **IMM-A** | no | solo Schivata; **continua a dare Ordini** | Schivata −6 | — | Schivata riuscita (anche F2F), Ingegnere |
+| **IMM-B** | no | solo Reset; **continua a dare Ordini** | Reset −3 | — | Reset riuscito, Ingegnere |
 | **Isolato** | no | agisce con il proprio Irregolare; niente Comms, Fireteam, Coordinato | Reset −9 | — | Reset riuscito, Ingegnere |
-| **Stordito** | no | niente Attacchi | −3 a ogni tiro tranne le salvezze | — | Dottore (VITA) / Ingegnere (STR) |
+| **Stordito** | no | niente Attacchi; gli Automatici continuano a funzionare | −3 a ogni tiro tranne le salvezze | — | Dottore (VITA) / Ingegnere (STR), **e da solo** all'inizio della Fase Stati del Turno di Giocatore in cui è stato causato |
 | **Engaged** | no | solo Berserk, CC, Schivata, Idle, Reset | — | BS Attack nel CC: −6 per alleato coinvolto | uscire dal contatto (Schivata riuscita) |
 | **Fuoco di Soppressione** | no | ARO solo BS in SF Mode (B3) | — | −3 nei F2F entro 24" | vedi 1.10 |
 | **Ritirata!** | **no** | solo Basic Short Skill, Cauto, Schivata, Reset | — | — | inizio turno, Command Token |

@@ -1,4 +1,4 @@
-// @versione 2026-09-28.3 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-09-28.20 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-09-28.3';
+    M.VERSIONE = '2026-09-28.20';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -625,6 +625,14 @@
             // insieme, e l'Hub calcolava "nessun tiro" e la cancellava prima
             // dell'ARO. (Collaudo al tavolo, 26 settembre — A-03.)
             aroAtteso: !!opzioni.aroAtteso,
+            // Le Abilita` dichiarate nell'Ordine: servono, fra l'altro, a sapere
+            // se l'attiva ha dichiarato una Schivata (mine). (28 settembre.)
+            azioniDichiarate: Array.isArray(opzioni.azioniDichiarate) ? opzioni.azioniDichiarate.slice() : undefined,
+            // 🔴 CHI E` L'ATTIVA. Con zero attacchi (un ordine di solo movimento)
+            // la busta non lo diceva: il motore non poteva riconoscere la sua
+            // Schivata contro una mina. (Chat INTERFACCIA, 28 settembre.)
+            attivo: opzioni.attivo || undefined,
+            attivoId: opzioni.attivoId || undefined,
             attacchi: validati,
             motoreVersione: M.VERSIONE,
             timestamp: Date.now()
@@ -1610,68 +1618,8 @@
     // Inoltre "+1B" vale SOLO in Turno Attivo, mai in ARO.
     // ==================================================================
 
-    M.burstIniziale = function (unita, arma, opzioni) {
-        opzioni = opzioni || {};
-        const voci = [];
-        const avvisi = [];
-        const MAXB = meccaniche().BURST_MAX;
-        const attivo = (opzioni.turnoAttivo !== false);
-
-        let base = (arma && typeof arma.burst === 'number') ? arma.burst : 1;
-        voci.push({ fonte: 'arma', valore: base, motivo: `Burst dell'arma${arma && arma.nome ? ' ' + arma.nome : ''}` });
-        let totale = base;
-
-        // Ordine Coordinato: solo la Punta di Lancia spara a Burst pieno.
-        if (opzioni.coordMode && opzioni.indiceCoord > 0) {
-            voci.push({ fonte: 'coordinato', valore: 1 - totale, motivo: 'Gregario di Ordine Coordinato: Burst 1' });
-            return { valore: 1, base: base, voci: voci, note: [], avvisi: avvisi };
-        }
-
-        // "<Skill> (+1B)": il bonus vale solo per la skill a cui e` attaccato.
-        const skillAttacco = (opzioni.contesto === 'CC') ? 'CC ATTACK' : 'BS ATTACK';
-        const testo = (((unita && unita.skills) || '') + ', ' + ((unita && unita.equip) || '')).toUpperCase();
-        const re = new RegExp(skillAttacco.replace(' ', '\\s+') + '\\s*\\(([^)]*)\\)', 'g');
-        let m;
-        while ((m = re.exec(testo)) !== null) {
-            const dentro = m[1].replace(/\s+/g, '');
-            const b = /^\+(\d+)B$/.exec(dentro);
-            if (b) {
-                if (attivo) {
-                    const v = parseInt(b[1], 10);
-                    totale += v;
-                    voci.push({ fonte: 'skill', valore: v, motivo: `${skillAttacco} (+${v}B) — solo in Turno Attivo` });
-                } else {
-                    avvisi.push(err('A60', `${skillAttacco} (+1B) non si applica in ARO: bonus ignorato.`));
-                }
-            }
-        }
-
-        // Stessa notazione sul nome dell'arma (es. "Combi Rifle (+1B)")
-        if (arma && Array.isArray(arma.notazioni)) {
-            arma.notazioni.forEach(function (n) {
-                const b = /^\+(\d+)\s*B$/i.exec(String(n).replace(/\s+/g, ''));
-                if (b && attivo) {
-                    const v = parseInt(b[1], 10);
-                    totale += v;
-                    voci.push({ fonte: 'arma', valore: v, motivo: `Notazione arma (+${v}B)` });
-                }
-            });
-        }
-
-        // 🔴 Qui c'era un ramo che applicava la Saturazione al Burst TOTALE,
-        // letto da opzioni.modBurstTerreno. Nessun file lo passava: era morto.
-        // Tolto, perche` se qualcuno l'avesse attivato il -1 si sarebbe contato
-        // due volte — la Saturazione vive in modAttacco, per bersaglio, dopo
-        // la divisione del Burst. (Chat REGOLE, 21 settembre.)
-
-        if (totale > MAXB) {
-            voci.push({ fonte: 'regolamento', valore: MAXB - totale, motivo: `Burst massimo ${MAXB}` });
-            totale = MAXB;
-        }
-        if (totale < 1) totale = 1;
-
-        return { valore: totale, base: base, voci: voci, note: [], avvisi: avvisi };
-    };
+    // (Qui c'era una definizione piu` vecchia di M.burstIniziale, sovrascritta
+    //  da quella sotto: codice morto tolto il 28 settembre. Vedi la definizione viva.)
 
     // NOTA: qui c'era una PRIMA definizione di M.variantiArma, sovrascritta
     // dalla seconda piu` sotto. Codice morto che nessuno eseguiva, e che
@@ -1686,50 +1634,8 @@
     //  - il +1B vale solo in Turno Attivo, mai in ARO (regola N5)
     //  - Ordine Coordinato: solo la Punta di Lancia spara a Burst pieno
     //  - tetto assoluto BURST_MAX
-    M.burstIniziale = function (unita, arma, opzioni) {
-        opzioni = opzioni || {};
-        const voci = [];
-        const avvisi = [];
-        const azione = opzioni.azione || M.AZIONI.BS_ATTACK;
-        const spec = M.SPEC[azione] || {};
-        const MAXB = meccaniche().BURST_MAX;
-
-        let valore = (arma && typeof arma.burst === 'number') ? arma.burst : 1;
-        voci.push({ fonte: 'arma', valore: valore, motivo: `Burst di ${(arma && arma.nome) || 'arma'}` });
-
-        if (spec.burst === 'fisso1') {
-            return { valore: 1, base: valore, voci: [{ fonte: 'regola', valore: 1, motivo: `${azione} usa sempre Burst 1` }], avvisi: avvisi };
-        }
-
-        // +1B contestuale: "BS Attack (+1B)" conta per il BS, non per il CC
-        const etichetta = (spec.attributo === 'CC') ? 'CC ATTACK' : 'BS ATTACK';
-        const testo = (((unita && unita.skills) || '') + ' ' + ((unita && unita.equip) || '') + ' ' +
-                       ((arma && arma.notazioni) ? arma.notazioni.join(' ') : '')).toUpperCase();
-        const regex = new RegExp(etichetta.replace(' ', '\\s+') + '\\s*\\(\\s*\\+1\\s*B\\s*\\)');
-
-        if (regex.test(testo) || /\(\s*\+1\s*B\s*\)/.test(((arma && arma.notazioni) || []).join(' ').toUpperCase())) {
-            if (opzioni.inARO) {
-                avvisi.push(err('A60', '+1B non applicato: vale solo in Turno Attivo, mai in ARO.'));
-            } else {
-                valore += 1;
-                voci.push({ fonte: '+1B', valore: 1, motivo: `${etichetta} (+1B)` });
-            }
-        }
-
-        // Ordine Coordinato: gregari a Burst 1
-        if (opzioni.coordMode && opzioni.indiceCoord > 0) {
-            voci.push({ fonte: 'coordinato', valore: 1 - valore, motivo: 'Gregario di Ordine Coordinato: Burst 1 (solo la Punta di Lancia spara a Burst pieno)' });
-            valore = 1;
-        }
-
-        if (valore > MAXB) {
-            voci.push({ fonte: 'tetto', valore: MAXB - valore, motivo: `Burst limitato a ${MAXB} dal regolamento` });
-            valore = MAXB;
-        }
-        if (valore < 1) valore = 1;
-
-        return { valore: valore, base: (arma && arma.burst) || 1, voci: voci, avvisi: avvisi };
-    };
+    // (Qui c'era una definizione piu` vecchia di M.burstIniziale, sovrascritta
+    //  da quella sotto: codice morto tolto il 28 settembre. Vedi la definizione viva.)
 
 
     // ==================================================================
@@ -1835,7 +1741,9 @@
 
     // Burst di partenza, con il dettaglio di come ci si è arrivati.
     // ctx: { azione, coordMode, indiceCoord, inARO }
-    // ⚠️ Sopra ci sono altre DUE definizioni di M.burstIniziale, piu` vecchie:
+    // (Le DUE definizioni piu` vecchie di M.burstIniziale sono state tolte il 28 settembre:
+    //  il Burst di ogni arma di ogni profilo e` risultato identico prima e dopo.)
+    // Nota storica:
     // in JavaScript vince l'ultima, quindi quelle sono codice morto che
     // chi legge il file puo` prendere per la funzione vera. Da togliere in
     // un giro dedicato, con la chat TEST che verifica che nulla le legga.
@@ -2423,6 +2331,11 @@
 
         const base = parseInt((attaccante && attaccante.cc), 10) || 0;
         let mod = 0;
+        // IMPROVISED (D-Charges in modo CC): -6 al CC (wiki "Traits", N5.3).
+        if (arma && /\bIMPROVISED\b/i.test(String(arma.traits || ''))) {
+            mod += -6;
+            voci.push({ fonte: 'improvised', valore: -6, motivo: 'Arma improvvisata: -6 al CC.' });
+        }
 
         // --- Martial Arts proprie: Attack MOD ---
         const mioMA = M.livelloMartialArts(attaccante);
@@ -3509,7 +3422,20 @@
 
     // Quali ARO può dichiarare questa truppa contro l'attacco in arrivo.
     // Restituisce tutte le voci con ammesso/motivo, come bersagliValidi.
-    M.azioniAroPossibili = function (unita, azioneInArrivo) {
+    // ctx.attivo: l'unita` attiva. Se e` un MARKER (CAMO, Impersonation), gli
+    // unici ARO dichiarabili sono Scoprire, Schivata, Look Out! e Reset — e si
+    // puo` RITARDARE l'ARO fino alla seconda Abilita` dell'Ordine (righe
+    // 13645-13656, chat REGOLE, 28 settembre). Prima il motore non sapeva
+    // contro chi si reagiva, e offriva l'Attacco BS anche contro un segnalino.
+    M.eMarkerAttivo = function (attivo) {
+        if (!attivo) return false;
+        const sa = M.statoBersaglio(attivo);
+        const dep = String(attivo.deployState || '').toUpperCase();
+        return !!(sa.camo || sa.imp || dep === 'CAMO' || dep === 'IMP' || dep === 'IMPERSONATION');
+    };
+    M.azioniAroPossibili = function (unita, azioneInArrivo, ctx) {
+        ctx = ctx || {};
+        const controMarker = M.eMarkerAttivo(ctx.attivo);
         const st = M.statoBersaglio(unita);
         const sk = skillsDi(unita);
         const inArrivo = String(azioneInArrivo || '').toUpperCase();
@@ -3533,10 +3459,25 @@
             { id: 'DODGE',     nome: 'Schivata' },
             { id: 'RESET',     nome: 'Reset' }
         ];
+        if (controMarker) {
+            voci.push({ id: 'SCOPRIRE', nome: 'Scoprire' });
+            voci.push({ id: 'LOOK_OUT', nome: 'Look Out!' });
+            voci.push({ id: 'RITARDA',  nome: 'Ritardo l\'ARO (fino alla seconda Abilita` del Marker)' });
+        }
 
         return voci.map(function (v) {
             const e = { id: v.id, nome: v.nome, ammesso: true, motivo: null, note: [] };
             function nega(m) { e.ammesso = false; e.motivo = m; }
+
+            if (controMarker) {
+                if (unita && unita.deployable && unita.reagisce) { nega('Armed Turret: mai contro un Marker (riga 6497).'); return e; }
+                if (['BS_ATTACK', 'CC_ATTACK', 'HACKING'].indexOf(v.id) >= 0) {
+                    nega('Contro un Marker gli ARO dichiarabili sono solo Scoprire, Schivata, Look Out! e Reset (righe 13645-13656). Puoi RITARDARE: se la seconda Abilita` lo rivela, dichiari contro il Modello.');
+                    return e;
+                }
+                if (v.id === 'RITARDA') e.note.push('Ti richiamo dopo la seconda Abilita`: dichiari solo se il Marker si rivela (riga 13656).');
+                if (v.id === 'LOOK_OUT') e.note.push('Look Out! non ha un calcolo nell\'app: si risolve al tavolo.');
+            }
 
             // 🔴 Eccezione: l'ARMED TURRET reagisce, con BS o CC (PARA CC
             // Weapon), e solo agli Ordini dei nemici di chi l'ha schierata
@@ -4458,6 +4399,21 @@
                      critici: M.critici(vs), voci: vociR, impossibile: vs < 1 };
         });
 
+        // IL DIMEZZAMENTO LO DECIDE IL CAMPO salvAttr DELL'ARMA ("ARM/2",
+        // "BTS/2"), non la munizione. Se la munizione dice "dimezza" e l'arma
+        // no, il motore segue l'arma — ma lo DICE, invece di tacere: e` cosi`
+        // che l'AP Thunderbolt ha fatto salvare fino a 17 invece di 13.
+        // (Chat DATABASE, 28 settembre.)
+        (function () {
+            const MU = catalogo('MUNIZIONI') || {};
+            const sa = String((arma && arma.salvAttr) || '');
+            const componenti = String(par.munizione || '').toUpperCase().split('+');
+            const vuoleDimezzare = componenti.some(c => MU[c] && MU[c].dimezza === true);
+            if (vuoleDimezzare && sa && sa.indexOf('/2') < 0) {
+                avvisi.push(err('A86', `${(arma && arma.nome) || 'Arma'}: munizione ${par.munizione}, che dimezza, ma salvezza "${sa}" senza "/2" nel dato dell'arma. Il motore segue il dato e NON dimezza: controlla la scheda.`));
+            }
+        })();
+
         // Tiri per attributo: "1e1" del Plasma = uno per ciascuno.
         const perAttr = (par.combinato && rami.length > 1) ? 1 : par.tiri;
 
@@ -4593,6 +4549,11 @@
             if (!valore) { if (motivo) note.push(motivo); return; }
             mod += valore;
             voci.push({ fonte: fonte, valore: valore, motivo: motivo });
+        }
+        // IMPROVISED: -6 all'Attributo dell'utente che l'arma usa — non sempre
+        // il CC (wiki "Traits", N5.3 — chat REGOLE, 28 settembre).
+        if (arma && /\bIMPROVISED\b/i.test(String(arma.traits || ''))) {
+            aggiungi('improvised', -6, `Arma improvvisata: -6 al ${nomeAttr || 'suo Attributo'}.`);
         }
 
         // 🔴 L'Attacco Intuitivo e` un tiro NUDO: nessun MOD, gittata
@@ -4966,6 +4927,20 @@
                 controSagoma: !!tplAtt,
                 membriFireteam: ctx.membriFireteam
             });
+            // SILENT (X): l'attaccante e` dentro la ZdC del bersaglio e fuori
+            // dalla sua LoF -> il MOD fra parentesi va alla Schivata in Faccia a
+            // Faccia, e "This MOD is cumulative with other Dodge MODs": e`
+            // l'ECCEZIONE al tetto di un solo -3 (wiki "Traits", N5.3 — chat
+            // REGOLE, 28 settembre). Qui fuori LoF = ctx.hasLoF === false.
+            const silent = String((attacco.arma && attacco.arma.traits) || '').match(/SILENT\s*\(\s*([+-]?\d+)\s*\)/i);
+            if (silent && ctx.hasLoF === false) {
+                const x = parseInt(silent[1], 10);
+                esito = Object.assign({}, esito, {
+                    valore: esito.valore + x,
+                    voci: (esito.voci || []).concat([{ fonte: 'silent', valore: x, motivo: `Arma Silent (${x}): si somma agli altri MOD della Schivata (fuori LoF, dentro la ZdC).` }])
+                });
+                esito.impossibile = esito.valore < 1;
+            }
             if (esente && ctx.hasLoF === false) {
                 esito.note.push(t.sestoSenso
                     ? 'Sesto Senso: nessun -3 alla Schivata senza LoF.'
@@ -5319,9 +5294,11 @@
 
         // --- 4. le salvezze, una per verso ---
         // Chi subisce il colpo dell'attivo:
+        const shockAtt = M.armaConMunizioneDaSkill(attaccante, arma, azione);
+        const armaSalvAtt = shockAtt.arma;
         const salvDifensore = (burstAtt > 0)
             ? M.tiroSalvezza(difensore, {
-                  arma: arma, ammo: attacco.ammo || (arma && arma.ammo),
+                  arma: armaSalvAtt, ammo: (armaSalvAtt !== arma) ? armaSalvAtt.ammo : (attacco.ammo || (arma && arma.ammo)),
                   cover: attacco.cover,
                   copertura: attacco.copertura,
                   ignoraCopertura: (azione === M.AZIONI.GUIDATO || azione === M.AZIONI.SPECULATIVO),
@@ -5339,9 +5316,11 @@
         const reazAttacca = !!reazione &&
             [M.AZIONI.BS_ATTACK, M.AZIONI.CC_ATTACK, M.AZIONI.HACKING,
              M.AZIONI.INTUITIVO, M.AZIONI.SPECULATIVO].indexOf(azReaz) >= 0;
+        const shockDif = reazione ? M.armaConMunizioneDaSkill(difensore, reazione.arma, azReaz) : { arma: null };
+        const armaSalvDif = shockDif.arma;
         const salvAttaccante = (reazAttacca && burstDif > 0)
             ? M.tiroSalvezza(attaccante, {
-                  arma: reazione.arma, ammo: reazione.ammo || (reazione.arma && reazione.arma.ammo),
+                  arma: armaSalvDif, ammo: (reazione && armaSalvDif !== reazione.arma) ? armaSalvDif.ammo : (reazione.ammo || (reazione.arma && reazione.arma.ammo)),
                   // 🔴 La Copertura che il reattivo dichiara sul suo bersaglio —
                   // l'attaccante — e` UN fatto: -3 al tiro del reattivo E +3 alla
                   // salvezza dell'attaccante colpito. Qui si leggeva un campo a
@@ -5353,6 +5332,12 @@
               })
             : { offensivo: false, note: ['Il reattivo non infligge danno.'] };
 
+
+        // La nota di BS Attack (Shock) va dove il giocatore la legge: con la
+        // salvezza che quell'attacco infligge. (Calcolarla e non mostrarla e`
+        // il difetto che la skill aveva gia`.)
+        if (shockAtt.nota && salvDifensore && salvDifensore.note) salvDifensore.note.push(shockAtt.nota);
+        if (shockDif.nota && salvAttaccante && salvAttaccante.note) salvAttaccante.note.push(shockDif.nota);
         return {
             tipo: conf.tipo,
             titolo: conf.tipo === M.CONFRONTO.F2F ? 'TIRO FACCIA A FACCIA'
@@ -5407,12 +5392,177 @@
     // Risolve un intero payload: piu` attaccanti, piu` bersagli, le reazioni
     // associate per nome. È il rimpiazzo diretto di generaRisoluzioneDaDati.
     // ------------------------------------------------------------------
+    // ------------------------------------------------------------------
+    // LA DETONAZIONE DI UNA MINA COME SCONTRO (chat REGOLE, 26-28 settembre)
+    // Il giocatore reattivo ha dichiarato che la mina e` scattata, dopo le tre
+    // domande (M.domandeDeployable('INNESCO_MINA')). Qui si risolve: nessun
+    // tiro per colpire; chi l'ha innescata puo` solo schivare, Tiro Normale a
+    // PH-3 se detona con una Sagoma (le mine; un solo -3, righe 7294-7299),
+    // PH pieno se no (Koala, MadTraps) — o Reset a WIP-3 per la Cybermine — e
+    // se fallisce fa la salvezza della mina.
+    // Lo scontro e` gia` orientato per il tabellone: `attivo` e` chi schiva
+    // (la fazione attiva, a sinistra), `reattivo` e` la mina (a destra).
+    // ------------------------------------------------------------------
+    M.scontroDetonazione = function (mina, bersaglio, arma, ctx) {
+        ctx = ctx || {};
+        arma = (typeof arma === 'string') ? M.profiloArma(arma) : (arma || M.profiloArma((mina && mina.chiaveArma) || ''));
+        // Le regole di chi detona: una MINA (Trigger Area, si rivela, riga 6231)
+        // o un BOOST come il CrazyKoala (ZdC, solo Modelli, si muove fino al
+        // contatto, "l'unico modo di evitarlo e` una Schivata riuscita").
+        // Prima al Koala arrivavano le note delle mine. (28 settembre.)
+        const RD = catalogo('REGOLE_DEPLOYABLE') || {};
+        const eMinaVera = M.eMina(arma) || M.eMina(mina);
+        const R = eMinaVera ? (RD.mina || {}) : Object.assign({}, RD.boost || {}, {
+            attacco: 'Si muove fino al contatto di Silhouette e detona: nessun tiro per colpire. L\'unico modo di evitarlo e` una Schivata riuscita (righe 6274-6293).',
+            rivela: null,
+            sottoSagoma: null
+        });
+        const cyber = M.eCybermine(arma) || M.eCybermine(mina);
+        // 🔴 LA SCHIVATA NON E` MAI AUTOMATICA: va DICHIARATA (voce DODGE,
+        // "SHORT SKILL / ARO"; esempio 7397-7423 — chat REGOLE, 28 settembre).
+        // ctx.schivataDichiarata: true  -> Tiro Normale (PH-3 con la Sagoma);
+        //                         false -> niente Schivata: la sagoma colpisce,
+        //                                  resta solo il Tiro Salvezza;
+        //                         undefined -> non so cosa ha dichiarato: non
+        //                                  la si presume, e lo si dice.
+        if (ctx.schivataDichiarata !== true) {
+            const nonSo = ctx.schivataDichiarata === undefined;
+            return {
+                tipo: 'DETONAZIONE', mina: true,
+                titolo: `${M.nomeUnita(mina)} detona su ${M.nomeUnita(bersaglio)}`,
+                motivoConfronto: 'Nessuna Schivata dichiarata: la sagoma colpisce, resta solo il Tiro Salvezza.',
+                attivo: { nome: M.nomeUnita(bersaglio), azione: 'NESSUNA SCHIVATA', attributo: null, mod: '-', burst: 0,
+                          voci: [], note: [nonSo ? 'Non so cosa ha dichiarato: la Schivata non si presume. Se l\'ha dichiarata, va detto nell\'Ordine.'
+                                                 : 'Non ha dichiarato la Schivata: la mina lo colpisce.'],
+                          salvezzaSubita: M.tiroSalvezza(bersaglio, { arma: arma }), nessunTiro: true },
+                reattivo: { nome: M.nomeUnita(mina), azione: 'DETONAZIONE', attributo: null, mod: '-', burst: 0,
+                            voci: [], note: [], salvezzaSubita: null, nessunDanno: true },
+                note: [R.attacco, R.rivela, R.rimozione, R.sottoSagoma].filter(Boolean),
+                avvisi: []
+            };
+        }
+        const sch = M.modSchivata(bersaglio, { haLoFVersoAttaccante: true });
+        const voci = (sch.voci || []).slice();
+        // Il -3 alla Schivata: tre circostanze (righe 7294-7299) — in ARO con
+        // l'Attivo in ZdC e fuori LoF; una Sagoma senza LoF; la Sagoma di un
+        // Deployable. Le mine rientrano nella terza; il CrazyKoala e le MadTraps
+        // in nessuna — si muovono fino al contatto e detonano: PH pieno.
+        // REGOLA DEL TETTO (riga 7295): "Even if several of these circumstances
+        // apply, only one -3 MOD is applied". Il tetto e` ESPLICITO qui sotto:
+        // il -3 della Sagoma si aggiunge solo se la Schivata non ne porta gia`
+        // uno. Il risultato e` giusto PER LA REGOLA, non per come e` costruito
+        // il calcolo: se un giorno modSchivata portasse qui il -3 della LoF,
+        // il totale resterebbe comunque -3. (Chat REGOLE, 28 settembre.)
+        const conSagoma = !!(arma && arma.isTemplate) || M.eMina(arma) || M.eMina(mina);
+        const giaMenoTre = voci.some(v => v.valore === -3);
+        let soglia = sch.valore || 0;
+        if (conSagoma && !giaMenoTre) {
+            voci.push({ fonte: 'sagoma', valore: -3, motivo: 'Schivata contro la Sagoma di un Deployable: -3 (righe 7294-7299; un solo -3)' });
+            soglia -= 3;
+        }
+        const difesa = { nome: M.nomeUnita(bersaglio), azione: 'SCHIVATA (Tiro Normale)', attributo: 'PH',
+                         mod: soglia, burst: 1, voci: voci, note: [],
+                         salvezzaSubita: M.tiroSalvezza(bersaglio, { arma: arma }), impossibile: soglia < 1 };
+        if (cyber) {
+            const rs = M.modReset(bersaglio, {});
+            difesa.note.push(`Cybermine: in alternativa Reset a WIP-3 = ${(rs.valore || 0) - 3} (riga 6240).`);
+        }
+        return {
+            tipo: 'DETONAZIONE', mina: true,
+            titolo: `${M.nomeUnita(mina)} detona su ${M.nomeUnita(bersaglio)}`,
+            motivoConfronto: 'Nessun tiro per colpire: la mina colpisce da sola. Il bersaglio puo` solo schivare, con un Tiro Normale.',
+            attivo: difesa,
+            reattivo: { nome: M.nomeUnita(mina), azione: 'DETONAZIONE', attributo: null, mod: '-', burst: 0,
+                        voci: [], note: [], salvezzaSubita: null, nessunDanno: true },
+            note: [R.attacco, R.rivela, R.rimozione, R.sottoSagoma].filter(Boolean),
+            avvisi: []
+        };
+    };
+
+    // ------------------------------------------------------------------
+    // BS ATTACK (SHOCK): la munizione Shock SI AGGIUNGE a quella dell'arma
+    // (riga 6649) e diventa una munizione combinata (righe 5874-5876):
+    // Combi N -> N+SHOCK, MULTI AP -> AP+SHOCK, DA -> DA+SHOCK. Numero di
+    // tiri e attributo restano quelli dell'arma; lo Shock porta solo il suo
+    // effetto. Su TUTTI i BS Attack, tranne:
+    //   BS Weapon (WIP)  divieto esplicito (wiki "Traits");
+    //   Non-Lethal       non infligge Ferite: lo Shock non ha su cosa agire.
+    // Prima la notazione si leggeva ("munizione Shock") ma lo scontro
+    // infliggeva N: la skill non faceva niente, su 17 profili.
+    // (Chat REGOLE, 28 settembre.)
+    // ------------------------------------------------------------------
+    const AZIONI_BS = ['ATTACCO BS', 'BS_ATTACK', 'ATTACCO INTUITIVO', 'FUOCO SPECULATIVO', 'TRIANGULATED FIRE'];
+    const AZIONI_CC = ['CC_ATTACK', 'BERSERK'];
+    // LA MUNIZIONE AGGIUNTA DA UNA SKILL (riga 6649: "the user ADDS ...
+    // Ammunition to all their BS Attacks"; la combinata "adds the effects",
+    // righe 5874-5876). BS Attack (X) sui BS Attack, CC Attack (X) in mischia.
+    //   SHOCK  munizione combinata; non con BS Weapon (WIP), nulla con
+    //          Non-Lethal (chat REGOLE, 28 settembre);
+    //   AP     munizione combinata E attributo dimezzato — scritto nel
+    //          salvAttr dell'arma usata, perche` e` li` che il motore legge il
+    //          dimezzamento (vedi la nota della munizione AP e l'avviso A86).
+    //          Prima BS Attack (AP) e CC Attack (AP) non dimezzavano niente.
+    // Se l'arma ha gia` quella munizione, resta com'e`.
+    M.armaConMunizioneDaSkill = function (unita, arma, azione) {
+        if (!unita || !arma) return { arma: arma };
+        const az = String(azione || '').toUpperCase();
+        const idA = M.idAro ? M.idAro(azione) : '';
+        const eBS = !arma.isCC && (AZIONI_BS.indexOf(az) >= 0 || AZIONI_BS.indexOf(idA) >= 0);
+        const eCC = !!arma.isCC && (AZIONI_CC.indexOf(az) >= 0 || AZIONI_CC.indexOf(idA) >= 0);
+        if (!eBS && !eCC) return { arma: arma };
+        const skill = eBS ? 'BS Attack' : 'CC Attack';
+        const aggiunte = M.notazioniAzione(skillsDi(unita), skill)
+            .filter(n => n.tipo === 'MUNIZIONE')
+            .map(n => String(n.valore || n.raw || '').toUpperCase().replace(/[()]/g, '').trim())
+            .filter(x => x === 'SHOCK' || x === 'AP');
+        if (!aggiunte.length) return { arma: arma };
+        const tratti = String(arma.traits || '').toUpperCase();
+        let risultato = arma; const note = [];
+        aggiunte.forEach(function (x) {
+            const base = String(risultato.ammo || '').toUpperCase();
+            if (!base) return;                                     // arma senza munizione
+            if (base.split('+').indexOf(x) >= 0) return;           // gia` AP / gia` SHOCK
+            if (x === 'SHOCK') {
+                if (/BS WEAPON \(WIP\)/.test(tratti)) { note.push(`${skill} (Shock) non vale con ${arma.nome}: arma BS Weapon (WIP).`); return; }
+                if (/NON-LETHAL/.test(tratti)) { note.push(`${skill} (Shock) non ha effetto con ${arma.nome}: arma Non-Lethal, non infligge Ferite.`); return; }
+            }
+            const comb = base + '+' + x;
+            const extra = { ammo: comb, ammoOpzioni: [comb] };
+            if (x === 'AP') {
+                const sa = String(risultato.salvAttr || '');
+                if (sa && sa.indexOf('/2') < 0) extra.salvAttr = sa.split('+').map(t => t.trim() + '/2').join('+');
+            }
+            risultato = Object.assign({}, risultato, extra);
+            note.push(x === 'SHOCK'
+                ? `${skill} (Shock): munizione ${comb}. Stessi tiri e stesso attributo dell'arma; ogni salvezza fallita porta a Morto una truppa con VITA 1 (annulla Dogged e NWI). Nessun effetto contro VITA 2+, Struttura o Immunity (Shock).`
+                : `${skill} (AP): munizione ${comb}. L'attributo della salvezza si dimezza; numero di tiri e resto degli effetti restano quelli dell'arma.`);
+        });
+        return { arma: risultato, nota: note.join(' ') || undefined };
+    };
+    // (nome del giro prima, per chi lo chiama ancora)
+    M.armaConShockDaSkill = M.armaConMunizioneDaSkill;
+
+    // Chi ha RITARDATO l'ARO contro un Marker, dopo la seconda Abilita`:
+    // dichiara solo se il Marker si e` rivelato, e allora contro il MODELLO —
+    // la cancellazione vale per l'intero Ordine (righe 13639-13641, 13656).
+    //   -> { puoDichiarare, azioni, motivo }
+    M.aroDopoRitardo = function (reattivo, attivoDopo, azioneInArrivo) {
+        if (M.eMarkerAttivo(attivoDopo)) {
+            return { puoDichiarare: false, azioni: [],
+                     motivo: 'Il Marker non si e` rivelato con la seconda Abilita`: chi ha ritardato non dichiara nulla (riga 13656).' };
+        }
+        return { puoDichiarare: true,
+                 azioni: M.azioniAroPossibili(reattivo, azioneInArrivo, { attivo: attivoDopo }),
+                 motivo: 'Si e` rivelato: dichiari contro il Modello, senza le restrizioni da Marker (righe 13639-13641).' };
+    };
+
     // CONTRATTO di M.risolviPayload(payload, reazioni, ctx) -> [scontro]
     // I campi che LEGGE, coi nomi canonici. Dove sono ammessi piu` nomi,
     // il primo e` quello da scrivere; gli altri si accettano per compatibilita`.
     //
     //   payload    attacchi[]                 (anche vuoto: "io muovo, tu mi spari")
-    //              attivo | unita             nome dell'attivo quando attacchi e` vuoto
+    //              attivo | unita | attaccante  nome dell'attivo quando attacchi e` vuoto
+    //              attivoId                   il suo id, se c'e`
     //   attacco    attaccante, attaccanteId, azione, bersagli[]
     //              arma                       profilo, oppure NOME (risolto qui)
     //   bersaglio  nome | alias | name        letto con M.nomeUnita
@@ -5522,14 +5672,60 @@
         // L'attivo: dal primo attacco se c'e`, altrimenti dall'unita` attiva del
         // payload (chi si e` mosso). Con ZERO attacchi prima non si arrivava qui.
         const att0 = attacchi[0] || {};
-        const attivoNome = att0.attaccante || (payload && (payload.attivo || payload.unita));
+        const attivoNome = att0.attaccante || (payload && (payload.attivo || payload.unita || payload.attaccante));
+        const attivoId = att0.attaccanteId || (payload && payload.attivoId);
         const attaccante = ctx.trovaUnita
-            ? (ctx.trovaUnita(attivoNome, att0.attaccanteId) || { alias: attivoNome || 'attivo' })
+            ? (ctx.trovaUnita(attivoNome, attivoId) || { alias: attivoNome || 'attivo' })
             : (att0.attaccante || { alias: attivoNome || 'attivo' });
         reazioni.forEach(function (r) {
             if (usate.indexOf(r) >= 0) return;
             const reattivo = r.difensore ||
                 (ctx.trovaUnita ? ctx.trovaUnita(r.nome) : { alias: r.nome });
+
+            // 🔴 L'ATTIVA HA DICHIARATO UNA SCHIVATA E QUESTO NEMICO LE SPARA:
+            // e` UN Faccia a Faccia, Schivata contro il suo tiro. Prima uscivano
+            // due tiri separati — la Schivata da sola e lo sparo come Tiro
+            // Normale "orfano" — per ogni Schivata attiva della partita.
+            // Lo scontro e` Sparo (attivo) contro Schivata (reattivo), con
+            // latiInvertiti: il tabellone mette comunque l'attiva a sinistra.
+            // (28 settembre, trovato provando le mine.)
+            const eSchivataAtt = a => /^(SCHIVATA|DODGE)$/i.test(String(a || '')) || (M.idAro && M.idAro(a) === 'DODGE');
+            const attivaSchiva = attacchi.some(a => eSchivataAtt(a.azione));
+            const idR = M.idAro ? M.idAro(r.azione) : r.azione;
+            const bersaglioR = r.bersaglio ? (ctx.trovaUnita ? ctx.trovaUnita(r.bersaglio) : { alias: r.bersaglio }) : attaccante;
+            if (attivaSchiva && (idR === 'BS_ATTACK' || idR === 'CC_ATTACK') &&
+                M.nomeUnita(bersaglioR) === M.nomeUnita(attaccante)) {
+                const f2f = M.risolviScontro({
+                    attaccante: reattivo, azione: M.azioneCanonica(r.azione) || r.azione, arma: r.arma,
+                    bersaglio: attaccante, burst: r.burst || 1, ammo: r.ammo,
+                    rangeIndex: r.rangeIndex, rangeMod: r.rangeMod, cover: r.cover, terrain: r.terrain
+                }, { difensore: attaccante, azione: 'DODGE', bersaglio: reattivo }, ctx);
+                f2f.latiInvertiti = true;
+                f2f.schivataAttiva = true;
+                scontri.push(f2f);
+                return;
+            }
+
+            // Una mina che detona non tira: ha uno scontro suo.
+            if (String(r.azione || '').toUpperCase() === 'DETONAZIONE') {
+                const colpito = r.bersaglio ? (ctx.trovaUnita ? ctx.trovaUnita(r.bersaglio) : { alias: r.bersaglio }) : attaccante;
+                const nomeColpito = M.nomeUnita(colpito);
+                const eSchivata = a => /^(SCHIVATA|DODGE)$/i.test(String(a || '')) || (M.idAro && M.idAro(a) === 'DODGE');
+                let dichiarata;
+                if (nomeColpito === M.nomeUnita(attaccante)) {
+                    // L'ATTIVA: la Schivata sta fra le Abilita` del suo Ordine —
+                    // come azione spedita dal modulo Difesa, o fra le azioni
+                    // dichiarate che il payload porta.
+                    const dalleAzioni = (payload && payload.azioniDichiarate) || null;
+                    const fraGliAttacchi = attacchi.some(a => eSchivata(a.azione));
+                    dichiarata = fraGliAttacchi || (dalleAzioni ? dalleAzioni.some(eSchivata) : (attacchi.length ? false : undefined));
+                } else {
+                    // Una REATTIVA: la Schivata e` l'ARO che ha dichiarato.
+                    dichiarata = reazioni.some(x => x !== r && M.nomeUnita(x.nome || x.difensore) === nomeColpito && eSchivata(x.azione));
+                }
+                scontri.push(M.scontroDetonazione(reattivo, colpito, r.arma, Object.assign({}, ctx, { schivataDichiarata: dichiarata })));
+                return;
+            }
 
             // Chi reagisce senza essere bersaglio fa un TIRO NORMALE:
             // l'attivo non gli sta tirando contro, quindi non c'e` niente
@@ -5554,6 +5750,51 @@
             ultimo.note = (ultimo.note || []).concat([
                 `${M.nomeUnita(reattivo)} reagisce senza essere bersaglio dell'attacco: il suo è un Tiro Normale a sé.`
             ]);
+        });
+
+        // La Schivata dell'attiva, se e` entrata in un Faccia a Faccia contro
+        // un'ARO, non resta anche come scontro a se`.
+        if (scontri.some(x => x.schivataAttiva)) {
+            for (let k = scontri.length - 1; k >= 0; k--) {
+                const x = scontri[k];
+                if (x.tipo === 'NESSUNO' && x.attivo && /SCHIVATA|DODGE/i.test(String(x.attivo.azione || ''))) scontri.splice(k, 1);
+            }
+        }
+
+        // PIU` NEMICI SPARANO ALL'ATTIVA CHE SCHIVA: il dado della Schivata
+        // resta UNO, e si confronta separatamente con ciascun tiro (riga 3543 —
+        // chat REGOLE, 28 settembre). Senza questa nota al tavolo si tirerebbe
+        // una Schivata per scontro.
+        const perSchivatore = {};
+        scontri.filter(x => x.schivataAttiva && x.reattivo).forEach(x => (perSchivatore[x.reattivo.nome] = perSchivatore[x.reattivo.nome] || []).push(x));
+        Object.keys(perSchivatore).forEach(function (chi) {
+            const gruppo = perSchivatore[chi];
+            if (gruppo.length < 2) return;
+            const testo = `${chi}: UN SOLO dado per la Schivata (${gruppo[0].reattivo.mod}), confrontato separatamente con ciascun tiro: ` +
+                          gruppo.map(x => `${x.attivo.nome} ${x.attivo.mod}`).join(', ') + ' (riga 3543).';
+            gruppo.forEach(x => { x.unDadoPerTutti = true; x.note = (x.note || []).concat([testo]); });
+        });
+
+        // UNA SOLA SCHIVATA, DUE SOGLIE (esempio righe 7397-7423): se chi e`
+        // colpito dalla mina sta anche schivando degli spari in un altro scontro,
+        // tira UN dado solo — PH pieno in Faccia a Faccia contro gli spari, PH-3
+        // contro la mina. Entrambi gli scontri lo dicono.
+        scontri.filter(x => x.tipo === 'DETONAZIONE').forEach(function (d) {
+            const chi = d.attivo.nome;
+            if (d.attivo.nessunTiro) return;   // nessuna Schivata dichiarata: nessuna soglia
+            // Il Faccia a Faccia nasce solo se un nemico le spara: chi e` colpito
+            // dalla mina schiva anche in un altro scontro, da reattivo (ARO
+            // Schivata) o da attivo (Schivata dichiarata contro un'ARO nemica).
+            const schiva = x => /DODGE|SCHIVATA/i.test(String(x && x.azione || ''));
+            const altro = scontri.find(x => x !== d && x.tipo !== 'DETONAZIONE' &&
+                ((x.reattivo && x.reattivo.nome === chi && schiva(x.reattivo)) ||
+                 (x.attivo && x.attivo.nome === chi && schiva(x.attivo) && x.tipo === 'F2F')));
+            if (!altro) return;
+            const lato = (altro.reattivo && altro.reattivo.nome === chi) ? altro.reattivo : altro.attivo;
+            const due = { unDado: true, controSpari: lato.mod, controMina: d.attivo.mod };
+            const testo = `${chi}: UN SOLO dado per la Schivata — contro gli spari ${due.controSpari} (Faccia a Faccia), contro la mina ${due.controMina} (Tiro Normale).`;
+            d.dueSoglie = due; altro.dueSoglie = due;
+            d.note = (d.note || []).concat([testo]); altro.note = (altro.note || []).concat([testo]);
         });
 
         return scontri;
@@ -8082,6 +8323,60 @@
     };
 
     // Il deployable si attiva contro questo nemico?
+    // DROP BEAR IN MODO BS (wiki "Drop Bears", N5.3 — chat REGOLE, 28 sett.)
+    // Attacco Targetless (BS Weapon (PH), Speculative Attack): si sceglie il
+    // punto, si tira, e il Mine Token si piazza nella Conclusione dell'Ordine.
+    //   - l'uso lo consuma il lancio: il segnalino NON ne consuma un altro;
+    //   - e` un Mine Token, non un Marker CAMO;
+    //   - NON puo` detonare nell'Ordine in cui e` stato lanciato;
+    //   - il punto va scelto rispettando la domanda di PIAZZAMENTO (nessun
+    //     Marker CAMO nemico nell'area, salvo un nemico valido scoperto).
+    // ------------------------------------------------------------------
+    // I SEGNALINI NATI DA UN LANCIO (Speculative Attack, Targetless):
+    // Drop Bear in modo BS, Pitcher, Disco Baller. Stessa forma per tutti
+    // (chat REGOLE, 28 settembre):
+    //   - il segnalino e` l'effetto del SUCCESSO del tiro, non del lancio;
+    //   - l'uso lo consuma il lancio, anche fallito (riga 14999): il
+    //     segnalino NON ne consuma un altro.
+    // Cambia il contenuto: cosa nasce, e cosa il giocatore deve sapere.
+    // ------------------------------------------------------------------
+    const LANCI = {
+        'DROP BEARS (BS MODE)': { armaDelSegnalino: 'Drop Bears (Deployable Mode)', tipo: 'MINA',
+            note: ['Mine Token: non pu\u00f2 detonare in questo stesso Ordine.'] },
+        'PITCHER': { armaDelSegnalino: 'Pitcher', tipo: 'RIPETITORE',
+            note: ['Deployable Repeater (ARM 0, BTS 0, STR 1, S 1): estende la Hacking Area del lanciatore e dei suoi alleati.'] },
+        'DISCO BALLER': { armaDelSegnalino: 'Disco Ball', tipo: 'DISCO_BALL',
+            note: ['Sulla Disco Ball si appoggia una Sagoma Circolare di munizione ECLIPSE, centrata sul segnalino (righe 6084-6092).',
+                   'All\'inizio della Fase Stati si disattiva e la Sagoma si toglie; si riattiva con Activate Disco Ball: tiro WIP+3 con le gittate del Deactivator.',
+                   'Il segnalino resta sul tavolo fino alla fine della partita.'] }
+    };
+    M.lancioConSegnalino = function (arma) {
+        const n = String((arma && arma.nome) || arma || '').toUpperCase().trim();
+        return LANCI[n] || null;
+    };
+    M.segnalinoDaLancio = function (portatore, arma, ctx) {
+        ctx = ctx || {};
+        const L = M.lancioConSegnalino(arma);
+        if (!L) return { token: null, note: [], errori: [err('E20', `${(arma && arma.nome) || arma}: non lascia un segnalino.`)] };
+        const e = M.creaDeployable(portatore, M.profiloArma(L.armaDelSegnalino),
+                                   { ordineId: ctx.ordineId, viaEsito: false, usoGiaSpeso: true });
+        if (e.token) {
+            e.token.nascitaDaLancio = L.tipo;
+            if (L.tipo === 'MINA') e.token.nascitaModoBS = true;   // lo legge il blocco dell'innesco
+            e.token.isCamo = false;
+            e.token.states = Object.assign({}, e.token.states || {}, { camo: false });
+            e.token.deployState = 'NORMAL';
+        }
+        return { token: e.token, portatoreAggiornato: portatore, avvisi: e.avvisi, errori: e.errori,
+                 note: e.token ? [`${e.token.nome} piazzato nella Conclusione dell'Ordine.`].concat(L.note) : [] };
+    };
+    // (compatibilita`: il nome usato dal modulo speculativo nel giro prima)
+    M.dropBearModoBS = function (portatore, ctx) {
+        const r = M.segnalinoDaLancio(portatore, { nome: 'Drop Bears (BS Mode)' }, ctx);
+        r.nota = (r.note || []).join(' ');
+        return r;
+    };
+
     M.innescoDeployable = function (arma, nemico, ctx) {
         ctx = ctx || {};
         const B = (catalogo('REGOLE_DEPLOYABLE') || {}).boost || {};
@@ -8094,6 +8389,14 @@
         // decisione di Paolo, 26 settembre.)
         if (M.eMina(arma)) {
             const R = (catalogo('REGOLE_DEPLOYABLE') || {}).mina || {};
+            // Un Drop Bear lanciato in modo BS non detona nell'Ordine in cui e`
+            // stato lanciato: ctx.token e` il segnalino, ctx.ordineId l'Ordine
+            // in corso (quello che il router assegna a ogni Ordine).
+            if (ctx.token && ctx.token.nascitaModoBS && ctx.ordineId != null &&
+                String(ctx.token.ordineDiPiazzamento) === String(ctx.ordineId)) {
+                return { scatta: false, rivela: false,
+                         motivo: 'Drop Bear lanciato in modo BS in QUESTO Ordine: non puo` detonare finche` l\'Ordine non e` concluso.' };
+            }
             if (ctx.nelTriggerArea === false) return { scatta: false, rivela: false, motivo: R.fuoriArea };
             if (ctx.soloSchivataOGuts === true) return { scatta: false, rivela: false, motivo: R.nonSchivataGuts };
             if (ctx.alleatoSottoSagoma === true) return { scatta: false, rivela: false, motivo: R.nonSeAlleato };
@@ -8443,6 +8746,11 @@
                     voce = db.find(function (d) { return normalizza(String(d.chiaveArma || '')).toUpperCase() === nc; }) || null;
                 }
             }
+            // Seconda via: la voce dice chi la GENERA (il Ripetitore del
+            // Pitcher non ha una chiave d'arma, ha `generatoDa: 'Pitcher'`).
+            if (!voce) {
+                voce = db.find(function (d) { return normalizza(String(d.generatoDa || '')).toUpperCase() === nomeArma; }) || null;
+            }
             if (!voce) {
                 errori.push(err('E20', `Nessuna voce di DB_DEPLOYABLES con chiaveArma "${arma.nome}".`));
                 return { token: null, portatoreAggiornato: portatore, avvisi, errori };
@@ -8451,7 +8759,10 @@
 
         // --- usi ---
         const usi = M.usiResidui(portatore, arma);
-        if (usi && usi.residui <= 0) {
+        // ctx.usoGiaSpeso: il segnalino nasce da un lancio che ha GIA` consumato
+        // l'uso (Drop Bear in modo BS). Non si controlla ne` si scala di nuovo:
+        // al terzo lancio i residui sarebbero zero e il segnalino non nascerebbe.
+        if (usi && usi.residui <= 0 && !ctx.usoGiaSpeso) {
             errori.push(err('E17', M.messaggioScarico(portatore, arma)));
             return { token: null, portatoreAggiornato: portatore, avvisi, errori };
         }
@@ -8525,7 +8836,7 @@
 
         // --- il portatore, con l'uso scalato ---
         let portatoreAggiornato = portatore;
-        if (usi) {
+        if (usi && !ctx.usoGiaSpeso) {
             const chiave = usi.chiaveUsi || arma.nome;
             portatoreAggiornato = Object.assign({}, portatore, {
                 usiSpesi: Object.assign({}, (portatore && portatore.usiSpesi) || {},
@@ -9298,7 +9609,10 @@
         const az = String(abilita || '').toUpperCase().trim();
         const note = [], fonti = [];
 
-        const eCauto = az === 'MOVIMENTO CAUTO' || az === 'CAUTIOUS MOVEMENT' || az === 'CAUTIOUS_MOVEMENT';
+        // "CAUTO" e` l'id con cui il router e il menu chiamano il Movimento
+        // Cauto: senza, un Hidden che muoveva cauto veniva rivelato. (28 sett.)
+        const eCauto = az === 'CAUTO' || az === 'MOVIMENTO CAUTO' || az === 'MOVIMENTO_CAUTO' ||
+                       az === 'CAUTIOUS MOVEMENT' || az === 'CAUTIOUS_MOVEMENT';
         const senza = M.azioneSenzaTiro ? M.azioneSenzaTiro(az) : null;
         // "Basic Short Skill senza tiro" — ma NON Look Out! (righe 13917-13918;
         // chat REGOLE). Oggi il catalogo non la classifica Corta Base, quindi
@@ -9764,6 +10078,65 @@
             ? `l'oggetto (${arma && arma.nome}) è Scarico: le altre armi Disposable restano usabili`
             : `la truppa è in stato Scarico`;
         return `${arma && arma.nome}: usi esauriti — ${chi}. Si toglie con Reload: Abilità Breve senza tiro, nella ZdC di un alleato con Baggage in stato non Null (righe 14720-14740, 15005-15007).`;
+    };
+
+    // ------------------------------------------------------------------
+    // IL TRASPORTO CLOUD — UNO SOLO per l'app (motore_core.js) e per l'Hub
+    // (calcolatore_cloud.js). Prima erano due copie identiche riga per riga,
+    // tranne una: l'app cancellava un canale anche in locale SUBITO — la
+    // correzione dello scorrimento che tornava in cima con la rete lenta —
+    // l'Hub no, e aspettava l'eco di Firebase. Due copie dello stesso codice:
+    // una correzione arrivata a meta`. Ora c'e` una funzione, e la correzione
+    // vale per entrambe. (28 settembre.)
+    //   const t = M.installaTrasportoCloud();  -> { db, attesa }
+    //   attesa.pronto / attesa.riprova / attesa.stato: vedi M.creaAttesaCloud.
+    // ------------------------------------------------------------------
+    M.CONFIG_FIREBASE = {
+        apiKey: "AIzaSyAMpF8Le_srYjxgC7vb231Ng40iXwr256o",
+        authDomain: "infinityn5-database.firebaseapp.com",
+        databaseURL: "https://infinityn5-database-default-rtdb.firebaseio.com",
+        projectId: "infinityn5-database",
+        storageBucket: "infinityn5-database.firebasestorage.app",
+        messagingSenderId: "506923243459",
+        appId: "1:506923243459:web:4aa5e59c84c9d8156c4f76"
+    };
+    M.installaTrasportoCloud = function (opzioni) {
+        opzioni = opzioni || {};
+        const fb = G.firebase;
+        if (!fb) throw new Error('Firebase non caricato: il trasporto cloud non parte.');
+        if (!fb.apps || !fb.apps.length) fb.initializeApp(M.CONFIG_FIREBASE);
+        const db = fb.database();
+        const canali = Object.values(M.CANALI);
+        const ls = G.localStorage;
+        const originalSetItem = ls.setItem, originalRemoveItem = ls.removeItem;
+        // "Arrivato" vuol dire "copia locale pronta": si segna DOPO la scrittura.
+        const attesa = M.creaAttesaCloud(canali, { tempoMassimo: opzioni.tempoMassimo || 8000 });
+        canali.forEach(function (canale) {
+            db.ref(canale).on('value', function (snapshot) {
+                const dati = snapshot.val();
+                if (dati !== null) {
+                    originalSetItem.call(ls, canale, dati);
+                    const ev = new G.Event('storage');
+                    ev.key = canale; ev.newValue = dati;
+                    G.dispatchEvent(ev);
+                } else {
+                    originalRemoveItem.call(ls, canale);
+                }
+                attesa.segna(canale);
+            });
+        });
+        // Un canale si scrive su Firebase: in locale arriva con l'eco.
+        ls.setItem = function (key, value) {
+            if (canali.includes(key)) db.ref(key).set(value);
+            else originalSetItem.call(ls, key, value);
+        };
+        // Un canale si cancella SUBITO anche in locale, poi su Firebase: chi lo
+        // rilegge nel frattempo non deve trovarlo ancora li`.
+        ls.removeItem = function (key) {
+            originalRemoveItem.call(ls, key);
+            if (canali.includes(key)) db.ref(key).remove();
+        };
+        return { db: db, attesa: attesa };
     };
 
     // La scelta fazione -> nome, anch'essa una volta sola.

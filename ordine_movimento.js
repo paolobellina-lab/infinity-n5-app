@@ -1,4 +1,4 @@
-// @versione 2026-09-26.3 | ordine_movimento.js | proprieta`: chat MOTORE
+// @versione 2026-09-28.2 | ordine_movimento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏃 MOVIMENTO E INSTRADAMENTO (N5) - ordine_movimento.js
 // ------------------------------------------
@@ -154,7 +154,10 @@
         // Nessun attacco: la busta va comunque spedita, così l'Hub sa che
         // l'ordine è finito e può risolvere gli eventuali ARO nemici.
         const esito = M.creaPayload([], { isCoordinated: window.coordMode, consentiVuoto: true,
-                                          aroAtteso: !!(aro && aro.genera) });
+                                          aroAtteso: !!(aro && aro.genera),
+                                          azioniDichiarate: [window.currentOrder.action1, window.currentOrder.action].filter(Boolean),
+                                          attivo: M.nomeUnita(window.currentOrder.unit),
+                                          attivoId: window.currentOrder.unit && window.currentOrder.unit.id });
         if (esito.ok && typeof window.inviaCalcoloAllHub === 'function') {
             window.inviaCalcoloAllHub(esito.payload);
         }

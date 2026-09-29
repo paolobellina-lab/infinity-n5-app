@@ -1,4 +1,4 @@
-<!-- @versione 2026-09-21.2 | FAQ_N5_INDICE.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-09-28.1 | FAQ_N5_INDICE.md | proprieta`: chat REGOLE -->
 
 # INDICE DELLE FAQ N5 (wiki ufficiale) — da affiancare a REGOLE_N5_v5_1_1.txt
 
@@ -28,9 +28,9 @@ coperte anche senza averle aperte.
 
 | Stato | Pagine |
 |---|---|
-| ✅ **Letta, con FAQ** (18) | Firewall · Coordinated Orders · Camouflaged State · Disco Baller · Engaged State · Fireteam Integrity · Fireteams: Basic Rules · Fireteams Chart · FT Master · Hacking Device · Immobilized-A State · Isolated State · Peripheral · Mines · Multispectral Visor · Order Expenditure Sequence · Saturation · Transmutation |
+| ✅ **Letta, con FAQ** (23) | Firewall · Coordinated Orders · Camouflaged State · Disco Baller · **Drop Bears** · Engaged State · Fireteam Integrity · Fireteams: Basic Rules · Fireteams Chart · FT Master · Hacking Device · Immobilized-A State · **Immobilized-B State** · Isolated State · Peripheral · Mines · Multispectral Visor · Order Expenditure Sequence · **Pitcher** · Saturation · **Stunned State** · **Traits** · Transmutation |
 | ⚠️ **Letta ma in versione vecchia** (2) — il lettore ha restituito la copia N5.2, senza FAQ | Ballistic Skills · White Noise |
-| 🔗 **Non aperta, coperta dalle "Related Pages"** (7) | Drop Bears, Mine Dispenser, Pitcher (→ F10, F11) · Immobilized-B State, Stunned State (→ F12) · Skills and Equipment Module (→ F04) · Traits (→ F09) |
+| 🔗 **Non aperta, coperta dalle "Related Pages"** (2) | Mine Dispenser (→ F10, F11) · Skills and Equipment Module (→ F04) |
 | ❌ **Non aperta** (1) | ITS FAQ (regolamento torneo; → F16) |
 
 **Fuori da questa lista:** anche la pagina **BS Attack** (non nella categoria 0.1) porta una
@@ -191,6 +191,7 @@ La wiki segna ogni modifica con "Update PDF 5.x" e, per i cambi di testo, mostra
 | 5.3 | Fireteam Integrity | il Fireteam si cancella se il Leader diventa Controller di una Periferica; una truppa esce dal Fireteam se diventa Controller |
 | 5.3 | Peripheral | Periferica (Cyberplug): profilo Connesso / Autonomo; con Controller Isolato o Null passa ad Autonomo invece di diventare Disconnessa |
 | 5.2 | Ballistic Skills | chi sta su una **superficie verticale** non beneficia della Copertura Parziale (prima: "chi sta scalando o è aggrappato") |
+| 5.2 | Pitcher | gittate cambiate: ora **0 / 0 / −3 / −6 / −6 / −6** (prima 0 / 0 / 0 / −3 / −6 / −6). Il database del progetto ha già le nuove |
 | 5.2 | BS Attack | Guidato senza modalità circolare: si sceglie una modalità qualsiasi ma si applica **sempre** la Sagoma Circolare centrata sul bersaglio |
 | 5.2 | Immobilized-A State | chiarito che vincendo la Schivata F2F si cancella anche l'IMM-A |
 | 5.2 | Order Expenditure Sequence | se nello stesso Ordine una truppa riceve e toglie Ferite o Stati, si applica **prima l'effetto positivo** poi il negativo |
@@ -202,8 +203,11 @@ La wiki segna ogni modifica con "Update PDF 5.x" e, per i cambi di testo, mostra
 
 ## 5. Da fare
 
-1. **Aprire le 7 pagine "coperte"** e le 2 in versione vecchia, per escludere FAQ proprie non
-   collegate altrove. Priorità: **Traits** e **Skills and Equipment Module** (le più grandi).
+1. **Restano da aprire**: Mine Dispenser, **Skills and Equipment Module** (la più grande) e le 2
+   pagine che il lettore aveva restituito in versione vecchia (Ballistic Skills, White Noise —
+   la seconda poi riletta e senza FAQ propria). Le pagine aperte finora non hanno FAQ proprie
+   oltre a quelle già indicizzate: F09 su Traits, F12 su Stunned e Immobilized-B, F10 e F11 su
+   Drop Bears e Pitcher.
 2. **Trovare l'elenco completo della FAQ 0.0.0.** La categoria wiki equivalente non è emersa
    dalle ricerche; in alternativa, aprire le pagine delle skill che il motore implementa
    (Surprise Attack, Sixth Sense, Stealth, Dodge, Reset, Martial Arts, Natural Born Warrior…).

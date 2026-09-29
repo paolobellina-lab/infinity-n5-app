@@ -1,81 +1,14 @@
-// @versione 2026-09-27.1 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-09-28.3 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
 
-const firebaseConfig = {
-    apiKey: "AIzaSyAMpF8Le_srYjxgC7vb231Ng40iXwr256o",
-    authDomain: "infinityn5-database.firebaseapp.com",
-    databaseURL: "https://infinityn5-database-default-rtdb.firebaseio.com",
-    projectId: "infinityn5-database",
-    storageBucket: "infinityn5-database.firebasestorage.app",
-    messagingSenderId: "506923243459",
-    appId: "1:506923243459:web:4aa5e59c84c9d8156c4f76"
-};
-
-// Inizializza Firebase Compat (Evita i blocchi CORS del browser per i file locali)
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// --- 1. MOTORE CLOUD INVISIBILE (Sincronizzazione) ---
-// L'elenco dei canali viene dal MOTORE, una volta sola (M.CANALI).
-// Prima era una copia qui e una in calcolatore_cloud.js: due elenchi da
-// tenere uguali a mano. (Chat INTERFACCIA + MOTORE, 23 settembre.)
-const canaliCloud = Object.values(window.MotoreN5.CANALI);
-
-const originalSetItem = localStorage.setItem;
-const originalRemoveItem = localStorage.removeItem;
-
-// PRIMA LETTURA DAL CLOUD — per la ripresa della partita.
-// window.cloudPronto si risolve quando OGNI canale ha ricevuto il primo valore
-// da Firebase (anche null) e la copia locale e` aggiornata; oppure dopo 8
-// secondi con { confermato: false }. window.riprovaCloud() da` una nuova
-// Promise della stessa forma. La logica sta in M.creaAttesaCloud (motore),
-// una volta sola per app e Hub. (Chat INTERFACCIA, 25 settembre.)
-const attesaCloud = window.MotoreN5.creaAttesaCloud(canaliCloud, { tempoMassimo: 8000 });
-window.cloudPronto  = attesaCloud.pronto;
-window.riprovaCloud = attesaCloud.riprova;
-window.statoCloud   = attesaCloud.stato;
-
-canaliCloud.forEach(canale => {
-    db.ref(canale).on('value', (snapshot) => {
-        const dati = snapshot.val();
-        if (dati !== null) {
-            originalSetItem.call(localStorage, canale, dati);
-            let eventoFake = new Event('storage');
-            eventoFake.key = canale;
-            eventoFake.newValue = dati;
-            window.dispatchEvent(eventoFake);
-        } else {
-            originalRemoveItem.call(localStorage, canale);
-        }
-        // Si segna DOPO la scrittura: "arrivato" vuol dire "copia locale pronta".
-        attesaCloud.segna(canale);
-    });
-});
-
-localStorage.setItem = function(key, value) {
-    if (canaliCloud.includes(key)) {
-        db.ref(key).set(value);
-    } else {
-        originalSetItem.call(localStorage, key, value);
-    }
-};
-
-localStorage.removeItem = function(key) {
-    if (canaliCloud.includes(key)) {
-        // 🔴 Si cancella SUBITO anche la copia locale.
-        // Prima si chiamava solo db.ref().remove(), e la copia locale
-        // spariva solo quando Firebase rimandava l'evento a null — dopo un
-        // giro di rete. Nel frattempo chi rileggeva la chiave la trovava
-        // ancora li`, e con la rete lenta il ciclo si ripeteva: e` la
-        // causa dello scorrimento che tornava in cima ogni secondo.
-        originalRemoveItem.call(localStorage, key);
-        db.ref(key).remove();
-    } else {
-        originalRemoveItem.call(localStorage, key);
-    }
-};
+// --- 1. TRASPORTO CLOUD — uno solo per app e Hub: M.installaTrasportoCloud
+// nel motore. (Prima: una copia qui e una in calcolatore_cloud.js.) ---
+const trasportoCloud = window.MotoreN5.installaTrasportoCloud();
+window.cloudPronto  = trasportoCloud.attesa.pronto;
+window.riprovaCloud = trasportoCloud.attesa.riprova;
+window.statoCloud   = trasportoCloud.attesa.stato;
 
 // --- 2. COMUNICAZIONE STANDARD (Spedizionieri) ---
 
@@ -113,6 +46,14 @@ window.inviaSchieramentoAllHub = (fazione, dati) => {
 };
 
 window.inviaAllarmeAro = (payload) => {
+    // L'identificativo dell'Ordine viaggia con ogni allarme: e` lo stesso per
+    // le due meta` dello stesso Ordine, diverso per l'Ordine dopo. Serve al
+    // reattivo per legare il RITARDO di un ARO contro un Marker all'Ordine in
+    // corso (chat INTERFACCIA, 28 settembre). Prima non lo scriveva nessuno:
+    // valeva sempre null. Il controller inoltra l'oggetto intero.
+    if (payload && payload.ordineId == null && window.currentOrder && window.currentOrder.id) {
+        payload.ordineId = window.currentOrder.id;
+    }
     localStorage.setItem(window.MotoreN5.CANALI.COMUNICAZIONE, JSON.stringify(payload));
     console.log("🚨 Core: Allarme ARO inviato all'Hub.", payload);
 };
@@ -257,10 +198,50 @@ window.ROUTER_AZIONI = [
                                                       modulo: 'avviaFaseSupporto',   nome: 'Supporto' }
 ];
 
+// Cambio di stato di schieramento causato dall'Abilita` dichiarata.
+//   -> { cambiato, prima, dopo, note } ; window.ultimoCambioStato per lo schermo
+window.applicaStatoDaAbilita = function (unita, azione) {
+    const M = window.MotoreN5;
+    if (!unita || !M || typeof M.statoDopoAbilita !== 'function') return { cambiato: false };
+    const deploy = String(unita.deployState || 'NORMAL').toUpperCase();
+    const st = unita.states || {};
+    if (deploy === 'NORMAL' && !st.camo && !st.impersonation) return { cambiato: false };
+    const r = M.statoDopoAbilita(unita, azione, {});
+    if (!r || !r.dopo || !r.prima) return { cambiato: false };
+    const esito = { cambiato: false, prima: r.prima.deployState, dopo: r.dopo.deployState, note: r.note || [] };
+    if (r.dopo.daVerificare) { esito.note = esito.note.concat(['Cambio di stato DA VERIFICARE: non applicato, decidi al tavolo.']); window.ultimoCambioStato = esito; return esito; }
+    if (r.dopo.deployState === r.prima.deployState && JSON.stringify(r.unitaAggiornata.states || {}) === JSON.stringify(st)) return esito;
+    const nelRoster = (window.roster || []).find(x => x && unita.id && x.id === unita.id);
+    [unita, nelRoster].filter(Boolean).forEach(x => Object.assign(x, r.unitaAggiornata));
+    esito.cambiato = true;
+    window.ultimoCambioStato = esito;
+    console.log(`🎭 ${M.nomeUnita(unita)}: ${esito.prima} -> ${esito.dopo} (${azione}).`);
+    if (typeof window.inviaSchieramentoAllHub === 'function') {
+        window.inviaSchieramentoAllHub(document.title.includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA', {
+            roster: window.roster, strutture: window.activeStructures || [],
+            terreni: window.activeTerrains || [], motivo: 'AGGIORNAMENTO'
+        });
+    }
+    return esito;
+};
+
 window.selectAction = (actionId, isSecondHalf = false) => {
     window.currentOrder = window.currentOrder || {};
     const azione = String(actionId || '').trim();
+    // UN ORDINE NUOVO NASCE CON LA PRIMA ABILITA`: nuovo identificativo. La
+    // seconda meta` lo conserva; nell'Ordine Coordinato lo conservano anche i
+    // partecipanti dopo il primo, perche` l'Ordine e` uno solo. (28 settembre.)
+    if (!isSecondHalf && !(window.coordMode && window.coordIndex > 0)) {
+        window.currentOrder.id = 'ordine_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+    }
     console.log(`🚥 Router: [${azione}]${isSecondHalf ? ' (seconda metà)' : ''}`);
+
+    // 🔴 HIDDEN E CAMO: dichiarare un'Abilita` puo` rivelare la truppa. La
+    // regola la sa M.statoDopoAbilita da giorni, ma nessun modulo la chiamava:
+    // un Hidden che attaccava restava nascosto. Si applica QUI, dove passa ogni
+    // ordine dichiarato; se lo stato cambia, l'Hub lo sa subito (AGGIORNAMENTO).
+    // Se la regola e` ancora da verificare, lo si dice e non si cambia niente.
+    window.applicaStatoDaAbilita(window.currentOrder.unit, azione);
 
     const voce = window.ROUTER_AZIONI.find(v => v.test(azione));
 

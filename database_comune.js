@@ -1,4 +1,4 @@
-// @versione 2026-09-27.3 | database_comune.js | proprieta`: chat DATABASE
+// @versione 2026-09-28.3 | database_comune.js | proprieta`: chat DATABASE
 // ==========================================
 // --- database_comune.js ---
 // Regole, armi, equipaggiamenti, strutture e terreni
@@ -21,6 +21,13 @@
 //                 Deployable Repeater dal Pitcher, che e` una BS Weapon che li spara
 //                 (reg. riga 4749). Il Dazer NO: e` Automatic Equipment piazzato
 //                 direttamente dal portatore, quindi resta null.
+// `isCamo`      = il token si piazza come Marker Camuffato. Le mine lo fanno, ma
+//                 NON tutte: Drop Bears (Deployable Mode) piazza "a Mine Token
+//                 [Mine (-3)] instead of a Camouflage Marker" (wiki N5.3), ed e`
+//                 visibile da subito, come il WildParrot. Il (-3) sul token e` il
+//                 Mimetismo, che le mine conservano anche da segnalino rivelato:
+//                 non e` lo stato Camuffato. Quindi `mina: true` con `isCamo: false`
+//                 non e` una contraddizione.
 // `mina`        = il token segue la regola delle Mine (Trigger Area, reg. righe
 //                 6229-6236)? Campo esplicito perche` il nome inganna in entrambi i
 //                 versi: Drop Bears (Deployable Mode) e WildParrot SONO mine pur non
@@ -54,7 +61,7 @@ window.DB_DEPLOYABLES = [
     { id: "mina_para", mina: true, generatoDa: null, nome: "Mina PARA", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Mina PARA", armi: "PARA", traits: ["Small Teardrop", "State: Immobilized-A"], chiaveArma: "PARA Mine" },
     { id: "crazykoala", mina: false, generatoDa: null, chiaveArma: "CrazyKoalas", nome: "CrazyKoala", tipo: "PERIMETER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "CrazyKoala", armi: "Shock", traits: ["Boost"] },
     { id: "fastpanda", mina: false, generatoDa: null, chiaveArma: "FastPanda", nome: "FastPanda", tipo: "PERIMETER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "Repeater", armi: "-", traits: ["Hacking Area"] },
-    { id: "dropbear", mina: true, generatoDa: null, chiaveArma: "Drop Bears (Deployable Mode)", nome: "Drop Bear", tipo: "MARKER", isCamo: true, arm: 0, bts: 0, str: 1, s: 0, equip: "Drop Bear", armi: "Shock", traits: ["Small Teardrop"] },
+    { id: "dropbear", mina: true, generatoDa: null, chiaveArma: "Drop Bears (Deployable Mode)", nome: "Drop Bear", tipo: "MARKER", isCamo: false, arm: 0, bts: 0, str: 1, s: 0, equip: "Drop Bear", armi: "Shock", traits: ["Small Teardrop"] },
     { id: "wildparrot", mina: true, generatoDa: null, chiaveArma: "WildParrot", nome: "WildParrot", tipo: "PERIMETER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "WildParrot", armi: "E/M", traits: ["Small Teardrop"] },
     { id: "deployable_repeater", mina: false, generatoDa: "Pitcher", chiaveArma: null, nome: "Deployable Repeater", tipo: "MARKER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "Deployable Repeater", armi: "-", traits: ["Disposable (3)", "Deployable"] },
     { id: "dazer", mina: false, generatoDa: null, chiaveArma: null, nome: "Dazer", tipo: "MARKER", isCamo: false, arm: 0, bts: 0, str: 1, s: 1, equip: "Dazer", armi: "-", traits: ["Disposable (3)", "Deployable", "Zone of Control"] },
@@ -221,7 +228,11 @@ window.RULES_WEAPONS = {
     "E/Mitter": { traits: ["Non-Lethal"], b: 2, dam: 7, ammo: "E/M", salvAttr: "BTS/2", salvTiri: 2, bande: [-3, 0, 3, 3, 0, 0] },
     "Contender": { traits: ["Anti-materiel"], b: 2, dam: 7, ammo: "T2", salvAttr: "ARM", salvTiri: 1, bande: [0, 3, 3, 0] },
     "Thunderbolt": { traits: [], b: 2, dam: 6, ammo: "N", salvAttr: "ARM", salvTiri: 1, bande: [-3, 0, 3, 3, 0, 0] },
-    "AP Thunderbolt": { traits: [], b: 2, dam: 6, ammo: "N", salvAttr: "ARM/2", salvTiri: 1, bande: [-3, 0, 3, 3, 0, 0] },
+    // Munizione AP dal metadata ufficiale; salvAttr resta "ARM/2" come su TUTTE le
+    // altre armi AP. Il motore legge il dimezzamento DAL CAMPO, non dalla munizione:
+    // con salvAttr "ARM" il bersaglio salverebbe su ARM intera. Provato: 1 diventava
+    // 14, 13 diventava 17. Non c'e` doppio dimezzamento da temere.
+    "AP Thunderbolt": { traits: [], b: 2, dam: 6, ammo: "AP", salvAttr: "ARM/2", salvTiri: 1, bande: [-3, 0, 3, 3, 0, 0] },
     "Feuerbach (Blast Mode)": { traits: ["Anti-materiel"], b: 1, dam: 6, ammo: "EXP", salvAttr: "ARM", salvTiri: 3, bande: [-3, 0, 3, 3, 0, 0] },
     "Feuerbach (Burst Mode)": { traits: ["Anti-materiel"], b: 2, dam: 6, ammo: "AP+DA", salvAttr: "ARM/2", salvTiri: 2, bande: [-3, 0, 3, 3, 0, 0] },
     "Hyper-Rapid Magnetic Cannon (Anti-Materiel Mode)": { traits: ["Anti-materiel"], b: 1, dam: 5, ammo: "DA", salvAttr: "ARM", salvTiri: 2, bande: [-3, 0, 3, 3, 0, 0] },
@@ -232,12 +243,17 @@ window.RULES_WEAPONS = {
     "Uragan MRL (Blast Mode)": { traits: ["Speculative Attack","Impact Template (Circular)","Burst: Single Target"], b: 3, dam: 6, ammo: "AP+SHOCK", salvAttr: "ARM/2", salvTiri: 1, bande: [-3, 3, 3, 0, 0, -6], isTemplate: true, template: "Circular" },
     "Uragan MRL (Hit Mode)": { traits: ["Burst: Single Target"], b: 3, dam: 5, ammo: "AP+SHOCK", salvAttr: "ARM/2", salvTiri: 1, bande: [-3, 3, 3, 0, 0, -6] },
     "Mk12": { traits: ["Suppressive Fire"], b: 3, dam: 5, ammo: "N", salvAttr: "ARM", salvTiri: 1, bande: [0, 3, 3, -3, -6, -6] },
-    "Ohotnik": { traits: ["Anti-materiel"], b: 2, dam: 6, ammo: "T2", salvAttr: "ARM", salvTiri: 1, bande: [0, 3, 3, 3, 0, -3, -6, -6, -6, -6, -6, -6] },
+    "Ohotnik": { traits: ["Anti-materiel"], b: 2, dam: 6, ammo: "T2", salvAttr: "ARM", salvTiri: 1, bande: [0, 3, 3, 3, 0, -6, -6, -6, -6, -6, -6, -6] },
     "Missile Launcher (Blast Mode)": { traits: ["Anti-materiel","Impact Template (Circular)"], b: 1, dam: 6, ammo: "EXP", salvAttr: "ARM", salvTiri: 3, bande: [-3, 0, 0, 3, 3, -3, -3, -3, -3, -3, -3, -3], isTemplate: true, template: "Circular" },
     "Missile Launcher (Hit Mode)": { traits: ["Anti-materiel"], b: 1, dam: 6, ammo: "AP+EXP", salvAttr: "ARM/2", salvTiri: 3, bande: [-3, 0, 0, 3, 3, -3, -3, -3, -3, -3, -3, -3] },
     "Flash Pulse": { traits: ["BS Weapon (WIP)","Non-Lethal","State: Stunned"], b: 1, dam: 7, ammo: "STUN", salvAttr: "BTS", salvTiri: 1, bande: [0, 3, 3, -3, -3, -3, -6, -6, -6, -6, -6, -6] },
     "Forward Observer": { traits: ["BS Weapon (WIP)","State: Targeted","Non-Lethal"], b: 2, dam: null, ammo: null, salvAttr: null, salvTiri: null, bande: [0, 0, 0, -3, -3, -3, -6, -6, -6, -6, -6, -6] },
     "Pitcher": { traits: ["Speculative Attack","Disposable (2)","Indiscriminate","Non-Lethal","Targetless"], b: 1, dam: null, ammo: null, salvAttr: null, salvTiri: null, bande: [0, 0, -3, -6, -6, -6] },
+    // DA VERIFICARE (chat REGOLE): il Tratto "Double Shot" non compare nel
+    // regolamento, che alla riga 6076-6080 da` al Disco Baller Speculative Attack,
+    // Disposable (2) e Targetless. Lasciato finche` non si trova la fonte.
+    // Nota: nel metadata ufficiale questa voce e` INCOMPLETA — zero Tratti e Burst
+    // assente — quindi non e` una fonte affidabile per toglierlo.
     "Disco Baller": { traits: ["Speculative Attack","Disposable (2)","Double Shot","Targetless"], b: 1, dam: null, ammo: null, salvAttr: null, salvTiri: null, bande: [0, 3, -3, -6] },
     "D-Charges (Demolition Mode)": { risoluzione: "CONTATTO_STRUTTURA",
       bersagliAmmessi: ["STRUTTURA", "EDIFICIO", "NEMICO_IMMOBILIZZATO", "NEMICO_NULL"],
