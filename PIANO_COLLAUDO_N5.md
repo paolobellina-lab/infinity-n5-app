@@ -1,41 +1,47 @@
-<!-- @versione 2026-09-26.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-09-29.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 5)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 6)
 
-Sostituisce la revisione 3 del 23 settembre. In mezzo ci sono stati sei giri
-di correzioni, e il difetto che stava in cima alla revisione 3 — l'ARO perso
-quando l'attivo non tira, trovato da Paolo al tavolo con due movimenti — è
-chiuso.
+Sostituisce la revisione 5 del 26 settembre. In mezzo sono cambiate tre cose
+grosse: i **database** sono passati dalla lettura a occhio dei PDF al JSON
+ufficiale di Corvus Belli (765 profili, 356 dei quali non c'erano affatto), il
+**giro degli allarmi** fra le due app e l'Hub è stato eseguito per la prima
+volta da un banco, e la **ripresa di una partita** interrotta adesso esiste.
 
 Le prove si eseguono **dall'app**, non in Node. Tutto ciò che si poteva
-verificare col motore è verde: 59 file di test, 2365 prove, banco di confronto
-a zero divergenze. Quello che resta non è verificabile senza toccare i bottoni.
+verificare col motore è verde: 71 file di test, 2591 prove, banco di confronto
+a zero divergenze. Per la prima volta la rete non verifica solo i dati contro
+se stessi — `test_fonte_ufficiale.js` li confronta con `101.json` e `501.json`,
+che sono la fonte, e `test_coerenza_dati.js` controlla che il database non si
+contraddica.
 
 Ogni valore atteso è stato calcolato facendo girare `motore_regole_n5.js`
-2026-09-23.14 sui profili veri dei due database. Dove motore e regolamento non
+2026-09-29.1 sui profili veri dei due database. Dove motore e regolamento non
 concordano la prova è marcata **[BUG NOTO]**, e il blocco V dice perché.
 Le regole citate rimandano a `REGOLE_N5_v5_1_1.txt`, verificabile con `grep -n`.
 
 ---
 
-# 0. Quello che è cambiato dalla revisione 3
+# 0. Quello che è cambiato dalla revisione 5
 
-**Niente blocca più il collaudo.** Il blocco dei reattivi non bersagliati stava
-dentro il ciclo sugli attacchi: con zero attacchi non girava mai, e l'Hub
-diceva "NESSUN TIRO DI DADO DA EFFETTUARE". Ora due movimenti più un ATTACCO BS
-in reazione danno uno scontro, TIRO NORMALE, col tiro del reattivo e il Tiro
-Salvezza dell'attivo. Prove **A-12** e **A-13**.
+**I numeri delle truppe sono cambiati.** I due database vengono ora dal JSON
+ufficiale: 765 profili invece di 442, e 172 profili modificati. Se una prova di
+questo piano dà un numero diverso da quello scritto, **guarda prima la scheda
+ufficiale**: in questa revisione i valori attesi sono stati ricalcolati, ma il
+piano invecchia insieme ai dati.
 
-Le altre cinque correzioni da confermare in app:
-- **Burst pieno in reazione** — BS-25. La radice era il contenitore "MULTI
-  Sniper Rifle", che non ha Burst proprio: `null` diventava 1.
-- **Contratto del payload** — i bersagli si cercavano con `name` mentre il
-  payload li scrive con `nome`: un Faccia a Faccia diventava due Tiri Normali.
-  Si vede in BS-01, che ora deve dare **un solo** scontro.
-- **Minelayer** (DEP-10), **Climbing Plus** (A-09), **Sagome su più bersagli**
-  (TPL-07).
-- **Prono e Scarico fuori dagli stati** (ST-19) e lo stato del Marker che si
-  chiama **CAMO** ovunque (ST-20).
+Le correzioni da confermare al tavolo, in ordine di quanto pesano:
+- **Gli usi Disposable si consumano** (nuovo blocco DIS). Fino al 27 settembre
+  un Panzerfaust tirato restava a due usi per sempre.
+- **Il dado speciale (+1SD) arriva a chi tira** (DIS-05): il motore lo
+  calcolava e non lo mostrava a nessuno.
+- **La Schivata contro una mina** (DET-01…04) e il −3 che viene dalla Sagoma,
+  non dal fatto che sia un deployable: mina 7, Koala 10, MadTraps 10.
+- **La ripresa della partita** (RIP): app e Hub riaprono su una partita in
+  corso senza cancellarla.
+- **Il RemDriver** (DEP-12), la **Tech-Recovery** (SUP-06), l'**Albedo** col
+  valore del profilo (BS-26), il **trattino** che rende l'azione impossibile
+  (ST-21).
 
 ## Come leggere una prova
 
@@ -779,37 +785,140 @@ L'invio deve essere **bloccato**. Se il calcolo parte lo stesso, è grave.
 
 ---
 
+# 23-bis. Blocco DIS — Usi Disposable e dado speciale
+
+Fino al 27 settembre gli usi si scalavano solo piazzando un Deployable: sparare
+non ne consumava nessuno. Il numero sullo schermo era giusto, era la sua storia
+a non esistere — ed è il genere di difetto che al tavolo non si vede finché
+qualcuno non conta i colpi.
+
+**DIS-01 — Il Panzerfaust ha due usi, e finiscono**
+- Triphammer (Panzerfaust) · due Attacchi BS di seguito contro lo stesso bersaglio
+- Atteso: dopo il primo colpo **1 uso**, dopo il secondo **0**, e al terzo
+  tentativo il Burst possibile è **0**: non si può più tirare.
+- Se dopo due colpi ne restano ancora due, è tornato il difetto.
+
+**DIS-02 — Il (+1B) costa due usi, il (+1SD) uno**
+- La stessa arma con le due notazioni
+- Atteso: col **(+1B)** si tirano due dadi e si spendono **due** usi; col
+  **(+1SD)** si tira un dado in più ma si spende **un** uso solo — il dado
+  speciale non consuma. Sono due notazioni che si somigliano e fanno l'opposto.
+
+**DIS-03 — Una Schivata non consuma niente**
+- Stessa truppa, SCHIVATA · Atteso: usi invariati.
+
+**DIS-04 — Scarico è l'oggetto, non la truppa**
+- Zero (Boarding Shotgun), che porta Shock Mine **e** PARA Mine: esaurita la
+  prima, l'altra deve restare usabile — atteso **3 usi** e Burst 1.
+- Il messaggio nomina lo stato **Scarico** e dice come si toglie: Reload,
+  Abilità Breve nella ZdC di un alleato con Baggage.
+
+**DIS-05 — Il dado speciale si vede** *(nuovo)*
+- Triggermen (BS Attack [+1SD]) · Attacco BS
+- Atteso: fra i modificatori compare **"tira 1 dado in più, poi scartane 1"**,
+  e il Burst **non** aumenta. Con due bersagli il dado va a **uno solo**: il
+  primo con dadi assegnati, o quello che hai marcato.
+- Controprova: un Alguacil non deve vedere quella frase.
+
+---
+
+# 23-ter. Blocco DET — Detonazione e Schivata
+
+**DET-01 — La mina detona e chi ha innescato schiva**
+- Attivo: Alguacil · MUOVERE + **SCHIVATA** · una Shock Mine nemica innesca
+- Atteso: a sinistra **SCHIVATA (Tiro Normale) 7** — PH 10 meno 3 — e sotto la
+  salvezza della mina con la sua munizione.
+
+**DET-02 — Chi non la dichiara non la riceve**
+- Stesso caso con MUOVERE + MUOVERE · Atteso: **NESSUNA SCHIVATA**. L'app non
+  presume niente: al tavolo una Schivata non dichiarata non esiste.
+
+**DET-03 — Il −3 viene dalla Sagoma**
+- Ripeti DET-01 contro un **CrazyKoala** e contro le **MadTraps**
+- Atteso: **10** in entrambi i casi, PH pieno. Solo la mina, che è una Sagoma,
+  toglie 3. Se vedi 7 contro il Koala, il −3 è stato dato a tutti i deployable.
+
+**DET-04 — Le tre domande dell'innesco**
+- Scegliendo DETONAZIONE per una mina: **tre domande**, ciascuna bloccante —
+  un nemico nell'area d'innesco; solo il movimento di una Schivata o di un Guts
+  fallito; un alleato sotto la Sagoma, anche Incosciente.
+- Atteso: se manca **anche una sola risposta**, la detonazione **non scatta** e
+  l'app lo dice. Al tavolo una detonazione non si annulla: "non so" deve
+  fermare, non procedere.
+- Il Chest Mine e il Mine Dispenser **non** ricevono la voce DETONAZIONE.
+
+**DET-05 — Il token esce dal tavolo**
+- Dopo l'innesco: la mina **sparisce** dal tabellone e dalla copia locale, e
+  non torna riaprendo l'app. Alla Fase Stati invece **non** si toglie: si toglie
+  la Sagoma, non il token.
+
+---
+
+# 23-quater. Blocco RIP — Riprendere una partita
+
+**RIP-01 — L'Hub riaperto a metà partita**
+- Chiudi la pagina dell'Hub durante una partita e riaprila
+- Atteso: **niente si cancella**. Finché la prima lettura dal server non è
+  conclusa l'Hub non trasmette; poi la partita torna da sola — roster di
+  entrambe le fazioni, fazione attiva, scenario e **ferite**.
+- Il difetto che questo blocco sorveglia: prima il primo invio a stato vuoto
+  cancellava la partita **per entrambi**, e bastava riaprire la pagina.
+
+**RIP-02 — Lettura non riuscita**
+- Stacca la rete e riapri l'Hub · Atteso: riquadro **"PARTITA NON LETTA DAL
+  SERVER"**, nessuna trasmissione, e un nuovo tentativo ogni quattro secondi.
+
+**RIP-03 — RIPRENDI PARTITA nell'app**
+- Atteso: il pulsante compare **solo** se sul dispositivo c'è una copia locale.
+  Dopo un reset dall'Hub **non** compare, e la copia viene dimenticata.
+- Con un allarme ARO pendente: avvisa, e l'allarme **resta** sul server — non
+  va cancellato, o l'avversario perde la sua reazione.
+
+**RIP-04 — Una copia salvata prima di questo giro**
+- Riapri con una copia locale vecchia, senza il campo dei token
+- Atteso: si carica, con zero token piazzati e **nessun errore**. È il caso che
+  capita per primo, alla prima riapertura dopo un aggiornamento.
+
+---
+
 # 24. Blocco V — Divergenze note, da confermare
 
-Non sono prove da superare: sono cose che il collaudo troverà. Le otto della
-revisione 3 sono **tutte chiuse**; restano tre, e due sono lavoro
-dell'interfaccia.
+Non sono prove da superare: sono cose che il collaudo troverà, o che restano
+aperte per una ragione dichiarata.
 
-**T-01 — Il canale del deployable a partita iniziata.** Il token piazzato con un
-ordine resta nell'app di chi lo piazza, e il modulo lo dichiara a schermo invece
-di far credere che sia arrivato. Il Minelayer fa eccezione, perché il suo token
-entra nel roster prima della conferma dello schieramento e viaggia con quello.
-→ INTERFACCIA.
+**T-01 — Le mine non sanno se detonano.** Nel database le mine non hanno un
+modo di risoluzione, e il percorso Deployable modella solo il Boost. All'innesco
+il motore risponde `rimuovi: null` — *non lo so* — e l'app dice che la mina
+**resta sul tavolo**, invitando a toglierla a mano. È corretto così: un "no"
+sarebbe falso al tavolo. Finché resta, una mina esplosa la toglie il giocatore.
+→ DATABASE, quando la fonte darà il modo di risoluzione.
 
-**T-02 — I residui dei due stati ritirati.** `calcolatore_controller.js` ha
-ancora una stringa "MIMETIZZATO", `roster_manager.js` cinque "Camuffato", e
-`app.html` l'icona `icon_unloaded` di uno stato che non si può più impostare.
-Il nome leggibile arriva già dal motore ed è CAMO: questi sono testi scritti a
-mano. → INTERFACCIA.
+**T-02 — Il limite "un pilota, un segnalino" è una lettura, non una regola.**
+La wiki vieta esplicitamente solo il secondo segnalino sullo **stesso REM**.
+Il limite per pilota è derivato — la skill si usa una volta, allo schieramento —
+ed è marcato come tale nel codice. Oggi la differenza è nulla: nei database un
+pilota si schiera una volta sola. → REGOLE, se la pagina lo dirà.
 
-**T-03 — I due vocabolari degli stati.** `CATALOGO_N5.STATI` ha 13 voci con le
-chiavi dei flag, `M.NOMI_STATI` ne ha 20 con chiavi italiane corte, e sette
-stati stanno da una parte sola (i sei Marker e il Foxhole). È "un fatto, due
-nomi" su scala di vocabolario, ed è la ragione per cui un controllo sulla prosa
-deve confrontare contro quattro elenchi invece di uno. L'unificazione è un giro
-a sé, già concordato fra MOTORE e INTERFACCIA per `STATI_TABELLONE`. → MOTORE.
+**T-03 — Il recupero parziale non esiste.** Se la copia locale manca del tutto
+(telefono cambiato o svuotato) il pulsante non compare e basta. Costruirlo è
+possibile, ma può recuperare **solo le unità visibili**: il numero dei nascosti
+non esiste da nessuna parte, perché per regola (riga 13896) un Hidden non mette
+il suo Ordine nel pool e l'esistenza di quell'Ordine è informazione privata.
+Se lo si fa, deve dire "non conoscibili dall'Hub, per regola" — non zero.
+→ INTERFACCIA, dopo il collaudo al tavolo.
 
-**Chiuse dalla revisione 3**, tutte da confermare in app con le prove indicate:
-l'ARO perso quando l'attivo non tira (A-12, A-13), Neurocinetics (BS-25), i
-bersagli secondari delle Sagome (TPL-07), Climbing Plus (A-09), il Movimento
-Cauto che chiede prima (A-03, A-04), il contratto del payload (BS-01),
-l'etichetta "SEGNALINO TO CAMO" (ST-20), e il banco dei gestori, che ora ha
-quattordici prove asserite e fallisce quando deve.
+**T-04 — Due identificativi ignoti nel database:** `?219` sul Monstrucker e
+`?227` su Shona Carano. Le tabelle di decodifica sono ridotte per fazione, e
+questi non stanno in nessuna delle due. → DATABASE.
+
+**Chiuse dalla revisione 5**, tutte da confermare in app con le prove indicate:
+gli usi Disposable (DIS), il dado speciale (DIS-05), la Schivata contro le mine
+e il −3 della Sagoma (DET), la ripresa di app e Hub (RIP), il RemDriver
+(DEP-12), la Tech-Recovery (SUP-06), l'Albedo col valore del profilo (BS-26),
+il trattino che rende impossibile l'azione (ST-21), il tocco lungo sugli stati
+(ST-22), ARRAMPICARSI e SOPPRESSIONE nel menu (A-09, A-11), i lati dello
+scontro orfano (A-12), e il koala piazzato che ora entra nel roster e viaggia
+con la busta (DEP-13).
 
 # 25. Blocco W — Sweep in console
 
@@ -866,16 +975,33 @@ Atteso: solo `deployable_repeater` e `dazer`, che hanno `chiaveArma: null` di pr
 
 # 26. Ordine di esecuzione
 
-1. **Preflight**. Se PRE-01 o PRE-02 falliscono, fermati.
-2. **A, B, C** — il grosso, e i più veloci.
-3. **U** (contratto): trova subito le regressioni sui bersagli e sugli errori bloccanti.
-4. **M, N** (stati): sono quelli che al tavolo fanno perdere ordini.
-5. **O** (deployable): il blocco nuovo, e quello con più cose da confermare.
-6. **D, E, F, G, H, I, J, K, L, P** — un blocco per sessione.
-7. **Q, R, S, T** — servono uno schieramento dedicato.
-8. **W** in console, una volta, alla fine.
-9. **V**: conferma le tre divergenze rimaste e le correzioni chiuse dalla revisione 3.
+1. **Preflight**. Se PRE-01 o PRE-02 falliscono, fermati. E dopo **ogni**
+   sostituzione di file, prima di qualunque altra cosa: `node
+   test_caricamento_pagine.js`. È l'unico controllo che vede un file
+   dichiarato dalla pagina e non presente — è già successo due volte in un
+   mese, e senza di lui l'app semplicemente non parte.
+2. **RIP** (ripresa): se l'Hub non riapre bene, tutto quello che viene dopo si
+   gioca su una partita che potrebbe cancellarsi da sola.
+3. **A, B, C** — il grosso, e i più veloci.
+4. **U** (contratto): trova subito le regressioni sui bersagli e sugli errori
+   bloccanti.
+5. **DIS** (usi Disposable): poche prove, e sono quelle che al tavolo cambiano
+   quanti colpi hai davvero.
+6. **M, N** (stati): sono quelli che fanno perdere ordini.
+7. **O, DEP, DET** (deployable, mine e detonazione): il blocco con più cose da
+   confermare.
+8. **D, E, F, G, H, I, J, K, L, P** — un blocco per sessione.
+9. **Q, R, S, T** — servono uno schieramento dedicato.
+10. **W** in console, una volta, alla fine.
+11. **V**: conferma le quattro divergenze rimaste e le correzioni chiuse dalla
+    revisione 5.
 
 Segna ogni fallimento con: codice della prova, unità e stato, cosa hai letto,
 cosa ti aspettavi. Col codice, chi riceve la segnalazione sa già quale riga di
 quale file guardare.
+
+E una cosa imparata in questi giorni, che vale anche al tavolo: quando un
+numero non torna, **guarda prima il dato di prova**. In due settimane, di tutti
+i rossi arrivati alle quattro chat, uno solo ha migliorato il codice — tutti
+gli altri erano prove che misuravano la cosa sbagliata, o profili cercati nella
+fazione sbagliata, o campi costruiti a mano più completi della realtà.

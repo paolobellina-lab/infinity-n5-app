@@ -605,5 +605,32 @@ ok(a87, 'e con l avviso A87, che dice la causa invece del solo effetto (' +
 ok(!(conBS(0).avvisi || []).some(a => a.codice === 'A87'),
    'controprova: uno 0 legittimo non accende A87');
 
+
+console.log('\n=== Albedo: il valore viene dal profilo, non è fisso ===');
+// Come il Mimetismo, l'Albedo porta il suo numero fra parentesi. Il sospetto
+// di REGOLE era quello giusto da avere: è la forma del difetto della
+// Sorpresa, dove un "-3" scritto nel testo veniva letto come se fosse sempre
+// lo stesso. Qui si prova che il motore legge la parentesi.
+// Questo banco non carica i database di fazione: l'attaccante si costruisce,
+// perché quello che conta è il visore, non il profilo.
+const conVisore = { alias: 'A', bs: 13, skills: 'Multispectral Visor L2', states: {} };
+const bersaglioCon = (sk) => ({ alias: 'B', arm: 1, bts: 0, skills: sk, states: {} });
+const tiro = (sk) => M.modAttacco(Object.assign(JSON.parse(JSON.stringify(conVisore)), { states: {} }),
+    bersaglioCon(sk), M.profiloArma('Combi Rifle'), M.AZIONI.BS_ATTACK, { rangeIndex: 1 }).valore;
+const base = tiro('');
+ok(tiro('Albedo (-3)') === base - 3, `Albedo (-3): ${base} diventa ${tiro('Albedo (-3)')}`);
+ok(tiro('Albedo (-6)') === base - 6, `Albedo (-6): ${base} diventa ${tiro('Albedo (-6)')} — il numero è quello del profilo`);
+// Controprova: senza i due valori affiancati, un -3 fisso passerebbe la prima
+// prova e sbaglierebbe la seconda di tre punti al tavolo.
+ok(tiro('Albedo (-3)') !== tiro('Albedo (-6)'), 'i due valori danno due tiri diversi');
+// E dove la regola dice che non si applica (riga 10474), non si applica.
+// In mischia l'attaccante ha bisogno del CC, o il confronto sarebbe fra due
+// zeri — e due zeri uguali direbbero "nessun effetto" anche se l'effetto ci
+// fosse: è il verde vuoto.
+const inCC = (sk) => M.modAttacco({ alias: 'A', bs: 13, cc: 14, skills: 'Multispectral Visor L2', states: {} },
+    Object.assign(bersaglioCon(sk), { cc: 12 }), M.profiloArma('CC Weapon'), M.AZIONI.CC_ATTACK, {}).valore;
+ok(inCC('') > 0, `in mischia si tira davvero (${inCC('')})`);
+ok(inCC('Albedo (-6)') === inCC(''), `e l Albedo non entra (${inCC('Albedo (-6)')} contro ${inCC('')}) — riga 10474`);
+
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

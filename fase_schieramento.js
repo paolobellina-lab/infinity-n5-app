@@ -1,4 +1,4 @@
-// @versione 2026-09-28.2 | fase_schieramento.js | proprieta`: chat MOTORE
+// @versione 2026-09-28.3 | fase_schieramento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🚀 FASE DI SCHIERAMENTO
 // ------------------------------------------
@@ -37,7 +37,7 @@ window.faseSchieramento = {
         const pilota = r.find(u => u && u.id === idPilota), rem = r.find(u => u && u.id === idRem);
         if (!pilota || !rem) return { ok: false, motivo: 'Pilota o REM non trovati nel roster.' };
         const e = M.applicaRemDriver(rem, pilota, r);   // col roster: un pilota, un segnalino
-        if (e.ok) Object.assign(rem, e.rem);   // stesso oggetto: chi lo tiene lo vede
+        if (e.ok) { Object.assign(rem, e.rem); Object.assign(pilota, e.pilota); }   // stessi oggetti: chi li tiene li vede
         return { ok: e.ok, motivo: e.motivo, nota: e.nota };
     },
 

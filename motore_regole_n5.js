@@ -1,4 +1,4 @@
-// @versione 2026-09-28.26 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-09-29.1 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-09-28.26';
+    M.VERSIONE = '2026-09-29.1';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -10122,14 +10122,28 @@
         while ((x = re.exec(m[1])) !== null) v[x[1].toLowerCase()] = parseInt(x[2], 10);
         return Object.keys(v).length ? v : null;
     };
-    // roster (facoltativo): se c'e`, si controlla anche che il pilota non abbia
-    // gia` un segnalino su un ALTRO REM — un pilota, un segnalino. Prima la
-    // regola viveva solo nell'interfaccia, che toglieva i pulsanti. (Chat
-    // INTERFACCIA, 28 settembre.)
+    // Due limiti, di natura diversa (chat REGOLE, 29 settembre):
+    //   REGOLA SCRITTA  "A REMOTE cannot have more than one REMDRIVER Token"
+    //                   (wiki Remdriver): un REM, un segnalino — qualunque
+    //                   pilota lo metta.
+    //   NOSTRA LETTURA  un pilota, un segnalino: la skill si usa una volta,
+    //                   allo schieramento di chi la porta. Solida ma derivata:
+    //                   la pagina non lo dice. Oggi la differenza e` nulla.
+    // roster (facoltativo): la seconda fonte, per chi non ha in mano il REM o
+    // il pilota aggiornati.
     M.puoRemDriver = function (utente, rem, roster) {
         const v = M.valoriRemDriver(utente);
-        const giaUsato = (roster || []).find(x => x && x !== rem && x.remDriver && utente && x.remDriver.utenteId === utente.id);
-        if (v && giaUsato) return { ammesso: false, motivo: `${M.nomeUnita(utente)} ha gi\u00e0 il suo segnalino REMDRIVER su ${M.nomeUnita(giaUsato)}: un pilota, un segnalino.` };
+        // Il segnalino usato e` un fatto sul PILOTA (campo remDriverSu, scritto
+        // da applicaRemDriver sul pilota restituito) — il roster resta una
+        // seconda fonte, per chi non ha il pilota aggiornato in mano.
+        // REGOLA SCRITTA, dal roster: quel REM ha gia` un segnalino?
+        const remNelRoster = (roster || []).find(x => x && rem && x.id != null && x.id === rem.id);
+        if (v && remNelRoster && remNelRoster.remDriver && !(rem && rem.remDriver)) {
+            return { ammesso: false, motivo: `${M.nomeUnita(rem)} ha gi\u00e0 un segnalino REMDRIVER (di ${remNelRoster.remDriver.utente}): uno per REM.` };
+        }
+        const suRoster = (roster || []).find(x => x && x !== rem && x.remDriver && utente && x.remDriver.utenteId === utente.id);
+        const giaSu = (utente && utente.remDriverSu && (!rem || utente.remDriverSu !== rem.id)) ? (utente.remDriverSuNome || utente.remDriverSu) : (suRoster ? M.nomeUnita(suRoster) : null);
+        if (v && giaSu) return { ammesso: false, motivo: `${M.nomeUnita(utente)} ha gi\u00e0 il suo segnalino REMDRIVER su ${giaSu}: un pilota, un segnalino.` };
         if (!v) return { ammesso: false, motivo: `${M.nomeUnita(utente)} non ha RemDriver con valori.` };
         if (!rem || String(rem.tipo).toUpperCase() !== 'REM') return { ammesso: false, motivo: 'Il segnalino REMDRIVER va accanto a un REM.' };
         if (rem.remDriver) return { ammesso: false, motivo: `${M.nomeUnita(rem)} ha gi\u00e0 un segnalino REMDRIVER: uno per REM.` };
@@ -10142,7 +10156,8 @@
         const nuovo = Object.assign({}, rem, p.valori, {
             remDriver: { utenteId: utente.id, utente: M.nomeUnita(utente), valori: p.valori, originali: originali }
         });
-        return { ok: true, rem: nuovo, nota: `${M.nomeUnita(rem)} ha il segnalino REMDRIVER di ${M.nomeUnita(utente)}: ` +
+        const pilotaAggiornato = Object.assign({}, utente, { remDriverSu: rem.id || M.nomeUnita(rem), remDriverSuNome: M.nomeUnita(rem) });
+        return { ok: true, rem: nuovo, pilota: pilotaAggiornato, nota: `${M.nomeUnita(rem)} ha il segnalino REMDRIVER di ${M.nomeUnita(utente)}: ` +
                  Object.keys(p.valori).map(k => k.toUpperCase() + ' ' + p.valori[k]).join(', ') + '.' };
     };
     M.togliRemDriver = function (rem) {

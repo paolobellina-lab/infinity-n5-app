@@ -1,4 +1,4 @@
-// @versione 2026-09-29.2 | test_remdriver_supporto.js | proprieta`: chat TEST
+// @versione 2026-09-29.3 | test_remdriver_supporto.js | proprieta`: chat TEST
 // ================================================================
 // Tre cose del 27-28 settembre che cambiano numeri al tavolo:
 //   - il RemDriver, che passa i valori del pilota al REM;
@@ -46,11 +46,26 @@ ok(M.applicaRemDriver(leggero, pilota).ok === false, 'su un Leggero: rifiutato �
 // regola che vive nell'interfaccia invece che nel motore, ed è esattamente la
 // cosa che ci siamo detti di non fare: un secondo schermo, o un ordine di
 // clic diverso, e la regola non c'è più.
+// "Un pilota, un segnalino" è un fatto SUL PILOTA, quindi va letto dal pilota
+// aggiornato: applicaRemDriver è pura — restituisce REM e pilota nuovi e non
+// tocca quelli che riceve, come consumaUsi. Chiamandola due volte col pilota
+// di PRIMA si chiede a un oggetto che non sa ancora niente, ed è l'errore che
+// avevo fatto io: il mio rosso diceva "manca la regola" e mancava la catena.
 const remA = Object.assign(JSON.parse(J(rem)), { id: 'rem_a' });
 const remB = Object.assign(JSON.parse(J(rem)), { id: 'rem_b' });
-ok(M.applicaRemDriver(remA, pilota).ok === true, 'un pilota assegna il suo segnalino a un REM');
-ok(M.applicaRemDriver(remB, pilota).ok === false,
-   `e a un SECONDO REM no: un segnalino per pilota (${J(M.applicaRemDriver(remB, pilota).motivo || 'accettato')})`);
+const primo = M.applicaRemDriver(remA, pilota);
+ok(primo.ok === true, 'un pilota assegna il suo segnalino a un REM');
+ok(primo.pilota && primo.pilota.remDriverSu === 'rem_a',
+   `e il pilota restituito se lo segna (${J(primo.pilota && primo.pilota.remDriverSu)})`);
+const secondo = M.applicaRemDriver(remB, primo.pilota);
+ok(secondo.ok === false,
+   `a un SECONDO REM no: un segnalino per pilota (${J(secondo.motivo || 'accettato')})`);
+// Controprova, e dice un limite invece di nasconderlo: col pilota VECCHIO la
+// funzione accetta, perché non ha nessuna informazione su cui rifiutare. È
+// onesto che sia così — ma chi la chiama deve concatenare, o passare il
+// roster, altrimenti la regola non c'è.
+ok(M.applicaRemDriver(remB, pilota).ok === true,
+   'col pilota non aggiornato accetta: la regola vive nella catena, non nella singola chiamata');
 
 // Controprova: senza i due rifiuti, "assegnato" sopra non distinguerebbe una
 // regola applicata da una funzione che dice sempre di sì.

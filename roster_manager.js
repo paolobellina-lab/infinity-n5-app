@@ -1,4 +1,4 @@
-// @versione 2026-09-28.2 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-09-28.3 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -892,14 +892,12 @@ window.bottoneRemDriver = (index) => {
         return `<div style="color:#aa8866; font-size:13px; margin:6px 0;">RemDriver: nessun REM nella lista a cui assegnarlo.</div>`;
     }
 
-    // Chi guida chi lo dice il MOTORE, nel campo remDriver che scrive lui
-    // sul REM. Qui ne tenevamo una copia (remDriverDa): due campi per lo
-    // stesso fatto, e quello di troppo era il nostro — se un domani il
-    // motore togliesse il segnalino, la nostra copia sarebbe rimasta a dire
-    // che il REM e` ancora guidato.
-    const gia = rem.filter(r => r.remDriver && r.remDriver.utenteId === pilota.id);
-    if (gia.length) {
-        return `<div style="color:#88cc88; font-size:14px; margin:6px 0;">RemDriver assegnato a <b>${gia[0].alias || gia[0].nome}</b>.</div>`;
+    // "Questo pilota ha gia` usato il suo segnalino" e` un fatto SUL PILOTA,
+    // e dal 28 settembre il motore lo scrive li`: remDriverSu col nome del
+    // REM. Prima scandagliavamo i REM per dedurlo, e prima ancora ne
+    // tenevamo una copia nostra. Si legge dove la cosa e` scritta.
+    if (pilota.remDriverSu) {
+        return `<div style="color:#88cc88; font-size:14px; margin:6px 0;">RemDriver assegnato a <b>${pilota.remDriverSuNome || pilota.remDriverSu}</b>.</div>`;
     }
 
     return rem.map(r => `
@@ -1253,7 +1251,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-09-28.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-09-28.3', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
