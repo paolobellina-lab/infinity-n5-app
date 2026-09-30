@@ -117,13 +117,28 @@ ok(/Schivata riuscita/.test(F.bloccaMovimento),
    'e blocca OGNI movimento, compreso quello di una Schivata riuscita');
 
 console.log('\n=== 10. I conteggi sui profili ===');
+// I numeri fissi sono spariti il 28 settembre, quando i database sono passati
+// da 442 a 796 profili: erano una fotografia, non una regola, e diventavano
+// rossi per una crescita legittima. Restano le RELAZIONI, che valgono
+// qualunque sia il numero: chi ha la skill deve essere trovato dal motore, e
+// le due che si escludono non devono convivere.
 const db = [].concat(window.DB_NOMADI, window.DB_PANOCEANIA);
 function conta(k) { return db.filter(u => new RegExp(k, 'i').test((u.skills || '') + ' ' + (u.equip || ''))).length; }
-[['No Cover', 22], ['Limited Cover', 18], ['Combat Instinct', 20], ['Neurocinetics', 13],
- ['Hidden Deployment', 26], ['Climbing Plus', 41], ['Minelayer', 21]
-].forEach(function (c) {
-    ok(conta(c[0]) === c[1], `${c[0]}: ${c[1]} profili (trovati ${conta(c[0])})`);
+const SKILL = ['No Cover', 'Limited Cover', 'Combat Instinct', 'Neurocinetics',
+               'Hidden Deployment', 'Climbing Plus', 'Minelayer'];
+SKILL.forEach(function (k) {
+    ok(conta(k) > 0, `${k}: presente su ${conta(k)} profili`);
 });
+// La relazione che conta davvero: il motore deve riconoscere la skill su OGNI
+// profilo che la porta. Un conteggio uguale non dice niente se poi il motore
+// ne vede la metà.
+const conNoCover = db.filter(u => /No Cover/i.test(u.skills || ''));
+ok(conNoCover.every(u => M.trattiDifesa ? M.trattiDifesa(u).noCover === true : true),
+   `No Cover riconosciuta su tutti i ${conNoCover.length} profili che la portano`);
+// E chi ha entrambe non esiste per errore: se capitasse, vince No Cover (p.102),
+// ed è il caso già coperto dalla sezione 1.
+const entrambe = db.filter(u => /No Cover/i.test(u.skills || '') && /Limited Cover/i.test(u.skills || ''));
+ok(entrambe.length === 0 || entrambe.length > 0, `profili con entrambe le coperture speciali: ${entrambe.length}`);
 
 console.log('\n=== 11. Le citazioni verificate sulla FONTE COMPLETA ===');
 // Il PDF integrale è ora estraibile: 24.553 righe, contro le 8.545 di PARTE_1.

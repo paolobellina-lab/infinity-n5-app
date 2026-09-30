@@ -1,4 +1,4 @@
-// @versione 2026-09-28.20 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-09-28.26 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-09-28.20';
+    M.VERSIONE = '2026-09-28.26';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -1411,8 +1411,12 @@
         const s = skillsDi(u);
         const t = String((u && u.tipo) || 'LI').toUpperCase();
         return s.indexOf('HACKABLE') >= 0 || s.indexOf('HACKER') >= 0 ||
-               t === 'HI' || t === 'TAG' || t === 'REM';
+               t === 'HI' || t === 'TAG' || t === 'REM' || t === 'VH';
     }
+    // Pubblica: la stessa condizione filtra i bersagli dei programmi e decide
+    // lo stato della Cybermine (HI, REM, TAG, VH, Hackable, Hacker — righe
+    // 6239-6243). Il VH mancava: aggiunto il 28 settembre (chat REGOLE).
+    M.eHackerabile = hackabile;
 
     // ------------------------------------------------------------------
     // bersagliValidi() — NON restituisce la lista già filtrata.
@@ -4414,6 +4418,37 @@
             }
         })();
 
+        // GLI STATI INFLITTI DAL TRATTO "State: X" DELL'ARMA. Prima il motore
+        // li prendeva solo dalla munizione: dove coincidevano (PARA -> IMM-A,
+        // STUN -> Stordito) andava, dove la munizione e` N lo stato si perdeva —
+        // Monofilament (Morto), Jammer (Isolato), Forward Observer (Bersagliato).
+        // (28 settembre, misurando i tratti con la chat DATABASE.)
+        const statiDalTratto = [];
+        (function () {
+            const MAPPA = { 'DEAD': 'MORTO', 'ISOLATED': 'ISOLATO', 'STUNNED': 'STORDITO', 'TARGETED': 'BERSAGLIATO',
+                            'IMMOBILIZED-A': 'IMM-A', 'IMMOBILIZED-B': 'IMM-B' };
+            const t = Array.isArray(arma && arma.traits) ? arma.traits.join(',') : String((arma && arma.traits) || '');
+            const re = /STATE:\s*([A-Z\-\/ ]+)/gi; let m;
+            while ((m = re.exec(t)) !== null) {
+                const voce = m[1].trim().toUpperCase();
+                if (voce === 'STUNNED/IMMOBILIZED-B') {
+                    // Cybermine (righe 6239-6243): IMM-B se il bersaglio e`
+                    // hackerabile o e` un Hacker, Stordito altrimenti. Basta UNA
+                    // salvezza fallita; con due fallimenti lo stato resta uno.
+                    const imm = hackabile(bersaglio);
+                    statiDalTratto.push(imm ? 'IMM-B' : 'STORDITO');
+                    note.push(`${(arma && arma.nome) || 'Arma'}: basta UNA salvezza fallita per ${imm ? 'IMM-B (bersaglio hackerabile o Hacker)' : 'lo Stordito'}; con due fallimenti lo stato resta uno.`);
+                    continue;
+                }
+                if (voce.indexOf('/') >= 0) {
+                    note.push(`${(arma && arma.nome) || 'Arma'}: "State: ${m[1].trim()}" — quale dei due stati si applica, e quando, \u00e8 DA VERIFICARE (chat REGOLE). Non applicato.`);
+                    continue;
+                }
+                if (MAPPA[voce]) statiDalTratto.push(MAPPA[voce]);
+            }
+        })();
+        const statiFallimentoTutti = (par.statiFallimento || []).concat(statiDalTratto.filter(x => (par.statiFallimento || []).indexOf(x) < 0));
+
         // Tiri per attributo: "1e1" del Plasma = uno per ciascuno.
         const perAttr = (par.combinato && rami.length > 1) ? 1 : par.tiri;
 
@@ -4430,7 +4465,7 @@
             tiri: par.tiri,
             tiriPerAttributo: perAttr,
             munizione: par.munizione,
-            statiFallimento: par.statiFallimento,
+            statiFallimento: statiFallimentoTutti,
             dannoPerFallimento: par.dannoPerFallimento,
             critExtra: par.critExtra,
             fonte: par.fonte,
@@ -4538,6 +4573,15 @@
         // con +3 di gittata esce a 3. Se il SV scende sotto 1 e` fallimento
         // automatico: un esito, non un divieto. Per questo lo 0 NON passa di qui.
         let senzaAttributo = /^\s*[-\u2013]\s*$/.test(String(grezzo == null ? '' : grezzo));
+        // Un attributo NEGATIVO non esiste nel regolamento: e` un residuo di
+        // conversione (i -1 dei Robbybot e dei Go-Pod, 28 settembre), e la
+        // fonte per quei profili dice "-". Si tratta come il trattino — non si
+        // tira mai su un numero che non puo` esistere — e si DICE, perche` il
+        // dato va corretto. Prima il Robbybot "attaccava a 2".
+        if (typeof grezzo === 'number' && grezzo < 0) {
+            senzaAttributo = true;
+            avvisi.push(err('A87', `${M.nomeUnita(attaccante)}: ${nomeAttr} ${grezzo} nel dato — un attributo negativo non esiste. Trattato come "-" (non ha l'attributo): controlla la scheda.`));
+        }
 
         // Sostituzione da profilo, es. "BS Attack (BS=13)"
         const sost = M.attributoEffettivo(attaccante, nomeAttr, spec.etichetta || 'BS Attack');
@@ -5425,6 +5469,29 @@
         //                                  resta solo il Tiro Salvezza;
         //                         undefined -> non so cosa ha dichiarato: non
         //                                  la si presume, e lo si dice.
+        // CYBERMINE: niente Schivata — si evita SOLO con un Reset DICHIARATO,
+        // Tiro Normale a WIP-3 (righe 6239-6243).
+        if (cyber) {
+            const salv = M.tiroSalvezza(bersaglio, { arma: arma });
+            const rs = M.modReset(bersaglio, {});
+            const conReset = ctx.resetDichiarato === true;
+            return {
+                tipo: 'DETONAZIONE', mina: true,
+                titolo: `${M.nomeUnita(mina)} detona su ${M.nomeUnita(bersaglio)}`,
+                motivoConfronto: 'Cybermine: Attacco Comms. Nessun tiro per colpire; si evita SOLO col Reset.',
+                attivo: conReset
+                    ? { nome: M.nomeUnita(bersaglio), azione: 'RESET (Tiro Normale)', attributo: 'WIP', mod: (rs.valore || 0) - 3, burst: 1,
+                        voci: (rs.voci || []).concat([{ fonte: 'cybermine', valore: -3, motivo: 'Reset contro la Cybermine: -3 WIP (riga 6240)' }]),
+                        note: [], salvezzaSubita: salv, impossibile: ((rs.valore || 0) - 3) < 1 }
+                    : { nome: M.nomeUnita(bersaglio), azione: 'NESSUN RESET', attributo: null, mod: '-', burst: 0, voci: [],
+                        note: ['La Cybermine si evita SOLO col Reset: la Schivata non serve. Senza un Reset dichiarato, colpisce.'],
+                        salvezzaSubita: salv, nessunTiro: true },
+                reattivo: { nome: M.nomeUnita(mina), azione: 'DETONAZIONE', attributo: null, mod: '-', burst: 0,
+                            voci: [], note: [], salvezzaSubita: null, nessunDanno: true },
+                note: [R.attacco, R.rivela, R.rimozione, R.sottoSagoma].filter(Boolean),
+                avvisi: []
+            };
+        }
         if (ctx.schivataDichiarata !== true) {
             const nonSo = ctx.schivataDichiarata === undefined;
             return {
@@ -5723,7 +5790,11 @@
                     // Una REATTIVA: la Schivata e` l'ARO che ha dichiarato.
                     dichiarata = reazioni.some(x => x !== r && M.nomeUnita(x.nome || x.difensore) === nomeColpito && eSchivata(x.azione));
                 }
-                scontri.push(M.scontroDetonazione(reattivo, colpito, r.arma, Object.assign({}, ctx, { schivataDichiarata: dichiarata })));
+                const eReset = a => /^RESET$/i.test(String(a || '')) || (M.idAro && M.idAro(a) === 'RESET');
+                const resetDichiarato = (nomeColpito === M.nomeUnita(attaccante))
+                    ? (attacchi.some(a => eReset(a.azione)) || (((payload && payload.azioniDichiarate) || []).some(eReset)))
+                    : reazioni.some(x => x !== r && M.nomeUnita(x.nome || x.difensore) === nomeColpito && eReset(x.azione));
+                scontri.push(M.scontroDetonazione(reattivo, colpito, r.arma, Object.assign({}, ctx, { schivataDichiarata: dichiarata, resetDichiarato: resetDichiarato })));
                 return;
             }
 
@@ -6334,6 +6405,15 @@
                 }
                 out.push({ unita: M.nomeUnita(u), skill: k, testo: testo });
             });
+        });
+        // MINELAYER + schieramento superiore: se il tiro FALLISCE si perde anche
+        // il Deployable gia` piazzato, e l'uso resta speso (riga 9131 e wiki —
+        // chat REGOLE, 28 settembre). M.minelayerTiroFallito lo applica; qui lo
+        // si DICE, dove il giocatore guarda mentre schiera.
+        (roster || []).forEach(function (u) {
+            if (!/MINELAYER/.test(skillsDi(u))) return;
+            out.filter(r => r.unita === M.nomeUnita(u) && /INFILTRATION|COMBAT JUMP|PARACHUTIST|AIRBORNE/i.test(String(r.skill)))
+               .forEach(r => { r.testo += ' Se fallisci, perdi anche il Deployable piazzato col Minelayer: l\'uso resta speso.'; });
         });
         return out;
     };
@@ -8415,7 +8495,10 @@
                 scatta: true, mina: true, rivela: true,
                 attacco: { sagoma: 'DIRETTA', tiroPerColpire: false, nota: R.attacco },
                 difesa: cyber
-                    ? { azioni: ['RESET', 'SCHIVATA'], reset: { attributo: 'WIP', mod: -3 }, schivata: { attributo: 'PH', mod: -3 }, tipo: 'NORMALE', testo: R.difesaCybermine }
+                    // Attacco Comms: si evita SOLO col Reset, non con la Schivata
+                    // (righe 6239-6243 — chat REGOLE, 28 settembre).
+                    ? { azioni: ['RESET'], reset: { attributo: 'WIP', mod: -3 }, tipo: 'NORMALE',
+                        testo: 'Cybermine: Attacco Comms, si evita SOLO col Reset a WIP-3 (righe 6239-6243). La Schivata non serve.' }
                     : { azioni: ['SCHIVATA'], schivata: { attributo: 'PH', mod: -3 }, tipo: 'NORMALE', testo: R.difesa },
                 dueSoglie: R.dueSoglie,
                 sottoSagoma: R.sottoSagoma,
@@ -8524,7 +8607,10 @@
         if (ev === 'DISTRUTTO')   return { rimuovi: true, motivo: 'Distrutto: lascia il tavolo.' };
         // Il giocatore sa cosa e` successo al tavolo e il motore no.
         if (ev === 'MANUALE')     return { rimuovi: true, motivo: 'Rimosso dal giocatore.' };
-        if (ev === 'DEACTIVATOR') return { rimuovi: true, motivo: 'Rimosso da un Deactivator riuscito.' };
+        // Disattivarla non le impedisce di scattare nell'Ordine in corso: si
+        // rimuove DOPO (wiki "Deactivator", N5.3 — chat REGOLE, 28 settembre).
+        if (ev === 'DEACTIVATOR') return { rimuovi: true, quando: 'FINE_ORDINE',
+            motivo: 'Disattivata da un Deactivator: in QUESTO Ordine pu\u00f2 ancora scattare. Si rimuove alla fine dell\'Ordine.' };
         if (ev === 'FASE_STATI')  return { rimuovi: false, motivo: M.fineTurnoDeployable(token).motivo };
         return { rimuovi: false, motivo: `Evento "${evento}" sconosciuto: il token resta.` };
     };
@@ -8787,6 +8873,12 @@
         };
         // Un Marker mimetico entra in gioco come Marker.
         if (voce.isCamo) token.states.camo = true;
+        // CONCEALED (riga 14975): il segnalino "usa gli effetti del Camuffato",
+        // e un Marker CAMO che nasconde un'arma ha Silhouette 2 — entra nella
+        // LoF. Prima nasceva camuffato ma con S 0. (Chat REGOLE, 28 settembre.)
+        if (token.states.camo && /\bCONCEALED\b/i.test(String(Array.isArray(arma.traits) ? arma.traits.join(',') : (arma.traits || '')))) {
+            token.s = 2;
+        }
         // 🔴 Il gettone NON porta `tipo`: nei database significa LI/MI/TAG/REM,
         // e "MARKER" (Repeater) o "TORRETTA" ingannerebbero chi legge il tipo
         // di truppa (test_creadeployable, sezione 4). Ma il Deployable Cover e`
@@ -9788,7 +9880,11 @@
         if (op.ha && !scelta) errori.push(err('E52', `"${nomeArma}" non è un'arma Deployable di questa truppa.`));
         else if (scelta && !scelta.disponibile) errori.push(err('E53', `"${scelta.nome}": usi esauriti.`));
         // I requisiti del tavolo: se il giocatore non li conferma, non si piazza.
-        if (risposte.nemiciNellArea !== false) errori.push(err('E54', 'Requisito: nessun nemico né Marker Mimetico nell\'Area d\'Innesco (o nella ZdC per le Perimeter).'));
+        // INDISCRIMINATE (riga 15041): usabile anche con Marker e senza bersagli
+        // validi nell'area — FastPanda, Pitcher, Deployable Repeater. Per loro il
+        // requisito non si chiede. (Chat REGOLE, 28 settembre.)
+        const indiscriminata = /INDISCRIMINATE/i.test(String((M.profiloArma(nomeArma) || {}).traits || ''));
+        if (!indiscriminata && risposte.nemiciNellArea !== false) errori.push(err('E54', 'Requisito: nessun nemico né Marker Mimetico nell\'Area d\'Innesco (o nella ZdC per le Perimeter).'));
         if (risposte.dentroZona !== true) errori.push(err('E55', 'Requisito: il punto deve stare dentro l\'area in cui il Minelayer può schierarsi.'));
         if (errori.length) return { token: null, portatoreAggiornato: unita, avvisi: [], errori: errori };
 
@@ -10026,15 +10122,21 @@
         while ((x = re.exec(m[1])) !== null) v[x[1].toLowerCase()] = parseInt(x[2], 10);
         return Object.keys(v).length ? v : null;
     };
-    M.puoRemDriver = function (utente, rem) {
+    // roster (facoltativo): se c'e`, si controlla anche che il pilota non abbia
+    // gia` un segnalino su un ALTRO REM — un pilota, un segnalino. Prima la
+    // regola viveva solo nell'interfaccia, che toglieva i pulsanti. (Chat
+    // INTERFACCIA, 28 settembre.)
+    M.puoRemDriver = function (utente, rem, roster) {
         const v = M.valoriRemDriver(utente);
+        const giaUsato = (roster || []).find(x => x && x !== rem && x.remDriver && utente && x.remDriver.utenteId === utente.id);
+        if (v && giaUsato) return { ammesso: false, motivo: `${M.nomeUnita(utente)} ha gi\u00e0 il suo segnalino REMDRIVER su ${M.nomeUnita(giaUsato)}: un pilota, un segnalino.` };
         if (!v) return { ammesso: false, motivo: `${M.nomeUnita(utente)} non ha RemDriver con valori.` };
         if (!rem || String(rem.tipo).toUpperCase() !== 'REM') return { ammesso: false, motivo: 'Il segnalino REMDRIVER va accanto a un REM.' };
         if (rem.remDriver) return { ammesso: false, motivo: `${M.nomeUnita(rem)} ha gi\u00e0 un segnalino REMDRIVER: uno per REM.` };
         return { ammesso: true, valori: v };
     };
-    M.applicaRemDriver = function (rem, utente) {
-        const p = M.puoRemDriver(utente, rem);
+    M.applicaRemDriver = function (rem, utente, roster) {
+        const p = M.puoRemDriver(utente, rem, roster);
         if (!p.ammesso) return { ok: false, motivo: p.motivo, rem: rem };
         const originali = {}; Object.keys(p.valori).forEach(k => { originali[k] = rem[k]; });
         const nuovo = Object.assign({}, rem, p.valori, {
@@ -10137,6 +10239,27 @@
             if (canali.includes(key)) db.ref(key).remove();
         };
         return { db: db, attesa: attesa };
+    };
+
+    // NFB: le voci con l'etichetta presenti in un profilo. Due o piu` sono
+    // incompatibili fra loro (righe 6677-6679): oggi nessun profilo dei nostri
+    // database ne combina due, ma il giorno che succede il motore lo sa dire.
+    // Due casi durano nel tempo (righe 5167-5170 e 5345-5347): l'Hacker in
+    // IMP-2 e la Sagoma del White Noise sul tavolo — quelli li dice il tavolo.
+    M.conflittiNFB = function (unita) {
+        const testo = skillsDi(unita);
+        const trovate = [];
+        [['SKILL', catalogo('SKILL')], ['EQUIP', catalogo('EQUIP')], ['HACKING', catalogo('HACKING')]].forEach(function (c) {
+            const tab = c[1] || {};
+            Object.keys(tab).forEach(function (k) {
+                const v = tab[k];
+                if (!v || v.nfb !== true) return;
+                const nomi = [k].concat(v.aliasTesto || []).map(n => String(n).toUpperCase());
+                if (nomi.some(n => testo.indexOf(n) >= 0)) trovate.push(k);
+            });
+        });
+        return { voci: trovate, conflitto: trovate.length > 1,
+                 nota: trovate.length > 1 ? `NFB: ${trovate.join(', ')} sono incompatibili fra loro (righe 6677-6679): se ne usa una sola.` : null };
     };
 
     // La scelta fazione -> nome, anch'essa una volta sola.

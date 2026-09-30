@@ -1,4 +1,4 @@
-<!-- @versione 2026-09-28.1 | FAQ_N5_INDICE.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-09-28.2 | FAQ_N5_INDICE.md | proprieta`: chat REGOLE -->
 
 # INDICE DELLE FAQ N5 (wiki ufficiale) — da affiancare a REGOLE_N5_v5_1_1.txt
 
@@ -28,9 +28,9 @@ coperte anche senza averle aperte.
 
 | Stato | Pagine |
 |---|---|
-| ✅ **Letta, con FAQ** (23) | Firewall · Coordinated Orders · Camouflaged State · Disco Baller · **Drop Bears** · Engaged State · Fireteam Integrity · Fireteams: Basic Rules · Fireteams Chart · FT Master · Hacking Device · Immobilized-A State · **Immobilized-B State** · Isolated State · Peripheral · Mines · Multispectral Visor · Order Expenditure Sequence · **Pitcher** · Saturation · **Stunned State** · **Traits** · Transmutation |
+| ✅ **Letta, con FAQ** (24) | **Skills and Equipment Module** · Firewall · Coordinated Orders · Camouflaged State · Disco Baller · **Drop Bears** · Engaged State · Fireteam Integrity · Fireteams: Basic Rules · Fireteams Chart · FT Master · Hacking Device · Immobilized-A State · **Immobilized-B State** · Isolated State · Peripheral · Mines · Multispectral Visor · Order Expenditure Sequence · **Pitcher** · Saturation · **Stunned State** · **Traits** · Transmutation |
 | ⚠️ **Letta ma in versione vecchia** (2) — il lettore ha restituito la copia N5.2, senza FAQ | Ballistic Skills · White Noise |
-| 🔗 **Non aperta, coperta dalle "Related Pages"** (2) | Mine Dispenser (→ F10, F11) · Skills and Equipment Module (→ F04) |
+| 🔗 **Non aperta, coperta dalle "Related Pages"** (1) | Mine Dispenser (→ F10, F11) |
 | ❌ **Non aperta** (1) | ITS FAQ (regolamento torneo; → F16) |
 
 **Fuori da questa lista:** anche la pagina **BS Attack** (non nella categoria 0.1) porta una
@@ -203,12 +203,14 @@ La wiki segna ogni modifica con "Update PDF 5.x" e, per i cambi di testo, mostra
 
 ## 5. Da fare
 
-1. **Restano da aprire**: Mine Dispenser, **Skills and Equipment Module** (la più grande) e le 2
-   pagine che il lettore aveva restituito in versione vecchia (Ballistic Skills, White Noise —
-   la seconda poi riletta e senza FAQ propria). Le pagine aperte finora non hanno FAQ proprie
-   oltre a quelle già indicizzate: F09 su Traits, F12 su Stunned e Immobilized-B, F10 e F11 su
-   Drop Bears e Pitcher.
-2. **Trovare l'elenco completo della FAQ 0.0.0.** La categoria wiki equivalente non è emersa
-   dalle ricerche; in alternativa, aprire le pagine delle skill che il motore implementa
-   (Surprise Attack, Sixth Sense, Stealth, Dodge, Reset, Martial Arts, Natural Born Warrior…).
+1. **Resta da aprire una sola pagina**: Mine Dispenser (le sue FAQ risultano F10 e F11, dalle
+   Related Pages). Tutte le altre 27 sono state lette: nessuna ha FAQ proprie oltre a quelle
+   già indicizzate — F09 su Traits, F12 su Stunned e Immobilized-B, F10 e F11 su Drop Bears e
+   Pitcher, F04 su Skills and Equipment Module.
+2. **La FAQ 0.0.0 non ha una categoria.** Verificato: le pagine aggiornate portano in fondo
+   alle categorie solo `N5 FAQ 0.1`, mentre le voci 0.0.0 compaiono nel corpo della pagina con
+   l'intestazione "Version: 0.0.0, Oct 2025". Non esiste quindi un elenco da consultare:
+   l'unico modo è incontrarle pagina per pagina, come abbiamo fatto (F02, F03, F05, F06, F07,
+   F08, F10, F15, F17 sono 0.0.0). Non è una lacuna colmabile in un giro: si aggiorna quando
+   si apre una pagina nuova.
 3. Quando esce una FAQ nuova, aggiungerla qui con un ID nuovo: gli ID già dati non si riusano.

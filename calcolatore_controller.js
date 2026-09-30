@@ -1,4 +1,4 @@
-// @versione 2026-09-26.1 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-09-28.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -359,13 +359,51 @@ window.STATI_TABELLONE = {
 // `nullo` aggiunge un segno UGUALE per tutti gli stati Null, oltre a icona
 // e colore propri: bordo rosso e la parola NULL, perche` il colore da solo
 // non basta a chi non lo distingue e con poca luce al tavolo.
-window.etichettaStato = (icona, testo, sfondo, colore, titolo, nullo) => {
+window.etichettaStato = (icona, testo, sfondo, colore, titolo, nullo, idStato) => {
     const bordo = nullo ? ' box-shadow: inset 0 0 0 2px #ff2020;' : '';
     const segno = nullo ? ` <b style="color:#ff5050; font-size:9px; letter-spacing:1px;">NULL</b>` : '';
     const suggerimento = nullo
         ? (titolo ? titolo + ' \u2014 ' : '') + 'Stato Null: non da` Ordini ne` Punti Vittoria'
         : (titolo || testo);
-    return `<span class="state-tag" style="background:${sfondo}; color:${colore};${bordo}" title="${suggerimento}">${icona} ${testo}${segno}</span>`;
+    // Il suggerimento del browser si vede solo col mouse, e l'Hub puo` stare
+    // su un tablet: quindi l'etichetta si tocca e apre lo stesso testo in un
+    // riquadro sotto il tabellone. Le due strade mostrano la stessa cosa.
+    const tocco = idStato
+        ? ` onclick="window.mostraDettaglioStato('${String(idStato).replace(/'/g, "\\'")}', '${String(testo).replace(/'/g, "\\'")}')" style="cursor:pointer;"`
+        : '';
+    return `<span class="state-tag"${tocco ? tocco.replace(' style="cursor:pointer;"', '') : ''} style="background:${sfondo}; color:${colore};${bordo}${idStato ? ' cursor:pointer;' : ''}" title="${suggerimento}">${icona} ${testo}${segno}</span>`;
+};
+
+// Il riquadro sotto il tabellone: nome, categoria e come si esce. Si apre
+// toccando un'etichetta, e si chiude toccando di nuovo la stessa.
+window.dettaglioStatoAperto = null;
+
+window.mostraDettaglioStato = (idStato, nome) => {
+    const box = document.getElementById('dettaglio-stato');
+    if (!box) return;
+    if (window.dettaglioStatoAperto === idStato) {
+        window.dettaglioStatoAperto = null;
+        box.style.display = 'none';
+        box.innerHTML = '';
+        return;
+    }
+    window.dettaglioStatoAperto = idStato;
+
+    const voce = ((window.CATALOGO_N5 || {}).STATI || {})[idStato] ||
+                 ((window.CATALOGO_N5 || {}).STATI_NON_GESTITI || {})[idStato] || {};
+    const modi = Array.isArray(voce.cancellazione) ? voce.cancellazione : null;
+
+    let corpo;
+    if (modi === null) corpo = '<div style="color:#aa8866;">Come si esce: non ancora verificato sul regolamento.</div>';
+    else if (!modi.length) corpo = '<div style="color:#ff8888;">Non se ne esce.</div>';
+    else corpo = '<div style="color:#ccc;">Come si esce:</div><ul style="margin:4px 0 0 18px; color:#ccc;">' +
+                 modi.map(m => `<li>${m}</li>`).join('') + '</ul>';
+
+    box.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;">
+            <b style="color:#fff; font-size:17px;">${nome}</b>
+            <span style="color:#888; font-size:13px;">tocca di nuovo per chiudere</span>
+        </div>${corpo}`;
+    box.style.display = 'block';
 };
 
 // Elenco testuale degli stati attivi, per il log.
@@ -380,6 +418,20 @@ window.elencoStatiAttivi = (unit) => {
     } catch (errore) {
         window.ultimaEccezione = errore;
         return 'STATI ILLEGGIBILI';
+    }
+};
+
+// Come si esce da uno stato, preso dal catalogo. Nessuna regola qui: si
+// legge un elenco di frasi gia` scritte, e se non c'e` non si inventa.
+window.comeSiEsce = (idStato) => {
+    try {
+        const voce = ((window.CATALOGO_N5 || {}).STATI || {})[idStato];
+        const modi = voce && voce.cancellazione;
+        if (!Array.isArray(modi) || !modi.length) return '';
+        return '\n\nCome si esce:\n\u2022 ' + modi.join('\n\u2022 ');
+    } catch (e) {
+        window.ultimaEccezione = e;
+        return '';
     }
 };
 
@@ -408,13 +460,19 @@ window.generateStateTags = (unit) => {
             // Null non e`, mentre Posseduto e Sepsitorizzato sono Null e stanno
             // in INFOGUERRA. Ricavarlo dalla categoria sbaglierebbe su tre.
             const nullo = stato.nullo === true;
+            // Come si esce dallo stato, se il catalogo lo dice: finisce nel
+            // suggerimento dell'etichetta, cosi` chi arbitra lo legge senza
+            // aprire il regolamento. Si legge il campo per QUALUNQUE stato:
+            // oggi ce l'ha solo lo Stordito, e quando ne arriveranno altri
+            // compariranno da soli.
+            const titolo = gruppo.categoria + window.comeSiEsce(stato.id);
             if (v) {
-                tags += window.etichettaStato(v.icona, nome, v.sfondo, v.colore, gruppo.categoria, nullo);
+                tags += window.etichettaStato(v.icona, nome, v.sfondo, v.colore, titolo, nullo, stato.id);
             } else {
                 // Il motore lo conosce, il tabellone non sa disegnarlo:
                 // si mostra col suo nome vero. Manca l'icona, non lo stato.
                 tags += window.etichettaStato('\u2753', nome, '#552200', '#ffaa66',
-                    gruppo.categoria + ' \u2014 icona non prevista dal tabellone', nullo);
+                    gruppo.categoria + ' \u2014 icona non prevista dal tabellone' + window.comeSiEsce(stato.id), nullo, stato.id);
             }
         });
     });
@@ -708,7 +766,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-09-26.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-09-28.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -63,7 +63,9 @@ db.forEach(u => ['skills', 'equip', 'weapon'].forEach(k => {
     });
 }));
 console.log('   ' + Object.entries(perTipo).sort((a, b) => b[1] - a[1]).map(([t, c]) => `${t}:${c}`).join('  '));
-ok(db.length === 269, `${db.length} unità PanOceania lette`);
+// Il numero non si fissa: i database sono passati da 442 a 796 profili il 28
+// settembre, e un "=== 269" sarebbe diventato rosso per una crescita vera.
+ok(db.length > 100, `${db.length} unità PanOceania lette`);
 ok((perTipo.MOVIMENTO || 0) >= 60, `${perTipo.MOVIMENTO} notazioni di movimento, tutte tenute fuori dai tiri`);
 ok((perTipo.SOSTITUZIONE || 0) >= 60, `${perTipo.SOSTITUZIONE} sostituzioni riconosciute (prima: ignorate)`);
 ok((perTipo.DADO_SPECIALE || 0) >= 6, `${perTipo.DADO_SPECIALE} dadi speciali riconosciuti (prima: ignorati)`);
@@ -85,7 +87,7 @@ ok(errori === 0, `tutte le ${db.length} unità passano dal motore senza eccezion
 
 console.log('\n=== 8. DATABASE NOMADI: famiglie che PanOceania non usa ===');
 const nom = window.DB_NOMADI;
-ok(nom.length === 173, `${nom.length} unità Nomadi lette`);
+ok(nom.length > 100, `${nom.length} unità Nomadi lette`);
 
 ok(P('PH+3').tipo === 'MOD_ATTRIBUTO' && P('PH+3').attributo === 'PH' && P('PH+3').valore === 3,
    'PH+3: MOD a un attributo specifico (i Nomadi lo usano, PanO no)');
@@ -107,13 +109,17 @@ const up2 = P('UPGRADE Oblivion +1B, Trinity AP');
 ok(up2.voci.length === 2 && up2.voci[0].modifica === '+1B',
    'upgrade multiplo con modifiche scomposto correttamente');
 
-const zoe = nom.find(u => /UPGRADE Zero Pain/.test(u.equip || ''));
+// I due punti sono facoltativi: DATABASE ha uniformato le grafie il 29
+// settembre — erano TRE, con e senza parentesi annidate e con e senza i due
+// punti — e il parser continua a leggerle tutte (la prova qui sopra usa la
+// forma senza). Il test cercava solo quella vecchia.
+const zoe = nom.find(u => /UPGRADE:?\s*Zero Pain/i.test(u.equip || ''));
 ok(!!zoe, 'trovata un unità Nomade con un upgrade');
 if (zoe) {
     const e = M.programmiAttacco(zoe);
     ok(e.upgrade.length > 0, `${zoe.nome}: upgrade riconosciuto (prima veniva ignorato)`);
 }
-const conMod = nom.find(u => /UPGRADE Trinity SR-1/.test(u.equip || ''));
+const conMod = nom.find(u => /UPGRADE:?\s*Trinity SR-1/i.test(u.equip || ''));
 if (conMod) {
     const e = M.programmiAttacco(conMod);
     const tri = e.programmi.find(p => p.nome === 'TRINITY');

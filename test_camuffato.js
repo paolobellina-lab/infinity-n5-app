@@ -120,25 +120,29 @@ ok(M.camoUnUso(conSkill('Camouflage [1 Use]')) === true, '"Camouflage [1 Use]": 
 ok(M.camoUnUso(conSkill('Limited Camouflage')) === true, '"Limited Camouflage" (nome N4): uso singolo');
 ok(M.camoUnUso(conSkill('Camouflage')) === false, 'controprova — "Camouflage": NON uso singolo');
 // Sui profili veri: il Locust e` (1 Use), lo Spektr no.
-const LOCUST = 'Locust (Boarding Shotgun)';
-ok(/Camouflage \(1 Use\)/.test(sk(LOCUST)) && M.camoUnUso(profilo(LOCUST)) === true, 'Locust nel database: Camouflage (1 Use)');
+const UN_USO = 'Heckler (Boarding Shotgun)';   // Camouflage (1 Use)
+// Il campione dell'uso singolo era il Locust, che nell'elenco ufficiale del
+// 28 settembre non ha più Camouflage. Sostituito con l'Heckler, uno dei 22
+// profili che portano Camouflage (1 Use).
+ok(/Camouflage \(1 Use\)/.test(sk(UN_USO)) && M.camoUnUso(profilo(UN_USO)) === true,
+   'Heckler nel database: Camouflage (1 Use)');
 ok(!/1 Use/.test(sk(SPEKTR)) && M.camoUnUso(profilo(SPEKTR)) === false, 'Spektr nel database: Camouflage normale');
 
 console.log('\n=== 4. Si puo` entrare in Camuffato? ===');
-const locust = Object.assign(profilo(LOCUST), { states: {} });
-ok(M.puoEntrareInCamo(locust).puo === true, 'Locust mai camuffato: si`');
+const locust = Object.assign(profilo(UN_USO), { states: {} });
+ok(M.puoEntrareInCamo(locust).puo === true, 'Heckler mai camuffato: si`');
 const consumato = M.consumaCamo(locust);
 // "Rivelato" si dichiara con states.camo = false: il profilo del Locust porta
 // deployState CAMO come predefinito di schieramento, e col silenzio vale il
 // predefinito (contratto di statoBersaglio). Senza il false esplicito il test
 // misurerebbe un Locust ancora Marker, non uno rivelato.
 const rivelato = Object.assign({}, consumato.unitaAggiornata, { states: { camo: false } });
-ok(M.statoBersaglio(rivelato).camo === false, 'il Locust rivelato non e` piu` Marker');
+ok(M.statoBersaglio(rivelato).camo === false, 'l Heckler rivelato non e` piu` Marker');
 const dopo = M.puoEntrareInCamo(rivelato);
-ok(dopo.puo === false, 'Locust dopo consumaCamo, rivelato: no');
+ok(dopo.puo === false, 'Heckler dopo consumaCamo, rivelato: no');
 ok(/1 Use|F07/.test(dopo.motivo || ''), 'e il motivo cita l\'uso singolo (' + (dopo.motivo || 'nessun motivo') + ')');
 const ancoraCamo = Object.assign({}, consumato.unitaAggiornata, { states: { camo: true } });
-ok(M.puoEntrareInCamo(ancoraCamo).puo === true, 'Locust ancora camuffato: si` — l\'uso si perde uscendo, non restando');
+ok(M.puoEntrareInCamo(ancoraCamo).puo === true, 'Heckler ancora camuffato: si` — l\'uso si perde uscendo, non restando');
 const spektr = Object.assign(profilo(SPEKTR), { states: {}, camoUsato: true });
 ok(M.puoEntrareInCamo(spektr).puo === true, 'controprova — Spektr (Camouflage normale) gia` usato: puo` tornare Camuffato');
 // Controprova sul "si`": chi non ha Camouflage non ci entra, altrimenti i
@@ -147,7 +151,7 @@ const fus = Object.assign(profilo('Fusilier (Combi Rifle)'), { states: {} });
 ok(M.puoEntrareInCamo(fus).puo === false, 'controprova — Fusilier senza Camouflage: no');
 
 console.log('\n=== 5. consumaCamo non modifica l\'unita` passata ===');
-const originale = Object.assign(profilo(LOCUST), { states: {} });
+const originale = Object.assign(profilo(UN_USO), { states: {} });
 const fotografia = JSON.stringify(originale);
 const r = M.consumaCamo(originale);
 ok(JSON.stringify(originale) === fotografia, 'l\'unita` passata e` identica a prima');

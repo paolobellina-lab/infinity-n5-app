@@ -1,4 +1,4 @@
-<!-- @versione 2026-09-28.4 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-09-28.5 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
 
 # PRONTUARIO ORDINI N5 — richiamo rapido durante la partita
 
@@ -73,7 +73,7 @@ Vale per ogni ordine, sempre.
 | `(+1B)` | +1 Burst all'utente, **solo in Turno Attivo** |
 | `(+1 SD)` | 1 dado extra, poi se ne scarta uno. **Non** aumenta il Burst (né il tetto di 6), **non** consuma usi Disposable, **non** si applica alle Long Skill né a chi non tira (Sagome Dirette). Vale in **Attivo e in Reattivo**. Col Burst diviso, il dado extra va a **un solo** bersaglio e lo scarto avviene su quel tiro. Nel F2F si scarta dopo che entrambi hanno tirato; sceglie prima l'attivo |
 | `(+1B)` in ARO | **mai**, nemmeno col Total Reaction: il testo lo esclude esplicitamente nel Turno Reattivo (righe 6646–6648) |
-| `(ReRoll)` | Ritira un dado del tiro, solo con quella skill/arma. **N5.2**: la forma dell'Ingegnere è ora `Engineer (ReRoll WIP=X)` — si ritira **usando** il WIP fra parentesi, non applicando un malus. `Doctor (ReRoll −3)` resta nei dati ufficiali: ⚠️ forma pre-N5.2 da verificare |
+| `(ReRoll)` | Ritira **un dado** del tiro, solo quando si usa quella skill/arma. **N5.2**: la forma dell'Ingegnere è ora `Engineer (ReRoll WIP=X)` — si ritira **usando** il WIP fra parentesi, non applicando un malus. `Doctor (ReRoll −3)` resta nei dati ufficiali: ⚠️ forma pre-N5.2 da verificare |
 | `(SR-1)` / `(SR-2)` | I **bersagli** applicano −1/−2 al proprio Tiro Salvezza. Non è gittata |
 | `(PS=X)` | Fissa il PS dell'arma a X in tutte le modalità |
 | `(PH=X)` / `(WIP=X)` | Usa X al posto dell'attributo del profilo per quel tiro |
@@ -81,6 +81,13 @@ Vale per ogni ordine, sempre.
 | `(AP)`, `(Shock)`, `(Continuous Damage)` | L'utente aggiunge quella munizione o tratto a tutti i suoi attacchi |
 | `(2W)` | Il bersaglio recupera 2 Ferite invece di 1 |
 
+> **NFB (Negative Feedback).** Una skill, equip o programma con l'etichetta NFB è
+> incompatibile con qualunque altro che abbia la stessa etichetta o lo stesso Tratto.
+>
+> **Da dove si dichiara.** Una skill si può dichiarare solo da una posizione in cui la truppa
+> è già stata, o che ha attraversato, **durante l'Ordine in corso**: mai da un punto non ancora
+> raggiunto.
+>
 > ⚠️ **Il livello non sta fra parentesi.** `Martial Arts L3`, `MSV L2`, `Fatality L1`:
 > il numero fa parte del **nome**. Fra parentesi c'è sempre un MOD, mai un livello.
 
@@ -1240,6 +1247,7 @@ FO: voci come un BS Attack sul WIP. Sensor: solo `+6`. Triangulated: **zero** vo
 - **Vietato** piazzare un'arma Deployable con un Marker CAMO nemico nella sua Trigger Area → serve un
   **Attacco Intuitivo** (tiro WIP non modificato, §1.3); fallendo non si piazza e il Disposable perde un uso.
 - Il Disco Ball nasce dall'esito del tiro del Disco Baller (Fuoco Speculativo), non da qui.
+- **Minelayer**: piazza allo schieramento una sua arma o equip Deployable nella propria ZdC, scalando un uso Disposable. Requisito: **niente truppe né Marker nemici** nella Trigger Area dell'oggetto, **o nella ZdC se è un'arma Perimeter**. Se l'utente si schiera con una skill Superior Deployment e **fallisce** il tiro (Infiltration, Combat Jump), **perde anche il Deployable**, e l'uso resta speso.
 
 ### I. Controllo dell'app
 Nessun calcolo, salvo il caso CAMO nella Trigger Area → deve passare dall'Intuitivo.
@@ -1275,6 +1283,7 @@ Si cancella entrando in Prono o cancellandolo all'inizio di una skill con etiche
 | Contatto / LoF | **contatto di Silhouette** | bersaglio in **LoF o nella ZdC**: niente contatto |
 | Gittata | nessuna | **+6 a 0–8" · +3 a 8–16" · −6 a 16–24"** |
 | Bersagli | scenografia con Tratto Objective | **solo Deployable nemici** già piazzati (mine, Repeater, **Armed Turret**…), **mai** Marker CAMO |
+| Nota | — | passare il tiro **non impedisce** al Deployable di scattare nell'Ordine in corso: lo rimuove dopo (wiki *Deactivator*, N5.3) |
 | MOD | quelli dello scenario (spesso bonus agli Specialisti) | **solo gittata** (il testo esclude i MOD di skill e il resto) |
 | Reazioni | normali contro chi agisce | normali contro chi agisce |
 

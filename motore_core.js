@@ -1,4 +1,4 @@
-// @versione 2026-09-28.3 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-09-28.4 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -233,6 +233,7 @@ window.selectAction = (actionId, isSecondHalf = false) => {
     // partecipanti dopo il primo, perche` l'Ordine e` uno solo. (28 settembre.)
     if (!isSecondHalf && !(window.coordMode && window.coordIndex > 0)) {
         window.currentOrder.id = 'ordine_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+        window.pulisciTokenDisattivati(window.currentOrder.id);
     }
     console.log(`🚥 Router: [${azione}]${isSecondHalf ? ' (seconda metà)' : ''}`);
 
@@ -391,6 +392,30 @@ window.verificaRouter = () => {
 // sparisce anche dalla ripresa. Eventi: 'INNESCO', 'DISTRUTTO', 'MANUALE',
 // 'DEACTIVATOR', 'FASE_STATI'. La regola e` del motore, l'array
 // dell'interfaccia: questa funzione sta in mezzo. (26 settembre.)
+// L'Ordine in corso visto da QUESTA app: il proprio (router) o quello
+// dell'avversario (dall'allarme, che porta ordineId).
+window.ordineInCorso = function () {
+    return (window.currentAttackData && window.currentAttackData.ordineId) ||
+           (window.currentOrder && window.currentOrder.id) || null;
+};
+// Toglie i Deployable disattivati in un Ordine DIVERSO da quello che comincia.
+window.pulisciTokenDisattivati = function (ordineNuovo) {
+    const tolti = [];
+    [window.roster || [], window.tokenPiazzati || []].forEach(function (l) {
+        for (let k = l.length - 1; k >= 0; k--) {
+            const t = l[k];
+            if (t && t.deployable && t.disattivata && t.disattivata.ordineId !== ordineNuovo) { tolti.push(t.nome || t.alias); l.splice(k, 1); }
+        }
+    });
+    if (tolti.length && typeof window.inviaSchieramentoAllHub === 'function') {
+        window.inviaSchieramentoAllHub(document.title.includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA', {
+            roster: window.roster, strutture: window.activeStructures || [],
+            terreni: window.activeTerrains || [], motivo: 'AGGIORNAMENTO'
+        });
+    }
+    return tolti;
+};
+
 window.rimuoviTokenPiazzato = function (id, evento) {
     const M = window.MotoreN5;
     // Si cerca nel ROSTER, dove stanno i token (piazzati in schieramento o in
@@ -403,6 +428,13 @@ window.rimuoviTokenPiazzato = function (id, evento) {
     if (!lista[i].deployable) return { rimosso: false, motivo: 'Non e` un Deployable: le truppe non si tolgono da qui.' };
     const r = M.tokenDaRimuovere(lista[i], evento);
     if (!r.rimuovi) return { rimosso: false, motivo: r.motivo, nonSo: r.rimuovi === null };
+    // Rimozione DIFFERITA (Deactivator): la mina resta, segnata con l'Ordine in
+    // corso, e si toglie quando ne comincia un altro (pulisciTokenDisattivati).
+    if (r.quando === 'FINE_ORDINE') {
+        lista[i].disattivata = { ordineId: window.ordineInCorso() };
+        if (typeof window.salvaPartitaLocale === 'function') window.salvaPartitaLocale();
+        return { rimosso: false, differito: true, motivo: r.motivo };
+    }
     const togliDa = function (l) { const k = l.findIndex(t => t && t.id === id); if (k >= 0) l.splice(k, 1); };
     liste.forEach(togliDa);   // da entrambe: un doppione non deve sopravvivere
     const esito = window.inviaSchieramentoAllHub(document.title.includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA', {
@@ -495,6 +527,8 @@ setInterval(() => {
     if (window._allarmiConsumati.length > 40) window._allarmiConsumati.splice(0, 20);
 
     window.currentAttackData = dati;
+    // Un Ordine nuovo dell'avversario: via i Deployable disattivati prima.
+    if (dati && dati.ordineId) window.pulisciTokenDisattivati(dati.ordineId);
     localStorage.removeItem(window.MotoreN5.CANALI.ALLARME_ATTACCO);
     if (window.mostraBannerAllarme) window.mostraBannerAllarme();
 }, 1000);

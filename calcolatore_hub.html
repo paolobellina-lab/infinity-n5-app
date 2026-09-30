@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-09-25.1 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-09-28.1 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -43,6 +43,13 @@
 
     <!-- Avviso di stato dell'Hub. Lo riempie avvisoHub() nel controller:
          serve a non lasciar credere che una pagina vuota sia la partita. -->
+    <!-- Il dettaglio di uno stato, aperto toccando la sua etichetta sul
+         tabellone. Esiste perche` l'Hub puo` stare su un tablet, dove il
+         suggerimento del browser non si vede: la stessa informazione
+         deve essere raggiungibile anche col dito. -->
+    <div id="dettaglio-stato" style="display:none; margin:10px; padding:12px; border:2px solid #555;
+         border-radius:6px; background:#111; font-size:15px;"></div>
+
     <div id="avviso-hub" style="display:none; margin:10px; padding:12px; border:2px solid #ffaa00;
          border-radius:6px; color:#ffdd88; font-weight:bold; text-align:center;"></div>
     <script>
@@ -116,7 +123,7 @@
         // quello dove una copia vecchia (cache del telefono) e` piu` probabile.
         (function () {
             var g = (typeof window !== 'undefined') ? window : globalThis;
-            var v = { file: 'calcolatore_hub.html', versione: '2026-09-25.1', proprieta: 'INTERFACCIA' };
+            var v = { file: 'calcolatore_hub.html', versione: '2026-09-28.1', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();

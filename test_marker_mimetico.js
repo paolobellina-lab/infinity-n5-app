@@ -34,12 +34,17 @@ const mimDiscover = (u) => M.modScoprire(alg, u, { rangeIndex: 1 }).voci
     .filter(v => /Mimetismo/i.test(v.motivo)).reduce((a, v) => a + v.valore, 0);
 
 console.log('\n=== 0. I profili hanno davvero le abilita` che il test presuppone ===');
-const LOCUST = 'Locust (Boarding Shotgun)';
+const LOCUST = 'Spektr (MULTI Sniper Rifle)';   // vedi nota sotto
 const HELOT  = 'Helot Militiaman (Surprise Attack [-3], Camouflage, Red Fury)';
 const SPEKTR = 'Spektr (MULTI Sniper Rifle)';
 const sk = (n) => profilo(n).skills || '';
-ok(/Camouflage/.test(sk(LOCUST)) && /Mimetism \(-6\)/.test(sk(LOCUST)) && !/Hidden Deployment/.test(sk(LOCUST)),
-   'Locust: Camouflage + Mimetism (-6), senza Hidden Deployment');
+// Il campione del -6 era il Locust, che nell'elenco ufficiale del 28
+// settembre NON ha Camouflage: ha Mimetism (-6) e Hidden Deployment, ma non
+// il Marker. Sostituito con lo Spektr, che porta Camouflage + Mimetism (-6).
+// Nessun profilo dei due database ha -6 SENZA Hidden Deployment, quindi la
+// condizione "senza Hidden" non si può più chiedere: si dichiara.
+ok(/Camouflage/.test(sk(LOCUST)) && /Mimetism \(-6\)/.test(sk(LOCUST)),
+   'Spektr: Camouflage + Mimetism (-6) — il campione del -6 al posto del Locust');
 ok(/Camouflage/.test(sk(HELOT)) && !/Mimetism/.test(sk(HELOT)),
    'Helot: Camouflage senza Mimetism');
 ok(/Camouflage/.test(sk(SPEKTR)) && /Hidden Deployment/.test(sk(SPEKTR)) && /Mimetism \(-6\)/.test(sk(SPEKTR)),

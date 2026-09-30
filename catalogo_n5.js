@@ -1,4 +1,4 @@
-// @versione 2026-09-28.6 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-09-28.8 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -1647,10 +1647,14 @@ window.CATALOGO_N5.STEALTH_INEFFICACE = {
 //   suChi:          'attaccanteNemico' (MOD al nemico che attacca l'utente) | 'utente' (bonus a se`) | 'bersaglio'
 //   effetto:        descrizione strutturata di cosa fa (letta dal motore)
 // ------------------------------------------------------------------
+// NFB (Negative Feedback, righe 6677-6679 e 14883 — chat REGOLE, 28 sett.):
+// una voce con nfb: true e` incompatibile con qualunque altra che abbia la
+// stessa etichetta. Sono cinque: Mimetism, Impersonation, Holoprojector,
+// Albedo, White Noise. M.conflittiNFB(unita) elenca quelle di un profilo.
 window.CATALOGO_N5.SKILL = {
 
     // --- SKILL CON MOD DIRETTO SUL CALCOLO DEI TIRI ---
-    'Mimetism': {
+    'Mimetism': { nfb: true,
         aliasTesto: ['mimetism', 'mimetismo'],
         haValore: true, valoreDefault: -3,           // -3 o -6 dal profilo
         applica: ['BS', 'DISCOVER'], suChi: 'attaccanteNemico',
@@ -1805,6 +1809,16 @@ window.CATALOGO_N5.SKILL = {
         },
         note: 'Tiro Normale WIP (nessun bonus). Ripara 1 Ferita STR (Incosciente) o rimuove stati (non Incosciente). Rimuovere stati, se fallisce, non ha conseguenze negative. Engineer (ReRoll -N) = un ritiro col MOD indicato.'
     },
+    // TRI-CORE (Monstrucker da 15 punti — chat DATABASE, 28 settembre).
+    // CONOSCIUTA MA NON MODELLATA: il nome si risolve, l'effetto l'app non lo
+    // calcola. La regola non ce l'abbiamo: quando la chat REGOLE la manda, si
+    // decide se modellarla. Non si finge un effetto.
+    'Tri-Core': {
+        aliasTesto: ['tri-core', 'tri core', 'tricore'],
+        haValore: false, applica: [], nonModellata: true,
+        note: 'Skill conosciuta ma non calcolata dall\'app: si risolve al tavolo.',
+        fonte: 'profilo ufficiale del Monstrucker (JSON Corvus Belli); regola da fornire'
+    },
     // REMDRIVER (wiki "Remdriver", N5.2 — chat REGOLE, 27 settembre).
     // DEPLOYMENT SKILL: non tocca chi la porta. Schierando l'utente si piazza
     // un segnalino REMDRIVER accanto a un REM gia` schierato; quel REM usa i
@@ -1945,10 +1959,10 @@ window.CATALOGO_N5.SKILL = {
     'Journalist':       { aliasTesto:['journalist','journalist l1'], applica:['INFO'], note:'Warcor: abilita` di scenario/civili. Fuori scope.' },
     'Explode':          { aliasTesto:['explode'], applica:['INFO'], note:'Esplode quando distrutto (danno ad area). Fuori scope tiri attivi.' },
     'Specialist Operative':{ aliasTesto:['specialist operative'], applica:['INFO'], note:'Puo` completare obiettivi da Specialista. Fuori scope tiri.' },
-    'Holoprojector':    { aliasTesto:['holoprojector'], haValore:true, applica:['GATING'], note:'Crea Holoecho (copie). Forma Marker.' },
+    'Holoprojector':    { nfb: true, aliasTesto:['holoprojector'], haValore:true, applica:['GATING'], note:'Crea Holoecho (copie). Forma Marker.' },
     'Holomask':         { aliasTesto:['holomask'], applica:['GATING'], note:'Si maschera da un\'altra unita` allo schieramento.' },
     'Decoy':            { aliasTesto:['decoy'], haValore:true, applica:['GATING'], note:'Crea segnalini Decoy identici. Forma Marker.' },
-    'Impersonation':    { aliasTesto:['impersonation'], haValore:true, applica:['GATING'], note:'Segnalino Impersonation (infiltrazione). Forma Marker; da` Surprise Attack.' },
+    'Impersonation':    { nfb: true, aliasTesto:['impersonation'], haValore:true, applica:['GATING'], note:'Segnalino Impersonation (infiltrazione). Forma Marker; da` Surprise Attack.' },
 
     // --- COMMON SKILL nel profilo col valore tra parentesi ---
     // REGOLA UFFICIALE (verificata wiki): "Positive MODs only apply to the user. Negative MODs only apply to enemies."
@@ -2110,7 +2124,7 @@ window.CATALOGO_N5.EQUIP = {
         effetto: { modAttaccante: -3, bonusSalvezza: 3, soloContro: 'BS' },
         note: 'Come Copertura ma cumulabile: -3 BS all\'attaccante + 3 alla salvezza. Non su Comms/CC. Marksmanship lo ignora.'
     },
-    'Albedo': {
+    'Albedo': { nfb: true,
         aliasTesto: ['albedo'],
         haValore: true, valoreDefault: -6,           // il profilo scrive Albedo (-3) o Albedo (-6)
         applica: ['GATING', 'BS', 'DISCOVER'], suChi: 'attaccanteNemico',
@@ -2207,7 +2221,7 @@ window.CATALOGO_N5.HACKING = {
 
     // --- esistono in N5 ma non sono attacchi: questo modulo non li gestisce ---
     'CYBERMASK':         { fonte: 'wiki', tipo: 'NON_ATTACCO',  note: 'Programma di occultamento.' },
-    'WHITE NOISE':       { fonte: 'wiki', tipo: 'NON_ATTACCO',  note: 'Zona di rumore bianco.' },
+    'WHITE NOISE':       { nfb: true, fonte: 'wiki', tipo: 'NON_ATTACCO',  note: 'Zona di rumore bianco.' },
     'ZERO PAIN':         { fonte: 'wiki', tipo: 'NON_ATTACCO',  note: 'Non gestito dal modulo attacco.' },
     'ASSISTED FIRE':     { fonte: 'wiki', tipo: 'SUPPORTWARE', bersaglioAlleato: true, note: 'Supportware su alleati (EVO).' },
     'ENHANCED REACTION': { fonte: 'wiki', tipo: 'SUPPORTWARE', bersaglioAlleato: true, note: 'Da` B2 in ARO a un REM alleato (EVO).' },
@@ -2344,7 +2358,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-09-28.6', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-09-28.8', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

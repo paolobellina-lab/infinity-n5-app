@@ -1,81 +1,174 @@
-// @versione 2026-09-23.1 | test_giro_ritorno.js | proprieta`: chat TEST
-// Il giro di ritorno del nome arma — node test_giro_ritorno.js
-global.window = global;
+// @versione 2026-09-29.1 | test_giro_ritorno.js | proprieta`: chat TEST
+// ================================================================
+// IL GIRO COMPLETO: app attiva -> Hub -> app reattiva -> Hub -> risoluzione.
+// Proposto da INTERFACCIA il 29 settembre, ed è il percorso su cui poggia
+// tutto il resto: nessun banco lo eseguiva. Ognuno di noi provava il proprio
+// pezzo con un dato costruito a mano, e i due pezzi si parlavano solo nella
+// nostra immaginazione — è così che l'ordineId risultava "non arriva" quando
+// mancava soltanto il passaggio intermedio.
+//
+// Qui girano TRE contesti separati, come i tre dispositivi veri: l'app
+// Nomadi, l'app PanOceania e l'Hub. Ognuno ha il suo localStorage; il
+// "server" è un oggetto in mezzo che recapita le chiavi agli altri due,
+// come fa Firebase. Nessuno dei tre vede la memoria degli altri.
+// ================================================================
 let passati = 0, falliti = 0;
-function ok(c, n, e) { if (c) { passati++; console.log(`  ✅ ${n}`); } else { falliti++; console.log(`  ❌ ${n}${e ? '\n       ' + e : ''}`); } }
+const ok = (c, m) => { if (c) { passati++; console.log('  ✅ ' + m); } else { falliti++; console.log('  ❌ ' + m); } };
+const J = JSON.stringify;
+const vm = require('vm'), fs = require('fs');
+const DIR = (process.env.CARTELLA || __dirname).replace(/\/?$/, '/');
 
-const el = {};
-function nodo(id) { return el[id] || (el[id] = { id, innerHTML: '', innerText: '', style: {},
-    appendChild() {}, remove() {}, cloneNode() { return nodo(id + '_c'); }, parentNode: { replaceChild() {} } }); }
-global.document = { title: 'NOMADS', getElementById: (i) => nodo(i),
-    querySelector: () => nodo('btn'), querySelectorAll: () => [],
-    createElement: () => ({ style: {}, innerHTML: '', appendChild() {} }) };
-global.alert = () => {}; global.goToStep = () => {}; global.confirmMultiAro = () => {};
-global.mostraTitoloUnitaCorrente = () => {}; global.puoFareAzione = () => true;
-global.inviaCalcoloAllHub = () => {};
+// L'elenco dei canali si chiede al motore, una volta: scriverlo a mano qui
+// vorrebbe dire tenerne una seconda copia, e un nome sbagliato farebbe
+// sembrare che il messaggio non parta — si cercherebbe il difetto nel codice
+// che funziona. È la stessa ragione per cui esiste M.CANALI.
+global.window = global;
+require(DIR + 'catalogo_n5.js'); require(DIR + 'database_comune.js');
+const CANALI_VERI = require(DIR + 'motore_regole_n5.js').CANALI;
 
-require('./catalogo_n5.js'); require('./database_comune.js');
-require('./database_nomad.js'); require('./database_panoceania.js');
-const M = require('./motore_regole_n5.js');
-require('./ordine_attacco_cc.js');
+// --- il server: una mappa di chiavi, e chi ascolta ---
+const server = {};
+const dispositivi = [];
+const transito = [];   // il registro di cosa è passato dal server, e da chi
+function recapita(da, chiave, valore) {
+    server[chiave] = valore;
+    transito.push({ da: da.nome, chiave: chiave, vuoto: valore === null });
+    dispositivi.forEach(d => { if (d !== da) d.riceve(chiave, valore); });
+}
+const passato = (chiave, da) => transito.some(t => t.chiave === chiave && !t.vuoto && (!da || t.da === da));
 
-const morlock = window.DB_NOMADI.find(u => /Morlock/.test(u.nome || ''));
-const fus = { alias: 'Fusilier', arm: 1, bts: 0, ph: 10 };
+function avvia(nome, titolo, moduli) {
+    const memoria = {};
+    const g = { console: { log: () => {}, warn: () => {}, error: () => {} } };
+    g.window = g; g.globalThis = g;
+    const el = () => ({ innerHTML: '', style: {}, value: '', checked: false, appendChild(){}, addEventListener(){},
+        classList: { add(){}, remove(){} }, cloneNode() { return el(); }, parentNode: { replaceChild(){}, insertBefore(){} } });
+    g.document = { title: titolo, getElementById: () => el(), querySelector: () => el(), querySelectorAll: () => [],
+        createElement: () => el(), addEventListener(){}, body: el(), documentElement: { setAttribute(){} } };
+    g.alert = () => {}; g.confirm = () => true; g.prompt = () => null;
+    // Ogni file può avere il suo ciclo: motore_core ne ha due — uno per il
+    // cambio turno, uno per gli allarmi in arrivo. Tenerne uno solo vuol dire
+    // eseguire metà dispositivo, e il pezzo che manca è sempre quello che
+    // serve alla prova.
+    g._cicli = [];
+    g.setInterval = (fn) => { g._cicli.push(fn); return g._cicli.length; }; g.setTimeout = () => 0;
+    g.addEventListener = (tipo, fn) => { if (tipo === 'storage') g._storage = fn; };
+    g.history = { pushState(){}, replaceState(){} };
+    // motore_core costruisce un evento 'storage' finto per avvisare la pagina:
+    // senza Event il recapito solleva a metà strada, e il messaggio si perde
+    // in un punto che non c'entra col codice in prova.
+    g.Event = function (tipo) { this.type = tipo; };
+    g.dispatchEvent = (ev) => { if (g._storage) g._storage(ev); };
+    g.location = { search: '', replace(){} };
+    // I canali NON si scrivono a mano: si leggono da M.CANALI, che è l'unica
+    // lista vera. Scrivendoli qui, un nome sbagliato — "hub_calcolo" invece di
+    // "canale_hub_calcolo" — fa sembrare che il messaggio non parta, e si
+    // finisce a cercare il difetto nel codice che funziona.
+    const CLOUD = Object.keys(CANALI_VERI).map(k => CANALI_VERI[k]);
+    const dispositivo = { nome: nome, g: g, memoria: memoria };
+    // Il localStorage è SOLO locale. Chi porta i canali fuori dal dispositivo
+    // è motore_core, che intercetta setItem e scrive su Firebase: se il finto
+    // Firebase ingoia, il messaggio non parte e sembra un difetto del codice.
+    // (INTERFACCIA ci è incappata il 25 settembre, e questo banco alla prima
+    // stesura pure: scriveva sul localStorage e si chiedeva perché non
+    // arrivasse niente.)
+    g.localStorage = {
+        getItem: k => (k in memoria ? memoria[k] : null),
+        setItem: (k, v) => { memoria[k] = String(v); },
+        removeItem: k => { delete memoria[k]; }
+    };
+    const ascolti = {};
+    dispositivo.riceve = (k, v) => {
+        // Come il trasporto vero: il server annuncia, il cloud scrive la copia
+        // locale e poi avvisa chi ascolta.
+        if (ascolti[k]) ascolti[k]({ val: () => v });
+        else { if (v === null) delete memoria[k]; else memoria[k] = v; if (g._storage) g._storage({ key: k, newValue: v }); }
+    };
+    g.firebase = { initializeApp: () => ({}), database: () => ({ ref: (k) => ({
+        on: (evento, fn) => { ascolti[k] = fn; },
+        set: (v) => recapita(dispositivo, k, String(v)),
+        update: () => {},
+        remove: () => recapita(dispositivo, k, null),
+        once: () => Promise.resolve({ val: () => (k in server ? server[k] : null) })
+    }) }) };
+    const ctx = vm.createContext(g);
+    moduli.forEach(f => vm.runInContext(fs.readFileSync(DIR + f, 'utf8'), ctx, { filename: f }));
+    dispositivo.giro = () => g._cicli.forEach(fn => fn());
+    dispositivi.push(dispositivo);
+    return dispositivo;
+}
 
-console.log('\n=== 1. Il nome grezzo sopravvive a variantiArma ===');
-const arme = M.armiCC(morlock);
-const ap = arme.find(a => /AP CC/.test(a.nome));
-ok(ap.nome === 'AP CC Weapon', 'nome: spogliato, per il database');
-ok(ap.nomeRichiesto === 'AP CC Weapon(PS=6)', 'nomeRichiesto: GREZZO, con la notazione');
-ok(ap.dam === 6, 'e il PS del profilo è già applicato');
+const BASE = ['catalogo_n5.js', 'database_comune.js', 'database_nomad.js', 'database_panoceania.js', 'motore_regole_n5.js'];
+const nomadi = avvia('app NOMADI', 'NOMADS', BASE.concat(['motore_core.js']));
+const pano = avvia('app PANOCEANIA', 'PANOCEANIA', BASE.concat(['motore_core.js']));
+// L'Hub carica anche calcolatore_cloud.js: è LUI che porta i canali fuori
+// dalla pagina dell'Hub, come motore_core fa nelle due app. Senza, l'Hub
+// riceve e non risponde mai — e il banco direbbe che il difetto è nel
+// controller. L'ordine dei file è quello della pagina vera.
+const hub = avvia('HUB', 'HUB', BASE.concat(['calcolatore_cloud.js', 'calcolatore_math.js', 'calcolatore_controller.js']));
+hub.g.hubPronto = true;
+// L'app che riceve l'allarme è quella reattiva: senza questo interruttore il
+// suo ascoltatore ignora tutto, come nel turno in cui tocca a lei.
+pano.g.isReactiveMode = true;
 
-console.log('\n=== 2. Il giro di ritorno è reversibile ===');
-// Il modulo salva una stringa e poi la ririsolve: se la stringa è spogliata,
-// la notazione non torna più.
-ok(M.profiloArma(ap.nomeRichiesto).dam === 6,
-   'ririsolvendo il nomeRichiesto: PS 6');
-ok(M.profiloArma(ap.nome).dam === 8,
-   'ririsolvendo il nome spogliato: PS 8 — ed è la causa del difetto');
+console.log('\n=== 1. I tre dispositivi partono separati ===');
+ok(nomadi.g.MotoreN5 && pano.g.MotoreN5 && hub.g.MotoreN5, 'tre contesti, tre copie del motore');
+ok(nomadi.g !== pano.g && nomadi.g.localStorage !== pano.g.localStorage,
+   'e tre memorie diverse: nessuno vede quella degli altri');
+nomadi.g.localStorage.setItem('prova_locale', 'x');
+ok(pano.g.localStorage.getItem('prova_locale') === null,
+   'una chiave che non è un canale resta sul dispositivo');
 
-console.log('\n=== 3. Il modulo passa il nome grezzo al bottone ===');
-window.currentOrder = {}; window.coordUnits = [morlock]; window.coordIndex = 0;
-window.coordPayloads = []; window.combatTargets = []; window.pendingTargets = [];
-M._fazione = 'NOMADI'; M._rosterProprio = [morlock];
-M._rosterNemico = [{ id: 'p1', alias: 'Fusilier', tipo: 'LI', arm: 1, bts: 0, ph: 10, skills: '', states: { engaged: true } }];
-window.avviaFaseCC('ATTACCO CC', false);
-const html = nodo('weapon-buttons-container').innerHTML;
-ok(/AP CC Weapon\(PS=6\)/.test(html),
-   'il bottone porta "AP CC Weapon(PS=6)", non il nome spogliato');
+console.log('\n=== 2. L allarme fa il giro: Nomadi -> Hub -> PanOceania ===');
+const C = nomadi.g.MotoreN5.CANALI;
+nomadi.g.currentOrder = { id: 'ordine-1', unit: { alias: 'Alguacil' } };
+nomadi.g.inviaAllarmeAro({ attaccante: 'Alguacil (Combi Rifle)', azione: 'ATTACCO BS', bersagli: [] });
+ok(server[C.COMUNICAZIONE] != null, 'l app attiva scrive sul canale di comunicazione');
+ok(hub.g.localStorage.getItem(C.COMUNICAZIONE) != null, 'e l Hub lo riceve');
+hub.giro();                                       // un giro dei cicli dell'Hub
+pano.giro();                                      // e uno dell app reattiva, che raccoglie l allarme
+// Non si guarda se la chiave C'È ADESSO: l'app reattiva la consuma subito, e
+// la cancellazione torna indietro fino al server. Guardare lo stato finale
+// direbbe "non è mai passato" proprio perché è arrivato. Si guarda il
+// TRANSITO — chi ha scritto cosa — che è la domanda vera.
+ok(passato(C.ALLARME_ATTACCO, 'HUB'), 'l Hub lo inoltra come allarme d attacco');
+// L'app reattiva non si limita a riceverlo: lo CONSUMA — lo legge, lo mette
+// in currentAttackData e libera il canale, perché un allarme già visto non
+// deve tornare. Quindi si guarda quello che il giocatore ha davanti, non la
+// chiave: cercare la chiave darebbe "non arrivato" proprio quando è arrivato.
+ok(pano.g.currentAttackData != null,
+   'e arriva all app reattiva, che lo consuma: il giro completo, senza che nessuno l abbia costruito a mano');
+ok(server[C.COMUNICAZIONE] == null, 'il canale di comunicazione viene liberato dall Hub');
 
-console.log('\n=== 4. Dal click al Tiro Salvezza ===');
-window.declareCCAttack('AP CC Weapon(PS=6)');
-ok(window.currentOrder.weapon === 'AP CC Weapon(PS=6)',
-   'currentOrder.weapon conserva la notazione');
-const riletta = M.profiloArma(window.currentOrder.weapon);
-ok(riletta.dam === 6, 'il modulo la ririsolve a PS 6');
-ok(M.tiroSalvezza(fus, { arma: riletta }).valoreSuccesso === 7,
-   'Tiro Salvezza ARM VS 7 — al tavolo, non solo nel motore');
+console.log('\n=== 3. L ordineId sopravvive al viaggio ===');
+// È il caso che aveva fatto dire "non arriva": il campo esiste da una parte,
+// viene letto dall'altra, e il pezzo in mezzo non lo portava. Qui il pezzo
+// in mezzo c'è.
+const arrivato = pano.g.currentAttackData;
+ok(arrivato.ordineId === 'ordine-1', `l identificativo dell Ordine arriva intero: ${arrivato.ordineId}`);
+ok(arrivato.attaccante === 'Alguacil (Combi Rifle)', 'e con lui il nome di chi attacca');
+ok(typeof arrivato.timestamp_allarme === 'number', 'l Hub ci aggiunge il momento in cui è passato');
 
-console.log('\n=== 5. Tutti e cinque i moduli passano il nome grezzo ===');
-const fs = require('fs');
-['ordine_attacco_bs.js','ordine_attacco_cc.js','ordine_attacco_guidato.js',
- 'ordine_attacco_intuitivo.js','ordine_fuoco_speculativo.js'].forEach(function (f) {
-    const t = fs.readFileSync('./' + f, 'utf8');
-    ok(/nomeRichiesto \|\| /.test(t), f + ': usa nomeRichiesto');
-    ok(!/const nomeEsc = [a-z]+\.nome\.replace/.test(t), f + ': non usa più il nome spogliato');
-});
+console.log('\n=== 4. La seconda metà porta lo STESSO identificativo ===');
+nomadi.g.inviaAllarmeAro({ attaccante: 'Alguacil (Combi Rifle)', azione: 'ATTACCO BS', bersagli: [] });
+hub.giro(); pano.giro();
+ok(pano.g.currentAttackData.ordineId === 'ordine-1', 'stesso Ordine, stesso identificativo');
+nomadi.g.currentOrder = { id: 'ordine-2', unit: { alias: 'Alguacil' } };
+nomadi.g.inviaAllarmeAro({ attaccante: 'Alguacil (Combi Rifle)', azione: 'ATTACCO BS', bersagli: [] });
+hub.giro(); pano.giro();
+ok(pano.g.currentAttackData.ordineId === 'ordine-2', 'Ordine nuovo, identificativo nuovo');
+// Controprova: senza questa coppia, un ordineId sempre uguale — o sempre
+// nullo, com'era fino al 28 settembre — passerebbe la prova di sopra.
 
-console.log('\n=== 6. Le altre notazioni, non solo il PS ===');
-// 227 notazioni d'arma passano da qui: il contratto vale per tutte.
-[['Combi Rifle(+1B)', 'BURST'], ['Combi Rifle(SR-1)', 'SALVEZZA'],
- ['MediKit (PH=12)', 'SOSTITUZIONE']].forEach(function (c) {
-    const p = M.profiloArma(c[0]);
-    ok(p.notazioni.length > 0 && M.parseNotazione(p.notazioni[0]).tipo === c[1],
-       `"${c[0]}": notazione agganciata come ${c[1]}`);
-});
-const conBurst = M.variantiArma('Combi Rifle(+1B)')[0];
-ok(conBurst && conBurst.nomeRichiesto === 'Combi Rifle(+1B)',
-   'e variantiArma conserva il grezzo anche per il (+1B)');
+console.log('\n=== 5. La reazione torna indietro: PanOceania -> Hub ===');
+pano.g.localStorage.setItem(C.ARO_PANOCEANIA, J({ reazioni: [
+    { nome: 'Fusilier (Combi Rifle)', azione: 'BS_ATTACK', arma: 'Combi Rifle', bersaglio: 'Alguacil (Combi Rifle)' }] }));
+ok(hub.g.localStorage.getItem(C.ARO_PANOCEANIA) != null, 'la reazione arriva all Hub');
+hub.giro();
+ok(hub.g.latestAroData && hub.g.latestAroData.length === 1,
+   `l Hub la registra (${hub.g.latestAroData && hub.g.latestAroData.length} reazione)`);
+ok(server[C.HUB_SBLOCCO] != null, 'e sblocca l attiva, che stava aspettando');
+ok(nomadi.g.localStorage.getItem(C.HUB_SBLOCCO) != null, 'lo sblocco arriva all app attiva');
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

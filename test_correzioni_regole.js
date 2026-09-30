@@ -57,10 +57,26 @@ const res = M.modReset({ alias: 'R', wip: 5, skills: '', states: { isolated: tru
 ok(res.valore < 1 && res.impossibile === true, `Reset WIP 5, Isolato -9: ${res.valore}, impossibile`);
 ok(M.modSchivata({ alias: 'S', ph: 12, skills: '', states: {} }, { haLoFVersoAttaccante: true }).impossibile === false,
    'e un tiro normale NON è marcato impossibile');
-// il Burst invece non scende sotto 1: quello va bene così
-const src = require('fs').readFileSync('./motore_regole_n5.js', 'utf8');
-ok((src.match(/if \(valore < 1\) valore = 1;/g) || []).length === 1,
-   'resta un solo clamp a 1 in tutto il motore: quello del Burst');
+// Il Burst invece non scende sotto 1, e questo si prova TIRANDO.
+// La versione precedente cercava la riga "if (valore < 1) valore = 1;" nel
+// sorgente del motore e la voleva una volta: stava in una delle due
+// definizioni morte di burstIniziale, mai eseguite. Era verde da settimane e
+// verificava che il codice ASSOMIGLIASSE a quello che ci aspettavamo.
+// Il pavimento vero sta in risolviScontro, sui MOD negativi al Burst.
+const alg = { alias: 'A', bs: 11, ph: 10, arm: 1, skills: '', states: {} };
+const ber = { alias: 'B', bs: 12, ph: 10, arm: 1, skills: '', states: {} };
+// Il MOD negativo al Burst che si incontra davvero è la Zona di Saturazione,
+// che ne toglie uno: si dichiara col terreno sulla reazione o sull'attacco.
+const conBurst = (b, terreno) => M.risolviScontro(
+    { attaccante: alg, arma: M.profiloArma('Combi Rifle'), azione: M.AZIONI.BS_ATTACK,
+      rangeIndex: 1, burst: b, bersaglio: ber, terrain: terreno },
+    null).attivo.burst;
+ok(conBurst(3) === 3, `Burst 3 senza terreno resta 3 (${conBurst(3)})`);
+ok(conBurst(3, 'TER_03') === 2, `sotto Saturazione scende a 2 (${conBurst(3, 'TER_03')})`);
+ok(conBurst(1, 'TER_03') === 1, `ma un Burst 1 resta 1, non 0 (${conBurst(1, 'TER_03')})`);
+// Controprova: senza il pavimento il -1 porterebbe a zero, e un tiro con zero
+// dadi non è un tiro. Le due righe insieme dicono che il MOD arriva E che si
+// ferma a 1; una sola delle due non distinguerebbe i due casi.
 
 console.log('\n=== 4. Il Reset rispetta il tetto dei MOD ===');
 // Bersagliato -3 + IMM-B -3 + Isolato -9 = -15 -> -12.
@@ -565,6 +581,29 @@ console.log('\n=== b1, b2 passando da logica_aro.js ===');
     ok(window.aroCurrentConfig.annullaSoppressione === true, 'e la configurazione dell ARO lo ricorda');
     global.document = docPrima;
 }
+
+
+console.log('\n=== Attributo negativo: vietato come il trattino, ma con la sua ragione ===');
+// Il 29 settembre il motore ha smesso di tirare su un numero che il
+// regolamento non conosce. Le tre scritture, e i tre comportamenti:
+//   "-"   vietato — la fonte dice che l'attributo non c'è
+//   -1    vietato — ma NON perché "non può": perché la conversione ha
+//         fallito, ed è l'avviso A87 a dirlo
+//   0     è un numero: si tira, e i MOD si sommano (il Bâtard, bs 0)
+const conBS = (v) => M.modAttacco({ alias: 'X', bs: v, skills: '', states: {} },
+    { alias: 'B', arm: 1, skills: '', states: {} },
+    M.profiloArma('Combi Rifle'), M.AZIONI.BS_ATTACK, { rangeIndex: 1 });
+ok(conBS(12).impossibile === false, `bs 12: si tira (${conBS(12).valore})`);
+ok(conBS(0).impossibile === false && conBS(0).valore === 3,
+   `bs 0: si tira lo stesso, a 3 col +3 di gittata (${conBS(0).valore})`);
+ok(conBS('-').impossibile === true, 'bs "-": azione impossibile');
+ok(conBS(-1).impossibile === true, 'bs -1: impossibile come il trattino, non un tiro a 2');
+const a87 = (conBS(-1).avvisi || []).some(a => a.codice === 'A87');
+ok(a87, 'e con l avviso A87, che dice la causa invece del solo effetto (' +
+   JSON.stringify((conBS(-1).avvisi || []).map(a => a.codice)) + ')');
+// Controprova: lo 0, che è un valore vero, NON deve accendere l'avviso.
+ok(!(conBS(0).avvisi || []).some(a => a.codice === 'A87'),
+   'controprova: uno 0 legittimo non accende A87');
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

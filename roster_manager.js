@@ -1,4 +1,4 @@
-// @versione 2026-09-27.1 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-09-28.2 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -696,13 +696,54 @@ window.apriStatiDaSchieramento = (index) => {
     if (window.apriPaginaStati) window.apriPaginaStati(index);
 };
 
+// I TIRI DA FARE PRIMA DI COMINCIARE, tutti insieme
+//
+// Prima erano una finestra di conferma al momento dell'invio: arrivava a
+// schieramento finito, elencava le unita` in un blocco di testo e chiedeva
+// "hai gia` tirato?". Al tavolo si preme OK senza leggere, e i tiri si
+// fanno dopo o non si fanno.
+//
+// Ora stanno nella pagina di schieramento, sempre visibili mentre si
+// dispongono le truppe: una riga per unita`, con la sua skill e cosa deve
+// tirare. Chi legge vede tutto in una volta e tira in un giro solo.
+//
+// Le righe le decide il MOTORE (M.promemoriaSchieramento): quali unita`,
+// quale skill, quale testo. Qui non si stabilisce chi deve tirare.
+window.tiriDiSchieramento = () => {
+    const M = window.MotoreN5;
+    if (!M || typeof M.promemoriaSchieramento !== 'function') return [];
+    try { return M.promemoriaSchieramento(window.roster || []) || []; }
+    catch (e) { window.ultimaEccezione = e; return []; }
+};
+
+window.pannelloTiriSchieramento = () => {
+    const tiri = window.tiriDiSchieramento();
+    if (!tiri.length) return '';
+
+    // Il NUMERO lo dice gia` il motore, in coda al testo ("Tiro a 9 (PH 12 - 3)"):
+    // non si ricalcola e non si aggiunge il PH per conto proprio, che sarebbe
+    // un secondo numero per lo stesso fatto.
+    const righe = tiri.map(t => `
+            <div style="padding:6px 0; border-bottom:1px solid #332200;">
+                <b style="color:#ffcc66;">${t.unita}</b> <span style="color:#aa8866; font-size:13px;">${t.skill}</span>
+                <div style="color:#ccc; font-size:13px; margin-top:2px;">${t.testo}</div>
+            </div>`).join('');
+
+    return `<div class="section" style="border-color:#ffaa00; background:#1a1200; margin-bottom:12px;">
+            <h3 style="margin-top:0; color:#ffcc66;">\u{1F3B2} TIRI DA FARE (${tiri.length})</h3>
+            <div style="color:#aa8866; font-size:13px; margin-bottom:6px;">Si tirano al tavolo, prima di cominciare. L'app non conosce l'esito: segna tu il risultato.</div>
+            ${righe}
+        </div>`;
+};
+
 window.renderDeployUnits = () => {
     const container = document.getElementById('deploy-units-container');
     // Gli stati di schieramento si aprivano SOLO col tocco lungo: un gesto
     // che sul telefono si annulla appena la lista scorre di un pixel, e che
     // nessuno indovina. Ora ogni unita` ha il suo pulsante, e il tocco lungo
     // resta come scorciatoia per chi lo conosce.
-    container.innerHTML = `<p style="color:#aaa; font-size:14px; text-align:center;">Tocco rapido = Schieramento e piazzamento<br>Tocco prolungato = Stati e Fireteam<br>Tocco sull'icona = Cambia foto</p>`;
+    container.innerHTML = window.pannelloTiriSchieramento() +
+        `<p style="color:#aaa; font-size:14px; text-align:center;">Tocco rapido = Schieramento e piazzamento<br>Tocco prolungato = Stati e Fireteam<br>Tocco sull'icona = Cambia foto</p>`;
 
     let isNomads = window.isNomadsApp();
     let aliasColor = isNomads ? 'var(--nomad-orange)' : '#00ffff';
@@ -851,7 +892,12 @@ window.bottoneRemDriver = (index) => {
         return `<div style="color:#aa8866; font-size:13px; margin:6px 0;">RemDriver: nessun REM nella lista a cui assegnarlo.</div>`;
     }
 
-    const gia = rem.filter(r => r.remDriverDa === pilota.id);
+    // Chi guida chi lo dice il MOTORE, nel campo remDriver che scrive lui
+    // sul REM. Qui ne tenevamo una copia (remDriverDa): due campi per lo
+    // stesso fatto, e quello di troppo era il nostro — se un domani il
+    // motore togliesse il segnalino, la nostra copia sarebbe rimasta a dire
+    // che il REM e` ancora guidato.
+    const gia = rem.filter(r => r.remDriver && r.remDriver.utenteId === pilota.id);
     if (gia.length) {
         return `<div style="color:#88cc88; font-size:14px; margin:6px 0;">RemDriver assegnato a <b>${gia[0].alias || gia[0].nome}</b>.</div>`;
     }
@@ -873,11 +919,9 @@ window.assegnaRemDriverA = (indexPilota, idRem) => {
     const e = window.faseSchieramento.assegnaRemDriver(pilota.id, idRem) || {};
     if (!e.ok) return alert('\u26a0\ufe0f RemDriver non assegnato.\n\n' + (e.motivo || ''));
 
-    // Il REM nel roster e` stato aggiornato sul posto dal motore: qui si
-    // salva e si ridisegna, e si segna chi lo guida per non riproporre il
-    // pulsante. Il segnalino lo toglie il motore quando il pilota va Null.
-    const rem = (window.roster || []).find(u => u && u.id === idRem);
-    if (rem) rem.remDriverDa = pilota.id;
+    // Il REM nel roster lo ha gia` aggiornato il motore, segnalino compreso:
+    // qui si salva e si ridisegna, e basta. Il segnalino lo toglie lui
+    // quando il pilota va Null.
 
     if (window.salvaPartitaLocale) window.salvaPartitaLocale();
     if (e.nota) alert('\u2705 ' + e.nota);
@@ -1209,7 +1253,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-09-27.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-09-28.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-09-26.4 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-09-28.1 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -483,7 +483,7 @@
         // quello dove una copia vecchia (cache del telefono) e` piu` probabile.
         (function () {
             var g = (typeof window !== 'undefined') ? window : globalThis;
-            var v = { file: 'app.html', versione: '2026-09-26.4', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-09-28.1', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -1054,6 +1054,13 @@
 
                 // Un token sul tavolo si toglie quando esplode o viene
                 // distrutto: la riga ce l'ha, e la regola la dice il motore.
+                // Una mina disattivata da un Deactivator resta sul tavolo fino
+                // al prossimo Ordine, ma non fa piu` niente: se non si vede,
+                // chi arbitra continua a trattarla come viva.
+                if (u.disattivata) {
+                    container.innerHTML += `<div style="color:#8888aa; font-size:13px; margin:-6px 0 6px 4px;">\u{1F6AB} Disattivata: resta sul tavolo fino al prossimo Ordine.</div>`;
+                }
+
                 if (u.deployable) {
                     container.innerHTML += `
                         <button class="btn-status" style="margin:-6px 0 12px 0; border-color:#aa6644; color:#cc9955;"
@@ -1282,7 +1289,18 @@
                 return { rimosso: false, motivo: 'Core non caricato.' };
             }
             const r = window.rimuoviTokenPiazzato(id, evento || 'MANUALE') || {};
-            if (!r.rimosso) alert('\u26a0\ufe0f Non rimosso.\n\n' + (r.motivo || ''));
+
+            // Tre esiti, non due. "differito" NON e` un rifiuto: il Deactivator
+            // disattiva la mina e la lascia sul tavolo fino al prossimo Ordine,
+            // quindi si dice cosa e` successo senza il segno di avvertimento,
+            // che farebbe pensare a un errore.
+            if (r.rimosso) {
+                // niente da dire: la riga sparisce e si vede.
+            } else if (r.differito) {
+                alert('\u23f3 ' + (r.motivo || 'Rimozione rimandata al prossimo Ordine.'));
+            } else {
+                alert('\u26a0\ufe0f Non rimosso.\n\n' + (r.motivo || ''));
+            }
             if (window.aggiornaGraficaRoster) window.aggiornaGraficaRoster();
             if (window.renderDeployUnits) window.renderDeployUnits();
             return r;

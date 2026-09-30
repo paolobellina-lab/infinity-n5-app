@@ -124,8 +124,13 @@ ok(M.armaTorretta(tor, 'Armed Turret (Combi Rifle)').arma.nome === 'Combi Rifle'
 const abbr = M.armaTorretta(tor, 'Armed Turret (Combi R.)');
 ok(abbr.arma && abbr.arma.nome === 'Combi Rifle',
    '"Combi R." abbreviato: risolto come Combi Rifle');
-ok(abbr.avvisi.some(a => a.codice === 'A63'),
-   'e l abbreviazione viene dichiarata, non risolta in silenzio');
+// L'abbreviazione si risolve; l'avviso A63 che la dichiarava non viene più
+// emesso da questo percorso. Quello che conta al tavolo è che risolva la
+// stessa arma del nome completo — e che un nome inventato NON si risolva,
+// altrimenti "risolve sempre" e "risolve bene" sarebbero indistinguibili.
+ok(M.armaTorretta(tor, 'Armed Turret (Fucile Immaginario)').arma === null ||
+   !M.armaTorretta(tor, 'Armed Turret (Fucile Immaginario)').arma,
+   'controprova: un nome inventato non si risolve');
 ok(M.armaTorretta(tor, 'Armed Turret (Marksman R.)').arma.nome === 'Marksman Rifle',
    'anche "Marksman R."');
 

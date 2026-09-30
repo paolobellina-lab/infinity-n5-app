@@ -1,4 +1,4 @@
-// @versione 2026-09-27.1 | fase_schieramento.js | proprieta`: chat MOTORE
+// @versione 2026-09-28.2 | fase_schieramento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🚀 FASE DI SCHIERAMENTO
 // ------------------------------------------
@@ -36,7 +36,7 @@ window.faseSchieramento = {
         const M = window.MotoreN5; const r = window.roster || [];
         const pilota = r.find(u => u && u.id === idPilota), rem = r.find(u => u && u.id === idRem);
         if (!pilota || !rem) return { ok: false, motivo: 'Pilota o REM non trovati nel roster.' };
-        const e = M.applicaRemDriver(rem, pilota);
+        const e = M.applicaRemDriver(rem, pilota, r);   // col roster: un pilota, un segnalino
         if (e.ok) Object.assign(rem, e.rem);   // stesso oggetto: chi lo tiene lo vede
         return { ok: e.ok, motivo: e.motivo, nota: e.nota };
     },
@@ -55,12 +55,12 @@ window.faseSchieramento = {
             return alert("Errore: Roster vuoto!");
         }
 
-        // --- CONTROLLO POST-SCHIERAMENTO (Tiri automatici) ---
-        let messaggiAvviso = this.validaSchieramento(window.roster);
-        if (messaggiAvviso.length > 0) {
-            let conferma = confirm("⚠️ PROMEMORIA TIRI POST-SCHIERAMENTO:\n\n" + messaggiAvviso.join("\n") + "\n\nHai già effettuato questi tiri? Clicca OK per inviare i dati all'avversario, oppure Annulla per tornare indietro.");
-            if (!conferma) return; // Ferma l'invio, permettendo all'utente di tirare i dadi
-        }
+        // I TIRI DI SCHIERAMENTO non si chiedono piu` qui con una finestra
+        // "hai gia` fatto?" all'ultimo gesto prima dell'invio: stanno in un
+        // riquadro della pagina di schieramento, visibile MENTRE si dispongono
+        // le truppe (M.promemoriaSchieramento, disegnato dalla chat INTERFACCIA).
+        // Decisione di Paolo, 28 settembre. validaSchieramento resta: la usa
+        // il riquadro.
 
         // 🟢 RILEVAMENTO DINAMICO DELLA FAZIONE
         let fazioneAttuale = document.title.includes("NOMADS") ? 'NOMADI' : 'PANOCEANIA';

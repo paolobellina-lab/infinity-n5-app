@@ -1,4 +1,4 @@
-// @versione 2026-09-28.2 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-09-28.3 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -309,7 +309,18 @@
             ? date
             : Object.assign({ percorsoLibero: dentroZdC, dentroZdC: dentroZdC }, date);
 
-        const e = M.innescoDeployable(voce.arma, voce.nemico, risposte);
+        // Oltre alle risposte, il motore vuole il SEGNALINO e l'Ordine in
+        // corso: un Drop Bear non detona nell'Ordine in cui e` stato
+        // lanciato, e per saperlo deve confrontare l'Ordine di nascita del
+        // token con quello di adesso. Passando solo le risposte quel blocco
+        // non poteva scattare, e un Drop Bear appena lanciato sarebbe
+        // esploso subito.
+        const contesto = Object.assign({
+            token: voce.unita,
+            ordineId: (window.currentAttackData || {}).ordineId || null
+        }, risposte);
+
+        const e = M.innescoDeployable(voce.arma, voce.nemico, contesto);
 
         const div = document.getElementById('dep-' + id);
         if (!e.scatta) {
@@ -779,7 +790,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-09-28.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-09-28.3', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

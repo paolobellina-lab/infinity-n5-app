@@ -1,4 +1,4 @@
-// @versione 2026-09-28.3 | database_comune.js | proprieta`: chat DATABASE
+// @versione 2026-09-28.4 | database_comune.js | proprieta`: chat DATABASE
 // ==========================================
 // --- database_comune.js ---
 // Regole, armi, equipaggiamenti, strutture e terreni
@@ -249,11 +249,12 @@ window.RULES_WEAPONS = {
     "Flash Pulse": { traits: ["BS Weapon (WIP)","Non-Lethal","State: Stunned"], b: 1, dam: 7, ammo: "STUN", salvAttr: "BTS", salvTiri: 1, bande: [0, 3, 3, -3, -3, -3, -6, -6, -6, -6, -6, -6] },
     "Forward Observer": { traits: ["BS Weapon (WIP)","State: Targeted","Non-Lethal"], b: 2, dam: null, ammo: null, salvAttr: null, salvTiri: null, bande: [0, 0, 0, -3, -3, -3, -6, -6, -6, -6, -6, -6] },
     "Pitcher": { traits: ["Speculative Attack","Disposable (2)","Indiscriminate","Non-Lethal","Targetless"], b: 1, dam: null, ammo: null, salvAttr: null, salvTiri: null, bande: [0, 0, -3, -6, -6, -6] },
-    // DA VERIFICARE (chat REGOLE): il Tratto "Double Shot" non compare nel
-    // regolamento, che alla riga 6076-6080 da` al Disco Baller Speculative Attack,
-    // Disposable (2) e Targetless. Lasciato finche` non si trova la fonte.
-    // Nota: nel metadata ufficiale questa voce e` INCOMPLETA — zero Tratti e Burst
-    // assente — quindi non e` una fonte affidabile per toglierlo.
+    // Tratti e gittate confermati dalla chat REGOLE sul Weapon Chart della wiki
+    // (N5.3): Speculative Attack, Disposable (2), Double Shot, Targetless, con
+    // gittate 0 / +3 / -3 / -6. Il testo descrittivo del regolamento ne elenca solo
+    // tre e non nomina il Double Shot: e` il CHART la fonte per i Tratti delle armi,
+    // non la prosa. Nel metadata ufficiale questa voce e` incompleta — zero Tratti
+    // e Burst assente — quindi non vale come smentita.
     "Disco Baller": { traits: ["Speculative Attack","Disposable (2)","Double Shot","Targetless"], b: 1, dam: null, ammo: null, salvAttr: null, salvTiri: null, bande: [0, 3, -3, -6] },
     "D-Charges (Demolition Mode)": { risoluzione: "CONTATTO_STRUTTURA",
       bersagliAmmessi: ["STRUTTURA", "EDIFICIO", "NEMICO_IMMOBILIZZATO", "NEMICO_NULL"],
