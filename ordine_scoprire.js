@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | ordine_scoprire.js | proprieta`: chat MOTORE
+// @versione 2026-09-29.1 | ordine_scoprire.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔍 SCOPRIRE (N5) - ordine_scoprire.js
 // ------------------------------------------
@@ -193,7 +193,7 @@
                 <div class="range-bar">${seg}</div>
                 <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${lab}</div>
                 <button class="huge-btn" style="width:100%; margin-top:12px; min-height:55px; font-size:16px; ${stileCop}"
-                    onclick="window.toggleCoverScoprire()">${t.cover ? 'BERSAGLIO IN COPERTURA' : 'BERSAGLIO ALLO SCOPERTO'}</button>`;
+                    onclick="window.toggleCoverScoprire()">${t.cover ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverSi') : ''}BERSAGLIO IN COPERTURA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverNo') : ''}BERSAGLIO ALLO SCOPERTO`}</button>`;
         }
 
         document.getElementById('targets-allocation-container').innerHTML = `

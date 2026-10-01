@@ -1,4 +1,4 @@
-// @versione 2026-09-28.8 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-09-29.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -681,7 +681,7 @@ window.CATALOGO_N5.MOVIMENTO = {
                               // Due conseguenze che il regolamento elenca e che l'app deve ricordare.
                               seDaRequisitoFallito: [
                                   'Le munizioni delle armi o degli Equipaggiamenti Disposable sono comunque SPESE.',
-                                  'Se la truppa e` in forma di Marker, viene RIVELATA e sostituita col Modello.'
+                                  'Se la truppa e` in forma di Marker, viene RIVELATA e sostituita col Modello SOLO se l\'Abilita` dichiarata l\'avrebbe rivelata (riga 7455): un Movimento Cauto fallito, per esempio, la lascia Marker.'
                               ],
                               fonte: 'regolamento, p.80' },
         'RICARICARE':       { nome: 'Reload',            tipo: 'SHORT_SKILL', generaAro: true },
@@ -2358,7 +2358,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-09-28.8', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-09-29.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

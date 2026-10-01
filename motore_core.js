@@ -1,4 +1,4 @@
-// @versione 2026-09-28.4 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-09-29.2 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -414,6 +414,20 @@ window.pulisciTokenDisattivati = function (ordineNuovo) {
         });
     }
     return tolti;
+};
+
+// ALLARME DI UN ORDINE: costruito da M.allarmeOrdine (motore), spedito qui.
+// Per chi sta nella pagina e non in un modulo (l'Idle da requisito fallito).
+window.inviaAllarmeOrdine = function (actionId, opzioni) {
+    const M = window.MotoreN5; opzioni = opzioni || {};
+    if (!M) return { genera: false, motivo: 'motore non caricato' };
+    const e = M.allarmeOrdine(actionId, Object.assign({
+        unita: window.currentOrder && window.currentOrder.unit,
+        coordUnits: window.coordUnits, coordMode: window.coordMode,
+        azioneSeconda: window.currentOrder && window.currentOrder.action
+    }, opzioni));
+    if (e.payload && typeof window.inviaAllarmeAro === 'function') window.inviaAllarmeAro(e.payload);
+    return e.aro;
 };
 
 window.rimuoviTokenPiazzato = function (id, evento) {

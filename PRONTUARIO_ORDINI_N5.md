@@ -1,4 +1,4 @@
-<!-- @versione 2026-09-28.5 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-09-30.1 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
 
 # PRONTUARIO ORDINI N5 — richiamo rapido durante la partita
 
@@ -1361,7 +1361,15 @@ casella vale la scheda dell'ordine (§1).
 - La **Schivata** non subisce MOD di visibilità.
 - I MOD di visibilità **non si sommano** fra loro: si applica solo il più restrittivo.
 - Il Fuoco Speculativo non ne subisce nessuno (solo il suo −6).
-- Eclipse: Zona Zero che blocca anche gli MSV di ogni livello.
+- **Fumo** ed **Eclipse** sono Zone Zero create in partita da una Sagoma Circolare, ad altezza
+  infinita, che restano fino all'inizio della Fase Stati. Non servono bersagli: si lanciano su un
+  punto. Chi attacca con quella munizione ottiene un **Faccia a Faccia contro tutti** gli attacchi
+  nemici che richiedono tiro e LoF e la cui LoF attraversa la zona, e deve vincerli tutti.
+- **Eclipse**: Zona Zero che blocca gli MSV **di ogni livello**; il bersaglio con MSV resta a −6
+  perché il testo (righe 5617–5620) vieta la riduzione **al visore**.
+- **Sesto Senso**: annulla quel −6 in tutti e tre i casi — Zona Zero, Rumore Bianco, Eclipse —
+  perché i divieti nominano solo il visore. ⚠️ Per Rumore Bianco ed Eclipse è una lettura, non una riga.
+- Più zone, o zona più terreno: vale **solo il MOD più restrittivo**, mai la somma.
 
 ---
 

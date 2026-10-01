@@ -1,4 +1,4 @@
-// @versione 2026-09-29.1 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-09-30.1 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-09-29.1';
+    M.VERSIONE = '2026-09-30.1';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -359,7 +359,12 @@
                 // I programmi di Hacking non hanno bande: agiscono nell'Area di
                 // Hacking, dove la gittata non esiste. Vanno esentati come le
                 // Sagome e le armi da CC.
-                if (!arma.isTemplate && !arma.isCC && !arma.isDifesa && !arma.isHacking &&
+                // Nemmeno un PIAZZAMENTO tira: un equipaggiamento Deployable (il
+                // Deployable Repeater) non ha bande, e prima la busta veniva
+                // bloccata qui — il segnalino nasceva, l'Hub non lo sapeva.
+                const ePiazzare = (M.azioneCanonica ? M.azioneCanonica(azione) : azione) === M.AZIONI.PIAZZA_DEPLOYABLE ||
+                                  /^PIAZZA/i.test(String(azione || ''));
+                if (!ePiazzare && !arma.isTemplate && !arma.isCC && !arma.isDifesa && !arma.isHacking &&
                     (!Array.isArray(arma.bands) || arma.bands.length === 0)) {
                     errori.push(err('E09',
                         `L'arma "${arma.nome || arma.nomeRichiesto || '?'}" non ha bande di gittata e non è a Sagoma né da CC.`));
@@ -3595,7 +3600,17 @@
 
         // 🔴 Fuoco di Soppressione: il profilo va sostituito con la SF Mode.
         if (st.suppressive && idAro === 'BS_ATTACK') {
+            // Solo le armi col tratto Suppressive Fire hanno un modo SF. Le
+            // altre restano nel loro profilo — reagire con loro CANCELLA la
+            // Soppressione (terza causa, scheda 1.10) — e lo si dice. Prima
+            // ogni arma diventava "(SF Mode)", Pistol compresa. (29 settembre.)
+            const conSF = p => /SUPPRESSIVE FIRE/i.test(String(Array.isArray(p.traits) ? p.traits.join(',') : (p.traits || '')));
             const sostituiti = dentro.map(function (p) {
+                if (!conSF(p)) {
+                    const n = Object.assign({}, p);
+                    n.note = (p.note || []).concat([`${p.nome} non ha il tratto Suppressive Fire: reagire con questa arma CANCELLA la Soppressione.`]);
+                    return n;
+                }
                 const sf = M.profiloSF(p);
                 (sf.avvisi || []).forEach(a => { if (!avvisi.some(x => x.codice === a.codice)) avvisi.push(a); });
                 return sf;
@@ -4812,6 +4827,33 @@
                 } else if (e.note) note.push(e.note);
             }
 
+            // Zona di Fumo o di Eclipse fra i due (campo `zona`, non `terrain`)
+            if (ctx.zona) {
+                const zz = M.modZona(ctx.zona, tA, !!ctx.bersaglioDellAttacco);
+                if (azione === M.AZIONI.SPECULATIVO) {
+                    // Il Fuoco Speculativo ignora i MOD negativi delle Zone di
+                    // Visibilita`, e non ha bisogno della LoF.
+                    if (zz.mod || zz.lofBloccata) note.push('Fuoco Speculativo: la zona di ' + (String(ctx.zona).toUpperCase() === 'FUMO' ? 'Fumo' : 'Eclipse') + ' non si applica.');
+                } else {
+                    if (zz.lofBloccata) {
+                        return { valore: null, lofBloccata: true, base: base, mod: mod, attributo: nomeAttr,
+                                 voci, burstMod, note: note.concat(zz.note).concat(['L\'attacco non si pu\u00f2 dichiarare.']), avvisi };
+                    }
+                    // Terreno E zona sulla stessa LoF: "apply only one MOD, that
+                    // must be always the most restrictive one". Arrivano da due
+                    // campi diversi: il troncamento si fa qui, dopo averli messi
+                    // insieme. (Chat REGOLE, 29 settembre.)
+                    const iT = voci.findIndex(v => v.fonte === 'terreno');
+                    const modT = iT >= 0 ? voci[iT].valore : 0;
+                    if (zz.mod < modT) {
+                        if (iT >= 0) { mod -= voci[iT].valore; voci.splice(iT, 1); note.push('Terreno e zona sulla stessa LoF: si applica solo il pi\u00f9 restrittivo — la zona.'); }
+                        aggiungi('zona', zz.mod, zz.note[0]);
+                    } else if (zz.mod) {
+                        note.push('Terreno e zona sulla stessa LoF: si applica solo il pi\u00f9 restrittivo — il terreno (' + modT + ').');
+                    } else zz.note.forEach(n => note.push(n));
+                }
+            }
+
             // Sparare dentro una mischia
             if (ctx.inMischia || (ctx.reazione && String(ctx.reazione.azione).toUpperCase() === 'CC_ATTACK')) {
                 aggiungi('mischia', -6, 'Tiro dentro una mischia: -6');
@@ -4947,10 +4989,35 @@
         return mappa[c] || String(x || '').toUpperCase();
     };
 
+    // L'ARMA CON CUI UN REATTIVO REAGISCE DAVVERO (Fuoco di Soppressione).
+    // Riga 14649: "Suppressive Fire allows the affected Trooper to react in
+    // ARO with the full B3 value of the SF Mode". Due strade perdevano il B3:
+    //   - la reazione viaggia per NOME, "Heavy Machine Gun (SF Mode)", e
+    //     profiloArma rileggeva l'arma normale (B4 -> poi B1 per l'ARO);
+    //   - un reattivo in stato Soppressione con un'arma SF passata nuda.
+    // Lo stato e` la verita`: in Soppressione, un'arma col tratto SF reagisce
+    // in modo SF. (Collaudo di Paolo, BS-12 — 29 settembre.)
+    M.armaReattivaEffettiva = function (reattivo, arma) {
+        if (!arma) return arma;
+        let a = (typeof arma === 'string') ? M.profiloArma(arma) : arma;
+        const haSF = x => /SUPPRESSIVE FIRE/i.test(String(Array.isArray(x && x.traits) ? x.traits.join(',') : ((x && x.traits) || '')));
+        // Il modo SF esiste SOLO per le armi col tratto Suppressive Fire: un
+        // "Pistol (SF Mode)" non e` un'arma del gioco. Il suffisso si toglie
+        // sempre; il profilo SF si applica solo se il tratto c'e`.
+        if (a && !a.sfMode && Array.isArray(a.notazioni) && a.notazioni.some(x => /^SF MODE$/i.test(String(x)))) {
+            const nuda = Object.assign({}, a, { notazioni: a.notazioni.filter(x => !/^SF MODE$/i.test(String(x))) });
+            a = haSF(nuda) ? M.profiloSF(nuda) : nuda;
+        }
+        const inSopp = !!(reattivo && reattivo.states && reattivo.states.suppressive);
+        if (a && !a.sfMode && inSopp && haSF(a)) a = M.profiloSF(a);
+        return a;
+    };
+
     M.modReazione = function (difensore, reazione, ctx) {
         ctx = ctx || {};
         reazione = reazione || {};
         if (reazione.azione) reazione = Object.assign({}, reazione, { azione: M.idAro(reazione.azione) });
+        if (reazione.arma) reazione = Object.assign({}, reazione, { arma: M.armaReattivaEffettiva(difensore, reazione.arma) });
         const attacco = ctx.attacco || {};
         const attaccante = attacco.attaccante || {};
         const t = M.trattiTiro(difensore);
@@ -5032,7 +5099,7 @@
             const presuntoBersaglio = eEtichettaBS && !bers;
             esito = M.modAttacco(difensore, attaccante, reazione.arma, M.AZIONI.BS_ATTACK, {
                 rangeIndex: ctx.rangeIndex, rangeMod: ctx.rangeMod,
-                cover: ctx.cover, terrain: ctx.terrain,
+                cover: ctx.cover, terrain: ctx.terrain, zona: ctx.zona,
                 // Chi risponde con un BS Attack all'attaccante che lo ha preso
                 // di mira e` il BERSAGLIO: Zona Zero a -6 con LoF (wiki
                 // "Visibility Conditions"), Rumore Bianco -6 se ha MSV o
@@ -5058,7 +5125,17 @@
                 // the -6 MOD from the resulting Poor Visibility Zone". F17
                 // aggiunge solo il caso con MSV L1. Prima si richiedeva l'MSV L1.
                 if (!(tF.sestoSenso && bersaglioDiBS)) return;
-                const i6 = (esito.voci || []).findIndex(function (v) { return v.fonte === 'terreno' && v.valore === -6; });
+                // Le zone di FUMO ed ECLIPSE sono Zone di Visibilita` Zero: il
+                // Sesto Senso ignora il loro -6 come quello del terreno.
+                //   Fumo     la F17 (lettura di una FAQ, vedi M.modZona)
+                //   Eclipse  LETTURA della chat REGOLE, 30 settembre — stessa
+                //            formula del Rumore Bianco: il divieto delle righe
+                //            5620-5621 nomina solo il VISORE ("their
+                //            Multispectral Visor cannot reduce..."), e il Sesto
+                //            Senso ha una clausola propria. Nessuna fonte dice
+                //            espressamente che valga dentro un'Eclipse.
+                const zonaZero = /^(FUMO|ECLIPSE)$/.test(String(ctx.zona || '').toUpperCase());
+                const i6 = (esito.voci || []).findIndex(function (v) { return (v.fonte === 'terreno' || (zonaZero && v.fonte === 'zona')) && v.valore === -6; });
                 if (i6 < 0) return;
                 // Anche nel Rumore Bianco il -6 cade: lettura della chat REGOLE,
                 // wiki Visibility Conditions + FAQ F17 — non una riga del testo.
@@ -5262,6 +5339,7 @@
             cover: attacco.cover,
             copertura: attacco.copertura,
             terrain: attacco.terrain,
+            zona: attacco.zona,
             livelloFireteam: ctx.livelloFireteamAtt, membriFireteam: ctx.membriFireteamAtt,
             distanzaPollici: ctx.distanzaPollici,
             inMischia: ctx.inMischia,
@@ -5287,6 +5365,7 @@
                 rangeMod: reazione.rangeMod,
                 cover: reazione.cover,
                 terrain: reazione.terrain,
+                zona: reazione.zona,
                 hasLoF: reazione.hasLoF,
                 livelloFireteam: ctx.livelloFireteamDif, membriFireteam: ctx.membriFireteamDif,
                 distanzaPollici: ctx.distanzaPollici,
@@ -5714,7 +5793,7 @@
                     // Viaggia col cover: senza questa riga l'interfaccia lo scriveva
                     // e nessuno lo leggeva — il caso "un fatto, un campo" al rovescio.
                     copertura: b.copertura,
-                    rangeIndex: b.rangeIndex, rangeMod: b.rangeMod, terrain: b.terrain
+                    rangeIndex: b.rangeIndex, rangeMod: b.rangeMod, terrain: b.terrain, zona: b.zona
                 }, r ? Object.assign({ difensore: dif }, r) : null, ctx));
                 if (iB === iSd) {
                     const ultimoSd = scontri[scontri.length - 1];
@@ -5762,10 +5841,11 @@
             const bersaglioR = r.bersaglio ? (ctx.trovaUnita ? ctx.trovaUnita(r.bersaglio) : { alias: r.bersaglio }) : attaccante;
             if (attivaSchiva && (idR === 'BS_ATTACK' || idR === 'CC_ATTACK') &&
                 M.nomeUnita(bersaglioR) === M.nomeUnita(attaccante)) {
+                const armaRf = M.armaReattivaEffettiva(reattivo, r.arma);
                 const f2f = M.risolviScontro({
-                    attaccante: reattivo, azione: M.azioneCanonica(r.azione) || r.azione, arma: r.arma,
-                    bersaglio: attaccante, burst: r.burst || 1, ammo: r.ammo,
-                    rangeIndex: r.rangeIndex, rangeMod: r.rangeMod, cover: r.cover, terrain: r.terrain
+                    attaccante: reattivo, azione: M.azioneCanonica(r.azione) || r.azione, arma: armaRf,
+                    bersaglio: attaccante, burst: armaRf ? M.burstReattivo(reattivo, armaRf, ctx).valore : (r.burst || 1), ammo: r.ammo,
+                    rangeIndex: r.rangeIndex, rangeMod: r.rangeMod, cover: r.cover, terrain: r.terrain, zona: r.zona
                 }, { difensore: attaccante, azione: 'DODGE', bersaglio: reattivo }, ctx);
                 f2f.latiInvertiti = true;
                 f2f.schivataAttiva = true;
@@ -5802,15 +5882,19 @@
             // l'attivo non gli sta tirando contro, quindi non c'e` niente
             // da opporre. Se invece punta all'attaccante, e` comunque il
             // suo tiro contro un bersaglio che non reagisce.
+            // Il reattivo che spara senza essere bersaglio: il suo Burst e` quello
+            // REATTIVO (B1, B3 in Soppressione, pieno con Neurocinetics), non
+            // quello dichiarato — prima usciva B1 anche in Soppressione.
+            const armaRo = M.armaReattivaEffettiva(reattivo, r.arma);
             scontri.push(M.risolviScontro({
                 attaccante: reattivo,
                 azione: M.azioneCanonica(r.azione) || r.azione,
-                arma: r.arma,
+                arma: armaRo,
                 bersaglio: r.bersaglio ? (ctx.trovaUnita ? ctx.trovaUnita(r.bersaglio) : { alias: r.bersaglio })
                                        : attaccante,
-                burst: r.burst || 1, ammo: r.ammo,
+                burst: armaRo ? M.burstReattivo(reattivo, armaRo, ctx).valore : (r.burst || 1), ammo: r.ammo,
                 rangeIndex: r.rangeIndex, rangeMod: r.rangeMod,
-                cover: (r.coverAttaccante != null) ? r.coverAttaccante : r.cover, terrain: r.terrain
+                cover: (r.coverAttaccante != null) ? r.coverAttaccante : r.cover, terrain: r.terrain, zona: r.zona
             }, null, Object.assign({}, ctx, { reattivoNonBersagliato: true })));
 
             const ultimo = scontri[scontri.length - 1];
@@ -7828,20 +7912,34 @@
                 motivi.push(`azione "${azione}" non riconosciuta: impossibile verificare l'arma`);
             }
             const spec = (canonica && M.SPEC[canonica]) || {};
-            const p = (typeof arma === 'string') ? M.profiloArma(arma) : arma;
-            const vuoleCC = (spec.attributo === 'CC');
+            // 🔴 HACKING: l'"arma" della prima meta` e` il PROGRAMMA, e i
+            // programmi stanno nel catalogo dell'hacking, non nel database
+            // armi. Cercarlo li` rimandava la seconda meta` alla scelta del
+            // programma, in anello: l'Ordine di hacking non si chiudeva mai.
+            // Si risolve come fa il modulo (armaDaProgrammaDi), e i controlli
+            // sulla mischia non valgono. (Collaudo di Paolo, 29 settembre.)
+            const eHacking = canonica === M.AZIONI.HACKING;
+            const p = eHacking
+                ? ((typeof arma === 'string')
+                    ? (ctx.unita ? M.armaDaProgrammaDi(ctx.unita, arma) : M.armaDaProgramma(arma))
+                    : arma)
+                : ((typeof arma === 'string') ? M.profiloArma(arma) : arma);
+            const vuoleCC = !eHacking && (spec.attributo === 'CC');
+            if (eHacking && p && p.nonTrovata) {
+                motivi.push(`il programma della prima met\u00e0 ("${arma}") non \u00e8 fra quelli di questa unit\u00e0`);
+            }
 
             // Arma non trovata e arma della famiglia sbagliata sono due
             // problemi diversi, e dirli allo stesso modo manda a cercare
             // nel posto sbagliato.
-            if (p && p.nonTrovata) {
+            if (!eHacking && p && p.nonTrovata) {
                 motivi.push(`l'arma della prima metà ("${p.nomeRichiesto || arma}") non è nel database armi`);
             } else if (p && p.soloModalita) {
                 motivi.push(`l'arma della prima metà (${p.nome}) richiede la scelta di una modalità`);
             } else if (vuoleCC && p && !p.isCC) {
                 motivi.push(`l'arma della prima metà (${p.nome}) non è da Corpo a Corpo`);
             }
-            if (!vuoleCC && p && p.isCC && canonica !== M.AZIONI.CC_ATTACK) {
+            if (!eHacking && !vuoleCC && p && p.isCC && canonica !== M.AZIONI.CC_ATTACK) {
                 motivi.push(`l'arma della prima metà (${p.nome}) è da Corpo a Corpo`);
             }
         }
@@ -7870,6 +7968,7 @@
     M.riprendiOrdineDaFinestra = function (azione, isSecondHalf) {
         return M.riprendiOrdine(azione, {
             isSecondHalf: isSecondHalf,
+            unita: (G.currentOrder && G.currentOrder.unit) || null,   // serve per i programmi di hacking
             arma: (G.currentOrder && G.currentOrder.weapon) || null,
             bersagli: G.combatTargets || [],
             azionePrimaMeta: (G.currentOrder && G.currentOrder.action1) || null
@@ -9394,7 +9493,10 @@
     // mostrarlo; applicaIdle() produce l'oggetto nuovo.
     M.applicaIdle = function (unita, arma, ctx) {
         ctx = ctx || {};
-        const c = M.conseguenzeIdle(unita, arma);
+        // L'arma per NOME si risolve anche qui: la chiave degli usi viene dal
+        // profilo, e con un nome finiva sotto "undefined".
+        if (typeof arma === 'string') { const pa = M.profiloArma(arma); arma = (pa && !pa.nonTrovata) ? pa : null; }
+        const c = M.conseguenzeIdle(unita, arma, ctx.azione);
         const mutazioni = [];
         let u = Object.assign({}, unita);
 
@@ -9432,7 +9534,8 @@
     // — un "annulla" farebbe credere che si torni indietro.
     M.convertiInIdle = function (payloadOriginale, unita, arma, motivo) {
         const idle = M.regoleIdle({ daRequisitoFallito: true });
-        const app = M.applicaIdle(unita, arma, {});
+        // L'Abilita` dichiarata passa avanti: decide se il Marker si rivela.
+        const app = M.applicaIdle(unita, arma, { azione: payloadOriginale && payloadOriginale.azione });
         return {
             azione: 'IDLE',
             attaccante: app.unitaAggiornata,
@@ -9455,18 +9558,41 @@
     };
 
     // Cosa cambia sull'unita` quando l'Idle nasce da un requisito fallito.
-    M.conseguenzeIdle = function (unita, arma) {
+    // azione: l'Abilita` DICHIARATA che si e` trasformata in Idle. Serve per
+    // la rivelazione: riga 7455, un Marker si rivela "quando la skill
+    // dichiarata l'avrebbe rivelato" — un Movimento Cauto fallito lascia il
+    // Camuffato com'e`. Prima si rivelava sempre. (Chat REGOLE, 29 sett.)
+    M.conseguenzeIdle = function (unita, arma, azione) {
         const e = { usiSpesi: null, rivelata: false, note: [] };
         const st = M.statoBersaglio(unita);
 
+        // L'arma arriva spesso per NOME (la pagina passa currentOrder.weapon):
+        // con un nome usiResidui non trovava niente, e l'uso Disposable NON
+        // si spendeva, in silenzio. Si risolve qui.
+        if (typeof arma === 'string') { const pa = M.profiloArma(arma); arma = (pa && !pa.nonTrovata) ? pa : null; }
         const usi = arma ? M.usiResidui(unita, arma) : null;
         if (usi) {
             e.usiSpesi = { arma: arma.nome, prima: usi.residui, dopo: Math.max(0, usi.residui - 1) };
             e.note.push(`${arma.nome}: un uso Disposable è speso comunque.`);
         }
         if (st.camo || st.imp) {
-            e.rivelata = true;
-            e.note.push('In forma di Marker: viene rivelata e sostituita col Modello.');
+            if (azione) {
+                const r = M.statoDopoAbilita(unita, azione, {});
+                const rivelerebbe = r && r.dopo && !r.dopo.daVerificare && String(r.dopo.deployState).toUpperCase() === 'NORMAL';
+                if (r && r.dopo && r.dopo.daVerificare) {
+                    e.note.push(`In forma di Marker: se "${azione}" l'avrebbe rivelata \u00e8 DA VERIFICARE — resta Marker, decidi al tavolo.`);
+                } else if (rivelerebbe) {
+                    e.rivelata = true;
+                    e.note.push(`In forma di Marker: "${azione}" l'avrebbe rivelata, quindi viene rivelata e sostituita col Modello (riga 7455).`);
+                } else {
+                    e.note.push(`In forma di Marker: "${azione}" non l'avrebbe rivelata, quindi resta Marker (riga 7455).`);
+                }
+            } else {
+                // Senza l'Abilita` dichiarata non si puo` sapere: resta il
+                // comportamento di prima, e lo si dice.
+                e.rivelata = true;
+                e.note.push('In forma di Marker: viene rivelata e sostituita col Modello (Abilit\u00e0 dichiarata non nota).');
+            }
         }
         return e;
     };
@@ -9714,7 +9840,13 @@
         const eCortaBaseSenzaTiro = !!(senza && senza.tipo === 'BASIC_SHORT') && !eLookOut;
         const spec = M.SPEC ? M.SPEC[M.azioneCanonica(az) || az] : null;
         const conTiro = !!(spec && spec.attributo) || /LOOK OUT/.test(az);
-        const eLunga = !!(senza && senza.tipo === 'LONG') || !!(spec && spec.tipo === 'LONG');
+        // Il catalogo scrive le Abilita` Lunghe 'LONG_SKILL'; qui si cercava
+        // 'LONG'. Due nomi per lo stesso fatto: Arrampicarsi, Salto e
+        // Trincerarsi non rivelavano mai un Camuffato (riga 13627: "dichiara
+        // una Long Skill diversa dal Movimento Cauto"). (29 settembre, trovato
+        // dal banco sull'Idle da requisito fallito.)
+        const eLong = t => /^LONG/.test(String(t || ''));
+        const eLunga = !!(senza && eLong(senza.tipo)) || !!(spec && eLong(spec.tipo));
 
         const skillMarker = /CAMOUFLAGE/.test(sk) ? 'CAMO' : (/IMPERSONATION/.test(sk) ? 'IMP' : null);
         const markerPrima = (deploy === 'CAMO' || st.camo) ? 'CAMO'
@@ -10275,6 +10407,89 @@
         });
         return { voci: trovate, conflitto: trovate.length > 1,
                  nota: trovate.length > 1 ? `NFB: ${trovate.join(', ')} sono incompatibili fra loro (righe 6677-6679): se ne usa una sola.` : null };
+    };
+
+    // ALLARME DI UN ORDINE — il COSTRUTTORE, uno solo, puro: decide se l'ARO
+    // va generato (M.generaAro) e costruisce la busta. Lo SPEDISCE chi lo
+    // chiama, con inviaAllarmeAro. Prima c'era solo nel modulo di movimento;
+    // Piazzare Equipaggiamento e l'Idle da requisito fallito non mandavano
+    // niente. Sta nel motore perche` ogni modulo dipende gia` dal motore, e
+    // da nient'altro. (Collaudo di Paolo, A-13 — 29 settembre.)
+    //   ctx: { unita, coordUnits, coordMode, azioneSeconda, fuoriLoFeZdC, azioneMostrata }
+    //   -> { aro, payload }   payload null se l'ARO non va generato
+    M.allarmeOrdine = function (actionId, ctx) {
+        ctx = ctx || {};
+        const aro = M.generaAro(actionId, { fuoriLoFeZdC: !!ctx.fuoriLoFeZdC });
+        if (!aro.genera) return { aro: aro, payload: null };
+        const unita = ctx.unita;
+        return { aro: aro, payload: {
+            isCoordinated: !!ctx.coordMode,
+            attaccante: M.nomeUnita(unita),
+            attaccanti: (ctx.coordUnits || [unita]).map(u => M.nomeUnita(u)),
+            // L'azione DICHIARATA: se l'ordine e` Movimento + Attacco,
+            // l'avversario deve vedere l'attacco.
+            azione: ctx.azioneMostrata || M.azioneDaRisolvere(actionId, ctx.azioneSeconda) || actionId,
+            azionePrimaMeta: actionId,
+            bersagli: [],
+            timestamp: Date.now()
+        } };
+    };
+
+    // Ha questo programma? Una domanda sola, per chi non deve leggere da se`
+    // l'equipaggiamento (il Cybermask: Hacking Device Plus e Killer Hacking
+    // Device sì, Hacking Device no — lo sa programmiDisponibili).
+    M.haProgramma = function (unita, nome) {
+        const p = M.programmiDisponibili(unita);
+        const l = Array.isArray(p) ? p : ((p && p.programmi) || []);
+        const n = String(nome || '').toUpperCase();
+        return l.some(x => String((x && x.nome) || x).toUpperCase() === n);
+    };
+
+    // ------------------------------------------------------------------
+    // ZONE DI FUMO ED ECLIPSE (chat REGOLE, 29 settembre)
+    // Una Zona di Visibilita` Zero creata in partita da una Sagoma: sta FRA
+    // chi tira e chi e` bersaglio — nel campo `zona` del bersaglio e della
+    // reazione, separato da `terrain`, che e` il tipo di campo della mappa.
+    // Vale nei due versi: la LoF si traccia in entrambi i sensi.
+    //   FUMO (righe ~5780-5800)
+    //     chi tira ATTRAVERSO la zona: niente LoF; MSV L1 -6; MSV L2/L3 0
+    //     il BERSAGLIO che risponde: la tratta come Pessima Visibilita` —
+    //     -6; MSV L1 -3; MSV L2/L3 0
+    //   ECLIPSE (righe 5609-5620): come il Fumo, ma ferma OGNI livello di MSV
+    //     chi tira: niente LoF, qualunque visore
+    //     il bersaglio: Pessima Visibilita` -6, e il visore NON la riduce
+    // Il campo dice la zona piu` restrittiva che la LoF attraversa, ovunque
+    // sia: l'Eclipse vale piu` del Fumo.
+    // ------------------------------------------------------------------
+    M.modZona = function (zona, tratti, comeBersaglio) {
+        const z = String(zona || '').toUpperCase();
+        if (z !== 'FUMO' && z !== 'ECLIPSE') return { mod: 0, lofBloccata: false, note: [] };
+        const t = tratti || {};
+        const msv2 = !!(t.msv2 || t.msv3), msv1 = !!t.msv1 && !msv2;
+        const nome = (z === 'FUMO') ? 'Fumo' : 'Eclipse';
+        if (!comeBersaglio) {
+            if (z === 'ECLIPSE') return { mod: 0, lofBloccata: true, note: [`Zona di Eclipse: niente LoF, e nessun livello di Multispectral Visor la attraversa (righe 5609-5620).`] };
+            if (msv2) return { mod: 0, lofBloccata: false, note: [`Zona di Fumo: il Multispectral Visor L2/L3 la attraversa senza MOD.`] };
+            if (msv1) return { mod: -6, lofBloccata: false, note: [`Zona di Fumo: Multispectral Visor L1, -6.`] };
+            return { mod: 0, lofBloccata: true, note: [`Zona di Fumo: niente LoF senza un Multispectral Visor.`] };
+        }
+        // ECLIPSE, bersaglio: -6 con QUALUNQUE visore. Motivo: REGOLA SCRITTA,
+        // righe 5617-5620 — "their Multispectral Visor cannot reduce the MODs
+        // of the resulting Poor Visibility Zone". Regge finche` regge il testo.
+        if (z === 'ECLIPSE') return { mod: -6, lofBloccata: false, note: [`Bersaglio attraverso una zona di Eclipse: -6, e il visore NON lo riduce (righe 5617-5620).`] };
+        if (msv2) return { mod: 0, lofBloccata: false, note: [`Bersaglio attraverso una zona di Fumo: annullata dal Multispectral Visor L2/L3.`] };
+        // FUMO, bersaglio con MSV L1: resta -6. Motivo: LETTURA DI UNA FAQ, non
+        // una riga — stesso numero dell'Eclipse, poggia su altro, e cadrebbe
+        // se la FAQ venisse ritirata o riscritta. Copiato da database_comune.js
+        // (applicaModTerreno, righe 514-519), che lo dice per la Zona Zero:
+        //   Bersaglio con MSV L1: resta -6.
+        //   Fonte: FAQ F17 (wiki "Multispectral Visor", FAQ 0.0.0), che concede a
+        //   MSV L1 PIU` Sixth Sense l'annullamento di questo -6: quindi l'MSV L1 da
+        //   solo lo subisce. Il caso con Sixth Sense lo gestisce il motore.
+        // La lettura "naturale" — Pessima Visibilita`, -3 con MSV L1 — e` quella
+        // che avevo scritto io il 29 settembre: sbagliata. (Chat REGOLE.)
+        if (msv1) return { mod: -6, lofBloccata: false, note: [`Bersaglio attraverso una zona di Fumo: -6 anche con Multispectral Visor L1 (FAQ F17).`] };
+        return { mod: -6, lofBloccata: false, note: [`Bersaglio attraverso una zona di ${nome}: Pessima Visibilit\u00e0 -6.`] };
     };
 
     // La scelta fazione -> nome, anch'essa una volta sola.

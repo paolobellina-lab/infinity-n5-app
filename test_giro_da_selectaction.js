@@ -1,24 +1,7 @@
-// @versione 2026-09-29.1 | test_giro_da_selectaction.js | proprieta`: chat TEST
-// ================================================================
-// Il giro completo che parte da SELECTACTION: l'identificativo dell'Ordine
-// non è scritto a mano, lo crea il router quando il giocatore sceglie.
-// Banco della chat INTERFACCIA, 29 settembre; qui è passato al formato
-// comune — asserzioni invece di stampe, intestazione e riepilogo — perché
-// nella forma originale i due banchi di controllo lo segnalavano come muto,
-// ed era giusto: un file che stampa e non asserisce non può diventare rosso.
-//
-// PERCHÉ QUESTO TRATTO CONTA: i ritardatari dell'ARO sono legati all'Ordine,
-// e tornano a dichiarare solo se la seconda metà porta lo stesso
-// identificativo. Con l'identificativo scritto a mano le due metà lo
-// condividono per costruzione, e quel caso non si vede mai — è il difetto
-// che era stato temuto e che poi c'era davvero: il campo che si leggeva non
-// lo scriveva nessuno.
-// Il compagno di questo banco è test_giro_ritorno.js, che copre il RITORNO:
-// insieme fanno il giro intero, e nessuno dei due da solo lo copre.
-// ================================================================
-let passati = 0, falliti = 0;
-const ok = (c, m) => { if (c) { passati++; console.log('  ✅ ' + m); } else { falliti++; console.log('  ❌ ' + m); } };
-
+// @versione 2026-09-29.2 | test_giro_da_selectaction.js | proprieta`: chat TEST
+// ============================================================================
+//  test_giro_da_selectaction.js
+//  Dalla chat INTERFACCIA, 29 settembre 2026.
 //
 //  COSA AGGIUNGE A test_giro_ritorno
 //  Quello parte da inviaAllarmeAro con l'identificativo dell'Ordine messo a
@@ -42,15 +25,40 @@ const ok = (c, m) => { if (c) { passati++; console.log('  ✅ ' + m); } else { f
 //  silenzio. Con l'identificativo scritto a mano nel banco, quel caso non
 //  si vede.
 //
+//  DI CHI E` IL CODICE PROVATO
+//  selectAction e la creazione dell'identificativo stanno in motore_core.js,
+//  che e` della chat MOTORE: questo banco prova il loro router attraverso le
+//  schermate. Se cambia il router, e` il banco da far girare.
+//
 //  USO:  node test_giro_da_selectaction.js
+//  ESITO: "N passati, M falliti"; uscita 1 se qualcosa fallisce.
 // ============================================================================
+
+// Le verifiche. Una dimostrazione che stampa e basta non puo` diventare
+// rossa: se il router smettesse di creare l'identificativo, stamperebbe
+// "undefined" e uscirebbe verde. (Segnalato dalla chat MOTORE.)
+// La cartella si passa con CARTELLA=, come in tutti gli altri banchi: con un
+// percorso fisso si prova solo quello che è GIÀ nel progetto, e non i file
+// candidati — cioè proprio il momento in cui un banco serve di più. (Chiesto
+// da MOTORE il 29 settembre: senza, non poteva provare il router prima di
+// consegnarlo, e il suo verso rosso ha finito per misurare il router sano.)
+const DIR = (process.env.CARTELLA || '/mnt/project/').replace(/\/?$/, '/');
+// Un file che non si carica NON si salta in silenzio: è la forma del catalogo
+// sparito del 28 settembre, dove a nominarlo fu test_caricamento_pagine. Qui
+// si contano e si dicono, e la prova cade.
+const nonCaricati = [], assenti = [];
+let passati = 0, falliti = 0;
+function ok(condizione, descrizione, visto) {
+  if (condizione) { passati++; console.log('  \u2713 ' + descrizione); }
+  else { falliti++; console.log('  \u2717 ' + descrizione + (visto !== undefined ? '  [visto: ' + JSON.stringify(visto) + ']' : '')); }
+}
 
 // Il giro completo partendo da dove parte DAVVERO: selectAction nell'app
 // attiva. Tre contesti separati, un server finto che recapita.
 const fs=require('fs'), vm=require('vm');
 const server={};                       // il "Firebase": una copia sola condivisa
 function apri(titolo, fazione){
-  const h=fs.readFileSync('/mnt/project/app.html','utf8');
+  const h=fs.readFileSync(DIR+'app.html','utf8');
   const g={}; g.window=g; g.globalThis=g; g.console={log:()=>{},warn:()=>{},error:()=>{}};
   const el={}; const finto=(id)=>{if(!el[id])el[id]={id,innerHTML:'',style:{},appendChild:()=>{},addEventListener:()=>{},value:'',classList:{add:()=>{},remove:()=>{}},setAttribute:()=>{},getAttribute:()=>null,options:[],cloneNode(){return finto(id+'_c');},parentNode:{replaceChild:()=>{}},querySelector:()=>null};return el[id];};
   const locale={};                     // localStorage privato di questo dispositivo
@@ -70,9 +78,9 @@ function apri(titolo, fazione){
   g.cloudPronto=Promise.resolve({confermato:true});
   [...h.matchAll(/<script(?:\s+src="([^"]+)")?\s*>([\s\S]*?)<\/script>/g)].forEach(m=>{
     const s=m[1];
-    if(s){ if(/^https?:/.test(s))return; const f='/mnt/project/'+s.split('?')[0]; if(!fs.existsSync(f))return;
-      try{vm.runInContext(fs.readFileSync(f,'utf8'),ctx,{filename:s});}catch(e){} }
-    else { try{vm.runInContext(m[2],ctx);}catch(e){} }
+    if(s){ if(/^https?:/.test(s))return; const f=DIR+s.split('?')[0]; if(!fs.existsSync(f)){ assenti.push(s); return; }
+      try{vm.runInContext(fs.readFileSync(f,'utf8'),ctx,{filename:s});}catch(e){ nonCaricati.push(s+': '+e.message); } }
+    else { try{vm.runInContext(m[2],ctx);}catch(e){ nonCaricati.push('script in linea: '+e.message); } }
   });
   // il recapito: prima di ogni giro del ciclo, il dispositivo riceve dal server
   return {g, el, locale, giro:()=>{ Object.keys(server).forEach(k=>locale[k]=server[k]); if(tick) tick(); }};
@@ -88,20 +96,18 @@ att.g.selectedCoordinatedUnits=[];
 att.g.currentOrder={};
 att.g.gameState={nomads:att.g.roster,panoceania:[]};
 
-console.log('\n=== Il giro, dall azione scelta al reattivo ===');
-ok(att.g.currentOrder.id === undefined || att.g.currentOrder.id === null,
-   `prima di scegliere non c è nessun identificativo (${att.g.currentOrder.id})`);
+console.log('--- l\'app attiva dichiara ---');
+ok(!att.g.currentOrder.id, 'prima di scegliere non c\'e` nessun identificativo', att.g.currentOrder.id);
 att.g.selectAction('MOVIMENTO', false);
-ok(!!att.g.currentOrder.id, `dopo selectAction il router ne crea uno: ${att.g.currentOrder.id}`);
-ok(!!server['canale_comunicazione_infinity'], 'e l allarme è sul server');
-if (server['canale_comunicazione_infinity']) {
-  const a=JSON.parse(server['canale_comunicazione_infinity']);
-  ok(a.ordineId === att.g.currentOrder.id, `l allarme porta quell identificativo, non un altro: ${a.ordineId}`);
-}
+const idGenerato = att.g.currentOrder.id;
+ok(!!idGenerato, 'selectAction crea l\'identificativo dell\'Ordine', idGenerato);
+ok(!!server['canale_comunicazione_infinity'], 'l\'allarme parte verso l\'Hub');
+const allarme = server['canale_comunicazione_infinity'] ? JSON.parse(server['canale_comunicazione_infinity']) : {};
+ok(allarme.ordineId === idGenerato, 'l\'allarme porta lo stesso identificativo', allarme.ordineId);
 
 // l'Hub in mezzo
 const hub=(function(){
-  const h=fs.readFileSync('/mnt/project/calcolatore_hub.html','utf8');
+  const h=fs.readFileSync(DIR+'calcolatore_hub.html','utf8');
   const g={}; g.window=g; g.globalThis=g; g.console={log:()=>{},warn:()=>{},error:()=>{}};
   const el={}; const finto=(id)=>{if(!el[id])el[id]={id,innerHTML:'',style:{display:'none'},appendChild:()=>{},addEventListener:()=>{},value:''};return el[id];};
   const locale={};
@@ -118,30 +124,46 @@ const hub=(function(){
   [...h.matchAll(/<script(?:\s+src="([^"]+)")?\s*>([\s\S]*?)<\/script>/g)].forEach(m=>{
     const s=m[1];
     if(s){ if(/^https?:/.test(s))return; const nome=s.split('?')[0]; if(nome==='calcolatore_cloud.js')return;
-      const f='/mnt/project/'+nome; if(!fs.existsSync(f))return; try{vm.runInContext(fs.readFileSync(f,'utf8'),ctx,{filename:nome});}catch(e){} }
-    else { try{vm.runInContext(m[2],ctx);}catch(e){} }
+      const f=DIR+nome; if(!fs.existsSync(f)){ assenti.push(nome); return; }
+      try{vm.runInContext(fs.readFileSync(f,'utf8'),ctx,{filename:nome});}catch(e){ nonCaricati.push(nome+': '+e.message); } }
+    else { try{vm.runInContext(m[2],ctx);}catch(e){ nonCaricati.push('script in linea: '+e.message); } }
   });
   return {g, locale, giro:()=>{ Object.keys(server).forEach(k=>locale[k]=server[k]); if(tick) tick();
                                  Object.keys(locale).forEach(k=>{ server[k]=locale[k]; }); }};
 })();
 hub.g.hubPronto=true;
 hub.giro();
-ok(!!server['canale_attacco_allarme'] || !!(reat.g.currentAttackData), 'l Hub lo inoltra');
-reat.giro();
-ok(!!(reat.g.currentAttackData), 'il reattivo lo riceve e lo consuma');
-ok((reat.g.currentAttackData || {}).ordineId === att.g.currentOrder.id,
-   `e l identificativo è lo stesso che il router aveva generato (${(reat.g.currentAttackData || {}).ordineId})`);
-const primo = att.g.currentOrder.id;
-// seconda meta` dello stesso Ordine
-att.g.selectAction('ATTACCO BS', true);
-ok(att.g.currentOrder.id === primo,
-   `la seconda metà dello stesso Ordine lo conserva (${att.g.currentOrder.id})`);
-// Controprova: un Ordine NUOVO deve averne uno diverso, altrimenti "lo
-// conserva" non si distinguerebbe da "è sempre lo stesso per tutti".
-att.g.currentOrder = { unit: att.g.currentOrder.unit };
-att.g.selectAction('ATTACCO BS', false);
-ok(att.g.currentOrder.id && att.g.currentOrder.id !== primo,
-   `e un Ordine nuovo ne ha uno diverso (${att.g.currentOrder.id})`);
+console.log('\n--- l\'Hub in mezzo ---');
+ok(!!server['canale_attacco_allarme'], 'l\'Hub inoltra l\'allarme al reattivo');
 
-console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
+reat.giro();
+console.log('\n--- l\'app reattiva riceve ---');
+const ricevuto = (reat.g.currentAttackData||{}).ordineId;
+ok(!!reat.g.currentAttackData, 'il reattivo riempie currentAttackData');
+ok(ricevuto === idGenerato, 'l\'identificativo arriva intero fino al reattivo', ricevuto);
+
+console.log('\n--- le due meta` dello stesso Ordine ---');
+att.g.selectAction('ATTACCO BS', true);
+ok(att.g.currentOrder.id === idGenerato, 'la seconda meta` conserva l\'identificativo', att.g.currentOrder.id);
+
+console.log('\n--- un Ordine nuovo ---');
+att.g.currentOrder = {};
+att.g.selectAction('MOVIMENTO', false);
+ok(!!att.g.currentOrder.id && att.g.currentOrder.id !== idGenerato,
+   'un Ordine nuovo ne riceve uno diverso', att.g.currentOrder.id);
+
+console.log('\n--- i file che le due pagine dichiarano ---');
+// Un file che non carica, o che la pagina dichiara e non c'è, NON si salta in
+// silenzio: il banco proverebbe metà app e direbbe di averla provata tutta.
+// È la forma del catalogo sparito del 28 settembre, che a nominarlo fu
+// test_caricamento_pagine.
+ok(nonCaricati.length === 0,
+   'tutti gli script delle due pagine si caricano',
+   nonCaricati.length ? nonCaricati.slice(0, 3).join(' | ') : 'nessun errore');
+ok(assenti.length === 0,
+   'e nessun file dichiarato manca dalla cartella',
+   assenti.length ? assenti.join(', ') : 'nessuno');
+
+console.log('\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500');
+console.log(passati + ' passati, ' + falliti + ' falliti');
 process.exit(falliti ? 1 : 0);

@@ -1,4 +1,4 @@
-// @versione 2026-09-28.2 | ordine_movimento.js | proprieta`: chat MOTORE
+// @versione 2026-09-29.2 | ordine_movimento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏃 MOVIMENTO E INSTRADAMENTO (N5) - ordine_movimento.js
 // ------------------------------------------
@@ -105,28 +105,17 @@
     // prima metà non ce l'hanno. Il codice precedente lo mandava solo dal
     // primo, quindi un Arrampicarsi non avvisava mai l'avversario.
     // ==============================================================
+    // L'allarme lo COSTRUISCE il motore (M.allarmeOrdine), uno per tutti gli
+    // ordini senza tiro; il modulo lo spedisce. Nessuna dipendenza nuova.
     window.inviaAllarmeMovimento = function (actionId) {
         const M = motore(); if (!M) return { genera: false };
-        const unita = window.currentOrder.unit;
-        const aro = M.generaAro(actionId, { fuoriLoFeZdC: !!window.cautoFuoriLoF });
-
-        if (!aro.genera) {
-            console.log('🏃 Nessun allarme ARO: ' + aro.motivo);
-            return aro;
-        }
-        const payload = {
-            isCoordinated: window.coordMode || false,
-            attaccante: M.nomeUnita(unita),
-            attaccanti: (window.coordUnits || [unita]).map(u => M.nomeUnita(u)),
-            // L'azione dichiarata, non sempre act1: se l'ordine è
-            // Movimento + Attacco, l'avversario deve vedere l'attacco.
-            azione: M.azioneDaRisolvere(actionId, window.currentOrder.action) || actionId,
-            azionePrimaMeta: actionId,
-            bersagli: [],
-            timestamp: Date.now()
-        };
-        if (typeof window.inviaAllarmeAro === 'function') window.inviaAllarmeAro(payload);
-        return aro;
+        const e = M.allarmeOrdine(actionId, {
+            unita: window.currentOrder.unit, coordUnits: window.coordUnits, coordMode: window.coordMode,
+            azioneSeconda: window.currentOrder.action, fuoriLoFeZdC: !!window.cautoFuoriLoF
+        });
+        if (!e.payload) { console.log('🏃 Nessun allarme ARO: ' + e.aro.motivo); return e.aro; }
+        if (typeof window.inviaAllarmeAro === 'function') window.inviaAllarmeAro(e.payload);
+        return e.aro;
     };
 
     // ==============================================================

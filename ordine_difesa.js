@@ -1,4 +1,4 @@
-// @versione 2026-09-26.1 | ordine_difesa.js | proprieta`: chat MOTORE
+// @versione 2026-09-29.1 | ordine_difesa.js | proprieta`: chat MOTORE
 // ==========================================
 // 🛡️ DIFESA: SCHIVATA, RESET E SOPPRESSIONE - ordine_difesa.js
 // ------------------------------------------
@@ -102,7 +102,7 @@
                     : 'background:#440000; color:#ff5555; border-color:#ff0000;';
                 opzioni += `<button type="button" class="huge-btn" style="width:100%; margin-top:10px; min-height:50px; font-size:16px; ${stileLoF}"
                     onclick="window.toggleDifesaLoF(${index}, '${actionId}')">
-                    ${u.difesaOpts.hasLoF ? '👁️ HO LINEA DI TIRO VERSO CHI ATTACCA' : '🚫 NESSUNA LINEA DI TIRO (-3 PH)'}</button>`;
+                    ${u.difesaOpts.hasLoF ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofSi') : '👁️ '}HO LINEA DI TIRO VERSO CHI ATTACCA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofNo') : '🚫 '}NESSUNA LINEA DI TIRO (-3 PH)`}</button>`;
 
                 const stileSag = u.difesaOpts.controSagoma
                     ? 'background:#442200; color:#ff9900; border-color:#ff9900;'

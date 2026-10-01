@@ -1,4 +1,4 @@
-// @versione 2026-09-28.3 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-09-29.2 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -89,6 +89,38 @@
     //
     // Di lei sappiamo quello che l'allarme ci manda: il nome e i suoi stati.
     // Basta: il motore guarda gli stati per sapere se e` un Marker.
+    // LE ICONE DEI DUE INTERRUTTORI
+    //
+    // I nomi dei file stanno QUI, in un posto solo, perche` gli stessi due
+    // interruttori compaiono anche in file di altre chat (ordine_attacco_bs,
+    // ordine_scoprire, ordine_attacco_intuitivo, ordine_difesa): se ognuno
+    // scrivesse il proprio nome, rinominare un'immagine vorrebbe dire
+    // cercarla in cinque file.
+    //
+    //   img/icon_cover_si.png   bersaglio in copertura parziale
+    //   img/icon_cover_no.png   bersaglio allo scoperto
+    //   img/icon_lof_si.png     ho linea di tiro
+    //   img/icon_lof_no.png     nessuna linea di tiro
+    //
+    // Se un file manca non si rompe niente: resta l'emoji di prima. E` comodo,
+    // ma vuol dire anche che un'immagine sbagliata di nome passa inosservata
+    // — il preflight PRE-09 e` li` per quello.
+    window.ICONE_INTERRUTTORI = {
+        coverSi: { file: 'img/icon_cover_si.png', ripiego: '\u{1F6E1}\uFE0F' },
+        coverNo: { file: 'img/icon_cover_no.png', ripiego: '\u2B1C' },
+        lofSi:   { file: 'img/icon_lof_si.png',   ripiego: '\u{1F441}\uFE0F' },
+        lofNo:   { file: 'img/icon_lof_no.png',   ripiego: '\u{1F6AB}' }
+    };
+
+    window.iconaInterruttore = function (chiave, altezza) {
+        const v = window.ICONE_INTERRUTTORI[chiave];
+        if (!v) return '';
+        const h = altezza || 26;
+        // onerror: se l'immagine non c'e`, al suo posto torna l'emoji.
+        return `<img src="${v.file}" alt="" style="height:${h}px; vertical-align:middle; margin-right:6px;"` +
+               ` onerror="this.outerHTML='${v.ripiego} '">`;
+    };
+
     window.unitaAttivaDiTurno = function () {
         const d = window.currentAttackData || {};
         if (!d.attaccante) return null;
@@ -627,7 +659,9 @@
                 const stile = cfg.hasLoF ? 'background:#004400; color:#00ff00; border-color:#00ff00;'
                                          : 'background:#440000; color:#ff5555; border-color:#ff0000;';
                 corpo += `<button type="button" class="huge-btn" style="width:100%; margin-top:10px; min-height:60px; font-size:17px; ${stile}"
-                    onclick="window.toggleAroLoF()">${cfg.hasLoF ? '👁️ HO LINEA DI TIRO' : '🚫 NESSUNA LINEA DI TIRO (-3 PH)'}</button>`;
+                    onclick="window.toggleAroLoF()">${cfg.hasLoF
+                        ? window.iconaInterruttore('lofSi') + 'HO LINEA DI TIRO'
+                        : window.iconaInterruttore('lofNo') + 'NESSUNA LINEA DI TIRO (-3 PH)'}</button>`;
             }
             if (esito.note.length) {
                 corpo += `<div style="margin-top:10px; color:#888; font-size:12px; line-height:1.6;">` +
@@ -695,10 +729,13 @@
                         ${sceltaMunizioni}
                         ${(cfg.azione === 'BS_ATTACK')
                             ? `<button type="button" class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:15px; ${cfg.cover ? 'background:#003300; color:#00ff00; border-color:#00ff00;' : 'background:#111; color:#aaa; border-color:#555;'}"
-                                onclick="window.toggleAroCover()">${cfg.cover ? '🛡️ IN COPERTURA' : '⬜ NO COPERTURA'}</button>`
+                                onclick="window.toggleAroCover()">${cfg.cover
+                                    ? window.iconaInterruttore('coverSi', 22) + 'IN COPERTURA'
+                                    : window.iconaInterruttore('coverNo', 22) + 'NO COPERTURA'}</button>`
                             : ''}
                        </div>
                        ${(cfg.azione === 'BS_ATTACK' && cfg.cover) ? window.sceltaCopertura(cfg.copertura, 'window.setAroCopertura') : ''}
+                       ${window.sceltaZona ? window.sceltaZona(cfg.zona, 'window.setAroZona') : ''}
                        ${(cfg.azione === 'BS_ATTACK' && cfg.cover) ? '<div style="color:#888; font-size:12px; margin-top:4px;">-3 al tuo tiro, +3 alla sua ARM.</div>' : ''}`
                     : ''}
                 <div style="display:flex; margin-top:20px; margin-bottom:5px;">
@@ -732,6 +769,13 @@
     window.toggleAroLoF = function () { window.aroCurrentConfig.hasLoF = !window.aroCurrentConfig.hasLoF; window.renderAroModifiersUI(); };
     window.setAroCopertura = function (v) { window.aroCurrentConfig.copertura = v || null; window.renderAroModifiersUI(); };
     window.setAroTerrain = function (v) { window.aroCurrentConfig.terrain = v; window.renderAroModifiersUI(); };
+    // La zona sulla linea di tiro: vuota diventa null, perche` nella busta
+    // "nessuna zona" e` null e non stringa vuota.
+    window.setAroZona = function (v) {
+        window.aroCurrentConfig.zona = v || null;
+        window.renderAroModifiersUI();
+    };
+
     window.setAroAmmo = function (v) { window.aroCurrentConfig.ammo = v; window.renderAroModifiersUI(); };
 
     // ==============================================================
@@ -790,7 +834,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-09-28.3', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-09-29.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

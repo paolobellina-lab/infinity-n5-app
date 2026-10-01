@@ -181,5 +181,37 @@ ok(soloKhd.indexOf('CARBONITE') < 0 && soloKhd.indexOf('TRINITY') >= 0,
 // anche come "Hacking Device" — era la ragione per cui il filtro scartava.
 ok(M.dispositiviHacking(zero).length === 1, 'e un Killer da solo resta UN dispositivo, non due');
 
+
+console.log('\n=== 9. La seconda metà non torna alla scelta del programma ===');
+// 🔴 Trovato da Paolo al tavolo il 29 settembre: scegli il programma,
+// confermi i bersagli, e l'app ti riporta a scegliere il programma — un
+// anello. La causa stava nel motore: riprendiOrdine cercava "l'arma" della
+// prima metà con profiloArma, cioè CARBONITE nel database delle armi, dove
+// i programmi non stanno. Ora si risolve con armaDaProgrammaDi.
+// La prova passa dal MODULO, non dal motore: è lì che il giocatore gira in
+// tondo, e chiamando riprendiOrdine da solo l'anello non si vede.
+const passi = [];
+const goVero = window.goToStep, inviaVero = window.inviaCalcoloAllHub;
+window.goToStep = (n) => passi.push(n);
+window.inviaCalcoloAllHub = () => passi.push('BUSTA');
+window.renderTargetButtons = window.renderTargetButtons || (() => {});
+const hacker = Object.assign(JSON.parse(JSON.stringify(TUTTI.find(u => /^Interventor \(Hacker/.test(u.nome)))), { states: {} });
+const vittima = Object.assign(JSON.parse(JSON.stringify(TUTTI.find(u => /^Orc \(Heavy Machine/.test(u.nome)))), { states: {} });
+M._rosterProprio = [hacker]; M._rosterNemico = [vittima];
+window.coordUnits = [hacker]; window.coordIndex = 0;
+window.combatTargets = [{ id: vittima.id, name: vittima.nome, skills: '', rangeIndex: 0, rangeMod: 0, burst: 0, cover: false, terrain: 'NESSUNO' }];
+window.currentOrder = { unit: hacker, action: 'HACKING', action1: 'HACKING', weapon: 'CARBONITE', isSecondHalf: true };
+passi.length = 0;
+try { window.avviaFaseHacking('HACKING', true); } catch (e) { passi.push('ECCEZIONE: ' + e.message); }
+ok(passi.indexOf('step-weapon') < 0, `la seconda metà NON torna a step-weapon (${JSON.stringify(passi)})`);
+ok(passi.indexOf('step-modifiers') >= 0, 'e prosegue verso i modificatori');
+// Controprova: un programma che questa unità NON ha deve essere rifiutato —
+// altrimenti "prosegue sempre" sarebbe indistinguibile da "prosegue bene".
+const esito = M.riprendiOrdine('HACKING', { isSecondHalf: true, unita: hacker,
+    arma: 'PROGRAMMA INVENTATO', bersagli: window.combatTargets, azionePrimaMeta: 'HACKING' });
+ok(esito.ok === false || /non è fra quelli|non riconosciut/i.test(String(esito.motivo || '')),
+   `un programma che l unità non ha viene rifiutato (${JSON.stringify(esito.motivo || esito.ok)})`);
+window.goToStep = goVero; window.inviaCalcoloAllHub = inviaVero;
+
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

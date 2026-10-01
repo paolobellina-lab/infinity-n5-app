@@ -1,4 +1,4 @@
-// @versione 2026-09-14.2 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
+// @versione 2026-09-29.1 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
 // ==========================================
 // 👻 ATTACCO INTUITIVO (N5) - ordine_attacco_intuitivo.js
 // ------------------------------------------
@@ -150,7 +150,7 @@
                 <span style="color:#aaa; font-size:12px;">Se la Sagoma coinvolge altri nemici, il tiratore deve comunque sceglierne uno solo come Principale.</span>
             </div>
             <button class="huge-btn" style="width:100%; min-height:55px; font-size:15px; margin-bottom:15px; ${statoLoF}" onclick="window.toggleIntuitivoFuoriLoF()">
-                ${fuoriLoF ? '🌫️ NESSUNA LoF — Zona di Visibilità Zero' : '👁️ HO LINEA DI TIRO (solo Marker bersagliabili)'}
+                ${fuoriLoF ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofNo') : '🌫️ '}NESSUNA LoF — Zona di Visibilità Zero` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofSi') : '👁️ '}HO LINEA DI TIRO (solo Marker bersagliabili)`}
             </button>
             <div id="intuitivo-bersagli"></div>`;
 

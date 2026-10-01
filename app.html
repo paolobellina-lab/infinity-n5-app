@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-09-28.1 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-09-30.1 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -483,7 +483,7 @@
         // quello dove una copia vecchia (cache del telefono) e` piu` probabile.
         (function () {
             var g = (typeof window !== 'undefined') ? window : globalThis;
-            var v = { file: 'app.html', versione: '2026-09-28.1', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-09-30.1', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -880,7 +880,14 @@
             const iconStyle = `style="width: 45px; height: 45px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(0,0,0,0.8)); margin-left: 5px; margin-bottom: 5px;"`;
             const getOnErr = (emoji) => `onerror="this.outerHTML='<span style=&quot;font-size:30px; margin-left:5px;&quot;>${emoji}</span>'"`;
 
-            if(s.immobilizedA || s.immobilizedB) icone += `<img src="img/icon_imma.png" ${iconStyle} ${getOnErr('🛑')}>`;
+            // Due stati distinti, due icone. Prima la condizione era
+            // "immobilizedA || immobilizedB" e pescava icon_imma.png per
+            // entrambi: l'icona di IMM-B non e` mai stata chiesta, quindi non
+            // mancava — semplicemente non esisteva la riga che la cercava.
+            // Il motore li tiene separati (Immobilizzato-A e -B) e anche il
+            // tabellone dell'Hub ha due simboli diversi.
+            if(s.immobilizedA) icone += `<img src="img/icon_imma.png" ${iconStyle} ${getOnErr('🛑')}>`;
+            if(s.immobilizedB) icone += `<img src="img/icon_immb.png" ${iconStyle} ${getOnErr('⛓️')}>`;
             if(s.isolated) icone += `<img src="img/icon_isolated.png" ${iconStyle} ${getOnErr('📵')}>`;
             if(s.targeted) icone += `<img src="img/icon_targeted.png" ${iconStyle} ${getOnErr('🎯')}>`;
             if(s.stunned) icone += `<img src="img/icon_stunned.png" ${iconStyle} ${getOnErr('😵')}>`;
@@ -1390,14 +1397,33 @@
                 if (grezzo !== null) { stato = JSON.parse(grezzo); letto = true; }
             } catch (e) { window.ultimaEccezione = e; }
 
-            if (letto) {
-                const viva = stato && (((stato.nomads || []).length) || ((stato.panoceania || []).length));
-                if (!viva) {
-                    // Partita azzerata: la copia locale e` di una partita che
-                    // non esiste piu`, e tenerla confonderebbe al giro dopo.
-                    window.scordaPartitaLocale();
-                    return;
-                }
+            const viva = letto && stato &&
+                (((stato.nomads || []).length) || ((stato.panoceania || []).length));
+
+            // Tre casi, non due. Il reset dell'Hub CANCELLA la chiave dello
+            // stato invece di svuotarla, quindi "assente" significa due cose
+            // diverse:
+            //   letto e vuoto        reset: la partita non c'e` piu`
+            //   assente, lettura CONFERMATA
+            //                        il server non ha nessuna partita. Vale
+            //                        come il reset: il trasporto segna il
+            //                        canale come ricevuto anche quando e`
+            //                        vuoto, quindi "confermato" significa
+            //                        davvero "ho guardato e non c'e` niente".
+            //   assente, lettura NON confermata
+            //                        rete giu`: non si sa nulla, e la copia
+            //                        locale e` l'unica cosa vera che abbiamo.
+            //
+            // Prima il controllo si fermava al primo caso: dopo un reset il
+            // pulsante RIPRENDI PARTITA ricompariva, e riprendeva una partita
+            // che sul tavolo non esisteva piu`.
+            if (letto && !viva) {
+                window.scordaPartitaLocale();
+                return;
+            }
+            if (!letto && esito && esito.confermato) {
+                window.scordaPartitaLocale();
+                return;
             }
 
             const quando = new Date(locale.timestamp || Date.now());
@@ -1453,6 +1479,54 @@
             if (aMeta.length) {
                 alert('\u26a0\ufe0f C\'era un ordine in corso quando l\'app si e` chiusa.\n\nControllate l\'Hub per vedere a che punto era: l\'app non lo recupera da sola.');
             }
+        };
+
+        // ==========================================
+        // 🌫️  ZONA DI VISIBILITA` ZERO FRA I DUE
+        // ==========================================
+        // CONTRATTO — chi la usa, la chiami e non si scriva la tendina in
+        // proprio (vale anche per i moduli della chat MOTORE):
+        //   window.sceltaZona(valoreAttuale, comando, argomento)
+        //   -> l'HTML di una tendina; il comando riceve 'FUMO' | 'ECLIPSE' | ''
+        //   Il campo da riempire nella busta si chiama `zona`, su OGNI
+        //   bersaglio e su OGNI reazione, e vale null quando e` vuoto.
+        //
+        // Perche` sono SEMPRE disponibili, al contrario dei terreni:
+        // Fumo ed Eclipse non sono scenografia dello scenario, nascono da
+        // un'azione e durano fino alla Fase Stati. L'app non ricorda i tiri
+        // dei turni prima, quindi non puo` sapere che due Ordini fa qualcuno
+        // ha lanciato una fumogena: lo dichiara il giocatore adesso, come la
+        // copertura.
+        //
+        // Perche` DUE voci e non una: un MSV L2 attraversa il Fumo e NON
+        // attraversa l'Eclipse. Con una voce sola, chi ha il visore
+        // sceglierebbe quella sbagliata e il MOD sarebbe giusto per la voce e
+        // falso per il tavolo.
+        //
+        // Cosa scegliere quando ce n'e` piu` d'una (chat REGOLE, 29 set):
+        // la zona PIU` RESTRITTIVA che quella linea di tiro attraversa,
+        // chiunque ci stia dentro — anche il tiratore. I MOD di visibilita`
+        // non si sommano mai: due Fumi restano Fumo, Fumo piu` Eclipse danno
+        // Eclipse.
+        window.ZONE_VISIBILITA = [
+            { id: 'FUMO',    nome: 'Fumo',    nota: 'Zona di Visibilita` Zero. Un MSV L2 o L3 la attraversa.' },
+            { id: 'ECLIPSE', nome: 'Eclipse', nota: 'Come il Fumo, ma ferma OGNI livello di Multispectral Visor.' }
+        ];
+
+        window.sceltaZona = (valoreAttuale, comando, argomento) => {
+            const opzioni = ['<option value="">Nessuna zona fra i due</option>']
+                .concat(window.ZONE_VISIBILITA.map(z =>
+                    `<option value="${z.id}" ${z.id === valoreAttuale ? 'selected' : ''}>${z.nome}</option>`))
+                .join('');
+
+            const scelta = window.ZONE_VISIBILITA.find(z => z.id === valoreAttuale);
+
+            return `<div style="margin-top:10px;">
+                    <div style="color:#aaa; font-size:13px; margin-bottom:4px;">Fumo o Eclipse sulla linea di tiro:</div>
+                    <select class="huge-btn" style="width:100%; min-height:50px; font-size:15px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;"
+                        onchange="${window.chiamataConValore(comando, argomento)}">${opzioni}</select>
+                    ${scelta ? `<div style="color:#aa8866; font-size:13px; margin-top:4px;">${scelta.nota}</div>` : ''}
+                </div>`;
         };
 
         // ==========================================
@@ -1638,7 +1712,18 @@
             }
 
             const unita = window.spearheadUnit;
-            const azione = (window.currentOrder && (window.currentOrder.action2 || window.currentOrder.action1)) || null;
+            // L'Abilita` DICHIARATA, quella che il requisito non soddisfa: e`
+            // la seconda se c'e`, altrimenti la prima. Il campo si chiama
+            // `action`: i moduli scrivono tutti li` (ordine_attacco_bs,
+            // ordine_movimento e gli altri), e `action2` non lo scrive
+            // NESSUNO — cercato in tutto il progetto, zero occorrenze.
+            //
+            // Leggendo action2 si cadeva sempre sul ripiego action1, cioe` sul
+            // MOVIMENTO: il motore riceveva "la skill dichiarata era un
+            // movimento" e un mimetico che falliva un Attacco BS NON si
+            // rivelava. L'uso Disposable si spendeva lo stesso, quindi il
+            // difetto non si vedeva nemmeno dal numero dei colpi.
+            const azione = (window.currentOrder && (window.currentOrder.action || window.currentOrder.action1)) || null;
             if (!unita || !azione) return;
 
             const motivo = prompt('Quale requisito non e` soddisfatto?\n(resta scritto nel calcolo)', '');
@@ -1688,6 +1773,22 @@
             // cioe` prima di premere — che e` l'unico momento in cui servono:
             // il giocatore deve sapere che sta per perdere un uso Disposable
             // e rivelare un Marker PRIMA di confermare, non dopo.
+            // L'ALLARME. Un Idle e` un Ordine speso e visibile: l'avversario
+            // ha diritto al suo ARO, e finora da questa strada non partiva
+            // nessun avviso — l'Idle scelto dal menu lo mandava, questo no.
+            // Un ARO che non viene chiesto non e` un ARO rinunciato: e` un
+            // ARO che il giocatore non ha mai saputo di avere.
+            //
+            // aroAtteso dice all'Hub di aspettare le reazioni prima di
+            // calcolare: senza, il calcolo si chiuderebbe da solo e la
+            // reazione arriverebbe a conti gia` fatti.
+            let aro = { genera: false };
+            if (typeof window.inviaAllarmeOrdine === 'function') {
+                try { aro = window.inviaAllarmeOrdine('IDLE') || aro; }
+                catch (errore) { window.ultimaEccezione = errore; }
+            }
+            convertito.aroAtteso = !!aro.genera;
+
             if (window.inviaCalcoloAllHub) window.inviaCalcoloAllHub(convertito);
         };
 

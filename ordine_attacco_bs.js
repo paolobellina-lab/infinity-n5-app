@@ -1,4 +1,4 @@
-// @versione 2026-09-27.1 | ordine_attacco_bs.js | proprieta`: chat MOTORE
+// @versione 2026-09-29.2 | ordine_attacco_bs.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎯 ATTACCO BS (TIRO A DISTANZA) - ordine_attacco_bs.js
 // ------------------------------------------
@@ -302,11 +302,14 @@
                 </div>
                 ${rangeHtml}
                 <div style="display:flex; gap:10px; margin-top: 15px;">
-                    <button class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; ${coverStyle}" onclick="window.toggleTargetCoverBS(${index})">${tgt.cover ? 'IN COPERTURA' : 'NO COPERTURA'}</button>
+                    <button class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; ${coverStyle}" onclick="window.toggleTargetCoverBS(${index})">${tgt.cover ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverSi') : ''}IN COPERTURA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverNo') : ''}NO COPERTURA`}</button>
                     <select class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; background:#002233; color:#fff; border-color:${bordo}; text-align:center; padding:0 10px;" onchange="window.setTargetAmmoBS(${index}, this.value)">
                         ${ammoHtml}
                     </select>
                 </div>
+                ${(typeof window.sceltaZona === 'function')
+                    ? `<div style="margin-top:10px;">${window.sceltaZona(tgt.zona || '', 'window.setTargetZonaBS', index)}</div>`
+                    : ''}
                 ${(tgt.cover && typeof window.sceltaCopertura === 'function')
                     // 🔴 `index`, non `i`: `i` e` la variabile del ciclo delle bande,
                     // gia` chiuso. Valutarla qui sollevava, e renderTargetsAllocationBS
@@ -364,6 +367,19 @@
         if (!window.combatTargets[i]) return;
         window.combatTargets[i].copertura = valore || null;
         window.renderTargetsAllocation();
+    };
+
+    // La ZONA di Fumo o di Eclipse fra chi spara e questo bersaglio. La tendina
+    // e` quella condivisa della chat INTERFACCIA (window.sceltaZona): il nome
+    // del campo e le due voci stanno in un posto solo. Accetta (indice,
+    // valore) in qualunque ordine; '' diventa null, non stringa vuota.
+    window.setTargetZonaBS = function (a, b) {
+        const index = (typeof a === 'number') ? a : b;
+        const valore = (typeof a === 'number') ? b : a;
+        const t = window.combatTargets && window.combatTargets[index];
+        if (!t) return;
+        t.zona = (valore === 'FUMO' || valore === 'ECLIPSE') ? valore : null;
+        window.renderTargetsAllocationBS();
     };
 
     window.toggleTargetCoverBS = function (i) { window.combatTargets[i].cover = !window.combatTargets[i].cover; if (!window.combatTargets[i].cover) window.combatTargets[i].copertura = null; window.renderTargetsAllocationBS(); };

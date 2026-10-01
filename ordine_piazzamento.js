@@ -1,4 +1,4 @@
-// @versione 2026-09-26.2 | ordine_piazzamento.js | proprieta`: chat MOTORE
+// @versione 2026-09-29.3 | ordine_piazzamento.js | proprieta`: chat MOTORE
 // ==========================================
 // 📦 PIAZZARE EQUIPAGGIAMENTO (N5) - ordine_piazzamento.js
 // ------------------------------------------
@@ -35,6 +35,15 @@
     }
 
     const COL = { bordo: '#cc88ff', sfondo: '#2a1a33' };
+
+    // La scelta del giocatore, come l'ha OFFERTA armiPiazzabili — non riletta
+    // per nome. Un EQUIPAGGIAMENTO Deployable (il Deployable Repeater di 29
+    // profili) non e` un'arma: riletto con profiloArma era "non trovato", e
+    // il segnalino offerto veniva poi rifiutato. (29 settembre.)
+    function armaScelta(M, unita) {
+        const offerta = unita ? (M.armiPiazzabili(unita).armi || []).find(a => a.nome === window.deployableScelta) : null;
+        return offerta || M.profiloArma(window.deployableScelta);
+    }
 
     window.avviaFaseDeployable = function (actionId, isSecondHalf) {
         const M = motore(); if (!M) return;
@@ -140,7 +149,7 @@
     // ==============================================================
     window.mostraDomandeDeployable = function () {
         const M = motore(); if (!M) return;
-        const arma = M.profiloArma(window.deployableScelta);
+        const arma = armaScelta(M, window.coordUnits[window.coordIndex]);
 
         let domande = M.domandeDeployable('PIAZZAMENTO');
         // Col Tratto Perimeter si piazza ovunque dentro la ZdC, ma il
@@ -235,7 +244,7 @@
         const unita = window.coordUnits[window.coordIndex];
         // 🔴 Il PROFILO, non il nome: creaDeployable dà E18 su una stringa.
         // E il nome GREZZO, con le notazioni della scheda.
-        const arma = M.profiloArma(window.deployableScelta);
+        const arma = armaScelta(M, window.coordUnits[window.coordIndex]);
         const ordineId = (window.currentOrder && window.currentOrder.id) ||
                          `ord_${Date.now()}`;
         window.currentOrder.id = ordineId;
@@ -291,7 +300,15 @@
             return window.mostraArmiPiazzabili();
         }
 
-        const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode });
+        // L'avversario deve sapere dell'Ordine: Piazzare genera ARO (M.generaAro),
+        // e prima l'allarme non partiva. La busta lo dice, cosi` l'Hub aspetta.
+        const al = M.allarmeOrdine('PIAZZARE EQUIPAGGIAMENTO', {
+            unita: unita, coordUnits: window.coordUnits, coordMode: window.coordMode,
+            azioneSeconda: window.currentOrder && window.currentOrder.action
+        });
+        if (al.payload && typeof window.inviaAllarmeAro === 'function') window.inviaAllarmeAro(al.payload);
+        const aro = al.aro;
+        const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode, aroAtteso: !!(aro && aro.genera) });
         if (!spedito) { window.coordIndex--; window.coordPayloads.pop(); return; }
 
         window.mostraEsitoPiazzamento(e.token, e.avvisi);
