@@ -1,4 +1,4 @@
-// @versione 2026-09-19.1 | ordine_logistica.js | proprieta`: chat MOTORE
+// @versione 2026-10-05.1 | ordine_logistica.js | proprieta`: chat MOTORE
 // ==========================================
 // 🪂 INGRESSO IN CAMPO e REQUEST SPEEDBALL - ordine_logistica.js
 // ------------------------------------------
@@ -70,6 +70,8 @@
         }
 
         const r = window.logisticaRisposta;
+        // Tre esiti, dal motore (M.valutaDomande): NON RISPOSTO non esegue.
+        const dom = window.statoDomandaIngresso();
         container.innerHTML = `
             <h2 style="color:${COL.bordo}; text-align:center; margin-bottom:6px;">🪂 INGRESSO IN CAMPO</h2>
             <div style="color:#aaa; font-size:13px; text-align:center; margin-bottom:16px;">
@@ -93,8 +95,8 @@
                     <button class="huge-btn" style="flex:1; min-height:48px; ${r === false ? 'background:#553300; border-color:#ffaa33;' : 'background:#111;'}"
                         onclick="window.rispondiLogistica(false)">NO</button>
                 </div>
-                ${r === false ? `<div style="margin-top:10px; padding:10px; background:#330000; border:1px solid #ff3333; border-radius:4px; color:#ff9999; font-size:13px;">
-                    ⛔ Il punto scelto non è valido: scegline un altro prima di tirare.</div>` : ''}
+                ${dom.esito === 'BLOCCATA' ? `<div style="margin-top:10px; padding:10px; background:#330000; border:1px solid #ff3333; border-radius:4px; color:#ff9999; font-size:13px;">
+                    ⛔ ${dom.motivo}</div>` : ''}
             </div>
 
             <div style="margin-top:14px; padding:12px; background:#2a2010; border:1px solid #886633; border-radius:5px;">
@@ -111,8 +113,17 @@
             ${e.note.length ? `<div style="margin-top:12px; color:#888; font-size:12px; line-height:1.6;">` +
                 e.note.map(n => `• ${n}`).join('<br>') + `</div>` : ''}`;
 
-        window.aggiornaPulsanteLogistica(r !== true, r === false ? 'PUNTO NON VALIDO' : 'ESEGUI TIRO PH');
+        window.aggiornaPulsanteLogistica(!dom.puoProcedere,
+            dom.esito === 'BLOCCATA' ? 'PUNTO NON VALIDO' : (dom.esito === 'NON_RISPOSTO' ? 'RISPONDI ALLA DOMANDA' : 'ESEGUI TIRO PH'));
         window.goToStep('step-modifiers');
+    };
+
+    // La domanda sul punto di atterraggio, valutata dal motore.
+    window.statoDomandaIngresso = function () {
+        const M = motore();
+        const e = window.logisticaEsito || {};
+        if (!M) return { esito: 'NON_RISPOSTO', puoProcedere: false, motivo: 'Motore non caricato.' };
+        return M.valutaDomande(e.domande || M.domandeIngressoInCampo(), { puntoValido: window.logisticaRisposta });
     };
 
     window.rispondiLogistica = function (v) {
@@ -222,8 +233,12 @@
         };
 
         if (azione === M.AZIONI.INGRESSO) {
-            if (window.logisticaRisposta !== true) {
+            const dom = window.statoDomandaIngresso();
+            if (dom.esito === 'NON_RISPOSTO') {
                 return alert('⚠️ Conferma che il punto di atterraggio rispetta i divieti prima di tirare.');
+            }
+            if (!dom.puoProcedere) {
+                return alert('⛔ ' + (dom.motivo || 'Punto di atterraggio non valido.'));
             }
             regole.isLongSkill = true;
             regole.seFallisce = e.seFallisce;
@@ -263,7 +278,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_logistica.js', versione: '2026-09-19.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_logistica.js', versione: '2026-10-05.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-09-30.1 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-05.4 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-09-30.1';
+    M.VERSIONE = '2026-10-05.4';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -73,6 +73,7 @@
         DEACTIVATOR:  'DEACTIVATOR',
         PIAZZA_DEPLOYABLE: 'PIAZZARE EQUIPAGGIAMENTO',
         TRINCERARSI:  'TRINCERARSI',
+        RIENTRO_CAMO: 'RIENTRARE IN CAMO',
         FORWARD_OBSERVER: 'FORWARD OBSERVER',
         SENSOR:       'SENSOR',
         TRIANGULATED: 'TRIANGULATED FIRE',
@@ -143,6 +144,7 @@
         'INGRESSO IN CAMPO': { schieramento: 'nessuno', attributo: 'PH', arma: 'nessuna', bersagli: 'nessuno', burst: 'fisso1', gittata: false, etichetta: 'Ingresso in campo' },
         'REQUEST SPEEDBALL': { schieramento: 'nessuno', attributo: 'PH', arma: 'nessuna', bersagli: 'nessuno', burst: 'fisso1', gittata: false, etichetta: 'Request Speedball' },
         'TRINCERARSI': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Trincerarsi' },
+        'RIENTRARE IN CAMO': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Rientrare in CAMO' },
         'PIAZZARE EQUIPAGGIAMENTO': { schieramento: 'nessuno', attributo: null, arma: 'obbligatoria', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Piazza Deployable' },
         'SCHIVATA':          { attributo: 'PH',  arma: 'nessuna',      bersagli: 'segnaposto',  burst: 'fisso1',     gittata: false },
         'RESET':             { attributo: 'WIP', arma: 'nessuna',      bersagli: 'segnaposto',  burst: 'fisso1',     gittata: false },
@@ -8458,6 +8460,115 @@
     };
     M.eCybermine = function (x) { return /cybermine/i.test(String((x && (x.chiaveArma || x.nome)) || x || '')); };
 
+    // ==================================================================
+    // LA DOMANDA BLOCCANTE — tre esiti, un posto solo
+    // ------------------------------------------------------------------
+    // L'app non ha la mappa: certe cose le chiede al giocatore. Ogni
+    // domanda ha TRE esiti, non due:
+    //     SI            NO            NON_RISPOSTO
+    // e NON_RISPOSTO non esegue MAI. Assente non e` "no", e non e` "si`".
+    //
+    // 🔴 Perche` sta qui (decisione di Paolo, blocco ORD). Fino al 5
+    // ottobre il piazzamento, Trincerarsi e l'Ingresso in Campo avevano
+    // ciascuno la sua copia, e due su tre riconoscevano "non risposto" con
+    // === undefined. MISURATO: con null o '' risolviTrincerarsi faceva
+    // ENTRARE in Foxhole e piazzamentoBloccato dava "non bloccato". Qui
+    // vale una regola sola: e` una risposta soltanto true o false.
+    //
+    // FORMA DI UNA DOMANDA (la stessa di domandeDeployable, piu` un campo):
+    //   id, testo
+    //   rispostaBloccante  quale risposta ferma: true = il SI` (se manca),
+    //                      false = il NO
+    //   blocca             se false la risposta "cattiva" avvisa e basta
+    //   seSi, seNo         cosa dire al giocatore dopo quella risposta
+    //   seBloccata         'VIETA' (se manca): l'azione non si fa, si
+    //                               sceglie altro — l'Ordine NON e` speso
+    //                      'IDLE':  il requisito e` fallito, la truppa
+    //                               esegue un Idle — l'Ordine E` speso
+    // La differenza fra VIETA e IDLE e` di regolamento, non di forma:
+    // Trincerarsi senza spazio e` un Idle (righe 7415-7431); un punto di
+    // atterraggio non valido si riscegli prima di tirare.
+    // ==================================================================
+    M.RISPOSTA = { SI: 'SI', NO: 'NO', NON_RISPOSTO: 'NON_RISPOSTO' };
+
+    M.rispostaDomanda = function (v) {
+        if (v === true) return M.RISPOSTA.SI;
+        if (v === false) return M.RISPOSTA.NO;
+        return M.RISPOSTA.NON_RISPOSTO;
+    };
+
+    // Una domanda e la sua risposta.
+    //   esito         'LIBERA' | 'BLOCCATA' | 'NON_RISPOSTO'
+    //   effetto       null | 'VIETA' | 'IDLE'
+    //   puoProcedere  true se LIBERA, o se BLOCCATA con effetto IDLE (si
+    //                 procede, ma a eseguire un Idle). MAI se NON_RISPOSTO.
+    M.valutaDomanda = function (d, risposta) {
+        d = d || {};
+        const r = M.rispostaDomanda(risposta);
+        const e = { id: d.id || null, risposta: r, esito: 'LIBERA', effetto: null,
+                    puoProcedere: true, motivo: null, avviso: null };
+        if (r === M.RISPOSTA.NON_RISPOSTO) {
+            e.esito = 'NON_RISPOSTO'; e.puoProcedere = false; e.motivo = 'Manca una risposta.';
+            return e;
+        }
+        const cattiva = (d.rispostaBloccante === false) ? (r === M.RISPOSTA.NO) : (r === M.RISPOSTA.SI);
+        if (!cattiva) return e;
+        const testo = (r === M.RISPOSTA.SI ? d.seSi : d.seNo) || null;
+        if (d.blocca === false) { e.avviso = testo; return e; }
+        e.esito = 'BLOCCATA';
+        e.effetto = (d.seBloccata === 'IDLE') ? 'IDLE' : 'VIETA';
+        e.puoProcedere = (e.effetto === 'IDLE');
+        e.motivo = testo;
+        return e;
+    };
+
+    // Un elenco di domande, IN ORDINE: la prima che ferma decide — una
+    // risposta che blocca chiude il discorso anche se le successive sono
+    // vuote, una vuota ferma prima di guardare oltre. `risposte` e` un
+    // oggetto per id. Un elenco vuoto e` LIBERA: nessuna domanda, nessun
+    // blocco.
+    //   bloccato / incompleto: gli stessi nomi che usava il piazzamento.
+    M.valutaDomande = function (domande, risposte) {
+        const D = Array.isArray(domande) ? domande : [];
+        const R = risposte || {};
+        const mancanti = D.filter(function (d) {
+            return M.rispostaDomanda(R[d.id]) === M.RISPOSTA.NON_RISPOSTO;
+        }).map(function (d) { return d.id; });
+        const avvisi = [];
+        for (let i = 0; i < D.length; i++) {
+            const v = M.valutaDomanda(D[i], R[D[i].id]);
+            if (v.avviso) avvisi.push(v.avviso);
+            if (v.esito !== 'LIBERA') {
+                return { esito: v.esito, effetto: v.effetto, puoProcedere: v.puoProcedere,
+                         motivo: v.motivo, domanda: D[i], mancanti: mancanti, avvisi: avvisi,
+                         bloccato: true, incompleto: v.esito === 'NON_RISPOSTO' };
+            }
+        }
+        return { esito: 'LIBERA', effetto: null, puoProcedere: true, motivo: null,
+                 domanda: null, mancanti: [], avvisi: avvisi, bloccato: false, incompleto: false };
+    };
+
+    // Le domande di Trincerarsi e dell'Ingresso in Campo: il testo viene dal
+    // catalogo, la forma e` quella qui sopra.
+    M.domandeTrincerarsi = function () {
+        const T = catalogo('TRINCERARSI') || {};
+        return [{ id: 'spazioSufficiente', testo: T.domanda || null,
+                  blocca: true, rispostaBloccante: false, seBloccata: 'IDLE',
+                  seNo: T.seRequisitoFallisce || null }];
+    };
+    // REGOLA (Effects del Combat Jump, righe 8046-8050 — chat REGOLE, 5
+    // ottobre): il punto di atterraggio NON e` un Requisito ma un VINCOLO DI
+    // PIAZZAMENTO ("the player cannot place the Trooper..."). Agisce prima:
+    // il punto non e` ammesso e se ne sceglie un altro, nessuna skill fallita
+    // da convertire — percio` VIETA. Trincerarsi invece scrive "instead
+    // performs an Idle" (righe 7415-7431) — percio` IDLE.
+    M.domandeIngressoInCampo = function () {
+        const R = catalogo('INGRESSO_IN_CAMPO') || {};
+        return [{ id: 'puntoValido', testo: R.domanda || null,
+                  blocca: true, rispostaBloccante: false, seBloccata: 'VIETA',
+                  seNo: 'Il punto scelto non \u00e8 valido: scegline un altro prima di tirare.' }];
+    };
+
     M.domandeDeployable = function (fase) {
         const D = catalogo('REGOLE_DEPLOYABLE');
         const dom = (D && D.domande) || {};
@@ -8576,18 +8687,30 @@
                 return { scatta: false, rivela: false,
                          motivo: 'Drop Bear lanciato in modo BS in QUESTO Ordine: non puo` detonare finche` l\'Ordine non e` concluso.' };
             }
-            if (ctx.nelTriggerArea === false) return { scatta: false, rivela: false, motivo: R.fuoriArea };
-            if (ctx.soloSchivataOGuts === true) return { scatta: false, rivela: false, motivo: R.nonSchivataGuts };
-            if (ctx.alleatoSottoSagoma === true) return { scatta: false, rivela: false, motivo: R.nonSeAlleato };
+            // Un altro deployable non la innesca: e` un verdetto che NON
+            // dipende dalle risposte, quindi viene PRIMA delle domande. Stava
+            // dopo, e contro un Deployable si rispondeva a tre domande a vuoto.
+            if (nemico && nemico.deployable) {
+                return { scatta: false, motivo: B.nonInnescaAltriDeployable || 'Un Deployable non ne attiva un altro.' };
+            }
+            // LE TRE DOMANDE passano dal meccanismo unico (M.valutaDomanda):
+            // e` una risposta solo true o false. 🔴 Fino al 5 ottobre qui i
+            // mancanti si cercavano con === undefined: con null o '' la mina
+            // SCATTAVA (misura della chat INTERFACCIA). Era lo stesso difetto
+            // tolto lo stesso giorno da piazzamento e Trincerarsi, e qui mi
+            // era sfuggito.
+            // Una risposta che chiude la faccenda la chiude anche se le altre
+            // mancano (fuori dalla Trigger Area non serve sapere dell'alleato):
+            // per questo si guardano TUTTE, non la prima che ferma.
+            const esiti = M.domandeDeployable('INNESCO_MINA').map(function (d) { return M.valutaDomanda(d, ctx[d.id]); });
+            const chiusa = esiti.find(function (v) { return v.esito === 'BLOCCATA'; });
+            if (chiusa) return { scatta: false, rivela: false, motivo: chiusa.motivo };
             // Senza TUTTE le risposte la mina non scatta: "non so" non e` "si`".
             // Una detonazione al tavolo non si annulla.
-            const mancanti = ['nelTriggerArea', 'soloSchivataOGuts', 'alleatoSottoSagoma'].filter(k => ctx[k] === undefined);
+            const mancanti = esiti.filter(function (v) { return v.esito === 'NON_RISPOSTO'; }).map(function (v) { return v.id; });
             if (mancanti.length) {
                 return { scatta: null, mancanti: mancanti,
                          motivo: 'Mancano risposte (' + mancanti.join(', ') + '): la mina non scatta finche` il giocatore non risponde.' };
-            }
-            if (nemico && nemico.deployable) {
-                return { scatta: false, motivo: B.nonInnescaAltriDeployable || 'Un Deployable non ne attiva un altro.' };
             }
             const cyber = M.eCybermine(arma);
             return {
@@ -8615,16 +8738,33 @@
         if (st.camo || st.imp) {
             return { scatta: false, motivo: B.noteEsclusi || 'Non scatta contro i Marker.' };
         }
-        // Il percorso: l'app non lo sa, lo chiede.
-        if (ctx.percorsoLibero === false) {
-            return { scatta: false, motivo: B.noSePercorsoBloccato || 'Percorso bloccato.' };
-        }
-        if (ctx.percorsoLibero === undefined) {
-            note.push('Percorso non verificato: chiedere se è libero prima di risolvere.');
-        }
-        // Un altro deployable non lo innesca.
+        // Un altro deployable non lo innesca: non dipende dalle risposte.
         if (nemico && nemico.deployable) {
             return { scatta: false, motivo: B.nonInnescaAltriDeployable || 'Un Deployable non ne attiva un altro.' };
+        }
+        // ZdC e percorso: l'app non li sa, li chiede — UNA domanda
+        // (domandeDeployable('ATTIVAZIONE'), id 'dentroZdC').
+        //
+        // 🔴 UN FATTO, DUE NOMI. La domanda si chiama dentroZdC, e qui si
+        // leggeva solo ctx.percorsoLibero. MISURATO il 5 ottobre: con
+        // { dentroZdC: false } — cioe` il NO scritto con la chiave della
+        // domanda — il koala SCATTAVA. E senza risposta scattava con una
+        // nota: "non risposto" eseguiva.
+        // Ora: il nome e` dentroZdC; percorsoLibero resta accettato perche`
+        // arriva ancora da fuori. Un NO sotto uno qualunque dei due nomi
+        // chiude; un SI` sotto uno dei due basta; nessuno dei due = NON
+        // RISPOSTO, e non scatta (scatta: null, come per le mine).
+        const dZ = M.domandeDeployable('ATTIVAZIONE')[0];
+        const dueNomi = [M.valutaDomanda(dZ, ctx.dentroZdC), M.valutaDomanda(dZ, ctx.percorsoLibero)];
+        if (dueNomi.some(function (v) { return v.esito === 'BLOCCATA'; })) {
+            // Il NO alla domanda intera (ZdC o percorso) porta il testo della
+            // domanda; quello al solo percorso, il testo del percorso.
+            return { scatta: false, motivo: (dueNomi[0].esito === 'BLOCCATA' && dZ.seNo)
+                                            || B.noSePercorsoBloccato || dZ.seNo || 'Percorso bloccato.' };
+        }
+        if (!dueNomi.some(function (v) { return v.esito === 'LIBERA'; })) {
+            const testo = 'Percorso non verificato: chiedere se è libero prima di risolvere.';
+            return { scatta: null, mancanti: [dZ.id], motivo: testo, note: note.concat([testo]) };
         }
 
         return {
@@ -9093,7 +9233,14 @@
         if (!pre.puo) {
             return { entra: false, idle: false, motivo: pre.motivo, blocchi: pre.blocchi };
         }
-        if (spazioSufficiente === false) {
+        // La risposta passa dal meccanismo unico (M.valutaDomande): null e ''
+        // sono NON RISPOSTO come undefined — prima facevano entrare in Foxhole.
+        const dom = M.valutaDomande(M.domandeTrincerarsi(), { spazioSufficiente: spazioSufficiente });
+        if (dom.esito === 'NON_RISPOSTO') {
+            return { entra: false, idle: false, incompleto: true,
+                     motivo: 'Manca la risposta sullo spazio disponibile.' };
+        }
+        if (dom.esito === 'BLOCCATA') {
             // 🔴 NON "ordine annullato": la truppa esegue un Idle. L'Ordine
             // e` speso comunque, e va detto al giocatore.
             // E l'Idle da requisito fallito porta le sue conseguenze: genera
@@ -9107,10 +9254,6 @@
                 note: ['L\'Ordine è comunque speso.']
                     .concat(idle.note).concat(cons.note)
             };
-        }
-        if (spazioSufficiente === undefined) {
-            return { entra: false, idle: false, incompleto: true,
-                     motivo: 'Manca la risposta sullo spazio disponibile.' };
         }
         const st = T.statoFoxhole || {};
         return {
@@ -9331,6 +9474,8 @@
             voci: [{ fonte: 'base', valore: base, motivo: `PH di ${M.nomeUnita(unita)}: ${base}` }],
             divieti: R.divieti || [],
             domanda: R.domanda || null,
+            // La stessa domanda nella forma del meccanismo unico.
+            domande: M.domandeIngressoInCampo(),
             // Cosa succede fallendo: si dice PRIMA di tirare.
             seFallisce: R.seFallisce || null,
             note: note.filter(Boolean), avvisi: avvisi
@@ -9558,10 +9703,23 @@
     };
 
     // Cosa cambia sull'unita` quando l'Idle nasce da un requisito fallito.
-    // azione: l'Abilita` DICHIARATA che si e` trasformata in Idle. Serve per
-    // la rivelazione: riga 7455, un Marker si rivela "quando la skill
-    // dichiarata l'avrebbe rivelato" — un Movimento Cauto fallito lascia il
-    // Camuffato com'e`. Prima si rivelava sempre. (Chat REGOLE, 29 sett.)
+    //
+    // REGOLA (riga 7462; wiki "Idle" identica al PDF 5.1.1, nessuna FAQ —
+    // verifica della chat REGOLE, 5 ottobre): "if the Trooper is in Marker
+    // form, it is revealed, and its Model is placed where the Marker was".
+    // SEMPRE: nessuna condizione sull'Abilita` dichiarata.
+    //
+    // 🔴 Dal 29 settembre al 5 ottobre qui c'era un ramo condizionale: si
+    // rivelava solo se l'Abilita` dichiarata l'avrebbe fatto, e un Movimento
+    // Cauto fallito restava Marker. Era una lettura sbagliata: la riga 13627
+    // dice cosa cancella il Camuffato quando la skill viene ESEGUITA; qui la
+    // skill NON viene eseguita. Non e` il Cauto a rivelare, e` il requisito
+    // fallito. Un Cauto RIUSCITO resta Marker, e quello lo decide
+    // statoDopoAbilita, non questa funzione.
+    //
+    // 🔴 `azione` NON E` UN RESIDUO: non decide niente, ma compone la nota
+    // per il giocatore ("il requisito di X e` fallito"). Toglierlo lascia la
+    // rivelazione giusta e la nota senza il motivo. (Chat REGOLE, 5 ott.)
     M.conseguenzeIdle = function (unita, arma, azione) {
         const e = { usiSpesi: null, rivelata: false, note: [] };
         const st = M.statoBersaglio(unita);
@@ -9576,23 +9734,8 @@
             e.note.push(`${arma.nome}: un uso Disposable è speso comunque.`);
         }
         if (st.camo || st.imp) {
-            if (azione) {
-                const r = M.statoDopoAbilita(unita, azione, {});
-                const rivelerebbe = r && r.dopo && !r.dopo.daVerificare && String(r.dopo.deployState).toUpperCase() === 'NORMAL';
-                if (r && r.dopo && r.dopo.daVerificare) {
-                    e.note.push(`In forma di Marker: se "${azione}" l'avrebbe rivelata \u00e8 DA VERIFICARE — resta Marker, decidi al tavolo.`);
-                } else if (rivelerebbe) {
-                    e.rivelata = true;
-                    e.note.push(`In forma di Marker: "${azione}" l'avrebbe rivelata, quindi viene rivelata e sostituita col Modello (riga 7455).`);
-                } else {
-                    e.note.push(`In forma di Marker: "${azione}" non l'avrebbe rivelata, quindi resta Marker (riga 7455).`);
-                }
-            } else {
-                // Senza l'Abilita` dichiarata non si puo` sapere: resta il
-                // comportamento di prima, e lo si dice.
-                e.rivelata = true;
-                e.note.push('In forma di Marker: viene rivelata e sostituita col Modello (Abilit\u00e0 dichiarata non nota).');
-            }
+            e.rivelata = true;
+            e.note.push(`In forma di Marker: viene rivelata e sostituita col Modello${azione ? ` — il requisito di "${azione}" \u00e8 fallito` : ''} (riga 7462: sempre, qualunque fosse l'Abilit\u00e0 dichiarata).`);
         }
         return e;
     };
@@ -9952,6 +10095,147 @@
         const u = Object.assign({}, unita, { camoUsato: true });
         return { unitaAggiornata: u,
                  mutazioni: [{ campo: 'camoUsato', da: !!unita.camoUsato, a: true }] };
+    };
+
+
+    // ==================================================================
+    // PARTE 51-BIS: RIENTRARE IN CAMO (blocco ORD, punto 2)
+    // ------------------------------------------------------------------
+    // REGOLA (riga 13597): nel Turno Attivo si torna in Stato CAMO solo
+    // spendendo una Long Skill, fuori dalla LoF di Marker e Truppe nemiche.
+    //  - Camouflage (1 Use): serve l'uso disponibile, e lo si consuma
+    //    (FAQ F07) — M.puoEntrareInCamo / M.consumaCamo, gia` esistenti.
+    //  - Nemici Incoscienti o Disconnessi non lo impediscono (FAQ F08): sta
+    //    nel testo della domanda, perche` la LoF la vede solo il giocatore.
+    //  - Chi rientra NON conta come lo stesso Marker (riga 13605).
+    //
+    // LETTURA (chat MOTORE, 5 ottobre — da confermare con REGOLE): in LoF di
+    // un nemico l'effetto e` VIETA, non IDLE. La riga sta sotto ACTIVATION
+    // dello Stato, non fra i Requisiti di un'Abilita`. Il valore sta nel
+    // catalogo (seInLoFEffetto): se la lettura cambia, cambia li`.
+    //
+    // 🔴 LIMITE DICHIARATO. "Chi ha fallito lo Scoprire non ritenta sullo
+    // stesso Marker fino al prossimo Turno" oggi NON e` modellato: e` solo
+    // una nota di ordine_scoprire. Quindi "non conta come lo stesso Marker"
+    // qui e` una NOTA al giocatore e il campo nuovoMarker nel risultato;
+    // non c'e` nessuna memoria da azzerare. Non aggiungo un contatore che
+    // nessuno leggerebbe.
+    //
+    // Schema solito: il motore calcola l'unita` AGGIORNATA, l'app la
+    // sostituisce (come applicaIdle e creaDeployable). La rivelazione tocca
+    // tre campi; il rientro pure: deployState, state, states.camo.
+    // ==================================================================
+    M.domandeRientroCamo = function () {
+        const C = catalogo('RIENTRO_CAMO') || {};
+        return [{ id: 'fuoriDallaLoF', testo: C.domanda || null,
+                  blocca: true, rispostaBloccante: false,
+                  seBloccata: (C.seInLoFEffetto === 'IDLE') ? 'IDLE' : 'VIETA',
+                  seNo: C.seInLoF || null }];
+    };
+
+    // Puo` DICHIARARLO? Cio` che il motore sa senza chiedere.
+    //   ctx.inAro: e` un ARO — non si puo`, e` solo del Turno Attivo.
+    M.puoRientrareInCamo = function (unita, ctx) {
+        ctx = ctx || {};
+        const C = catalogo('RIENTRO_CAMO') || {};
+        const sk = skillsDi(unita);
+        const st = M.statoBersaglio(unita || {});
+        const blocchi = [], avvisi = [];
+
+        if (ctx.inAro) blocchi.push('Solo nel Turno Attivo: non \u00e8 un\'ARO (riga 13597).');
+        if (!/CAMOUFLAGE/.test(sk)) blocchi.push(`Serve l'Abilit\u00e0 ${C.skillRichiesta || 'Camouflage'}.`);
+        if (st.camo || st.imp) blocchi.push('\u00c8 gi\u00e0 in forma di Marker.');
+        if (st.hidden) blocchi.push('\u00c8 in Schieramento Nascosto: non \u00e8 sul tavolo.');
+        // 🔴 NON M.eNullo: qui si chiede "puo` agire", come in puoTrincerarsi.
+        if (st.morto || st.incosciente || st.disconnesso) blocchi.push('Non puo` agire: Morto, Incosciente o Disconnesso.');
+        // Ingaggiato e Ritirata! cancellano gli stati Marker
+        // (M.cancellaStatiMarker): entrarci sarebbe uscirne subito.
+        if (st.engaged) blocchi.push('\u00c8 Ingaggiato: lo Stato CAMO verrebbe cancellato subito.');
+        if (st.retreat) blocchi.push('\u00c8 in Ritirata!: lo Stato CAMO verrebbe cancellato subito.');
+        // Camouflage (1 Use), FAQ F07.
+        const uso = /CAMOUFLAGE/.test(sk) ? M.puoEntrareInCamo(unita) : { puo: true, unUso: false };
+        if (!uso.puo && !(st.camo || st.imp)) blocchi.push(uso.motivo);
+        // Impetuoso: lo stato si cancella, ma "e` Impetuoso" il motore non lo
+        // sa con certezza (Frenzy lo diventa in partita). Si avvisa, non si
+        // blocca.
+        if (/IMPETUOUS|FRENZY/.test(sk)) avvisi.push(C.impetuoso || null);
+
+        return {
+            puo: blocchi.length === 0,
+            blocchi: blocchi,
+            motivo: blocchi.length ? blocchi[0] : null,
+            tipo: C.tipo || 'LONG_SKILL',
+            unUso: !!uso.unUso,
+            domande: M.domandeRientroCamo(),
+            avvisi: avvisi.filter(Boolean)
+        };
+    };
+
+    // L'esito, date le risposte del giocatore ({ fuoriDallaLoF: true|false }).
+    //   esito: 'NON_DISPONIBILE'  non puo` dichiararlo (blocchi)
+    //          'NON_RISPOSTO'     manca la risposta: NON esegue
+    //          'VIETATO'          in LoF: non si dichiara, Ordine non speso
+    //          'IDLE'             solo se il catalogo dira` seInLoFEffetto IDLE
+    //          'RIENTRA'          entra in Stato CAMO
+    M.rientraInCamo = function (unita, risposte, ctx) {
+        const C = catalogo('RIENTRO_CAMO') || {};
+        const pre = M.puoRientrareInCamo(unita, ctx);
+        const base = { rientra: false, ordineSpeso: false, generaAro: false,
+                       unitaAggiornata: unita, mutazioni: [], note: [], avvisi: pre.avvisi };
+        if (!pre.puo) {
+            return Object.assign(base, { esito: 'NON_DISPONIBILE', motivo: pre.motivo, blocchi: pre.blocchi });
+        }
+        const dom = M.valutaDomande(pre.domande, risposte || {});
+        if (dom.esito === 'NON_RISPOSTO') {
+            return Object.assign(base, { esito: 'NON_RISPOSTO', incompleto: true,
+                                         motivo: 'Manca la risposta sulla Linea di Tiro dei nemici.' });
+        }
+        if (dom.esito === 'BLOCCATA' && dom.effetto === 'IDLE') {
+            const idle = M.applicaIdle(unita, null, { azione: M.AZIONI.RIENTRO_CAMO });
+            return Object.assign(base, { esito: 'IDLE', idle: true, ordineSpeso: true, generaAro: true,
+                                         motivo: dom.motivo, unitaAggiornata: idle.unitaAggiornata,
+                                         mutazioni: idle.mutazioni, note: ['L\'Ordine \u00e8 comunque speso.'].concat(idle.note) });
+        }
+        if (dom.esito === 'BLOCCATA') {
+            return Object.assign(base, { esito: 'VIETATO', motivo: dom.motivo });
+        }
+
+        // Entra. Prima l'uso (F07), poi i tre campi dello stato.
+        const uso = M.consumaCamo(unita);
+        const prima = uso.unitaAggiornata;
+        const u = Object.assign({}, prima);
+        const mutazioni = uso.mutazioni.slice();
+        const deployPrima = String(prima.deployState || 'NORMAL').toUpperCase();
+        u.deployState = 'CAMO';
+        mutazioni.push({ campo: 'deployState', da: deployPrima, a: 'CAMO' });
+        if (Object.prototype.hasOwnProperty.call(prima, 'state')) {
+            mutazioni.push({ campo: 'state', da: prima.state, a: 'CAMO' });
+            u.state = 'CAMO';
+        }
+        const stPrima = prima.states || {};
+        u.states = Object.assign({}, stPrima, { camo: true });
+        mutazioni.push({ campo: 'states.camo', da: !!stPrima.camo, a: true });
+
+        const mim = M.valoreMimetismo ? (M.valoreMimetismo(unita) || 0) : 0;
+        const note = [
+            `${M.nomeUnita(unita)} rientra in Stato CAMO: si sostituisce il Modello col Marker${mim ? ` (Mimetism ${mim})` : ''}.`,
+            C.nuovoMarker || null,
+            pre.unUso ? 'Camouflage (1 Use): l\'uso \u00e8 consumato (FAQ F07).' : null,
+            C.fireteam || null
+        ].filter(Boolean);
+
+        return {
+            esito: 'RIENTRA', rientra: true, ordineSpeso: true, isLongSkill: true,
+            generaAro: true,
+            stato: 'camo', marker: 'CAMO', modMarker: mim,
+            // riga 13605: e` un Marker NUOVO. Oggi e` un'informazione, non una
+            // memoria azzerata (vedi il LIMITE in testa alla PARTE 51-BIS).
+            nuovoMarker: true,
+            unUsoConsumato: uso.mutazioni.length > 0,
+            unitaAggiornata: u, mutazioni: mutazioni,
+            note: note, avvisi: pre.avvisi,
+            fonti: ['riga 13597', 'riga 13605'].concat(pre.unUso ? ['FAQ F07'] : [])
+        };
     };
 
 

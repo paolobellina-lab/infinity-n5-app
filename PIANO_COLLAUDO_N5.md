@@ -1,47 +1,37 @@
-<!-- @versione 2026-09-29.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-09-30.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 6)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 7)
 
-Sostituisce la revisione 5 del 26 settembre. In mezzo sono cambiate tre cose
-grosse: i **database** sono passati dalla lettura a occhio dei PDF al JSON
-ufficiale di Corvus Belli (765 profili, 356 dei quali non c'erano affatto), il
-**giro degli allarmi** fra le due app e l'Hub è stato eseguito per la prima
-volta da un banco, e la **ripresa di una partita** interrotta adesso esiste.
+Sostituisce la revisione 6 del 29 settembre.
 
-Le prove si eseguono **dall'app**, non in Node. Tutto ciò che si poteva
-verificare col motore è verde: 71 file di test, 2591 prove, banco di confronto
-a zero divergenze. Per la prima volta la rete non verifica solo i dati contro
-se stessi — `test_fonte_ufficiale.js` li confronta con `101.json` e `501.json`,
-che sono la fonte, e `test_coerenza_dati.js` controlla che il database non si
-contraddica.
+# 0. Quello che è cambiato dalla revisione 6
 
-Ogni valore atteso è stato calcolato facendo girare `motore_regole_n5.js`
-2026-09-29.1 sui profili veri dei due database. Dove motore e regolamento non
-concordano la prova è marcata **[BUG NOTO]**, e il blocco V dice perché.
-Le regole citate rimandano a `REGOLE_N5_v5_1_1.txt`, verificabile con `grep -n`.
+**Tre difetti trovati al tavolo sono aperti**, e tre prove di questo piano oggi
+non arrivano in fondo: l'anello della scelta dell'arma (BS-06), il Burst della
+Soppressione in reazione (BS-12), e gli ordini senza tiro che non avvisano
+l'avversario (A-13). Stanno tutti nel blocco V, con la riga di regolamento.
 
----
+**Cinque prove avevano il bersaglio sbagliato**, e sono corrette: BS-22 usava il
+Morlock, che è Nomade come l'attaccante; BS-23 lo Zondnautica-A, idem; BS-16
+chiedeva al Fusiliere un (+1B) che nessuno dei suoi dieci profili ha. A-11 diceva
+che la Soppressione va a pochi: la portano **462 profili su 765**, e per provare
+il filtro serve chi NON ce l'ha.
 
-# 0. Quello che è cambiato dalla revisione 5
+**A-07, A-10, A-20 e A-21 erano troppo corte** per essere eseguite da chi non le
+ha scritte: ora dicono cosa preparare e cosa guardare.
 
-**I numeri delle truppe sono cambiati.** I due database vengono ora dal JSON
-ufficiale: 765 profili invece di 442, e 172 profili modificati. Se una prova di
-questo piano dà un numero diverso da quello scritto, **guarda prima la scheda
-ufficiale**: in questa revisione i valori attesi sono stati ricalcolati, ma il
+**Un blocco nuovo, ORD**: le tre voci che non tirano e hanno una domanda davanti
+— piazzare equipaggiamento, Cybermask, rientrare in Camuffato. Le ultime due sono
+da costruire.
+
+**I numeri delle truppe vengono dal JSON ufficiale**: 765 profili. Se una prova dà
+un numero diverso da quello scritto qui, guarda prima la scheda ufficiale — il
 piano invecchia insieme ai dati.
 
-Le correzioni da confermare al tavolo, in ordine di quanto pesano:
-- **Gli usi Disposable si consumano** (nuovo blocco DIS). Fino al 27 settembre
-  un Panzerfaust tirato restava a due usi per sempre.
-- **Il dado speciale (+1SD) arriva a chi tira** (DIS-05): il motore lo
-  calcolava e non lo mostrava a nessuno.
-- **La Schivata contro una mina** (DET-01…04) e il −3 che viene dalla Sagoma,
-  non dal fatto che sia un deployable: mina 7, Koala 10, MadTraps 10.
-- **La ripresa della partita** (RIP): app e Hub riaprono su una partita in
-  corso senza cancellarla.
-- **Il RemDriver** (DEP-12), la **Tech-Recovery** (SUP-06), l'**Albedo** col
-  valore del profilo (BS-26), il **trattino** che rende l'azione impossibile
-  (ST-21).
+Le prove si eseguono **dall'app**. Tutto ciò che si poteva verificare col motore è
+verde: 71 file di test, 2596 prove, banco di confronto a zero divergenze.
+I valori attesi sono calcolati con `motore_regole_n5.js` 2026-09-29.2 sui profili
+veri. Le regole citate rimandano a `REGOLE_N5_v5_1_1.txt`, con `grep -n`.
 
 ## Come leggere una prova
 
@@ -163,9 +153,17 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 - Atteso: nessuna azione, ma **ARO generato** — regolamento p.80, "its declaration just activates the Trooper, potentially generating AROs". Nella revisione 1 il catalogo diceva il contrario, ed era l'unica azione di movimento a non generarne.
 
 **A-07 — Requisito non soddisfatto → Idle**
-- Dichiara un'abilità di cui l'unità non ha i requisiti: Trincerarsi senza spazio, un gregario del Coordinato che non può fare quello che fa la Punta
-- Atteso, tre cose insieme: l'app converte in Idle e **genera l'ARO**; le munizioni delle armi **Disposable sono comunque spese**; e se la truppa è **in forma di Marker viene rivelata**, col Modello messo dov'era il Marker.
-- Le ultime due sono quelle che si dimenticano: un Moran che dichiara un piazzamento e fallisce il requisito perde l'uso del CrazyKoala **e** si scopre.
+Non è una prova sui requisiti: è sulle **tre cose che devono succedere insieme**
+quando un requisito fallisce.
+- Prendi un **Moran (Surprise Attack, Camouflage)**, che porta i CrazyKoalas, e
+  mettilo in copertura come segnalino mimetico. Dichiara **PIAZZARE
+  EQUIPAGGIAMENTO** e rispondi **sì** alla domanda "c'è un nemico nell'Area
+  d'Innesco?": il requisito non è soddisfatto.
+- Atteso, tutte e tre: l'azione diventa **Idle**; l'**ARO viene generato lo
+  stesso**; l'**uso del CrazyKoala è speso** e non torna indietro; e il Moran
+  **si rivela**, col modello messo dov'era il segnalino.
+- Le ultime due sono quelle che si dimenticano, e al tavolo costano un ordine,
+  un uso e la copertura tutti insieme.
 
 **A-08 — Salto e scalata**
 - Morlock · SALTO · Atteso: nessun calcolo, ARO generato, **ordine intero** consumato.
@@ -175,13 +173,32 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 - Atteso: con la skill l'arrampicata è **mezzo ordine** e resta la seconda metà per un'altra Abilità Breve; senza, ordine intero. La funzione del motore rispondeva giusto da giorni, ma il modulo chiedeva il tipo a chi non conosce l'unità.
 
 **A-10 — Ordini senza modulo**
-- Atteso: **nessuno**. Tutte le azioni del vocabolario hanno un modulo e `verificaRouter()` è verde. Se un ordine compare e poi dà "Azione non riconosciuta", segnalalo: significa `<script>` mancante in `app.html`.
+È una prova che deve dare **zero risultati**: si apre il menu di una truppa e si
+prova ogni voce, una per una.
+- Atteso: ogni voce apre una schermata. Se una dà **"Azione non riconosciuta"**,
+  manca lo `<script>` di quel modulo in `app.html`.
+- È il controllo inverso di quello che ha trovato ARRAMPICARSI e SOPPRESSIONE
+  mancanti dal menu: quello cercava azioni senza voce, questo voci senza modulo.
+- Utile anche `verificaRouter()` in console, che risponde su tutte insieme.
 
 **A-11 — Requisiti di menu**
-- SOPPRESSIONE solo a chi ha un'arma col Tratto Suppressive Fire. Attenzione al profilo, non alla truppa: **Alguacil (Combi Rifle) sì**, **Morlock (Combi Rifle) sì** — ha la stessa arma — **Morlock (Assault Pistol), (Kobra Pistol × 2) e (Boarding Shotgun) no**. La revisione 4 diceva "Morlock no" su cinque profili di cui uno si comporta al contrario.
-- HACKING solo a chi ha Hacker o un Hacking Device; con **due** dispositivi, i programmi si sommano (Mary Problems).
-- SUPPORTO solo a Doctor/Paramedic/Engineer o a chi porta MediKit/GizmoKit.
-- **PIAZZARE EQUIPAGGIAMENTO** solo a chi ha un'arma col Tratto Deployable.
+Attenzione: qui si prova che una voce **manchi** dove deve mancare. Vederla quasi
+sempre non è un difetto.
+- **SOPPRESSIONE**: ce l'hanno **462 profili su 765**, perché Combi Rifle, Rifle,
+  HMG, Spitfire e Red Fury portano tutti il Tratto Suppressive Fire. Per provare
+  il filtro serve una truppa **senza**: **Grenzer (Missile Launcher)**,
+  **Grenzer (MULTI Sniper Rifle)**, **Hellcat (Boarding Shotgun)** — lì la voce
+  NON deve comparire. Attenzione al profilo e non alla truppa: il **Morlock
+  (Combi Rifle) la ha**, il Morlock (Assault Pistol) no.
+- **HACKING** solo a chi ha Hacker o un dispositivo. Con **due** dispositivi i
+  programmi si sommano: **Mary Problems** vede Trinity, Carbonite, Oblivion,
+  Spotlight e Total Control.
+- **SUPPORTO** deve comparire su **Daktari (Doctor)**, **Alguacil (Paramedic)**,
+  **Hellcat (Paramedic)** e su chi porta un GizmoKit (i **Clockmaker**). NON su
+  un Alguacil (Combi Rifle) qualunque.
+- **PIAZZARE EQUIPAGGIAMENTO**: 116 profili. Sì su **Moran (Surprise Attack,
+  Camouflage)** coi CrazyKoalas, **Spektr (Minelayer)** con E/M Mine e Shock
+  Mine, **Heckler (Hacker, Killer Hacking Device)**. NO su un Fusiliere.
 
 **A-12 — Io muovo, tu mi spari** *(era il difetto che bloccava)*
 - Attivo: Alguacil (Combi Rifle) · MUOVERE → MUOVERE
@@ -190,9 +207,15 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 - Sul tabellone il Fusiliere deve comparire sotto **PanOceania**, non sotto la fazione attiva: lo scontro è marcato come reazione non bersagliata.
 - Nella revisione 3 usciva "NESSUN TIRO DI DADO DA EFFETTUARE".
 
-**A-13 — Lo stesso con gli altri ordini senza tiro**
-- Ripeti A-12 con CAUTO (rispondendo "dentro"), SALTO, IDLE e PIAZZARE EQUIPAGGIAMENTO
-- Atteso: in tutti, il tiro del reattivo compare. È il caso più comune della partita, e vale per ogni ordine che non tira.
+**A-13 — Lo stesso con gli altri ordini senza tiro** **[DIFETTO APERTO]**
+- Ripeti A-12 con CAUTO (rispondendo "dentro"), SALTO, IDLE e PIAZZARE
+  EQUIPAGGIAMENTO
+- Atteso: in tutti, l'avversario riceve l'allarme e il tiro del reattivo compare.
+- **Oggi NON funziona con PIAZZARE EQUIPAGGIAMENTO e con IDLE**: l'ordine passa
+  diritto al calcolo senza generare l'ARO (trovato da Paolo il 30 settembre). Il
+  motore dice che quelle azioni l'ARO lo generano — `generaAro` risponde sì per
+  entrambe — ma i due moduli non chiamano mai `inviaAllarmeAro`.
+- È il caso più comune della partita, e vale per ogni ordine che non tira.
 
 ---
 
@@ -217,8 +240,15 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 **BS-05 — MSV L1**
 - Grenzer (FO, Sensor) · Combi @ banda 1 vs Zulu-Cobra · Atteso: **16**, con la nota sul visore.
 
-**BS-06 — Mimetismo −6 e copertura**
-- Alguacil · Combi @ banda 1 vs Croc Man **in copertura** · Atteso: **5**, salvezza ARM VS 11.
+**BS-06 — Mimetismo −6 e copertura** **[DIFETTO APERTO: anello]**
+- Alguacil · Combi @ banda 1 vs **Croc Man (MULTI Sniper Rifle)**, PanOceania,
+  **in copertura** · Atteso: **5**, salvezza ARM **VS 11**. I numeri sono giusti,
+  verificati sul motore.
+- **Oggi la prova non arriva in fondo**: dopo la scelta dell'arma l'app torna a
+  chiedere l'arma, in anello (trovato da Paolo il 30 settembre). Ha la stessa
+  firma dell'anello dell'hacking chiuso il 29: la seconda metà non ritrova
+  l'arma della prima. Segnalando, indica **quale arma** avevi scelto — se aveva
+  una parentesi o una modalità, è quasi certamente lo stesso punto.
 
 **BS-07 — MSV L2 annulla il −6**
 - Intruder · HMG @ banda 2 vs Croc Man in copertura · Atteso: 13 +3 −3 = **13** B4.
@@ -238,7 +268,15 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 
 **BS-12 — Bersaglio in Soppressione entro 24"**
 - Combi @ banda 0 vs Fusilier **in Soppressione** · ARO: ATTACCO BS in SF Mode
-- Atteso: attivo **11** (−3 Soppressione). Reattivo col profilo **Combi Rifle (SF Mode)**: Burst **3**, bande 0/0/−3, gittata massima 24", avviso **A98**.
+- Atteso: attivo **11** (−3 Soppressione). Reattivo col profilo **Combi Rifle
+  (SF Mode)**: Burst **3**, bande 0/0/−3, gittata massima 24", avviso **A98**.
+- **Il Burst 3 è la parte che conta**, ed è regola scritta (riga 14649): *"Suppressive
+  Fire allows the affected Trooper to react in ARO with the full B3 value of the
+  SF Mode"*. Se vedi **Burst 1**, è un difetto — ed è quello che oggi succede
+  **quando l'attivo spara**: misurato, con un attacco attivo il reattivo in
+  Soppressione scende a 1, senza attacco resta 3. La regola generale dell'ARO
+  sta scavalcando la Soppressione, come faceva con Neurocinetics.
+- Il Burst pieno va tutto su **un solo** bersaglio: non si divide.
 
 **BS-13 — Soppressione oltre le 24"** · @ banda 3 · Atteso: il −3 **non** si applica.
 
@@ -246,7 +284,12 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 
 **BS-15 — Total Reaction** · Sierra Dronbot in ARO · Atteso: **Burst 3**, con la voce.
 
-**BS-16 — ARO normale** · Fusilier in ARO · Atteso: **Burst 1**, con la nota che le notazioni (+1B) non valgono in ARO.
+**BS-16 — ARO normale e il (+1B) che non vale in reazione**
+- Per il Burst 1 in ARO va bene qualunque **Fusilier**: Atteso **Burst 1**.
+- Ma il Fusiliere **non ha** il (+1B) — nessuno dei suoi dieci profili — quindi
+  per vedere la nota serve un profilo che ce l'abbia davvero: **Puppetbot (Red
+  Fury)** o un altro dei 25 con *BS Attack (+1B)*. Atteso: in attivo il Burst
+  sale, **in ARO no**, con la nota che lo dice.
 
 **BS-17 — BS Attack (+1B) solo in attivo**
 - Puppetbot · Red Fury @ banda 1 · Atteso: **Burst 5**, tiro **15**. Lo stesso Puppetbot in ARO: Burst **1**.
@@ -257,17 +300,38 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 **BS-19 — ARM alto**
 - Mobile Brigada (HMG) @ banda 0 vs Orc, ARO HMG · Atteso: attivo **10** B4, reattivo **11** B1, salvezza Orc **VS 9**, salvezza Brigada **VS 10**.
 
-**BS-20 — Tiro dentro una mischia** · Atteso: voce **−6**.
+**BS-20 — Tiro dentro una mischia**
+- Spari a un bersaglio che è **ingaggiato in mischia** con un'altra truppa:
+  rischi di colpire chi non volevi.
+- Atteso: fra i modificatori compare la voce **−6**.
 
-**BS-21 — Limite dei MOD** · somma oltre −12 · Atteso: voce "MOD minimo −12", e un Valore di Successo ≤ 0 deve dire **fallimento automatico**, non 1.
+**BS-21 — Limite dei MOD**
+- Accumula modificatori negativi finché la somma supera −12: fuori gittata,
+  bersaglio mimetico, in copertura, tiro dentro una mischia.
+- Atteso: compare la voce **"MOD minimo −12"** — oltre non si va — e se il
+  Valore di Successo finisce a **zero o sotto**, l'app deve dire **fallimento
+  automatico**, non mostrare 1. Un 1 sullo schermo si tira; un fallimento
+  automatico no, ed è la differenza fra sprecare un dado e sprecare un Ordine.
 
 **BS-22 — No Cover** *(risolto, da confermare)*
-- Alguacil · Combi @ banda 0 vs **Morlock "in copertura"**
-- Atteso: niente −3 all'attaccante e niente +3 all'ARM → tiro **14**, salvezza **VS 8**. Nella revisione 2 erano 11 e VS 11: sei punti regalati al Morlock.
+- Alguacil · Combi @ banda 0 vs **Dr. Harper FTO** (PanOceania) **"in copertura"**
+- Atteso: niente −3 all'attaccante e niente +3 all'ARM → tiro **14**, salvezza
+  **VS 8**. Nella revisione 2 erano 11 e VS 11: sei punti regalati al bersaglio.
+- La revisione 6 usava il **Morlock**, che è dei Nomadi come l'Alguacil: due
+  truppe della stessa fazione non si sparano. Il Dr. Harper ha No Cover e non ha
+  Mimetismo, quindi i due MOD non si confondono.
 
 **BS-23 — Limited Cover** *(risolto, da confermare)*
-- Contro un profilo con Limited Cover (Zondnautica-A e altri 17)
-- Atteso: cade **solo** il −3 all'attaccante, il +3 all'ARM resta (p.98). Nell'elenco MOD non deve comparire la copertura; nel Tiro Salvezza sì.
+- Alguacil · Combi @ banda 0 vs **Teutonic Knight (Light Shotgun, Panzerfaust)**
+  (PanOceania) in copertura
+- Atteso: cade **solo** il −3 all'attaccante, il +3 all'ARM resta (p.98) → tiro
+  **14**, salvezza **VS 13**. Nell'elenco MOD non deve comparire la copertura;
+  nel Tiro Salvezza sì.
+- La revisione 6 indicava Zondnautica-A, che è **dei Nomadi**: dei 26 profili con
+  Limited Cover, 14 sono PanOceania, e il Teutonic Knight è il più semplice
+  perché non ha Mimetismo.
+- **Prima di cominciare, controlla che il bersaglio sia davvero schierato**: una
+  prova contro un'unità che non è sul tavolo non misura niente.
 
 **BS-24 — Combat Instinct** *(risolto, da confermare)*
 - Intruder **in Camo** attacca · ARO: **Squalo Mk-II** → ATTACCO BS
@@ -881,44 +945,99 @@ qualcuno non conta i colpi.
 
 ---
 
-# 24. Blocco V — Divergenze note, da confermare
+# 23-quinquies. Blocco ORD — Ordini che non tirano, con una domanda davanti
 
-Non sono prove da superare: sono cose che il collaudo troverà, o che restano
-aperte per una ragione dichiarata.
+Tre voci con la stessa struttura: **Abilità Lunga, nessun tiro, un requisito che
+l'app non può vedere** — la linea di tiro la sa solo chi guarda il tavolo — e un
+effetto che cambia lo stato di chi agisce, non di un avversario. Due sono da
+costruire; la terza esiste già ed è il modello.
 
-**T-01 — Le mine non sanno se detonano.** Nel database le mine non hanno un
-modo di risoluzione, e il percorso Deployable modella solo il Boost. All'innesco
-il motore risponde `rimuovi: null` — *non lo so* — e l'app dice che la mina
-**resta sul tavolo**, invitando a toglierla a mano. È corretto così: un "no"
-sarebbe falso al tavolo. Finché resta, una mina esplosa la toglie il giocatore.
-→ DATABASE, quando la fonte darà il modo di risoluzione.
+**ORD-01 — Piazzare equipaggiamento** *(esiste)*
+- È il modello della famiglia: domande bloccanti, e se manca una risposta non si
+  esegue. Vedi DEP-10 e DET-04.
 
-**T-02 — Il limite "un pilota, un segnalino" è una lettura, non una regola.**
-La wiki vieta esplicitamente solo il secondo segnalino sullo **stesso REM**.
-Il limite per pilota è derivato — la skill si usa una volta, allo schieramento —
-ed è marcato come tale nel codice. Oggi la differenza è nulla: nei database un
-pilota si schiera una volta sola. → REGOLE, se la pagina lo dirà.
+**ORD-02 — Cybermask** *(da costruire)*
+- Programma già nel catalogo, su **Hacking Device Plus** e **Killer Hacking
+  Device**: un Hacking Device normale NON deve mostrarlo.
+- Regola (riga 5150): Abilità Lunga, **NFB**, nessun tiro. Requisito: l'utente
+  dev'essere **fuori dalla LoF di Modelli e Marker nemici**.
+- Atteso: una domanda sola — *"Nessun nemico ha LoF verso di te?"* — e tre esiti:
+  **no** non si può dichiarare, col motivo; **sì** l'hacker diventa Marker
+  **IMP-2** senza tirare, Ordine intero speso; **non risposto** non si esegue.
+- In IMP-2 vale l'NFB: nessun'altra Skill o Equipaggiamento. Le altre voci del
+  menu devono sparire.
 
-**T-03 — Il recupero parziale non esiste.** Se la copia locale manca del tutto
-(telefono cambiato o svuotato) il pulsante non compare e basta. Costruirlo è
-possibile, ma può recuperare **solo le unità visibili**: il numero dei nascosti
-non esiste da nessuna parte, perché per regola (riga 13896) un Hidden non mette
-il suo Ordine nel pool e l'esistenza di quell'Ordine è informazione privata.
-Se lo si fa, deve dire "non conoscibili dall'Hub, per regola" — non zero.
-→ INTERFACCIA, dopo il collaudo al tavolo.
+**ORD-03 — Rientrare in Camuffato** *(da costruire)*
+- Regola (riga 13597): *"During the Active Turn, Troopers may only return to this
+  state by spending a Long Skill, while outside the LoF of enemy Markers or
+  Troopers."*
+- Stessa domanda e stessi tre esiti. In più: la truppa deve **avere
+  Camouflage**, e con **Camouflage (1 Use)** l'uso dev'essere ancora disponibile
+  (FAQ F07) — l'**Heckler** è il profilo da usare per quel caso.
+- Da non perdere (riga 13605): una truppa rivelata che **rientra** in Camuffato
+  **non conta come lo stesso Marker**. Chi aveva fallito uno Scoprire contro di
+  lei può ritentare subito, senza aspettare il turno dopo.
 
-**T-04 — Due identificativi ignoti nel database:** `?219` sul Monstrucker e
-`?227` su Shona Carano. Le tabelle di decodifica sono ridotte per fazione, e
-questi non stanno in nessuna delle due. → DATABASE.
+---
 
-**Chiuse dalla revisione 5**, tutte da confermare in app con le prove indicate:
-gli usi Disposable (DIS), il dado speciale (DIS-05), la Schivata contro le mine
-e il −3 della Sagoma (DET), la ripresa di app e Hub (RIP), il RemDriver
-(DEP-12), la Tech-Recovery (SUP-06), l'Albedo col valore del profilo (BS-26),
-il trattino che rende impossibile l'azione (ST-21), il tocco lungo sugli stati
-(ST-22), ARRAMPICARSI e SOPPRESSIONE nel menu (A-09, A-11), i lati dello
-scontro orfano (A-12), e il koala piazzato che ora entra nel roster e viaggia
-con la busta (DEP-13).
+# 24. Blocco V — Difetti aperti e divergenze note
+
+## Difetti trovati al tavolo, non ancora chiusi
+
+**D-01 — L'anello della scelta dell'arma (BS-06).** Dopo la scelta, l'app torna a
+chiederla. Stessa firma dell'anello dell'hacking chiuso il 29 settembre: la
+seconda metà non ritrova l'arma della prima. → MOTORE.
+
+**D-02 — Il Burst della Soppressione in reazione (BS-12).** Con un attacco attivo
+il reattivo in Fuoco di Soppressione scende a **Burst 1**; senza attacco resta
+**3**. La regola (riga 14649) dice 3 sempre: la regola generale dell'ARO sta
+scavalcando la Soppressione, come faceva con Neurocinetics. → MOTORE.
+
+**D-03 — Gli ordini senza tiro che non avvisano (A-13).** PIAZZARE
+EQUIPAGGIAMENTO e IDLE passano al calcolo **senza generare l'ARO**. Il motore
+dice che lo genererebbero; i due moduli non chiamano `inviaAllarmeAro`. → MOTORE.
+
+## Divergenze note, che restano aperte per una ragione
+
+**T-01 — Le mine non sanno se detonano.** Nel database non hanno un modo di
+risoluzione. All'innesco il motore risponde `null` — *non lo so* — e l'app dice
+che la mina **resta sul tavolo**, invitando a toglierla a mano. È corretto così:
+un "no" sarebbe falso. → DATABASE, quando la fonte darà il dato.
+
+**T-02 — "Un pilota, un segnalino" è una lettura, non una regola.** La wiki vieta
+esplicitamente solo il secondo segnalino sullo stesso REM. → REGOLE.
+
+**T-03 — Il recupero parziale non esiste.** Se la copia locale manca del tutto,
+il pulsante non compare. Costruirlo è possibile, ma potrebbe recuperare **solo le
+unità visibili**: per regola (riga 13896) un Hidden non mette il suo Ordine nel
+pool, e l'esistenza di quell'Ordine è informazione privata. Se si fa, deve dire
+"non conoscibili dall'Hub, per regola" — non zero. → INTERFACCIA.
+
+**T-04 — Due identificativi ignoti:** `?219` sul Monstrucker e `?227` su Shona
+Carano. Le tabelle di decodifica sono ridotte per fazione e questi non stanno in
+nessuna delle due. → DATABASE.
+
+## Da costruire, deciso ma non fatto
+
+**C-01 — Cybermask** e **C-02 — Rientrare in Camuffato** (blocco ORD): due voci di
+menu con la stessa forma del piazzamento. → MOTORE per la regola e la domanda,
+INTERFACCIA per il menu.
+
+**C-03 — Le due zone temporanee.** Fumo ed Eclipse non sono terreni dello
+scenario: nascono da un'azione e durano un turno. Vanno **sempre** disponibili nel
+menu del calcolo, indipendentemente dallo schieramento, e si dichiarano al
+momento del tiro come la copertura. Servono entrambe, perché un MSV L2 attraversa
+il Fumo ma non l'Eclipse: con una voce sola il giocatore col visore sceglierebbe
+quella sbagliata. → INTERFACCIA per il menu, MOTORE per il MOD.
+
+**C-04 — Le icone dei due pulsanti.** Copertura e linea di tiro hanno ora le
+quattro immagini (bersaglio in copertura parziale, bersaglio non in copertura, LoF
+libera, LoF interrotta); vanno nella cartella `img/` accanto ad `app.html`.
+→ INTERFACCIA.
+
+**Chiuse dalla revisione 6**, da confermare in app: l'anello dell'hacking, il
+RemDriver col rifiuto nel motore, l'Albedo col valore del profilo, gli usi
+Disposable, il dado speciale, la Schivata contro le mine, la ripresa di app e Hub.
 
 # 25. Blocco W — Sweep in console
 

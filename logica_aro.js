@@ -1,4 +1,4 @@
-// @versione 2026-09-29.2 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-05.3 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -278,9 +278,18 @@
         const voce = (window.deployableInnescabili || []).find(x => String(x.unita.id) === String(id));
         if (!voce) return '';
         const date = (window.risposteInnesco || {})[id] || {};
-        const aperta = (voce.domande || []).find(d => date[d.id] === undefined);
+        // "Non risposto" lo decide il motore (M.rispostaDomanda), non un
+        // confronto scritto qui. Prima era "=== undefined": un null o una
+        // stringa vuota passavano per risposta data, la domanda spariva
+        // dalla schermata e compariva fra le fatte come "NO". Dai pulsanti
+        // non succedeva (scrivono solo true o false), ma il motore usava
+        // lo stesso confronto e con tre null faceva detonare la mina:
+        // due posti, la stessa idea sbagliata di cosa sia una risposta.
+        const M = motore();
+        const manca = (d) => M.rispostaDomanda(date[d.id]) === M.RISPOSTA.NON_RISPOSTO;
+        const aperta = (voce.domande || []).find(manca);
 
-        const fatte = (voce.domande || []).filter(d => date[d.id] !== undefined)
+        const fatte = (voce.domande || []).filter(d => !manca(d))
             .map(d => `<div style="color:#888; font-size:12px;">\u2713 ${date[d.id] ? 'S\u00cc' : 'NO'} \u2014 ${d.testo.slice(0, 60)}\u2026</div>`).join('');
 
         if (!aperta) return fatte;   // tutte risposte: la risoluzione e` gia` partita
@@ -315,16 +324,48 @@
         // Cosi` non si legge blocca/rispostaBloccante qui: quale risposta
         // chiuda la domanda lo sa lui.
         const date = window.risposteInnesco[id];
-        const div = document.getElementById('dom-' + id);
         const M2 = motore();
-        let esito = { scatta: null };
-        if (M2) { try { esito = M2.innescoDeployable(voce.arma, voce.nemico, date); } catch (err) { window.ultimaEccezione = err; } }
+        if (!M2) return;
+        let esito;
+        // Prima il catch metteva l'eccezione in ultimaEccezione e proseguiva
+        // con { scatta: null }, cioe` "mancano risposte": il giocatore aveva
+        // risposto a tutto, la schermata ridisegnava le domande gia` fatte e
+        // non succedeva niente, senza una parola. Un errore del motore non
+        // e` una risposta mancante: si dice, e ci si ferma.
+        try { esito = M2.innescoDeployable(voce.arma, voce.nemico, date); }
+        catch (err) {
+            window.ultimaEccezione = err;
+            console.error('\u26d4 innescoDeployable ha sollevato:', err);
+            window.mostraInnescoSospeso(id, 'Errore nel calcolo dell\'innesco: ' + (err && err.message ? err.message : err) + '. Risolvetelo a mano al tavolo.');
+            return;
+        }
 
-        if (esito && esito.scatta === null) {
-            if (div) div.innerHTML = window.domandeInnescoHtml(id);
+        if (!esito || esito.scatta === null || esito.scatta === undefined) {
+            window.mostraInnescoSospeso(id, esito && esito.motivo);
             return;
         }
         window.attivaDeployable(id);
+    };
+
+    // L'innesco e` SOSPESO: il motore non ha detto ne` si` ne` no. Se c'e`
+    // ancora una domanda aperta la si mostra, ed e` il caso normale. Se NON
+    // ce n'e` piu` — le domande a schermo sono finite ma al motore manca
+    // ancora qualcosa — lo si scrive col suo motivo. Senza questa riga quel
+    // caso lasciava il riquadro con le sole risposte date e nessun verdetto:
+    // e` la forma del koala del 5 ottobre, dove la domanda si chiamava
+    // dentroZdC e il motore leggeva percorsoLibero.
+    window.mostraInnescoSospeso = function (id, motivo) {
+        const div = document.getElementById('dom-' + id);
+        if (!div) return;
+        const voce = (window.deployableInnescabili || []).find(x => String(x.unita.id) === String(id));
+        const date = (window.risposteInnesco || {})[id] || {};
+        const M = motore();
+        const aperte = (voce && M) ? (voce.domande || []).filter(d => M.rispostaDomanda(date[d.id]) === M.RISPOSTA.NON_RISPOSTO) : [];
+        let html = window.domandeInnescoHtml(id);
+        if (!aperte.length) {
+            html += `<div style="color:#ffaa66; font-size:14px; margin-top:8px;">\u26a0\ufe0f NON DECISO: ${motivo || 'il motore non ha dato un verdetto.'}</div>`;
+        }
+        div.innerHTML = html;
     };
 
     // Tutte le domande hanno una risposta: si chiede al motore.
@@ -355,7 +396,15 @@
         const e = M.innescoDeployable(voce.arma, voce.nemico, contesto);
 
         const div = document.getElementById('dep-' + id);
-        if (!e.scatta) {
+        // Tre esiti, non due. Prima "if (!e.scatta)" leggeva anche null come
+        // "non si attiva": ma null vuol dire "non lo so ancora", e scriverlo
+        // come un no chiudeva il riquadro su un innesco mai deciso. Dal
+        // motore 2026-10-05.3 anche il koala puo` rispondere null.
+        if (e.scatta === null || e.scatta === undefined) {
+            window.mostraInnescoSospeso(id, e.motivo);
+            return;
+        }
+        if (e.scatta !== true) {
             if (div) div.innerHTML = `<div style="color:#888; font-size:14px;">
                 📦 ${M.nomeUnita(voce.unita)} — non si attiva: ${e.motivo}</div>`;
             return;
@@ -735,15 +784,16 @@
                             : ''}
                        </div>
                        ${(cfg.azione === 'BS_ATTACK' && cfg.cover) ? window.sceltaCopertura(cfg.copertura, 'window.setAroCopertura') : ''}
-                       ${window.sceltaZona ? window.sceltaZona(cfg.zona, 'window.setAroZona') : ''}
                        ${(cfg.azione === 'BS_ATTACK' && cfg.cover) ? '<div style="color:#888; font-size:12px; margin-top:4px;">-3 al tuo tiro, +3 alla sua ARM.</div>' : ''}`
                     : ''}
-                <div style="display:flex; margin-top:20px; margin-bottom:5px;">
-                    <select class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;"
-                        onchange="window.setAroTerrain(this.value)">
-                        ${window.generaOpzioniTerreni ? window.generaOpzioniTerreni(cfg.terrain) : '<option value="NESSUNO">Nessun Terreno</option>'}
-                    </select>
-                </div>
+                <!-- Terreno, Fumo ed Eclipse in UNA tendina (Paolo, 5 ottobre).
+                     Prima erano due: la zona stava sopra, dentro il blocco
+                     delle munizioni, e il terreno qui. Si usa la tendina
+                     condivisa di app.html (window.sceltaTerreno); i campi
+                     nella busta restano due, terrain e zona.
+                     NIENTE accento grave in questo commento: siamo dentro
+                     una stringa fra accenti gravi, e la chiuderebbe. -->
+                ${window.tendinaTerrenoAro(cfg)}
             </div>`;
     };
 
@@ -769,10 +819,33 @@
     window.toggleAroLoF = function () { window.aroCurrentConfig.hasLoF = !window.aroCurrentConfig.hasLoF; window.renderAroModifiersUI(); };
     window.setAroCopertura = function (v) { window.aroCurrentConfig.copertura = v || null; window.renderAroModifiersUI(); };
     window.setAroTerrain = function (v) { window.aroCurrentConfig.terrain = v; window.renderAroModifiersUI(); };
-    // La zona sulla linea di tiro: vuota diventa null, perche` nella busta
-    // "nessuna zona" e` null e non stringa vuota.
-    window.setAroZona = function (v) {
-        window.aroCurrentConfig.zona = v || null;
+    // window.sceltaTerreno sta in app.html. Dove app.html non c'e` (i banchi
+    // che caricano solo questo file) si ripiega sulla tendina del solo
+    // terreno, e lo si DICE: un ripiego muto qui vorrebbe dire Fumo ed
+    // Eclipse spariti dall'ARO senza che nessuno se ne accorga.
+    window.tendinaTerrenoAro = function (cfg) {
+        if (typeof window.sceltaTerreno === 'function') {
+            return window.sceltaTerreno(cfg.terrain, cfg.zona, 'window.setAroTerreno');
+        }
+        console.error('\u26d4 window.sceltaTerreno manca (app.html non caricato?): tendina del solo terreno, senza Fumo ne` Eclipse.');
+        return `<div style="display:flex; margin-top:20px; margin-bottom:5px;">
+                    <select class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;"
+                        onchange="window.setAroTerrain(this.value)">
+                        ${window.generaOpzioniTerreni ? window.generaOpzioniTerreni(cfg.terrain) : '<option value="NESSUNO">Nessun Terreno</option>'}
+                    </select>
+                </div>`;
+    };
+
+    // La tendina unica consegna un valore composto ("TER_10+FUMO"): lo
+    // separa chi l'ha composto, cosi` la forma sta in un posto solo.
+    // setAroTerrain resta: lo chiama il ripiego qui sopra. setAroZona e`
+    // stato tolto il 5 ottobre: non lo chiamava piu` nessuno in tutto il
+    // progetto, e un comando che scrive `zona` da solo, accanto a questo,
+    // sarebbe una seconda strada per lo stesso campo.
+    window.setAroTerreno = function (v) {
+        const s = window.separaTerrenoEZona(v);
+        window.aroCurrentConfig.terrain = s.terrain;
+        window.aroCurrentConfig.zona = s.zona;
         window.renderAroModifiersUI();
     };
 

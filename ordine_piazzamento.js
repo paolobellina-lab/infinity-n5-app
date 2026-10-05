@@ -1,4 +1,4 @@
-// @versione 2026-09-29.3 | ordine_piazzamento.js | proprieta`: chat MOTORE
+// @versione 2026-10-05.1 | ordine_piazzamento.js | proprieta`: chat MOTORE
 // ==========================================
 // 📦 PIAZZARE EQUIPAGGIAMENTO (N5) - ordine_piazzamento.js
 // ------------------------------------------
@@ -184,10 +184,12 @@
     };
 
     window.avvisoDomanda = function (d, risposta) {
-        if (risposta === undefined) return '';
-        const bloccante = (d.rispostaBloccante === false) ? (risposta === false) : (risposta === true);
-        if (!bloccante) return '';
-        const testo = (risposta === true ? d.seSi : d.seNo) || 'Piazzamento non consentito.';
+        // Chi decide se una risposta blocca e` il motore (M.valutaDomanda),
+        // non questa pagina: la regola sta in un posto solo.
+        const M = motore(); if (!M) return '';
+        const v = M.valutaDomanda(d, risposta);
+        if (v.esito !== 'BLOCCATA' && !v.avviso) return '';
+        const testo = v.motivo || v.avviso || 'Piazzamento non consentito.';
         return `<div style="margin-top:10px; padding:10px; background:#330000; border:1px solid #ff3333; border-radius:4px; color:#ff9999; font-size:13px;">⛔ ${testo}</div>`;
     };
 
@@ -198,16 +200,14 @@
 
     // Il piazzamento è bloccato da una delle risposte?
     window.piazzamentoBloccato = function () {
-        const d = window.deployableDomande || [];
-        for (let i = 0; i < d.length; i++) {
-            const r = window.deployableRisposte[d[i].id];
-            if (r === undefined) return { bloccato: true, motivo: 'Manca una risposta.', incompleto: true };
-            const bloccante = (d[i].rispostaBloccante === false) ? (r === false) : (r === true);
-            if (bloccante && d[i].blocca) {
-                return { bloccato: true, motivo: (r === true ? d[i].seSi : d[i].seNo) || 'Piazzamento non consentito.' };
-            }
-        }
-        return { bloccato: false };
+        // Il meccanismo e` del motore (M.valutaDomande): tre esiti, e NON
+        // RISPOSTO non esegue. Qui c'era una copia che riconosceva "non
+        // risposto" solo con undefined: con null il piazzamento passava.
+        const M = motore(); if (!M) return { bloccato: true, motivo: 'Motore non caricato.', incompleto: true };
+        const v = M.valutaDomande(window.deployableDomande || [], window.deployableRisposte || {});
+        if (v.esito === 'LIBERA') return { bloccato: false };
+        if (v.esito === 'NON_RISPOSTO') return { bloccato: true, motivo: v.motivo, incompleto: true };
+        return { bloccato: true, motivo: v.motivo || 'Piazzamento non consentito.' };
     };
 
     window.aggiornaPulsantePiazza = function () {
@@ -343,7 +343,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_piazzamento.js', versione: '2026-09-21.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-05.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

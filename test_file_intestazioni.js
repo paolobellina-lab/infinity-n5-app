@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | test_file_intestazioni.js | proprieta`: chat TEST
+// @versione 2026-10-05.1 | test_file_intestazioni.js | proprieta`: chat TEST
 // ================================================================
 // Ogni banco deve potersi citare. Il 23 settembre INTERFACCIA ha contato che
 // solo 12 dei 57 test avevano l'intestazione @versione: quando una chat
@@ -27,17 +27,28 @@ const sbagliati = file.filter(f => { const m = riga(f).match(RE); return m && m[
 ok(sbagliati.length === 0, 'il nome nell intestazione è quello del file (sbagliati: ' + sbagliati.length +
    (sbagliati.length ? ' — ' + sbagliati.slice(0, 5).join(', ') : '') + ')');
 
-console.log('\n=== 3. E dichiara il proprietario ===');
-const altri = file.filter(f => { const m = riga(f).match(RE); return m && m[3] !== 'TEST'; });
-ok(altri.length === 0, `i banchi appartengono alla chat TEST (altri: ${altri.length}${altri.length ? ' — ' + altri.join(', ') : ''})`);
+console.log('\n=== 3. E dichiara un proprietario vero ===');
+// Fino al 5 ottobre questo controllo pretendeva "chat TEST", perché quando è
+// nato tutti i banchi erano di TEST. Ma la regola che ci siamo dati il 29
+// settembre è un'altra — un banco appartiene a chi possiede il CODICE che
+// prova — e due banchi di INTERFACCIA hanno dovuto dichiararsi TEST per
+// passare di qui. Un'intestazione che costringe a mentire sulla proprietà è
+// peggio di nessuna intestazione: ora si accettano le quattro chat.
+const CHAT = ['TEST', 'MOTORE', 'INTERFACCIA', 'DATABASE', 'REGOLE'];
+const altri = file.filter(f => { const m = riga(f).match(RE); return m && CHAT.indexOf(m[3]) < 0; });
+ok(altri.length === 0, `ogni banco dichiara una delle chat (fuori: ${altri.length}${altri.length ? ' — ' + altri.join(', ') : ''})`);
+// E il proprietario si vede: quanti ne ha ciascuna.
+const perChat = {};
+file.forEach(f => { const m = riga(f).match(RE); if (m) perChat[m[3]] = (perChat[m[3]] || 0) + 1; });
+ok(Object.keys(perChat).length >= 1, `proprietari dichiarati: ${JSON.stringify(perChat)}`);
 
 console.log('\n=== 4. Controprova: il controllo sa dire di no ===');
 // Senza questa, un elenco vuoto non distingue "tutto a posto" da "non sto
 // guardando niente".
 ok(!RE.test('// niente intestazione'), 'una riga qualunque non passa per intestazione');
-ok(!RE.test('// @versione 2026-09-23.1 | altro.js | proprieta`: chat TEST'.replace('@versione', '@version')),
+ok(!RE.test('// @versione 2026-10-05.1 | altro.js | proprieta`: chat TEST'.replace('@versione', '@version')),
    'una parola sbagliata nella chiave non passa');
-ok(RE.test('// @versione 2026-09-23.1 | test_x.js | proprieta`: chat TEST'), 'e una riga giusta passa');
+ok(RE.test('// @versione 2026-10-05.1 | test_x.js | proprieta`: chat TEST'), 'e una riga giusta passa');
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

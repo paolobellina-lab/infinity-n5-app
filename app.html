@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-09-30.1 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-05.2 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -1484,12 +1484,16 @@
         // ==========================================
         // 🌫️  ZONA DI VISIBILITA` ZERO FRA I DUE
         // ==========================================
-        // CONTRATTO — chi la usa, la chiami e non si scriva la tendina in
-        // proprio (vale anche per i moduli della chat MOTORE):
-        //   window.sceltaZona(valoreAttuale, comando, argomento)
-        //   -> l'HTML di una tendina; il comando riceve 'FUMO' | 'ECLIPSE' | ''
-        //   Il campo da riempire nella busta si chiama `zona`, su OGNI
-        //   bersaglio e su OGNI reazione, e vale null quando e` vuoto.
+        // Qui stanno solo le DUE VOCI e il perche`. La tendina e` piu` sotto,
+        // window.sceltaTerreno, ed e` la stessa del terreno.
+        //   Il campo nella busta si chiama `zona`, su OGNI bersaglio e su
+        //   OGNI reazione, e vale null quando e` vuoto.
+        //
+        // Fino al 5 ottobre qui c'era window.sceltaZona, una tendina tutta
+        // sua. Tolta quando l'ultimo che la chiamava (ordine_attacco_bs.js,
+        // chat MOTORE, 2026-10-05.1) e` passato a sceltaTerreno. Non
+        // rimetterla: due tendine per "cosa c'e` fra me e lui" erano il
+        // difetto, non una comodita`.
         //
         // Perche` sono SEMPRE disponibili, al contrario dei terreni:
         // Fumo ed Eclipse non sono scenografia dello scenario, nascono da
@@ -1513,17 +1517,64 @@
             { id: 'ECLIPSE', nome: 'Eclipse', nota: 'Come il Fumo, ma ferma OGNI livello di Multispectral Visor.' }
         ];
 
-        window.sceltaZona = (valoreAttuale, comando, argomento) => {
-            const opzioni = ['<option value="">Nessuna zona fra i due</option>']
+        // ==========================================
+        // 🗺️  TERRENO, FUMO ED ECLIPSE IN UNA TENDINA SOLA
+        // ==========================================
+        // CONTRATTO — chi la usa, la chiami e non si scriva la tendina in
+        // proprio (vale anche per i moduli della chat MOTORE):
+        //   window.sceltaTerreno(terrenoAttuale, zonaAttuale, comando, argomento)
+        //   -> l'HTML di UNA tendina; il comando riceve un valore composto
+        //   window.separaTerrenoEZona(valore)
+        //   -> { terrain: 'TER_10' | 'NESSUNO', zona: 'FUMO' | 'ECLIPSE' | null }
+        // Nella busta i campi restano DUE, `terrain` e `zona`, come prima:
+        // cambia solo come li sceglie il giocatore, il motore non se ne
+        // accorge.
+        //
+        // Prima c'erano due tendine, una per la zona e una per il terreno.
+        // Paolo (5 ottobre) ne ha chiesta una sola: al tavolo sono la stessa
+        // domanda, "cosa c'e` fra me e lui", e due campi per una domanda
+        // sola costano un tocco e un dubbio a ogni tiro.
+        //
+        // Perche` esistono le voci COMPOSTE ("Bosco + Fumo") e non basta
+        // mettere Fumo ed Eclipse in fondo all'elenco dei terreni: con una
+        // scelta sola, chi tira attraverso il Fumo dentro un Bosco dovrebbe
+        // rinunciare a uno dei due, e la Zona di Saturazione (-1 B) si
+        // CUMULA con la visibilita`, come il Rumore Bianco per chi ha un
+        // visore. Undici terreni su diciotto hanno uno dei due tratti: non
+        // e` un caso raro. Le voci composte compaiono solo per i terreni
+        // dichiarati sul tavolo, quindi l'elenco resta corto.
+        //
+        // Fumo ed Eclipse restano SEMPRE disponibili, anche senza terreni:
+        // il perche` sta nel blocco qui sopra.
+        window.separaTerrenoEZona = (valore) => {
+            const pezzi = String(valore || 'NESSUNO').split('+');
+            const zona = (pezzi[1] === 'FUMO' || pezzi[1] === 'ECLIPSE') ? pezzi[1] : null;
+            return { terrain: pezzi[0] || 'NESSUNO', zona: zona };
+        };
+
+        window.sceltaTerreno = (terrenoAttuale, zonaAttuale, comando, argomento) => {
+            const terreno = terrenoAttuale || 'NESSUNO';
+            const zona = (zonaAttuale === 'FUMO' || zonaAttuale === 'ECLIPSE') ? zonaAttuale : '';
+            const attuale = terreno + (zona ? '+' + zona : '');
+
+            const voce = (valore, testo) =>
+                `<option value="${valore}" ${valore === attuale ? 'selected' : ''}>${testo}</option>`;
+            const terna = (id, nome) => [voce(id, nome)]
                 .concat(window.ZONE_VISIBILITA.map(z =>
-                    `<option value="${z.id}" ${z.id === valoreAttuale ? 'selected' : ''}>${z.nome}</option>`))
+                    voce(id + '+' + z.id, (id === 'NESSUNO') ? z.nome : nome + ' + ' + z.nome)))
                 .join('');
 
-            const scelta = window.ZONE_VISIBILITA.find(z => z.id === valoreAttuale);
+            let opzioni = terna('NESSUNO', 'Nessun Terreno Speciale');
+            (window.activeTerrains || []).forEach(t => {
+                const tratti = (t.tratti && t.tratti.length) ? ` (${t.tratti.join(', ')})` : '';
+                opzioni += `<optgroup label="${t.nome}${tratti}">${terna(t.id, t.nome)}</optgroup>`;
+            });
 
-            return `<div style="margin-top:10px;">
-                    <div style="color:#aaa; font-size:13px; margin-bottom:4px;">Fumo o Eclipse sulla linea di tiro:</div>
-                    <select class="huge-btn" style="width:100%; min-height:50px; font-size:15px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;"
+            const scelta = window.ZONE_VISIBILITA.find(z => z.id === zona);
+
+            return `<div style="margin-top:20px; margin-bottom:5px;">
+                    <div style="color:#aaa; font-size:13px; margin-bottom:4px;">Terreno, Fumo o Eclipse sulla linea di tiro:</div>
+                    <select class="huge-btn" style="width:100%; margin:0; min-height:55px; font-size:16px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;"
                         onchange="${window.chiamataConValore(comando, argomento)}">${opzioni}</select>
                     ${scelta ? `<div style="color:#aa8866; font-size:13px; margin-top:4px;">${scelta.nota}</div>` : ''}
                 </div>`;

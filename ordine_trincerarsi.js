@@ -1,4 +1,4 @@
-// @versione 2026-09-19.1 | ordine_trincerarsi.js | proprieta`: chat MOTORE
+// @versione 2026-10-05.1 | ordine_trincerarsi.js | proprieta`: chat MOTORE
 // ==========================================
 // 🕳️ TRINCERARSI / SAPPER (N5) - ordine_trincerarsi.js
 // ------------------------------------------
@@ -92,7 +92,8 @@
                 </div>
             </div>` : ''}`;
 
-        window.aggiornaPulsanteTrincera(r === undefined);
+        // "Non risposto" lo dice il motore: null e '' non sono una risposta.
+        window.aggiornaPulsanteTrincera(!!esito.incompleto, !!esito.idle);
         window.goToStep('step-modifiers');
     };
 
@@ -101,7 +102,7 @@
         window.mostraTrinceramento();
     };
 
-    window.aggiornaPulsanteTrincera = function (disabilitato) {
+    window.aggiornaPulsanteTrincera = function (disabilitato, idle) {
         const btn = document.getElementById('btn-esegui-calcolo') ||
                     document.querySelector('#step-modifiers .huge-btn');
         if (!btn) return;
@@ -114,7 +115,7 @@
             nuovo.style.display = '';
         nuovo.onclick = function () { window.eseguiTrinceramento(); };
         nuovo.innerText = disabilitato ? 'RISPONDI ALLA DOMANDA'
-                        : (window.trinceraSpazio === false ? 'ESEGUI IDLE' : 'TRINCERATI');
+                        : (idle ? 'ESEGUI IDLE' : 'TRINCERATI');
     };
 
     window.eseguiTrinceramento = function () {
@@ -123,11 +124,11 @@
         const pre = M.puoTrincerarsi(unita);
         if (!pre.puo) return alert(`⛔ ${pre.motivo}\n\nL'ordine non è stato eseguito.`);
 
-        if (window.trinceraSpazio === undefined) {
+        // Tre esiti, dal motore: NON RISPOSTO non esegue.
+        const esito = M.risolviTrincerarsi(unita, window.trinceraSpazio);
+        if (esito.incompleto) {
             return alert('⚠️ Rispondi alla domanda sullo spazio prima di procedere.');
         }
-
-        const esito = M.risolviTrincerarsi(unita, window.trinceraSpazio);
 
         window.coordPayloads.push({
             attaccante: unita,
@@ -177,7 +178,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_trincerarsi.js', versione: '2026-09-19.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_trincerarsi.js', versione: '2026-10-05.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

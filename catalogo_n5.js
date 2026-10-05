@@ -1,4 +1,4 @@
-// @versione 2026-09-29.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-10-05.2 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -681,7 +681,7 @@ window.CATALOGO_N5.MOVIMENTO = {
                               // Due conseguenze che il regolamento elenca e che l'app deve ricordare.
                               seDaRequisitoFallito: [
                                   'Le munizioni delle armi o degli Equipaggiamenti Disposable sono comunque SPESE.',
-                                  'Se la truppa e` in forma di Marker, viene RIVELATA e sostituita col Modello SOLO se l\'Abilita` dichiarata l\'avrebbe rivelata (riga 7455): un Movimento Cauto fallito, per esempio, la lascia Marker.'
+                                  'Se la truppa e` in forma di Marker, viene RIVELATA e sostituita col Modello.'
                               ],
                               fonte: 'regolamento, p.80' },
         'RICARICARE':       { nome: 'Reload',            tipo: 'SHORT_SKILL', generaAro: true },
@@ -693,6 +693,11 @@ window.CATALOGO_N5.MOVIMENTO = {
         // trovava: un dato presente e irraggiungibile.
         'TRINCERARSI': { nome: 'Sapper (Foxhole)', tipo: 'LONG_SKILL', generaAro: true,
                               note: 'Ordine Intero, nessun tiro. Se lo spazio non basta, la truppa esegue un Idle.' },
+        // Non e` un'Abilita` col suo nome nel regolamento: e` l'attivazione
+        // dello Stato CAMO nel Turno Attivo (riga 13597), che costa una
+        // Long Skill. Regole e fonti in CATALOGO_N5.RIENTRO_CAMO.
+        'RIENTRARE IN CAMO': { nome: 'Rientrare in CAMO', tipo: 'LONG_SKILL', generaAro: true,
+                              note: 'Ordine Intero, nessun tiro. Solo fuori dalla LoF di Modelli e Marker nemici.' },
         'PIAZZARE EQUIPAGGIAMENTO': { nome: 'Place Deployable', tipo: 'SHORT_SKILL', generaAro: true,
                               note: 'Se c\'e` un Marker Mimetico nemico nell\'Area d\'Innesco, va invece dichiarato un Attacco Intuitivo.' }
     },
@@ -1378,6 +1383,45 @@ window.CATALOGO_N5.TRATTI_CONDIZIONALI = {
 };
 
 // ------------------------------------------------------------------
+// RIENTRARE IN CAMO — Stato CAMO (Camouflaged State), ACTIVATION (riga 13597)
+// ------------------------------------------------------------------
+// "During the Active Turn, Troopers may only return to this state by
+//  spending a Long Skill, while outside the LoF of enemy Markers or
+//  Troopers."
+// ------------------------------------------------------------------
+window.CATALOGO_N5.RIENTRO_CAMO = {
+
+    skillRichiesta: 'Camouflage',
+    tipo: 'LONG_SKILL',
+    soloTurnoAttivo: true,
+    tiro: false,
+    bersagli: 'nessuno',
+
+    // 🔴 La condizione che l'app NON puo` verificare: non ha la mappa.
+    domanda: 'La truppa e` FUORI dalla Linea di Tiro di ogni Modello e di ogni Marker nemico? (Non contano i nemici Incoscienti o Disconnessi.)',
+    // LETTURA della chat MOTORE, 5 ottobre, DA CONFERMARE con la chat
+    // REGOLE: la riga 13597 sta sotto ACTIVATION, non e` un Requisito di
+    // un'Abilita`. In LoF di un nemico lo stato non si puo` attivare: non
+    // si dichiara, e l'Ordine non e` speso. Se REGOLE dira` che e` un
+    // Requisito (Idle, Ordine speso), cambia `seInLoFEffetto` in 'IDLE'.
+    seInLoF: 'In Linea di Tiro di un Modello o di un Marker nemico non si puo` rientrare in CAMO: scegli un\'altra Abilita`.',
+    seInLoFEffetto: 'VIETA',
+
+    nuovoMarker: 'Chi e` stato rivelato e rientra in CAMO NON conta come lo stesso Marker: chi aveva fallito lo Scoprire puo` ritentare.',
+    unUso: 'Camouflage (1 Use): serve l\'uso ancora disponibile, e rientrando lo si consuma.',
+    fireteam: 'Chi entra in Stato CAMO smette automaticamente di far parte della Fireteam.',
+    impetuoso: 'Lo Stato CAMO si cancella se la truppa e` o diventa Impetuosa, o entra in Ritirata!.',
+
+    fonti: {
+        attivazione: 'regolamento, riga 13597',
+        nuovoMarker: 'regolamento, riga 13605',
+        unUso: 'FAQ F07 (wiki Camouflaged State, 0.0.0)',
+        nemiciNulli: 'FAQ F08 (wiki Camouflaged State, 0.0.0)',
+        fireteam: 'regolamento, Stato CAMO (Camouflaged State), EFFECTS',
+        cancellazione: 'regolamento, Stato CAMO (Camouflaged State), CANCELLATION'
+    }
+};
+
 // TRINCERARSI (SAPPER) — LETTO dal regolamento, PARTE_1 righe 7415-7431
 // ------------------------------------------------------------------
 window.CATALOGO_N5.TRINCERARSI = {
@@ -2358,7 +2402,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-09-29.1', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-10-05.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

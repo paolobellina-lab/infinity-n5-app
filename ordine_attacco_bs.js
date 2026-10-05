@@ -1,4 +1,4 @@
-// @versione 2026-09-29.2 | ordine_attacco_bs.js | proprieta`: chat MOTORE
+// @versione 2026-10-05.1 | ordine_attacco_bs.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎯 ATTACCO BS (TIRO A DISTANZA) - ordine_attacco_bs.js
 // ------------------------------------------
@@ -307,9 +307,6 @@
                         ${ammoHtml}
                     </select>
                 </div>
-                ${(typeof window.sceltaZona === 'function')
-                    ? `<div style="margin-top:10px;">${window.sceltaZona(tgt.zona || '', 'window.setTargetZonaBS', index)}</div>`
-                    : ''}
                 ${(tgt.cover && typeof window.sceltaCopertura === 'function')
                     // 🔴 `index`, non `i`: `i` e` la variabile del ciclo delle bande,
                     // gia` chiuso. Valutarla qui sollevava, e renderTargetsAllocationBS
@@ -317,11 +314,7 @@
                     // Errore mio del 23 settembre. (Collaudo al tavolo di Paolo.)
                     ? window.sceltaCopertura(tgt.copertura, 'window.setTargetCoperturaBS', index)
                     : ''}
-                <div style="display:flex; margin-top: 25px; margin-bottom: 5px;">
-                    <select class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;" onchange="window.setTargetTerrainBS(${index}, this.value)">
-                        ${window.generaOpzioniTerreni ? window.generaOpzioniTerreni(tgt.terrain) : '<option value="NESSUNO">Nessun Terreno</option>'}
-                    </select>
-                </div>
+                ${window.tendinaTerrenoBS(tgt, index)}
             </div>`;
         });
 
@@ -369,21 +362,46 @@
         window.renderTargetsAllocation();
     };
 
-    // La ZONA di Fumo o di Eclipse fra chi spara e questo bersaglio. La tendina
-    // e` quella condivisa della chat INTERFACCIA (window.sceltaZona): il nome
-    // del campo e le due voci stanno in un posto solo. Accetta (indice,
-    // valore) in qualunque ordine; '' diventa null, non stringa vuota.
-    window.setTargetZonaBS = function (a, b) {
-        const index = (typeof a === 'number') ? a : b;
-        const valore = (typeof a === 'number') ? b : a;
-        const t = window.combatTargets && window.combatTargets[index];
+    // TERRENO, FUMO ED ECLIPSE: UNA tendina sola (richiesta di Paolo, 5
+    // ottobre). La tendina e` quella condivisa della chat INTERFACCIA
+    // (window.sceltaTerreno, app.html 2026-10-05.1): consegna un valore
+    // composto ("TER_10+FUMO") che separa chi l'ha composto
+    // (window.separaTerrenoEZona) — qui non lo si legge a mano. Nella busta i
+    // campi restano DUE, terrain e zona.
+    //
+    // Dove app.html non c'e` (i banchi che caricano solo questo file) si
+    // ripiega sulla tendina del solo terreno e lo si DICE: un ripiego muto
+    // vorrebbe dire Fumo ed Eclipse spariti dall'Attacco BS in silenzio.
+    //
+    // I due comandi di prima, setTargetZonaBS e setTargetTerrainBS, sono
+    // TOLTI: non li chiamava nessun altro, e due strade per lo stesso campo
+    // sono il difetto che torna sempre.
+    window.tendinaTerrenoBS = function (tgt, index) {
+        if (typeof window.sceltaTerreno === 'function') {
+            return window.sceltaTerreno(tgt.terrain, tgt.zona, 'window.setTargetTerrenoBS', index);
+        }
+        console.error('\u26d4 window.sceltaTerreno manca (app.html non caricato?): tendina del solo terreno, senza Fumo ne` Eclipse.');
+        return `<div style="display:flex; margin-top: 25px; margin-bottom: 5px;">
+                    <select class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;" onchange="window.setTargetTerrenoBS(${index}, this.value)">
+                        ${window.generaOpzioniTerreni ? window.generaOpzioniTerreni(tgt.terrain) : '<option value="NESSUNO">Nessun Terreno</option>'}
+                    </select>
+                </div>`;
+    };
+
+    window.setTargetTerrenoBS = function (i, v) {
+        const t = window.combatTargets && window.combatTargets[i];
         if (!t) return;
-        t.zona = (valore === 'FUMO' || valore === 'ECLIPSE') ? valore : null;
+        if (typeof window.separaTerrenoEZona === 'function') {
+            const s = window.separaTerrenoEZona(v);
+            t.terrain = s.terrain; t.zona = s.zona;
+        } else {
+            // Solo col ripiego qui sopra: il valore e` un terreno e basta.
+            t.terrain = v || 'NESSUNO'; t.zona = null;
+        }
         window.renderTargetsAllocationBS();
     };
 
     window.toggleTargetCoverBS = function (i) { window.combatTargets[i].cover = !window.combatTargets[i].cover; if (!window.combatTargets[i].cover) window.combatTargets[i].copertura = null; window.renderTargetsAllocationBS(); };
-    window.setTargetTerrainBS = function (i, v) { window.combatTargets[i].terrain = v; window.renderTargetsAllocationBS(); };
     window.setTargetAmmoBS = function (i, v) { window.combatTargets[i].ammo = v; window.renderTargetsAllocationBS(); };
     window.adjustTargetBurstBS = function (i, delta) {
         const assegnati = window.combatTargets.reduce((s, t) => s + (t.burst || 0), 0);
