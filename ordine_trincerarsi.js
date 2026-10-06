@@ -1,4 +1,4 @@
-// @versione 2026-10-05.1 | ordine_trincerarsi.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.4 | ordine_trincerarsi.js | proprieta`: chat MOTORE
 // ==========================================
 // 🕳️ TRINCERARSI / SAPPER (N5) - ordine_trincerarsi.js
 // ------------------------------------------
@@ -11,7 +11,7 @@
 // E se la risposta è no, la truppa NON "non esegue l'ordine": esegue un
 // IDLE. L'Ordine è speso comunque. È la differenza fra "non puoi" e
 // "puoi provare e fallire", e il regolamento dice la seconda.
-// (PARTE_1, righe 7415-7431)
+// (REGOLE_N5_v5_1_1.txt, Sapper, righe 9841-9847)
 // ==========================================
 
 (function () {
@@ -159,7 +159,19 @@
             return window.mostraTrinceramento();
         }
 
-        const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode });
+        // 🔴 L'AVVERSARIO DEVE SAPERE DELL'ORDINE. Trincerarsi genera ARO
+        // (catalogo, MOVIMENTO.senzaTiro), e anche l'Idle da requisito
+        // fallito lo genera — ma l'allarme da qui non partiva mai, e la busta
+        // non diceva all'Hub di aspettare le reazioni. MISURATO il 6 ottobre:
+        // zero allarmi, aroAtteso false. E` lo stesso difetto che avevano
+        // Piazzare Equipaggiamento e l'Idle (A-13). L'allarme lo costruisce
+        // il motore (M.allarmeOrdine), come per tutti gli ordini senza tiro.
+        const al = M.allarmeOrdine(M.AZIONI.TRINCERARSI, {
+            unita: unita, coordUnits: window.coordUnits, coordMode: window.coordMode,
+            azioneSeconda: window.currentOrder && window.currentOrder.action
+        });
+        if (al.payload && typeof window.inviaAllarmeAro === 'function') window.inviaAllarmeAro(al.payload);
+        const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode, aroAtteso: !!(al.aro && al.aro.genera) });
         if (!spedito) { window.coordIndex--; window.coordPayloads.pop(); return; }
 
         const div = document.getElementById('calc-result');
@@ -178,7 +190,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_trincerarsi.js', versione: '2026-10-05.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_trincerarsi.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

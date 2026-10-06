@@ -1,4 +1,4 @@
-// @versione 2026-09-28.1 | logica_stati.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.4 | logica_stati.js | proprieta`: chat MOTORE
 // ==========================================
 // NOTA: le regole di questo file passano da MotoreN5.
 //  - la cancellazione degli stati Marker (Ritirata!, Ingaggiato, Stati Nulli)
@@ -48,7 +48,17 @@ window.apriPaginaStati = (index) => {
         const pc = Mc.puoEntrareInCamo(window.unitToEdit);
         if (!pc.puo) { canCamo = false; notaCamo = pc.motivo || ''; }
     }
-    let canImp = skills.includes('impersonation') || skills.includes('imp-1') || skills.includes('imp-2');
+    // 🔴 IMPERSONATION: la casella serve a chi ha la skill, a chi puo`
+    // entrarci col CYBERMASK (IMP-2, righe 5150-5171), e a chi C'E` GIA`.
+    // Fino al 5 ottobre la disegnava solo la skill: per un Hacker in IMP-2 da
+    // Cybermask la casella non c'era, il salvataggio la leggeva "non
+    // spuntata", e APRIRE E SALVARE l'editor per qualunque motivo — segnare
+    // un Bersagliato, per dire — lo rivelava. MISURATO il 6 ottobre.
+    const Mi = window.MotoreN5;
+    const statoMotore = Mi ? Mi.statoBersaglio(window.unitToEdit) : {};
+    const haSkillImp = skills.includes('impersonation') || skills.includes('imp-1') || skills.includes('imp-2');
+    const haCybermask = !!(Mi && typeof Mi.haProgramma === 'function' && Mi.haProgramma(window.unitToEdit, 'CYBERMASK'));
+    let canImp = haSkillImp || haCybermask || !!statoMotore.imp;
     let canHolo = skills.includes('holoprojector') || skills.includes('holomask') || skills.includes('holo');
     let canDecoy = skills.includes('decoy');
     let canFoxhole = skills.includes('sapper');
@@ -77,12 +87,20 @@ window.apriPaginaStati = (index) => {
     if (modMim <= -6) camoIcon = "img/icon_camo6.png";
     else if (modMim <= -3) camoIcon = "img/icon_camo3.png";
 
-    window.tempImpState = "IMP_1";
-    let impIcon = "img/icon_imp1.png";
-    let impTitle = "Impersonation-1";
-    if (skills.includes('impersonation-2') || skills.includes('imp-2') || skills.includes('imp 2')) {
-        window.tempImpState = "IMP_2"; impIcon = "img/icon_imp2.png"; impTitle = "Impersonation-2";
-    }
+    // IL LIVELLO (IMP-1 / IMP-2, righe 14225-14234). Vale quello che
+    // l'unita` HA ADESSO; se non e` in Impersonation, quello della skill; chi
+    // ci arriva solo col Cybermask entra in IMP-2. Prima lo decideva la sola
+    // skill, e salvando un IMP-2 da Cybermask tornava IMP-1.
+    // Con la skill il livello si puo` cambiare dalla tendina: un IMP-1
+    // Scoperto diventa IMP-2 (riga 14228), non Modello.
+    const livelloOra = (Mi && typeof Mi.livelloImpersonation === 'function') ? Mi.livelloImpersonation(window.unitToEdit) : null;
+    let livelloImp = (skills.includes('impersonation-2') || skills.includes('imp-2') || skills.includes('imp 2')) ? 2 : 1;
+    if (!haSkillImp && (haCybermask || statoMotore.imp)) livelloImp = 2;
+    if (livelloOra === 1 || livelloOra === 2) livelloImp = livelloOra;
+    const livelliImpAmmessi = haSkillImp ? [1, 2] : [livelloImp];
+    window.tempImpState = "IMP_" + livelloImp;
+    let impIcon = "img/icon_imp" + livelloImp + ".png";
+    let impTitle = "Impersonation-" + livelloImp;
 
     // Nascondi le altre schermate e mostra gli stati
     document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
@@ -157,9 +175,16 @@ window.apriPaginaStati = (index) => {
     }
     if (canImp) {
         html += `<label class="state-label" title="${impTitle}">
-                    <input type="checkbox" id="st-imp" class="state-checkbox" ${s.impersonation ? 'checked' : ''}>
+                    <input type="checkbox" id="st-imp" class="state-checkbox" ${statoMotore.imp ? 'checked' : ''}>
                     <img src="${impIcon}" class="state-icon" onerror="this.src='img/icon_imp1.png'; this.onerror=function(){this.outerHTML='<span class=\\'fallback-emoji\\'>👤</span>'};">
                  </label>`;
+        if (livelliImpAmmessi.length > 1) {
+            html += `<label class="state-label" title="Livello dell'Impersonation" style="width:auto;">
+                    <select id="st-imp-liv" style="background:#111; color:#fff; border:1px solid #666; font-size:16px; padding:8px;">
+                        ${livelliImpAmmessi.map(l => `<option value="IMP_${l}" ${l === livelloImp ? 'selected' : ''}>IMP-${l}</option>`).join('')}
+                    </select>
+                 </label>`;
+        }
     }
     if (canHolo) {
         html += `<label class="state-label" title="HoloMask / HoloEcho">
@@ -303,6 +328,9 @@ window.annullaStati = () => {
  */
 window.salvaStatiUnita = () => {
     let s = window.unitToEdit.states;
+    // Com'era PRIMA di salvare, visto dal motore: serve piu` sotto per
+    // decidere fra CAMO e Impersonation se le caselle sono spuntate entrambe.
+    const eraInImp = !!(window.MotoreN5 && window.MotoreN5.statoBersaglio(window.unitToEdit).imp);
     
     // 1. LETTURA CHECKBOX COMUNI
     let isDead = document.getElementById('st-dead').checked;
@@ -324,6 +352,18 @@ window.salvaStatiUnita = () => {
     // 2. LETTURA CHECKBOX SPECIALI (se presenti nel DOM)
     s.camo = document.getElementById('st-camo') ? document.getElementById('st-camo').checked : false;
     s.impersonation = document.getElementById('st-imp') ? document.getElementById('st-imp').checked : false;
+    // Il livello scelto nella tendina, se c'e`; altrimenti resta quello
+    // calcolato all'apertura (window.tempImpState).
+    // 🔴 UN MARKER E` DI UN TIPO SOLO. Chi ha Camouflage e Cybermask vede
+    // tutte e due le caselle, e spuntandole insieme usciva con camo e
+    // impersonation entrambi veri (revisione indipendente, 6 ottobre).
+    // Vince quella APPENA spuntata: se era in Impersonation e ora c'e` anche
+    // CAMO, vuole CAMO; altrimenti vuole l'Impersonation.
+    if (s.camo && s.impersonation) {
+        if (eraInImp) s.impersonation = false; else s.camo = false;
+    }
+    const selLivImp = document.getElementById('st-imp-liv');
+    if (selLivImp && /^IMP_[12]$/.test(String(selLivImp.value))) window.tempImpState = selLivImp.value;
     
     let isHolo = document.getElementById('st-holo') ? document.getElementById('st-holo').checked : false;
     if(isHolo) { s.holoecho = true; s.holomask = true; } else { s.holoecho = false; s.holomask = false; }
@@ -466,7 +506,7 @@ window.salvaStatiUnita = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_stati.js', versione: '2026-09-21.4', proprieta: 'MOTORE' };
+    var v = { file: 'logica_stati.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-09-28.2 | calcolatore_math.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.2 | calcolatore_math.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧮 CALCOLATORE N5 — adattatore sopra MotoreN5
 // ------------------------------------------
@@ -87,7 +87,10 @@
         if (esito.attributo && esito.base != null) {
             html += `Statistica Base (${esito.attributo}): ${esito.base}<br>`;
         }
-        (esito.voci || []).forEach(function (v) {
+        // La voce 'base' ripete la riga sopra ("PH di X: 12 (+12)"): non e`
+        // un modificatore, e se la base e` gia` scritta si salta. (Visto dalla
+        // chat INTERFACCIA, 6 ottobre.)
+        (esito.voci || []).filter(v => !(v && v.fonte === 'base' && esito.attributo && esito.base != null)).forEach(function (v) {
             const seg = v.valore > 0 ? '+' + v.valore : v.valore;
             html += `<span style="color:${colore(v.valore)}">${v.motivo} (${seg})</span><br>`;
         });
@@ -96,7 +99,9 @@
         });
         if (esito.automatico) html += `<span style="color:#ff9900">🔥 Sagoma Diretta: colpo automatico</span><br>`;
         if (esito.lofBloccata) html += `<span style="color:#ff0000">⚠️ Nessuna Linea di Tiro</span><br>`;
-        if (esito.impossibile) html += `<span style="color:#ff0000">⚠️ Valore di Successo sotto 1: il tiro fallisce automaticamente</span><br>`;
+        // Due motivi diversi per "non si tira": un Requisito fallito e` un
+        // Idle, non un valore sotto 1.
+        if (esito.impossibile) html += `<span style="color:#ff0000">⚠️ ${esito.requisitoFallito ? 'Requisito non soddisfatto: Idle, nessun tiro' : 'Valore di Successo sotto 1: il tiro fallisce automaticamente'}</span><br>`;
         // Critici: il dado pari al Valore di Successo. Sopra il 20 se ne
         // aggiungono di più, ed è un'informazione che il giocatore vuole.
         if (esito.critici && !esito.critici.nessunTiro) {
@@ -130,8 +135,17 @@
         const eff = [];
         (s.statiFallimento || []).forEach(x => eff.push(`Fallimento = ${x}`));
         if (s.dannoPerFallimento > 1) eff.push(`<b style="color:#ff3333;">${s.dannoPerFallimento} Ferite per ogni fallimento</b>`);
-        (s.note || []).forEach(n => eff.push(n));
+        // Le note sul Marker (M.notaMarkerSuSalvezza) NON vanno in coda in
+        // grigio: per decisione di Paolo sono l'UNICO avviso che un Marker
+        // costretto a un Tiro Salvezza va rivelato. Hanno un riquadro loro.
+        // (Osservazione della chat INTERFACCIA, 5 ottobre: cancellaMarker
+        // non lo leggeva nessuno.)
+        const noteMarker = (s.cancellaMarker && Array.isArray(s.noteMarker)) ? s.noteMarker : [];
+        (s.note || []).filter(n => noteMarker.indexOf(n) < 0).forEach(n => eff.push(n));
         if (eff.length) html += `<span style="font-size:12px; color:#aaa;">${eff.join(' | ')}</span><br>`;
+        noteMarker.forEach(function (n) {
+            html += `<div style="margin:6px 0; padding:8px; background:#332200; border:2px solid #ffaa33; border-radius:4px; color:#ffcc66; font-size:13px; font-weight:bold;">${n}</div>`;
+        });
         html += `<span style="font-size:11px; color:#888;">Nota: un Critico aggiunge ${s.critExtra || 1} Tiro Salvezza extra.</span>`;
         return html;
     }
@@ -276,6 +290,13 @@
             };
             // Gli avvisi del motore non si perdono: l'interfaccia può mostrarli.
             if (s.avvisi && s.avvisi.length) out.avvisi = s.avvisi;
+            // 🔴 I campi DELLO SCONTRO (non di un lato) si perdevano qui:
+            // il motore scriveva s.coperturaNegata e s.note, e al tabellone
+            // arrivavano solo attivo/reattivo/titolo/motivoConfronto.
+            // (Chat INTERFACCIA, 6 ottobre: non poteva mostrarli.)
+            if (s.coperturaNegata) out.coperturaNegata = s.coperturaNegata;
+            if (s.note && s.note.length) out.note = s.note;
+            if (s.reattivoNonBersagliato) out.reattivoNonBersagliato = true;
             return out;
         });
     };
@@ -289,7 +310,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_math.js', versione: '2026-09-28.2', proprieta: 'MOTORE' };
+    var v = { file: 'calcolatore_math.js', versione: '2026-10-06.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

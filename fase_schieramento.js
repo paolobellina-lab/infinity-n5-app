@@ -1,4 +1,4 @@
-// @versione 2026-09-28.3 | fase_schieramento.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.4 | fase_schieramento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🚀 FASE DI SCHIERAMENTO
 // ------------------------------------------
@@ -134,7 +134,7 @@ window.confermaSchieramento = function() {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'fase_schieramento.js', versione: '2026-09-22.1', proprieta: 'MOTORE' };
+    var v = { file: 'fase_schieramento.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

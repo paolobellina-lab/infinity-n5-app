@@ -1,4 +1,4 @@
-// @versione 2026-10-05.2 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-10-06.5 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -694,9 +694,21 @@ window.CATALOGO_N5.MOVIMENTO = {
         'TRINCERARSI': { nome: 'Sapper (Foxhole)', tipo: 'LONG_SKILL', generaAro: true,
                               note: 'Ordine Intero, nessun tiro. Se lo spazio non basta, la truppa esegue un Idle.' },
         // Non e` un'Abilita` col suo nome nel regolamento: e` l'attivazione
-        // dello Stato CAMO nel Turno Attivo (riga 13597), che costa una
+        // dello Stato CAMO nel Turno Attivo (riga 13603), che costa una
         // Long Skill. Regole e fonti in CATALOGO_N5.RIENTRO_CAMO.
-        'RIENTRARE IN CAMO': { nome: 'Rientrare in CAMO', tipo: 'LONG_SKILL', generaAro: true,
+        // soloDaModello: chi e` gia` Marker NON puo` dichiararla. Senza, il
+        // router la trattava come una Long Skill qualunque e RIVELAVA il
+        // Marker (riga 13635) prima ancora di aprire la schermata — che poi lo
+        // faceva rientrare come Marker "nuovo". Lo legge M.statoDopoAbilita.
+        // Il programma di Hacking CYBERMASK e` una Long Skill a se` (riga 5151),
+        // non un attacco: ha la sua voce e la sua schermata. Regole e fonti in
+        // CATALOGO_N5.CYBERMASK. soloDaModello: come il rientro in CAMO, ma
+        // un Marker CAMO PUO` dichiararlo (chat REGOLE, 6 ottobre): il CAMO
+        // cade come per ogni Long Skill. Resta fuori chi e` gia` in IMP:
+        // sarebbe lecito e inutile.
+        'CYBERMASK': { nome: 'Cybermask', tipo: 'LONG_SKILL', generaAro: true, soloDaModello: true, dichiarabileDaMarker: ['CAMO'],
+                              note: 'Ordine Intero, nessun tiro. Requisito: fuori dalla LoF di Modelli e Marker nemici. L\'Hacker entra in IMP-2.' },
+        'RIENTRARE IN CAMO': { nome: 'Rientrare in CAMO', tipo: 'LONG_SKILL', generaAro: true, soloDaModello: true,
                               note: 'Ordine Intero, nessun tiro. Solo fuori dalla LoF di Modelli e Marker nemici.' },
         'PIAZZARE EQUIPAGGIAMENTO': { nome: 'Place Deployable', tipo: 'SHORT_SKILL', generaAro: true,
                               note: 'Se c\'e` un Marker Mimetico nemico nell\'Area d\'Innesco, va invece dichiarato un Attacco Intuitivo.' }
@@ -1272,7 +1284,10 @@ window.CATALOGO_N5.REGOLE_DEPLOYABLE = {
     domande: {
         piazzamento: 'C\'e` un Marker mimetico nemico nell\'area d\'innesco?',
         perimeter: 'Il percorso dal portatore al punto scelto e` libero?',
-        attivazione: 'Il nemico che si attiva e` dentro la ZdC del deployable, con percorso libero?'
+        attivazione: 'Il nemico che si attiva e` dentro la ZdC del deployable, con percorso libero?',
+        // La seconda domanda del Drop Bear lanciato in modo BS: si fa solo
+        // se la prima (`piazzamento`) ha avuto risposta si`.
+        dropBearNemicoScoperto: 'C\'e` anche un nemico valido, NON in forma di Marker, dentro l\'area d\'innesco?'
     }
 };
 
@@ -1383,7 +1398,7 @@ window.CATALOGO_N5.TRATTI_CONDIZIONALI = {
 };
 
 // ------------------------------------------------------------------
-// RIENTRARE IN CAMO — Stato CAMO (Camouflaged State), ACTIVATION (riga 13597)
+// RIENTRARE IN CAMO — Stato CAMO (Camouflaged State), ACTIVATION (REGOLE_N5_v5_1_1.txt riga 13603)
 // ------------------------------------------------------------------
 // "During the Active Turn, Troopers may only return to this state by
 //  spending a Long Skill, while outside the LoF of enemy Markers or
@@ -1398,31 +1413,72 @@ window.CATALOGO_N5.RIENTRO_CAMO = {
     bersagli: 'nessuno',
 
     // 🔴 La condizione che l'app NON puo` verificare: non ha la mappa.
-    domanda: 'La truppa e` FUORI dalla Linea di Tiro di ogni Modello e di ogni Marker nemico? (Non contano i nemici Incoscienti o Disconnessi.)',
-    // LETTURA della chat MOTORE, 5 ottobre, DA CONFERMARE con la chat
-    // REGOLE: la riga 13597 sta sotto ACTIVATION, non e` un Requisito di
-    // un'Abilita`. In LoF di un nemico lo stato non si puo` attivare: non
-    // si dichiara, e l'Ordine non e` speso. Se REGOLE dira` che e` un
-    // Requisito (Idle, Ordine speso), cambia `seInLoFEffetto` in 'IDLE'.
-    seInLoF: 'In Linea di Tiro di un Modello o di un Marker nemico non si puo` rientrare in CAMO: scegli un\'altra Abilita`.',
-    seInLoFEffetto: 'VIETA',
+    // "Modelli o Marker": chi e` in Schieramento Nascosto non e` sul tavolo
+    // e non conta (riga 14307) — ma se si rivela in ARO, alla Risoluzione il
+    // Requisito manca.
+    domanda: 'La truppa e` FUORI dalla Linea di Tiro di ogni Modello e di ogni Marker nemico? (Non contano i nemici Incoscienti o Disconnessi, ne` quelli in Schieramento Nascosto finche` non si rivelano.)',
+    // 🔴 E` UN REQUISITO: IDLE, Ordine SPESO. REGOLA (chat REGOLE, 6 ottobre):
+    // righe 1240-1247 — un Requisito che manca si risolve SEMPRE con un Idle,
+    // e si verifica alla Risoluzione; solo Alert!, le Basic Short Skill, Jump
+    // e Climb lo verificano alla dichiarazione (riga 1238). La riga 13603 e`
+    // un Requisito anche se sta sotto ACTIVATION; l'esempio delle righe
+    // 14298-14316 lo scrive ("lose his Order").
+    // Fino alla 2026-10-06.1 qui c'era 'VIETA' (Ordine non speso), su una
+    // lettura del 5 ottobre che la chat REGOLE ha ritirato.
+    seInLoF: 'Il Requisito non e` soddisfatto (in Linea di Tiro di un Modello o di un Marker nemico): la truppa NON rientra in CAMO ed esegue invece un Idle. L\'Ordine e` speso.',
+    seInLoFEffetto: 'IDLE',
 
+    // Il Marker nasce con la Risoluzione; l'ARO si dichiara prima, contro un
+    // Modello: chi reagisce NON ha le restrizioni degli ARO contro un Marker
+    // (puo` dichiarare BS Attack, CC, hacking). Il rientro protegge
+    // dall'Ordine successivo, non da quello in cui si dichiara.
+    //
+    // LETTURA della chat REGOLE (5 ottobre), dalla sequenza dell'Ordine —
+    // NESSUNA RIGA la scrive: il rientro non si completa se nella Risoluzione
+    // la truppa non puo` piu` eseguire cio` che ha dichiarato: Stato Nullo,
+    // o uno stato che vieta l'Abilita` (Ingaggiato, Ritirata!, e per esempio
+    // un IMM-B da un ARO di hacking). Sono i blocchi che
+    // M.puoRientrareInCamo gia` conosce.
+    // 🔴 NON e` "costretta a un Tiro Salvezza": quello (riga 13638) cancella
+    // un Marker GIA` ESISTENTE, e qui il Marker non esiste ancora. Una
+    // salvezza superata senza conseguenze NON ferma il rientro. Il testo di
+    // questa nota, fino alla versione .5 del 5 ottobre, diceva il contrario ed era
+    // sbagliato: avevo trasportato la regola fuori dal suo caso.
+    // L'app applica lo stato all'invio e non sa l'esito dell'ARO: lo dice.
+    // Il criterio e` "non puo` piu` eseguire l'Abilita` dichiarata": gli
+    // stessi stati che M.puoRientrareInCamo rifiuta alla dichiarazione
+    // (Nulli, e quelli di STATI.azioniPermesse). Il testo ne nomina alcuni
+    // per farsi capire, ma l'elenco che vale e` quello della funzione.
+    // Testo proposto dalla chat REGOLE, 5 ottobre.
+    seNonSiCompleta: 'Il rientro si completa nella Risoluzione dell\'Ordine. Se nel frattempo la truppa entra in uno stato che le impedisce di eseguire questa Abilita` (un qualsiasi Stato Nullo, Ingaggiato, Ritirata!, Immobilizzato) il rientro NON avviene: resta Modello, togli lo stato CAMO dall\'editor. Una salvezza superata senza conseguenze non lo impedisce. (Lettura dalla sequenza dell\'Ordine: nessuna riga la scrive.)',
     nuovoMarker: 'Chi e` stato rivelato e rientra in CAMO NON conta come lo stesso Marker: chi aveva fallito lo Scoprire puo` ritentare.',
     unUso: 'Camouflage (1 Use): serve l\'uso ancora disponibile, e rientrando lo si consuma.',
     fireteam: 'Chi entra in Stato CAMO smette automaticamente di far parte della Fireteam.',
-    impetuoso: 'Lo Stato CAMO si cancella se la truppa e` o diventa Impetuosa, o entra in Ritirata!.',
+    // REGOLA (riga 13639, CANCELLATION; chat REGOLE, 5 ottobre): "The Trooper
+    // IS or becomes Impetuous". "Is" copre chi e` Impetuoso PER PROFILO: non
+    // puo` stare in CAMO, quindi rientrarci lo farebbe uscire subito. BLOCCA.
+    impetuoso: 'Una truppa Impetuosa non puo` stare in Stato CAMO: verrebbe cancellato subito.',
+    // FRENZY non rende Impetuosi subito (riga 8396 e seguenti, ACTIVATION:
+    // "Automatic in the States Phase if the user has inflicted at least one
+    // Wound on an Enemy Trooper, or caused them to enter Dead State"). L'app non lo sa: e` una domanda bloccante, non un avviso.
+    domandaFrenzy: 'Frenzy: la truppa e` GIA` diventata Impetuosa? (Lo diventa nella Fase Stati, se ha inflitto almeno una Ferita a un nemico o lo ha portato a Morto.)',
+    seFrenzyAttivo: 'Frenzy attivo: la truppa e` Impetuosa e non puo` stare in Stato CAMO. Scegli un\'altra Abilita`.',
 
     fonti: {
-        attivazione: 'regolamento, riga 13597',
-        nuovoMarker: 'regolamento, riga 13605',
+        attivazione: 'regolamento, riga 13603',
+        nuovoMarker: 'regolamento, righe 13613-13614',
         unUso: 'FAQ F07 (wiki Camouflaged State, 0.0.0)',
         nemiciNulli: 'FAQ F08 (wiki Camouflaged State, 0.0.0)',
         fireteam: 'regolamento, Stato CAMO (Camouflaged State), EFFECTS',
-        cancellazione: 'regolamento, Stato CAMO (Camouflaged State), CANCELLATION'
+        cancellazione: 'regolamento, Stato CAMO (Camouflaged State), CANCELLATION',
+        impetuoso: 'regolamento, riga 13639',
+        frenzy: 'regolamento, Frenzy (riga 8396 e seguenti); lettura della chat REGOLE, 5 ottobre'
     }
 };
 
-// TRINCERARSI (SAPPER) — LETTO dal regolamento, PARTE_1 righe 7415-7431
+// TRINCERARSI (SAPPER) — REGOLE_N5_v5_1_1.txt righe 9841-9847 (REQUIREMENTS
+// di Sapper). "PARTE_1 righe 7415-7431" era la numerazione di un vecchio
+// file spezzato: nel regolamento unico quelle righe sono un esempio di tiro.
 // ------------------------------------------------------------------
 window.CATALOGO_N5.TRINCERARSI = {
 
@@ -1559,7 +1615,8 @@ window.CATALOGO_N5.INGRESSO_IN_CAMPO = {
     },
     dopoIlTiro: 'In entrambi i casi il Giocatore Reattivo dichiara tutti i propri ARO.',
 
-    // 🔴 Vale in ogni caso, riuscito o fallito.
+    // 🔴 Vale in ogni caso, riuscito o fallito. Il testo e` per il giocatore;
+    // la regola APPLICATA sta in COPERTURA_NEGATA_DA_AZIONE (riga 8059).
     restrizione: 'Durante l\'Ordine in cui si usa questa Abilita`, la truppa NON puo` beneficiare della Copertura Parziale.',
 
     notazionePH: 'Il profilo puo` scrivere "Combat Jump (PH=10)": quel valore sostituisce il PH.',
@@ -1616,6 +1673,214 @@ window.CATALOGO_N5.SPEEDBALL = {
     },
 
     fonte: 'regolamento', riga: 5610
+};
+
+// ------------------------------------------------------------------
+// CYBERMASK — programma di Hacking, righe 5150-5171
+// ------------------------------------------------------------------
+//   5151  LONG SKILL
+//   5153  NFB, No Roll.
+//   5155-5156  REQUIREMENTS: "The user must be outside the LoF of enemy
+//              Markers or Troopers."
+//   5158-5165  EFFECTS: entra in Impersonation-2, senza tiro; dura finche`
+//              non si rivela secondo le regole dell'IMP-2; nessuna gittata.
+//   5167-5171  REMEMBER NFB: in IMP-2 non applica altre voci NFB
+//              (Mimetism, Albedo, Holoprojector).
+// Chi puo` usarlo: M.haProgramma(unita, 'CYBERMASK') — Hacking Device Plus e
+// Killer Hacking Device. 35 profili fra Nomadi e PanOceania.
+// ------------------------------------------------------------------
+window.CATALOGO_N5.CYBERMASK = {
+
+    programma: 'CYBERMASK',
+    tipo: 'LONG_SKILL',
+    soloTurnoAttivo: true,
+    tiro: false,
+    bersagli: 'nessuno',
+    entraIn: 'IMP_2',
+
+    domanda: 'L\'Hacker e` FUORI dalla Linea di Tiro di ogni Modello e di ogni Marker nemico?',
+    // REGOLA, confermata dalla chat REGOLE il 6 ottobre: la riga 5155 sta
+    // sotto REQUIREMENTS, e un Requisito che manca si risolve con un Idle,
+    // Ordine speso (righe 1240-1247). Uguale al rientro in CAMO.
+    seInLoF: 'Il Requisito del Cybermask non e` soddisfatto (in Linea di Tiro di un Modello o di un Marker nemico): l\'Hacker NON entra in IMP-2 ed esegue invece un Idle.',
+    seInLoFEffetto: 'IDLE',
+
+    effetto: 'Si sostituisce il Modello con un Marker IMP-2. Nessun tiro (righe 5159-5161).',
+    durata: 'Dura finche` l\'Hacker non si rivela secondo le regole dell\'IMP-2 (righe 5162-5163).',
+    fireteam: 'Chi entra in Impersonation smette automaticamente di far parte della Fireteam (righe 14216-14217).',
+    // riga 14242: "The Trooper is or becomes Impetuous... or enters Retreat!"
+    impetuoso: 'Una truppa Impetuosa non puo` stare in Impersonation: lo stato verrebbe cancellato subito.',
+    domandaFrenzy: 'Frenzy: la truppa e` GIA` diventata Impetuosa? (Lo diventa nella Fase Stati, se ha inflitto almeno una Ferita a un nemico o lo ha portato a Morto.)',
+    seFrenzyAttivo: 'Frenzy attivo: la truppa e` Impetuosa e non puo` stare in Impersonation. Scegli un\'altra Abilita`.',
+    // Stessa lettura della chat REGOLE usata per il rientro in CAMO.
+    seNonSiCompleta: 'Il Marker nasce nella Risoluzione dell\'Ordine: chi reagisce reagisce contro un Modello. Se nel frattempo l\'Hacker entra in uno stato che gli impedisce di eseguire l\'Abilita` (un qualsiasi Stato Nullo, Ingaggiato, Ritirata!, Immobilizzato, Isolato) il Cybermask NON avviene: togli l\'IMP-2 dall\'editor. (Lettura dalla sequenza dell\'Ordine: nessuna riga la scrive.)',
+    // DA MARKER CAMO SI PUO` (chat REGOLE, 6 ottobre): dichiarare una Long
+    // Skill fa cadere il CAMO alla dichiarazione (righe 13635, 13645-13648),
+    // gli ARO sono contro un Modello, e alla Risoluzione entra in IMP-2
+    // (righe 5159-5161). Il Requisito della LoF resta: se manca, Idle col
+    // CAMO gia` caduto.
+    daCamo: 'Dichiarato da Marker CAMO: lo Stato CAMO cade alla dichiarazione, chi reagisce reagisce contro un Modello, e alla Risoluzione l\'Hacker entra in IMP-2. Cambia Marker: perde il MOD del Mimetism (NFB), guadagna che contro un Marker IMP non si puo` dichiarare l\'Attacco Intuitivo (riga 14210).',
+    // riga 9534: NON MODELLATO. Nessun profilo con Cybermask e` un Controller.
+    periferiche: 'NON MODELLATO: se l\'Hacker e` un Controller, lo stato vale anche per le sue Periferiche (riga 9534).',
+
+    fonti: {
+        programma: 'regolamento, righe 5150-5171',
+        requisito: 'regolamento, righe 5155-5156; Idle da requisito fallito: righe 1240-1247 e 7457-7459',
+        daCamo: 'regolamento, righe 13635, 13645-13648, 5159-5161; chat REGOLE, 6 ottobre',
+        nfb: 'regolamento, righe 5167-5171 e 6677-6679',
+        isolato: 'regolamento, righe 14412-14414',
+        impetuoso: 'regolamento, riga 14242'
+    }
+};
+
+// ------------------------------------------------------------------
+// FUOCO SPECULATIVO CONTRO UN MARKER (chat REGOLE, 6 ottobre)
+// ------------------------------------------------------------------
+// Righe 13609-13610: "You cannot declare Attacks against Camouflaged
+// Markers ... unless otherwise specified by a rule or Skill". Le eccezioni
+// sono l'Attacco Intuitivo (4017-4022) e il MSV L3 (11011-11015); lo
+// Speculativo non lo e` (3887-3923 non nominano Marker; 11399-11401).
+// Per l'Impersonation il testo sta in IMPERSONATION.speculativo.
+window.CATALOGO_N5.FUOCO_SPECULATIVO_MARKER = {
+    camo: 'Un Marker CAMO non puo` essere il Bersaglio Principale di un Fuoco Speculativo: va Scoperto prima (righe 13609-13610). Puoi scegliere un altro Principale e prendere il Marker sotto la sagoma come bersaglio secondario.',
+    ammesso: 'Restano ammessi: il Marker come bersaglio SECONDARIO sotto la sagoma (righe 3914-3919) e le armi Targetless, che non chiedono un Principale (righe 3763-3766).',
+    fonti: { divieto: 'regolamento, righe 13609-13610', eccezioni: 'righe 4017-4022 e 11011-11015', secondario: 'righe 3914-3919', targetless: 'righe 3763-3766' }
+};
+
+// ------------------------------------------------------------------
+// HACKING ATTRAVERSO UN REPEATER NEMICO
+// ------------------------------------------------------------------
+// REGOLE_N5_v5_1_1.txt (5ea7581f.904498):
+//   4797-4799  l'Hacker dentro la ZdC di un Repeater (o Deployable
+//              Repeater) NEMICO ha nella sua Area di Hacking tutte le
+//              truppe nemiche del tavolo.
+//   4799-4802  se il bersaglio NON e` un Hacker, l'ARO o il Programma
+//              fallisce i Requisiti: Idle.
+//   4850-4852  "...applying Firewall MODs (-3)".
+//   4837-4845  Firewall: MOD al tiro WIP di chi attacca, +3 al Tiro
+//              Salvezza di chi ne beneficia; UN SOLO Firewall, e se sono
+//              piu` d'uno sceglie il giocatore che ne beneficia.
+//   4941       esempio: "-3 Firewall MOD for using an Enemy Repeater".
+//   4853-4854  non si reagisce contro il Repeater, solo contro l'Hacker.
+// L'app non ha la mappa: che l'attacco passi da un Repeater nemico lo
+// dice il giocatore, col pulsante sul bersaglio (campo `repeaterNemico`).
+// ------------------------------------------------------------------
+window.CATALOGO_N5.REPEATER_NEMICO = {
+    firewall: -3,
+    soloControHacker: true,
+    pulsante: 'VIA REPEATER NEMICO',
+    spiegazione: 'Il bersaglio e` nell\'Area di Hacking solo perche` l\'Hacker sta nella Zona di Controllo di un Repeater nemico.',
+    voce: 'Attacco attraverso un Repeater nemico: Firewall -3 WIP',
+    salvezza: 'Attraverso un Repeater nemico il bersaglio ha il Firewall: +3 al Tiro Salvezza.',
+    unSoloFirewall: 'Il bersaglio beneficia di due Firewall (il suo e quello del Repeater nemico): se ne applica UNO solo, e lo sceglie il giocatore del bersaglio. Il calcolatore prende il piu` negativo; il +3 al Tiro Salvezza e` lo stesso in ogni caso.',
+    seNonHacker: 'Attraverso un Repeater nemico si possono colpire SOLO gli Hacker nemici: contro questo bersaglio il Programma fallisce i Requisiti e l\'Hacker esegue un Idle.',
+    // "Sceglie il giocatore del bersaglio" (righe 4761-4763, 4844-4846): e`
+    // una scelta, non un calcolo. Il piu` negativo e` il default.
+    // Il +3 alla salvezza e` FISSO (righe 4771-4774): mai +6, mai scalato.
+    // NON MODELLATI i due casi di HoloMask (chat REGOLE, 6 ottobre): sono
+    // un ESITO che si scopre alla Risoluzione, non una domanda.
+    nonModellato: 'NON MODELLATO, HoloMask: se il bersaglio non ha davvero la skill Hacker (righe 4818-4825), o se il Repeater usato e` finto (righe 4827-4833), il Programma fallisce i Requisiti alla Risoluzione: Idle, e l\'avversario lo rivela.',
+    fonti: {
+        area: 'regolamento, righe 4797-4799',
+        soloHacker: 'regolamento, righe 4799-4802 e 4850-4852',
+        firewall: 'regolamento, righe 4837-4845 e 4850-4852; esempio riga 4941',
+        nessunAroSulRepeater: 'regolamento, righe 4853-4854'
+    }
+};
+
+// ------------------------------------------------------------------
+// IMPERSONATION — UNO stato, DUE livelli
+// ------------------------------------------------------------------
+// REGOLE_N5_v5_1_1.txt (5ea7581f.904498), righe 14195-14244.
+// Fino al 5 ottobre il motore conosceva un solo "Impersonation", senza
+// livello: i due Marker si comportano in modo diverso proprio dove conta
+// (lo Scoprire, e cosa succede quando riesce). Il livello sta nel
+// deployState dell'unita` — 'IMP_1' o 'IMP_2', come lo scrivono il roster
+// e l'editor degli stati — e lo legge M.livelloImpersonation.
+//
+// Nei database di Nomadi e PanOceania NESSUN profilo ha la skill
+// Impersonation: in queste due fazioni l'unica strada e` il CYBERMASK, che
+// porta in IMP-2. L'IMP-1 e` scritto dal regolamento e provato con unita`
+// di prova.
+// ------------------------------------------------------------------
+window.CATALOGO_N5.IMPERSONATION = {
+    livelli: {
+        1: { deployState: 'IMP_1', sigla: 'IMP-1', nome: 'Impersonation-1',
+             // riga 14227: "a Discover Roll must be passed, applying a -3 MOD"
+             modScoprire: -3,
+             // riga 14228: "the Trooper enters Impersonation-2 State"
+             scopertoDiventa: 'IMP_2',
+             seScoperto: 'Se lo Scoprire riesce il Marker IMP-1 diventa IMP-2 (riga 14228): NON si piazza il Modello. Cambia il segnalino dall\'editor.',
+             attacco: 'Contro un Marker IMP-1 non si possono dichiarare Attacchi (riga 14207). Scoprilo: diventa IMP-2.',
+             righe: '14225-14228' },
+        2: { deployState: 'IMP_2', sigla: 'IMP-2', nome: 'Impersonation-2',
+             modScoprire: 0,
+             // riga 14234: "replaced with the corresponding Model"
+             scopertoDiventa: 'NORMAL',
+             seScoperto: 'Se lo Scoprire riesce il Marker IMP-2 si sostituisce col Modello (riga 14234). Toglilo dall\'editor.',
+             attacco: 'Contro un Marker IMP-2 serve prima Scoprirlo: manovra Scoprire + Attacco (riga 14208).',
+             righe: '14231-14234' }
+    },
+    // deployState 'IMP' o solo states.impersonation: e` in Impersonation ma
+    // il livello non e` scritto. Non si indovina.
+    senzaLivello: 'Marker Impersonation senza livello (IMP-1 o IMP-2 non indicato): il -3 allo Scoprire dell\'IMP-1 NON e` stato applicato. Imposta il livello dall\'editor.',
+    attaccoSenzaLivello: 'Contro un Marker Impersonation non si possono dichiarare Attacchi senza prima Scoprirlo (righe 14207-14208).',
+    // riga 14210
+    intuitivo: 'Un Attacco Intuitivo non si puo` dichiarare contro un Marker Impersonation, ne` IMP-1 ne` IMP-2 (riga 14210).',
+    // LETTURA della chat MOTORE, 6 ottobre, DA CONFERMARE con la chat REGOLE:
+    // il Fuoco Speculativo e` un Attacco con un Bersaglio Principale
+    // ("Designate the Main Target of the Attack", righe 3907-3930), quindi
+    // cade sotto "cannot declare Attacks against" (righe 14207-14208).
+    speculativo: 'Un Marker Impersonation non puo` essere il Bersaglio Principale di un Fuoco Speculativo: contro di lui non si dichiarano Attacchi (righe 14207-14208).',
+    speculativoLettura: true,
+    // riga 14206
+    contatto: 'Non si puo` entrare in contatto di Silhouette con un Marker Impersonation nemico (riga 14206).',
+    // righe 11011-11015: "a BS Attack on a Camouflage Marker (CAMO)"
+    msv3: 'Il Multispectral Visor L3 permette il BS Attack senza Scoprire SOLO contro un Marker CAMO (righe 11011-11015): non contro un Marker Impersonation.',
+    // righe 6677-6679 (regola), 5167-5171 (Cybermask), 8662 (skill)
+    nfb: 'In Impersonation vale l\'etichetta NFB: Mimetism e Albedo del profilo NON si applicano finche` resta Marker (righe 6677-6679; per il Cybermask 5167-5171).',
+    // righe 14238-14239
+    cancellazione: {
+        attaccoOTiro: 'riga 14238', lunga: 'riga 14239', contatto: 'riga 14240',
+        scoperto: 'riga 14241 (solo IMP-2)', impetuoso: 'riga 14242'
+        // NON c'e` "costretto a un Tiro Salvezza": la lista ha cinque voci.
+    },
+    // riga 14202: come per il CAMO. NON COSTRUITO: nessun profilo di Nomadi
+    // o PanOceania ha la skill, e il regolamento non dice a quale livello
+    // si rientra.
+    rientro: 'NON MODELLATO: rientrare in Impersonation con una Long Skill fuori dalla LoF (riga 14202).',
+    fonte: 'regolamento, righe 14195-14244'
+};
+
+// ------------------------------------------------------------------
+// COPERTURA PARZIALE NEGATA DA UN'ABILITA` DICHIARATA
+// ------------------------------------------------------------------
+// Chi dichiara una di queste Abilita` non beneficia della Copertura
+// Parziale. "Cannot benefit from Partial Cover" = cadono ENTRAMBI i MOD, il
+// -3 al tiro nemico e il +3 al Tiro Salvezza: e` la formula di No Cover,
+// non quella di Limited Cover ("attacks do not apply the -3") — chat REGOLE,
+// 5 ottobre. Righe contate su REGOLE_N5_v5_1_1.txt (5ea7581f.904498).
+// La chiave e` l'azione CANONICA del motore.
+//   durata 'ORDINE'  il divieto vale per tutto l'Ordine: il motore lo
+//                    APPLICA (M.coperturaNegataDaAzioni, M.risolviPayload).
+//   altra durata     dipende da dove sta la truppa, e l'app non ha la
+//                    mappa: resta una NOTA al giocatore, non una regola
+//                    applicata. Legarla all'Ordine toglierebbe la copertura
+//                    a chi scende dalla parete e si ripara.
+// ------------------------------------------------------------------
+window.CATALOGO_N5.COPERTURA_NEGATA_DA_AZIONE = {
+    // "Troopers cannot benefit from Partial Cover MODs during an Order in
+    //  which they declared Jump."
+    'SALTO': { nome: 'Salto', durata: 'ORDINE', riga: '2762-2763' },
+    // Combat Jump e Parachutist, stessa frase: "Restriction: During the Order
+    // this Special Skill is used, the Trooper cannot benefit from Partial
+    // Cover."
+    'INGRESSO IN CAMPO': { nome: 'Ingresso in campo', durata: 'ORDINE',
+                           riga: '8059 (Combat Jump), 9474-9475 (Parachutist)' },
+    // "A Trooper who is Climbing or holding onto a vertical surface cannot
+    //  benefit from Partial Cover MODs."
+    'ARRAMPICARSI': { nome: 'Arrampicarsi', durata: 'SUPERFICIE_VERTICALE', riga: '2925-2926',
+                      nota: 'Arrampicarsi: finche` la truppa e` su una superficie verticale NON beneficia della Copertura Parziale (righe 2925-2926). L\'app non lo applica: non sa dov\'e` la truppa.' }
 };
 
 // ------------------------------------------------------------------
@@ -2264,7 +2529,9 @@ window.CATALOGO_N5.HACKING = {
                         note: 'B3, +3 WIP all\'attacco, Tiro Salvezza contro BTS PIENO con PS 6, 1 Ferita per salvezza fallita. Un Critico impone un Tiro Salvezza aggiuntivo. E` l\'unico programma letale.' },
 
     // --- esistono in N5 ma non sono attacchi: questo modulo non li gestisce ---
-    'CYBERMASK':         { fonte: 'wiki', tipo: 'NON_ATTACCO',  note: 'Programma di occultamento.' },
+    // nfb: "NFB, No Roll" (riga 5153). Fino al 5 ottobre l'etichetta mancava.
+    'CYBERMASK':         { fonte: 'regolamento, righe 5150-5171', tipo: 'NON_ATTACCO', nfb: true, abilita: 'LONG_SKILL',
+                           note: 'Long Skill senza tiro: l\'Hacker entra in IMP-2. Si dichiara dalla voce CYBERMASK delle Abilita` Lunghe, non da questa schermata.' },
     'WHITE NOISE':       { nfb: true, fonte: 'wiki', tipo: 'NON_ATTACCO',  note: 'Zona di rumore bianco.' },
     'ZERO PAIN':         { fonte: 'wiki', tipo: 'NON_ATTACCO',  note: 'Non gestito dal modulo attacco.' },
     'ASSISTED FIRE':     { fonte: 'wiki', tipo: 'SUPPORTWARE', bersaglioAlleato: true, note: 'Supportware su alleati (EVO).' },
@@ -2337,7 +2604,10 @@ window.CATALOGO_N5.CATEGORIE_STATI = ['NULLO', 'IMM', 'INFOGUERRA', 'ALTERAZIONE
 window.CATALOGO_N5.STATI = {
     immA:       { vecchiaChiave: 'IMM-A', chiave: 'immobilizedA', nome: 'Immobilizzato-A', categoria: 'IMM', azioniPermesse: ['SCHIVATA'], mod: { SCHIVATA: -6, attributo:'PH' }, cancella: ['SCHIVATA','ENGINEER'], cancellazione: ['Schivata riuscita (Normale o Faccia a Faccia), applicando il -6 PH.', 'Ingegnere: Abilita` Breve a contatto, WIP Normale.'] },
     immB:       { vecchiaChiave: 'IMM-B', chiave: 'immobilizedB', nome: 'Immobilizzato-B', categoria: 'IMM', azioniPermesse: ['RESET'],    mod: { RESET: -3, attributo:'WIP' },   cancella: ['RESET','ENGINEER'], cancellazione: ['Reset riuscito, applicando il -3 WIP.', 'Ingegnere.'] },
-    isolato:     { vecchiaChiave: 'ISOLATO', chiave: 'isolated', nome: 'Isolato', categoria: 'INFOGUERRA', nonAttivabile: true, mod: { RESET: -9, attributo:'WIP' }, cancella: ['RESET','ENGINEER'], note:'Disabilita skill/equip Comms; no Fireteam/Coordinato.', cancellazione: ['Reset riuscito, applicando il -9 WIP.', 'Ingegnere.'] },
+    // vietaAzioni: "all their Hacking Programs are disabled" (righe 14412-14414).
+    // Fino al 5 ottobre il campo mancava: MISURATO, un Hacker Isolato poteva
+    // dichiarare Hacking in ARO.
+    isolato:     { vecchiaChiave: 'ISOLATO', chiave: 'isolated', nome: 'Isolato', categoria: 'INFOGUERRA', nonAttivabile: true, vietaAzioni: ['HACKING', 'CYBERMASK'], mod: { RESET: -9, attributo:'WIP' }, cancella: ['RESET','ENGINEER'], note:'Disabilita skill/equip Comms; no Fireteam/Coordinato.', cancellazione: ['Reset riuscito, applicando il -9 WIP.', 'Ingegnere.'] },
     targeted: { vecchiaChiave: 'BERSAGLIATO', chiave: 'targeted', nome: 'Bersagliato', categoria: 'INFOGUERRA', vietaAzioni: ['CAUTO','STEALTH'], modAttaccante: 3, mod: { RESET: -3, attributo:'WIP' }, cancella: ['RESET','ENGINEER'], note:'+3 a chi attacca l\'utente (BS/Comms/Discover).', cancellazione: ['Reset riuscito, applicando il -3 WIP.', 'Ingegnere.'] },
     stordito:    { vecchiaChiave: 'STORDITO', chiave: 'stunned', nome: 'Stordito', categoria: 'ALTERAZIONE', vietaAzioni: ['ATTACCO BS','ATTACCO CC','BERSERK','PROTHEION','HACKING'], note:'Fallisce automaticamente il Guts Roll successivo. Le Abilita` Speciali e gli Equipaggiamenti Automatici (Mimetismo, ECM, Firewall...) continuano a funzionare, rispettando le restrizioni di dichiarazione.',
                    // Come si esce dallo Stordito (wiki "Stunned State", N5.2/5.3 — chat
@@ -2350,7 +2620,7 @@ window.CATALOGO_N5.STATI = {
                    ] },
     suppressive:{ vecchiaChiave: 'SOPPRESSIONE', chiave: 'suppressive', nome: 'Fuoco di Soppressione', categoria: 'POSTURA', modNemiciEntro24: -3, aroSoloBS_SF: true, sfMode: { gittate:{z0:16, m3:24, x96:96}, burst:3 }, note:'Nemici entro 0-24" hanno -3 in tutti i F2F. In ARO usa SF Mode Weapon.', cancellazione: ['Dichiara un Ordine.', 'Dichiara un ARO diverso da BS Attack in SF Mode.', "Usa un'arma senza il Tratto Suppressive Fire.", 'Fallisce un Guts Roll.', 'Entra in Engaged, Isolato, Ritirata!, in qualsiasi stato Null o Immobilizzato.', 'Perdita del Tenente.', 'Entra in un Fireteam.'] },
     engaged:     { vecchiaChiave: 'ENGAGED', chiave: 'engaged', nome: 'Ingaggiato', categoria: 'POSTURA', azioniPermesse: ['ATTACCO CC','BERSERK','SCHIVATA','RESET','IDLE'], cancellazione: ['Non e` piu` in contatto di Silhouette con nemici.', 'Automatica: alla fase Effetti di un Ordine tutti i nemici in contatto sono Immobilizzati o in uno stato Null (eccetto Posseduto e Sepsitorizzato).', 'Schivata riuscita, Normale o Faccia a Faccia, muovendo fino a 2" per uscire dal contatto. Senza una posizione valida resta Ingaggiato.'] },
-    retreat:     { vecchiaChiave: 'RETREAT', chiave: 'retreat', nome: 'Ritirata!', categoria: 'NULLO', azioniPermesse: ['MOVIMENTO','CAUTO','SALTO','SCHIVATA','RESET','SCOPRIRE'], cancellazione: ['Non si cancella: finisce con la situazione di Ritirata.'] },
+    retreat:     { vecchiaChiave: 'RETREAT', chiave: 'retreat', nome: 'Ritirata!', categoria: 'NULLO', azioniPermesse: ['MOVIMENTO','SCOPRIRE','IDLE','CAUTO','SCHIVATA','RESET'], fontiAzioni: 'righe 14557-14558 e 16940: Basic Short Skill (Move, Discover, Idle: righe 16620-16624) + Cautious Movement, Dodge, Reset. SALTO e ARRAMPICARSI sono Long Skill non nominate: NO (chat REGOLE, 6 ottobre).', cancellazione: ['Non si cancella: finisce con la situazione di Ritirata.'] },
     disconnesso: { vecchiaChiave: 'DISCONNESSO', chiave: 'disconnected', statoNullo: true, nome: 'Disconnesso', categoria: 'INFOGUERRA', nonAttivabile: true, note:'Periferiche: no ordini/ARO.', cancellazione: ['Ingegnere.', 'Il Controller torna in uno stato valido.', 'La truppa rientra in Coerenza.'] },
     // 🔴 Posseduto e Sepsitorizzato NON erano voci del catalogo: vivevano solo
     // come flag dell'unita` (states.possessed / states.sepsitorized). Per
@@ -2364,15 +2634,39 @@ window.CATALOGO_N5.STATI = {
     sepsitorizzato: { vecchiaChiave: 'SEPSITORIZZATO', chiave: 'sepsitorized', nome: 'Sepsitorizzato', categoria: 'INFOGUERRA', statoNullo: true, cancellazione: [] },
     incosciente: { vecchiaChiave: 'INCOSCIENTE', chiave: 'unconscious', nome: 'Incosciente', categoria: 'NULLO', nonAttivabile: true, statoNullo: true, cancellazione: ['Dottore o MediKit, su un bersaglio con VITA.', 'Ingegnere o GizmoKit, su un bersaglio con STR.', 'Con Remote Presence un solo tiro riuscito toglie tutte le Ferite necessarie.'] },
     morto:       { vecchiaChiave: 'MORTO', chiave: 'dead', nome: 'Morto', categoria: 'NULLO', nonAttivabile: true, statoNullo: true, cancellazione: [] },
+    // cadePerTiroSalvezza: lo stato si cancella se chi lo ha e` "forced to
+    // make a Saving Roll", ANCHE se la salvezza riesce. Righe contate sul
+    // file del regolamento: CAMO 13638, Decoy 13781, Holoecho 13993,
+    // HoloMask 14073. L'IMPERSONATION NON ha il campo, e non per
+    // dimenticanza nostra: la sua lista di cancellazione (righe 14236-14241)
+    // ha cinque voci e il Tiro Salvezza forzato NON c'e` (chat REGOLE, 5
+    // ottobre). Scritta cosi`, l'Impersonation sopravvive a una salvezza
+    // superata.
+    // Lo legge M.notaMarkerSuSalvezza: e` una NOTA nel risultato, non una
+    // domanda e non un cambio di stato (decisione di Paolo, 5 ottobre).
     // Gli stati MARKER — erano solo in M.NOMI_STATI. Nessun effetto di regola
     // qui (niente azioniPermesse ne` statoNullo): servono al vocabolario.
-    camo:     { chiave: 'camo',          nome: 'CAMO',                  categoria: 'MARKER', cancellazione: ['Dichiara un Attacco, Look Out! o qualunque Abilita` che richieda un tiro.', 'Dichiara un\'Abilita` Lunga diversa dal Movimento Cauto.', 'Entra in contatto di Silhouette con un Modello nemico.', 'Viene Scoperto.', 'E` costretto a un Tiro Salvezza.', 'Diventa Impetuoso (Frenzy) o entra in Ritirata!.', 'La cancellazione vale per l\'INTERO Ordine dichiarato, anche se l\'Abilita` che rivela e` l\'ultima (righe 13639-13641).'] },
-    imp:      { chiave: 'impersonation', nome: 'Impersonation',         categoria: 'MARKER', cancellazione: ['Come il Camuffato, ma senza Look Out!.', 'Lo Scoprire cancella solo l\'IMP-2.'] },
-    holoecho: { chiave: 'holoecho',      nome: 'Holoecho',              categoria: 'MARKER', cancellazione: ['Stessa struttura del Decoy: le repliche e l\'utente si cancellano separatamente (riga ~13934).'] },
-    holomask: { chiave: 'holomask',      nome: 'HoloMask',              categoria: 'MARKER', cancellazione: ['Dichiara un Attacco, Look Out! o un\'Abilita` con tiro.', 'Dichiara un\'Abilita` Lunga diversa dal Movimento Cauto.', 'Entra in contatto di Silhouette con un Modello nemico.', 'E` costretto a un Tiro Salvezza.', 'Viene Scoperto.'] },
-    decoy:    { chiave: 'decoy',         nome: 'Decoy',                 categoria: 'MARKER', cancellazione: ['Replica: viene Scoperta.', 'Replica: e` colpita da un attacco riuscito (senza fare la salvezza).', 'Replica: un Modello nemico entra in contatto.', 'Replica: l\'utente si rivela.', 'Utente: dichiara un Attacco, Look Out! o un\'Abilita` con tiro, TRANNE il Combat Jump.', 'Utente: dichiara un\'Abilita` Lunga diversa da Movimento Cauto, Parachutist e Combat Jump.', 'Utente: FALLISCE un tiro di Infiltrazione o di Combat Jump.', 'Utente: entra in contatto di Silhouette con un Modello nemico.', 'Utente: viene Scoperto.', 'Utente: e` costretto a un Tiro Salvezza.'] },
+    camo:     { chiave: 'camo',          nome: 'CAMO',                  categoria: 'MARKER', cadePerTiroSalvezza: { riga: 13638 }, cancellazione: ['Dichiara un Attacco, Look Out! o qualunque Abilita` che richieda un tiro.', 'Dichiara un\'Abilita` Lunga diversa dal Movimento Cauto.', 'Entra in contatto di Silhouette con un Modello nemico.', 'Viene Scoperto.', 'E` costretto a un Tiro Salvezza.', 'Diventa Impetuoso (Frenzy) o entra in Ritirata!.', 'La cancellazione vale per l\'INTERO Ordine dichiarato, anche se l\'Abilita` che rivela e` l\'ultima (righe 13639-13641).'] },
+    imp:      { chiave: 'impersonation', nome: 'Impersonation',         categoria: 'MARKER', cancellazione: ['Dichiara un Attacco o un\'Abilita` che richiede un tiro (riga 14238). NON il Look Out!.', 'Dichiara un\'Abilita` Lunga diversa dal Movimento Cauto (riga 14239).', 'Entra in contatto di Silhouette con un Modello nemico (riga 14240).', 'IMP-2: viene Scoperto (riga 14241). Un IMP-1 Scoperto diventa IMP-2, non Modello (riga 14228).', 'E` o diventa Impetuoso, o entra in Ritirata! (riga 14242).'] },
+    holoecho: { chiave: 'holoecho',      nome: 'Holoecho',              categoria: 'MARKER', cadePerTiroSalvezza: { riga: 13993 }, cancellazione: ['Stessa struttura del Decoy: le repliche e l\'utente si cancellano separatamente (riga ~13934).'] },
+    holomask: { chiave: 'holomask',      nome: 'HoloMask',              categoria: 'MARKER', cadePerTiroSalvezza: { riga: 14073 }, cancellazione: ['Dichiara un Attacco, Look Out! o un\'Abilita` con tiro.', 'Dichiara un\'Abilita` Lunga diversa dal Movimento Cauto.', 'Entra in contatto di Silhouette con un Modello nemico.', 'E` costretto a un Tiro Salvezza.', 'Viene Scoperto.'] },
+    decoy:    { chiave: 'decoy',         nome: 'Decoy',                 categoria: 'MARKER', cadePerTiroSalvezza: { riga: 13781 }, cancellazione: ['Replica: viene Scoperta.', 'Replica: e` colpita da un attacco riuscito (senza fare la salvezza).', 'Replica: un Modello nemico entra in contatto.', 'Replica: l\'utente si rivela.', 'Utente: dichiara un Attacco, Look Out! o un\'Abilita` con tiro, TRANNE il Combat Jump.', 'Utente: dichiara un\'Abilita` Lunga diversa da Movimento Cauto, Parachutist e Combat Jump.', 'Utente: FALLISCE un tiro di Infiltrazione o di Combat Jump.', 'Utente: entra in contatto di Silhouette con un Modello nemico.', 'Utente: viene Scoperto.', 'Utente: e` costretto a un Tiro Salvezza.'] },
     hidden:   { chiave: 'hidden',        nome: 'Schieramento Nascosto', categoria: 'MARKER', cancellazione: ['Dichiara un Ordine o un ARO.', 'Viene Scoperto.', 'Resta Marker solo nei tre casi di M.statoDopoAbilita (righe 13914-13921).'] },
-    foxhole:  { chiave: 'foxhole',       nome: 'Foxhole',               categoria: 'POSTURA' }
+    // FOXHOLE (righe 13855-13876; chat REGOLE, 6 ottobre). NON vieta nessuna
+    // dichiarazione: vieta di MUOVERSI (riga 13867). Nel Turno Attivo chi
+    // dichiara una Skill con etichetta Movimento PUO` cancellare lo stato, e
+    // lo deve ANNUNCIARE alla dichiarazione (righe 13871-13874). Le sei Skill
+    // con etichetta Movimento: righe 12620-12621 piu` la Schivata (12154,
+    // 12164-12170). In ARO non si cancella (riga 13873) e non cade.
+    foxhole:  { chiave: 'foxhole',       nome: 'Foxhole',               categoria: 'POSTURA',
+                cancellaCon: ['MOVIMENTO','CAUTO','ARRAMPICARSI','SALTO','BERSERK','SCHIVATA'],
+                cancellaSoloTurnoAttivo: true,
+                domandaCancella: 'La truppa e` in Foxhole. Annunci che CANCELLI lo Stato Foxhole per muoverti?\n\nOK = cancello: si muove con MOV e Silhouette veri, ma perde Copertura a 360 gradi, Mimetism (-3) e Courage per tutto l\'Ordine.\nAnnulla = resto in Foxhole: lo stato resta, ma la truppa NON si muove (nemmeno con una Schivata riuscita).',
+                seCancella: 'Foxhole cancellato alla dichiarazione: la truppa si muove con MOV e Silhouette veri e perde, per tutto l\'Ordine, Copertura a 360 gradi, Mimetism (-3), Courage e S3 (righe 13871-13876).',
+                seNonCancella: 'Resta in Foxhole: lo stato non permette nessun movimento, nemmeno quello di una Schivata riuscita (riga 13867).',
+                inAro: 'In ARO il Foxhole non si cancella e non cade: la truppa reagisce tenendo Copertura a 360 gradi e Mimetism (-3), ma una Schivata riuscita non la fa muovere (righe 13867, 13873).',
+                nonModellato: 'NON MODELLATO nel calcolo: Copertura a 360 gradi, Mimetism (-3), Courage e S3 del Foxhole vanno applicati al tavolo.',
+                cancellazione: ['Entra in Stato Prono.', 'Turno Attivo: dichiara una Skill con etichetta Movimento e ANNUNCIA la cancellazione.', 'Turno Attivo: all\'inizio del movimento di una Schivata.'] }
 };
 
 // ------------------------------------------------------------------
@@ -2402,7 +2696,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-10-05.2', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-10-06.5', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-05.3 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-06.2 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -514,14 +514,33 @@
         };
 
         possibili.filter(a => a.ammesso).forEach(function (a) {
-            // puoFareAzione lavora sugli ID del turno attivo: la traduzione la fa il motore.
-            const equivalente = M.aroAdAzione(a.id);
-            if (window.puoFareAzione && equivalente && !window.puoFareAzione(u, equivalente)) return;
+            // 🔴 6 ottobre, difetto di questa chat. Qui c'era un SECONDO filtro:
+            // ogni ARO ammessa dal motore veniva ripassata a puoFareAzione
+            // (app.html), che e` scritta per il menu del Turno Attivo. Tre
+            // danni misurati: un Isolato compariva fra i reattivi ma senza
+            // nessun pulsante (puoFareAzione parte da puoRicevereOrdine, e
+            // un'ARO non e` un Ordine); un Ingaggiato perdeva l'Attacco CC
+            // (la traduzione da` 'CC_ATTACK', la lista di puoFareAzione dice
+            // 'ATTACCO CC'); un Posseduto perdeva tutto. Senza stati il
+            // filtro non toglieva niente (765 profili per 4 azioni in
+            // arrivo): era solo dannoso. Quali ARO sono lecite lo decide
+            // M.azioniAroPossibili, una volta sola.
             const nota = a.note.length ? `<br><span style="font-size:12px; color:#ff9900;">${a.note[0]}</span>` : '';
             const c = colori[a.id] || ['#111', '#888'];
             container.innerHTML += `<button class="huge-btn" style="background:${c[0]}; border-color:${c[1]};"
                 onclick="window.selezionaAzioneAro('${a.id}')">${a.nome.toUpperCase()}${nota}</button>`;
         });
+
+        // Foxhole in ARO (6 ottobre): lo stato non si cancella e non cade, e
+        // una Schivata riuscita non fa muovere la truppa (righe 13867, 13873).
+        // Chi reagisce lo deve leggere PRIMA di scegliere, non scoprirlo al
+        // tavolo. Il testo e` del catalogo, lo consegna il motore.
+        if (typeof M.foxholeAllaDichiarazione === 'function') {
+            const fx = M.foxholeAllaDichiarazione(u, 'SCHIVATA', { inAro: true });
+            if (fx && fx.nota) {
+                container.innerHTML += `<div style="margin-top:10px; padding:10px; background:#221a00; border:1px solid #aa8800; border-radius:5px; color:#ddbb55; font-size:13px;">🕳️ ${fx.nota}${fx.nonModellato ? '<br><span style="color:#aa9955;">' + fx.nonModellato + '</span>' : ''}</div>`;
+            }
+        }
 
         const negate = possibili.filter(a => !a.ammesso);
         if (negate.length > 0) {
@@ -678,7 +697,17 @@
         const difensivo = (cfg.azione === 'DODGE' || cfg.azione === 'RESET');
 
         // 🚨 Con un'azione difensiva NON si tocca il profilo arma.
-        const arma = difensivo ? null : M.profiloArma(cfg.arma);
+        // 🔴 6 ottobre, difetto di questa chat. Un programma di Hacking NON e`
+        // un'arma del database: M.profiloArma('TRINITY') risponde "non
+        // trovata", B1, munizioni N, nessuna gittata. Qui passava di li` anche
+        // l'Hacking: a schermo uscivano una tendina "Munizioni: N" senza
+        // senso e una barra gittate vuota; il riquadro ZONA HACKING, scritto
+        // piu` sotto, non compariva mai (isHacking mancava), e con lui non
+        // sarebbe comparso il pulsante del Repeater. Il
+        // programma lo descrive M.armaDaProgrammaDi, la stessa chiamata che
+        // fa il motore quando calcola la reazione.
+        const arma = difensivo ? null
+                   : (cfg.azione === 'HACKING' ? M.armaDaProgrammaDi(u, cfg.arma) : M.profiloArma(cfg.arma));
         if (arma && window.aroSfMode) Object.assign(arma, M.profiloSF(arma));
 
         let corpo = '';
@@ -734,7 +763,8 @@
                     ⚔️ CORPO A CORPO<br><span style="font-size:12px; color:#fff;">Si tira su CC. Niente gittata né copertura.</span></div>`;
             } else if (arma.isHacking) {
                 corpo = `<div style="margin-bottom:15px; text-align:center; padding:10px; background:#002244; border:1px solid ${accento()}; color:${accento()}; font-weight:bold; border-radius:5px;">
-                    💻 ZONA HACKING<br><span style="font-size:12px; color:#fff;">PS ${arma.ps} · ${arma.dimezzaBTS ? 'BTS dimezzato' : 'BTS pieno'} · ${arma.effetto || ''}</span></div>`;
+                    💻 ZONA HACKING<br><span style="font-size:12px; color:#fff;">PS ${arma.ps} · ${arma.dimezzaBTS ? 'BTS dimezzato' : 'BTS pieno'} · ${arma.effetto || ''}</span></div>`
+                    + window.riquadroRepeaterAro(cfg);
             } else {
                 let seg = '', lab = '';
                 arma.bands.forEach(function (b, i) {
@@ -754,10 +784,21 @@
             // soltanto la tendina.
             sceltaMunizioni = `<select class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; background:#002233; color:#fff; border-color:${accento()}; text-align:center; padding:0 10px;"
                 onchange="window.setAroAmmo(this.value)">${ammoOpts}</select>`;
+            // Un programma di Hacking non ha munizioni da scegliere.
+            if (arma.isHacking) sceltaMunizioni = '';
         }
 
         const burst = arma ? M.burstARO(u, arma) : { valore: 1, voci: [], note: [] };
         cfg.burst = burst.valore;
+
+        // 6 ottobre. Salto e Ingresso in Campo negano la Copertura a chi li
+        // dichiara: il motore lo scrive nell'allarme (coperturaNegata). Prima
+        // questa schermata offriva lo stesso l'interruttore: il reattivo
+        // poteva dichiarare una Copertura che il calcolo poi ignorava, e si
+        // vedeva togliere il -3 senza sapere perche`. Ora l'interruttore non
+        // c'e` e al suo posto sta il motivo, col testo del motore.
+        const copNeg = (window.currentAttackData && window.currentAttackData.coperturaNegata) || null;
+        if (copNeg) { cfg.cover = false; cfg.copertura = null; }
 
         container.innerHTML = `
             <div class="target-card" style="border-left:4px solid var(--nomad-red); background:rgba(255,255,255,0.03); padding:15px; overflow:hidden;">
@@ -776,7 +817,7 @@
                 ${(sceltaMunizioni || cfg.azione === 'BS_ATTACK')
                     ? `<div style="display:flex; gap:10px; margin-top:14px;">
                         ${sceltaMunizioni}
-                        ${(cfg.azione === 'BS_ATTACK')
+                        ${(cfg.azione === 'BS_ATTACK' && !copNeg)
                             ? `<button type="button" class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:15px; ${cfg.cover ? 'background:#003300; color:#00ff00; border-color:#00ff00;' : 'background:#111; color:#aaa; border-color:#555;'}"
                                 onclick="window.toggleAroCover()">${cfg.cover
                                     ? window.iconaInterruttore('coverSi', 22) + 'IN COPERTURA'
@@ -784,7 +825,8 @@
                             : ''}
                        </div>
                        ${(cfg.azione === 'BS_ATTACK' && cfg.cover) ? window.sceltaCopertura(cfg.copertura, 'window.setAroCopertura') : ''}
-                       ${(cfg.azione === 'BS_ATTACK' && cfg.cover) ? '<div style="color:#888; font-size:12px; margin-top:4px;">-3 al tuo tiro, +3 alla sua ARM.</div>' : ''}`
+                       ${(cfg.azione === 'BS_ATTACK' && cfg.cover) ? '<div style="color:#888; font-size:12px; margin-top:4px;">-3 al tuo tiro, +3 alla sua ARM.</div>' : ''}
+                       ${(cfg.azione === 'BS_ATTACK' && copNeg) ? '<div style="color:#ff9900; font-size:13px; margin-top:8px; padding:8px; border:1px solid #ff9900; border-radius:5px;">⛔ NIENTE COPERTURA per il bersaglio: ' + (copNeg.motivo || copNeg.nome || copNeg.azione || '') + '</div>' : ''}`
                     : ''}
                 <!-- Terreno, Fumo ed Eclipse in UNA tendina (Paolo, 5 ottobre).
                      Prima erano due: la zona stava sopra, dentro il blocco
@@ -793,7 +835,7 @@
                      nella busta restano due, terrain e zona.
                      NIENTE accento grave in questo commento: siamo dentro
                      una stringa fra accenti gravi, e la chiuderebbe. -->
-                ${window.tendinaTerrenoAro(cfg)}
+                ${(arma && arma.isHacking) ? '' : window.tendinaTerrenoAro(cfg)}
             </div>`;
     };
 
@@ -813,6 +855,44 @@
     // gia` da sempre: mancava solo il comando. (Chat INTERFACCIA, 23 sett.)
     window.toggleAroCover = function () {
         window.aroCurrentConfig.cover = !window.aroCurrentConfig.cover;
+        window.renderAroModifiersUI();
+    };
+
+    // ==============================================================
+    // 📡 HACKING IN ARO ATTRAVERSO UN REPEATER NEMICO (6 ottobre)
+    // ==============================================================
+    // Prima la reazione non portava il campo repeaterNemico: un Hacker che
+    // reagiva passando da un Repeater avversario tirava senza il -3 del
+    // Firewall, e contro un attivo non Hacker tirava un attacco che per
+    // regola e` un Idle. Il motore legge reazione.repeaterNemico; qui si
+    // scrive soltanto, e i testi sono quelli di CATALOGO_N5.REPEATER_NEMICO
+    // (stesso pulsante della schermata di Hacking del Turno Attivo).
+    // L'avviso "non e` un Hacker" lo da` M.viaRepeaterNemico: nessuna regola
+    // riscritta qui.
+    window.riquadroRepeaterAro = function (cfg) {
+        const M = motore();
+        const REP = (window.CATALOGO_N5 && window.CATALOGO_N5.REPEATER_NEMICO) || {};
+        const rep = !!cfg.repeaterNemico;
+        let avviso = '';
+        if (rep && M && typeof M.viaRepeaterNemico === 'function') {
+            const nemico = (M.rosterNemico() || []).find(x => M.nomeUnita(x) === String(cfg.bersaglio || '').trim());
+            // Se il bersaglio non si trova nel roster nemico NON si avvisa:
+            // un avviso inventato sarebbe peggio di nessuno. Il calcolo
+            // dell'Hub lo decide comunque sull'unita` vera.
+            if (nemico) {
+                const via = M.viaRepeaterNemico(nemico);
+                if (!via.ammesso) avviso = '<div style="margin:0 0 12px; padding:10px; background:#330000; border:1px solid #ff3333; color:#ff6666; font-size:13px; border-radius:5px;"><b>⚠️ REQUISITO NON SODDISFATTO → IDLE</b><br>' + (via.motivo || '') + '</div>';
+            }
+        }
+        return '<button type="button" class="huge-btn" style="margin:0 0 10px; min-height:50px; font-size:15px; '
+            + (rep ? 'background:#553300; color:#ffaa33; border-color:#ffaa33;' : 'background:#111; color:#aaa; border-color:#555;')
+            + '" onclick="window.toggleAroRepeater()">📡 ' + (REP.pulsante || 'VIA REPEATER NEMICO') + ': '
+            + (rep ? 'SÌ (Firewall ' + (REP.firewall || -3) + ')' : 'NO') + '</button>'
+            + (rep ? '<div style="color:#aaa; font-size:12px; margin:-4px 0 10px; text-align:center;">' + (REP.spiegazione || '') + '</div>' : '')
+            + avviso;
+    };
+    window.toggleAroRepeater = function () {
+        window.aroCurrentConfig.repeaterNemico = !window.aroCurrentConfig.repeaterNemico;
         window.renderAroModifiersUI();
     };
 
@@ -860,6 +940,8 @@
         // Vocabolario ARO per l'Hub, più quello attivo per chiarezza.
         cfg.azioneAttiva = M.aroAdAzione(cfg.azione);
         cfg.sfMode = !!window.aroSfMode;
+        // Sempre vero o falso, mai assente: e solo per l'Hacking.
+        cfg.repeaterNemico = (cfg.azione === 'HACKING') && !!cfg.repeaterNemico;
         window.aroReactions.push(JSON.parse(JSON.stringify(cfg)));
         window.aroSfMode = false;
 
@@ -907,7 +989,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-09-29.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-10-06.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

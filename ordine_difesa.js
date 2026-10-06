@@ -1,4 +1,4 @@
-// @versione 2026-09-29.1 | ordine_difesa.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.4 | ordine_difesa.js | proprieta`: chat MOTORE
 // ==========================================
 // 🛡️ DIFESA: SCHIVATA, RESET E SOPPRESSIONE - ordine_difesa.js
 // ------------------------------------------
@@ -308,7 +308,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_difesa.js', versione: '2026-09-14.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_difesa.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

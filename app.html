@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-05.2 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-06.3 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -142,6 +142,7 @@
     <script src="ordine_piazzamento.js"></script>
     <script src="ordine_osservazione.js"></script>
     <script src="ordine_trincerarsi.js"></script>
+    <script src="ordine_rientro_camo.js"></script>
     <script src="ordine_logistica.js"></script>
 
     <style>
@@ -483,7 +484,12 @@
         // quello dove una copia vecchia (cache del telefono) e` piu` probabile.
         (function () {
             var g = (typeof window !== 'undefined') ? window : globalThis;
-            var v = { file: 'app.html', versione: '2026-09-30.1', proprieta: 'INTERFACCIA' };
+            // 6 ottobre: qui c'era '2026-09-30.1' mentre la testa del file
+            // diceva 2026-10-05.3. La testa si aggiornava a ogni consegna e
+            // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
+            // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
+            // test_voce_cybermask.js).
+            var v = { file: 'app.html', versione: '2026-10-06.3', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -532,6 +538,21 @@
                 { id: 'FUOCO SPECULATIVO', nome: 'FUOCO SPECULATIVO', desc: 'Tiro parabolico senza LoF (-6 BS).', type: 'LONG_WEAPON' },
                 { id: 'TRIANGULATED FIRE', nome: 'TRIANGULATED FIRE', desc: 'Attacco BS che ignora i malus.', type: 'LONG_WEAPON' },
                 { id: 'TRINCERARSI', nome: 'TRINCERARSI (FOXHOLE)', desc: 'Entra in stato Foxhole.', type: 'LONG_SKILL' },
+                // Rientrare in Camuffato (5 ottobre): chi e` stato rivelato torna
+                // Marker spendendo un Ordine Intero, fuori dalla LoF nemica
+                // (regolamento, riga 13603). Prima non c'era modo di dichiararlo:
+                // un Camuffato rivelato restava Modello fino a fine partita, o lo
+                // si rimetteva Marker a mano dalla pagina stati, senza Ordine
+                // speso e senza ARO per l'avversario.
+                // 6 ottobre: la voce si chiamava 'RIENTRARE IN CAMUFFATO' mentre
+                // id, catalogo e schermata dicono CAMO: due nomi per la stessa
+                // cosa (rilievo della chat MOTORE).
+                { id: 'RIENTRARE IN CAMO', nome: 'RIENTRARE IN CAMO', desc: 'Ordine Intero: torna Marker, fuori dalla LoF nemica.', type: 'LONG_SKILL' },
+                // Cybermask (6 ottobre): Long Skill a se`, non un attacco di
+                // Hacking (regolamento, riga 5151). Il router la porta gia` a
+                // avviaFaseRientroCamo; mancava solo la voce, e senza la voce
+                // l'Hacker non aveva modo di entrare in IMP-2.
+                { id: 'CYBERMASK', nome: 'CYBERMASK', desc: 'Ordine Intero: l\'Hacker entra in IMP-2, fuori dalla LoF nemica.', type: 'LONG_SKILL' },
                 { id: 'INGRESSO IN CAMPO', nome: 'INGRESSO IN CAMPO (AD)', desc: 'Schieramento aereo consumando l\'ordine.', type: 'LONG_MOVE' },
                 { id: 'REQUEST SPEEDBALL', nome: 'REQUEST SPEEDBALL', desc: 'Richiedi lancio di rifornimenti.', type: 'LONG_SKILL' }
             ]
@@ -666,11 +687,29 @@
             // l'ordine, non lo si offre affatto.
             if (!window.ordineInstradabile(actionId)) return false;
 
-            // L'Idle e` cio` che si dichiara quando non si puo` o non si vuole
-            // fare altro: non ha requisiti d'arma ne` di skill, e il catalogo
-            // lo ammette anche in mischia. Va offerto sempre, altrimenti una
-            // truppa senza opzioni resterebbe senza nulla da dichiarare e
-            // l'avversario perderebbe l'ARO che gli spetta.
+            // 🔴 STATI: UNA FONTE SOLA, IL MOTORE (6 ottobre).
+            // Qui c'erano sei liste scritte a mano (Ingaggiato, Ritirata!,
+            // Trincerato, IMM-A, IMM-B, Stordito) e l'Idle offerto SEMPRE.
+            // Misurate contro M.azionePermessaDaStati e contro il regolamento
+            // (chat REGOLE, 6 ottobre), sbagliavano in tre punti:
+            //  - Trincerato: negavo MOVIMENTO, CAUTO e SALTO. Lo stato vieta
+            //    di muoversi, non di dichiarare (righe 13863-13867): chi
+            //    dichiara puo` cancellare il Foxhole, e la domanda la fa il
+            //    router. Con la voce nascosta quella domanda non arrivava mai.
+            //  - IDLE: lo offrivo anche a IMM-A e IMM-B, che non possono
+            //    dichiararlo (righe 14130, 14176).
+            //  - Ingaggiato: non c'era ARRAMPICARSI ne` altro da dire, ma la
+            //    lista era una copia: alla prima correzione del catalogo
+            //    (come il SALTO in Ritirata!, tolto oggi) sarebbe rimasta
+            //    indietro.
+            // Ora si chiede al motore, per ogni azione, Idle compreso. Se la
+            // funzione manca NON si offre niente: meglio un menu vuoto e
+            // visibile che una regola inventata qui.
+            {
+                const Ms = window.MotoreN5;
+                if (!Ms || typeof Ms.azionePermessaDaStati !== 'function') return false;
+                if (Ms.azionePermessaDaStati(unit, actionId).permessa !== true) return false;
+            }
             if (actionId === 'IDLE') return true;
 
             let skills = (unit.skills || "").toUpperCase();
@@ -678,47 +717,6 @@
             let weapons = (unit.weapon || "").toUpperCase();
             let type = (unit.tipo || "").toUpperCase();
             let state = unit.states || {};
-
-            // ==========================================
-            // 🚨 OVERRIDE STATI ALTERATI (ENGAGED, RETREAT, FOXHOLE)
-            // ==========================================
-
-            // 1. ENGAGED (Ingaggiato in CC)
-            if (state.engaged) {
-                const allowedEngaged = ['ATTACCO CC', 'BERSERK', 'SCHIVATA', 'RESET'];
-                // Se l'azione non è tra quelle consentite in mischia, nascondi il bottone
-                if (!allowedEngaged.includes(actionId)) return false;
-            }
-
-            // 2. RETREAT! (Ritirata)
-            if (state.retreat) {
-                // Ammette solo Short Skills base, Dodge, Reset o Cautious Movement
-                const allowedRetreat = ['MOVIMENTO', 'SCOPRIRE', 'SCHIVATA', 'RESET', 'CAUTO'];
-                if (!allowedRetreat.includes(actionId)) return false;
-            }
-
-            // 3. FOXHOLE (Trincerato)
-            if (state.foxhole) {
-                // Impedisce le azioni con l'etichetta Movement (non può muoversi a meno che non cancelli lo stato)
-                const movementActions = ['MOVIMENTO', 'SALTO', 'CAUTO', 'INGRESSO IN CAMPO'];
-                if (movementActions.includes(actionId)) return false;
-            }
-
-            // 4. IMMOBILIZED-A: può dichiarare SOLO Schivata (regola ufficiale N5, Game States Module)
-            if (state.immobilizedA) {
-                if (actionId !== 'SCHIVATA') return false;
-            }
-
-            // 5. IMMOBILIZED-B: può dichiarare SOLO Reset (ancora più restrittivo di IMM-A)
-            if (state.immobilizedB) {
-                if (actionId !== 'RESET') return false;
-            }
-
-            // 6. STUNNED (Stordito): non può dichiarare Attacchi (BS/CC/Berserk/Protheion/Hacking)
-            if (state.stunned) {
-                const azioniAttacco = ['ATTACCO BS', 'ATTACCO CC', 'BERSERK', 'PROTHEION', 'HACKING'];
-                if (azioniAttacco.includes(actionId)) return false;
-            }
 
             // ==========================================
             // 🔍 FUNZIONE DI SUPPORTO PER TRATTI ARMI
@@ -809,6 +807,30 @@
                 case 'TRINCERARSI':
                     return skills.includes('SAPPER');
 
+                case 'RIENTRARE IN CAMO': {
+                    // Lo decide il motore, NON una lettura delle skill qui: oltre
+                    // ad avere Camouflage conta se l'uso unico e` gia` speso
+                    // (Camouflage 1 Use), se la truppa e` gia` Marker, se e`
+                    // Impetuosa. Una "skills.includes('CAMOUFLAGE')" offrirebbe
+                    // la voce a chi non puo` dichiararla, e il giocatore lo
+                    // scoprirebbe solo dentro la schermata.
+                    // Niente ripiego se la funzione manca: senza il motore
+                    // giusto la voce non compare, che e` meglio di una voce
+                    // offerta a caso.
+                    const M = window.MotoreN5;
+                    if (!M || typeof M.puoRientrareInCamo !== 'function') return false;
+                    return M.puoRientrareInCamo(unit, { inAro: false }).puo === true;
+                }
+
+                case 'CYBERMASK': {
+                    // Come sopra: decide il motore (programma posseduto, gia`
+                    // in Impersonation, Isolato, Schieramento Nascosto). Un
+                    // Marker CAMO PUO` dichiararlo, e il motore lo sa.
+                    const M = window.MotoreN5;
+                    if (!M || typeof M.puoUsareCybermask !== 'function') return false;
+                    return M.puoUsareCybermask(unit, { inAro: false }).puo === true;
+                }
+
                 case 'INGRESSO IN CAMPO':
                     return skills.includes('COMBAT JUMP') || skills.includes('PARACHUTIST') || skills.includes('AIRBORNE DEPLOYMENT') || skills.includes('AD:');
 
@@ -893,6 +915,16 @@
             if(s.stunned) icone += `<img src="img/icon_stunned.png" ${iconStyle} ${getOnErr('😵')}>`;
             if(s.suppressive) icone += `<img src="img/icon_suppressive.png" ${iconStyle} ${getOnErr('🔥')}>`;
             if(s.camo) icone += `<img src="img/icon_camo.png" ${iconStyle} ${getOnErr('👻')}>`;
+            // Impersonation (6 ottobre): lo stato non sta in u.states ma in
+            // deployState ('IMP_1'/'IMP_2'), quindi questa funzione non lo
+            // vedeva e un Hacker in Cybermask appariva identico a prima. Il
+            // livello lo legge il motore; qui solo l'etichetta, senza immagine
+            // (non esiste un file icona per l'IMP).
+            {
+                const Mi = window.MotoreN5;
+                const liv = (Mi && typeof Mi.livelloImpersonation === 'function') ? Mi.livelloImpersonation(u) : null;
+                if (liv) icone += `<span style="font-size:14px; font-weight:bold; color:#cc99ff; border:1px solid #cc99ff; border-radius:4px; padding:3px 5px; margin-left:5px;">IMP-${liv}</span>`;
+            }
             if(s.disconnected) icone += `<img src="img/icon_disconnected.png" ${iconStyle} ${getOnErr('🔌')}>`;
             if(s.possessed) icone += `<img src="img/icon_possessed.png" ${iconStyle} ${getOnErr('👾')}>`;
             if(s.sepsitorized) icone += `<img src="img/icon_sepsitorized.png" ${iconStyle} ${getOnErr('👽')}>`;
@@ -1087,6 +1119,9 @@
         };
         // 4. Genera la lista delle Azioni in base al profilo dell'unità
         window.procediAlleAzioni = () => {
+            // Il menu si apre PRIMA di ogni dichiarazione: un cambio di stato
+            // gia` in memoria non e` di quest'Ordine.
+            if (window.segnaCambioStatoVecchio) window.segnaCambioStatoVecchio();
             window.currentOrder = window.currentOrder || {};
             window.currentOrder.unit = window.spearheadUnit;
             window.currentOrder.coordinatedUnits = window.selectedCoordinatedUnits;
@@ -1970,6 +2005,56 @@
             }
         })();
 
+        // ==========================================
+        // 🎭  CAMBIO DI STATO CAUSATO DALLA DICHIARAZIONE (6 ottobre, Paolo)
+        // ==========================================
+        // Dichiarare un'Abilita` puo` cambiare lo stato della truppa: un
+        // Marker CAMO o Impersonation che si rivela, uno Schieramento
+        // Nascosto che compare, un Foxhole cancellato. Il router lo applica
+        // al roster e avvisa l'Hub, ma al giocatore che dichiarava NON lo
+        // diceva nessuno: passava dritto alla scelta dell'arma, con
+        // l'avversario che vedeva gia` il Modello e lui che aveva ancora il
+        // Marker sul tavolo. Il router lascia tutto in
+        // window.ultimoCambioStato (prima, dopo, note, azione, unita): qui
+        // lo si mostra, in un riquadro che resta in cima a ogni schermata
+        // finche` l'Ordine non finisce. I testi sono del motore.
+        //
+        // QUALE cambio e` "di quest'Ordine": ultimoCambioStato resta in
+        // memoria anche dopo, e non porta l'identificativo dell'Ordine. Si
+        // ricorda quindi l'oggetto che c'era QUANDO IL MENU SI E` APERTO
+        // (segnaCambioStatoVecchio): quello e` vecchio per definizione, e
+        // solo uno nato dopo viene mostrato.
+        window.segnaCambioStatoVecchio = () => { window._cambioStatoVecchio = window.ultimoCambioStato || null; };
+        window.testoCambioStato = () => {
+            const c = window.ultimoCambioStato;
+            if (!c || c.cambiato !== true || c === window._cambioStatoVecchio) return '';
+            const nomi = { CAMO: 'Marker CAMO', IMP_1: 'Marker IMP-1', IMP_2: 'Marker IMP-2', IMP: 'Marker Impersonation',
+                           HIDDEN: 'Schieramento Nascosto', FOXHOLE: 'Foxhole', NORMAL: 'Modello sul tavolo' };
+            const dire = (s) => nomi[String(s || '').toUpperCase()] || String(s || '?');
+            const note = (Array.isArray(c.note) ? c.note : []).filter(Boolean);
+            return `<div style="margin:0 0 12px; padding:10px 12px; background:#2a1a00; border:2px solid #ffaa33; border-radius:6px; color:#ffcc66; font-size:15px; text-align:left;">
+                        <b>🎭 ${c.unita || 'La truppa'}: ${dire(c.prima)} → ${dire(c.dopo)}</b>
+                        <span style="color:#cc9944;"> (${c.azione || 'dichiarazione'})</span>
+                        ${note.length ? '<div style="margin-top:6px; font-size:13px; color:#ddbb77;">' + note.join('<br>') + '</div>' : ''}
+                    </div>`;
+        };
+        window.aggiornaRiquadroCambioStato = (contenitore) => {
+            let box = document.getElementById('riquadro-cambio-stato');
+            const testo = contenitore ? window.testoCambioStato() : '';
+            if (!box) {
+                if (!testo) return;
+                box = document.createElement('div');
+                box.id = 'riquadro-cambio-stato';
+            }
+            box.innerHTML = testo;
+            box.style.display = testo ? 'block' : 'none';
+            // In cima alla schermata che si sta aprendo: cosi` segue il
+            // giocatore da un passo all'altro dello stesso Ordine.
+            if (testo && contenitore && typeof contenitore.insertBefore === 'function') {
+                contenitore.insertBefore(box, contenitore.firstChild || null);
+            }
+        };
+
         window.goToStep = (stepId) => {
             let header = document.getElementById('battle-header');
             
@@ -1977,6 +2062,10 @@
                 document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
                 document.getElementById('battle').style.display = 'flex';
                 if(header) header.style.display = 'none';
+                // Ordine finito (o annullato): il riquadro sparisce, e cio`
+                // che c'e` in memoria diventa vecchio.
+                window.segnaCambioStatoVecchio();
+                window.aggiornaRiquadroCambioStato(null);
                 return;
             }
 
@@ -1984,6 +2073,7 @@
             const targetStep = document.getElementById(stepId);
             if(targetStep) targetStep.style.display = 'flex';
             if(header) header.style.display = 'block';
+            window.aggiornaRiquadroCambioStato(targetStep);
         };
 
         // Service Worker

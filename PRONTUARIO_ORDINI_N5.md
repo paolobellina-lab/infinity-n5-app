@@ -1,4 +1,4 @@
-<!-- @versione 2026-09-30.1 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-10-06.1 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
 
 # PRONTUARIO ORDINI N5 — richiamo rapido durante la partita
 
@@ -19,7 +19,7 @@
 | § | Contenuto |
 |---|---|
 | 0 | Motore di base: SV, MOD, critici, Faccia a Faccia, Burst |
-| 1 | **Le schede ordine** — 1.1 BS · 1.2 CC · 1.3 Intuitivo · 1.4 Speculativo · 1.5 Guidato · 1.6 Hacking · 1.7 Scoprire · 1.8 Supporto · 1.9 Difesa · 1.10 Soppressione · 1.11 Movimento · 1.12 Coordinato · 1.13 Osservazione · 1.14 Piazzamento · 1.15 Trincerarsi · 1.16 Scenografia · 1.17 Logistica |
+| 1 | **Le schede ordine** — 1.1 BS · 1.2 CC · 1.3 Intuitivo · 1.4 Speculativo · 1.5 Guidato · 1.6 Hacking · 1.7 Scoprire · 1.8 Supporto · 1.9 Difesa · 1.10 Soppressione · 1.11 Movimento · 1.12 Coordinato · 1.13 Osservazione · 1.14 Piazzamento · 1.15 Trincerarsi · 1.16 Scenografia · 1.17 Logistica · 1.18 Entrare in forma di Marker |
 | 2 | Matrice MOD × ordine |
 | 3 | Armi: tipi, profili, tratti, notazioni |
 | 4 | Munizioni e Tiri Salvezza |
@@ -61,6 +61,18 @@ Vale per ogni ordine, sempre.
   5.1 Effetti (salvezze, movimento della Schivata) → 5.2 Conclusione (Guts Roll,
   Alert!). Eccezioni che si verificano alla *dichiarazione*: Alert!, Basic Short
   Skill, Jump, Climb. ✅
+- **🔴 Requisito non soddisfatto = sempre Idle.** Righe 1244–1247: «the action is
+  cancelled and the Trooper instead performs an Idle. Additionally, any declared uses
+  of Disposable items are expended and lost». Vale in **entrambi** i momenti di
+  verifica: anche per Jump, che si verifica alla dichiarazione, l'esempio del
+  regolamento (righe 2862–2864) finisce con «he performs an Idle instead». Quindi
+  l'Ordine **è speso**, gli usi Disposable **si consumano**, e un Marker si **rivela**
+  (righe 7462–7463). Non esiste un requisito fallito che restituisca l'Ordine. ✅
+- **Quando invece l'Ordine NON è speso** (il giocatore sceglie altro): solo se la regola
+  non è un *Requisito* ma un **vincolo di piazzamento**, cioè un divieto scritto come
+  «the player cannot place…» / «is not permitted». L'unico caso nell'app è il
+  **Combat Jump** (righe 8049–8053), che non ha affatto un blocco REQUIREMENTS: il
+  punto d'atterraggio non è ammesso e se ne sceglie un altro. ✅
 - **Regola generale:** quando più skill si applicano insieme, vince l'opzione più
   restrittiva. ✅
 
@@ -519,6 +531,20 @@ Burst **sempre 1**.
 - Una traiettoria tracciabile fino al punto d'impatto
 - Sagoma Circolare: centro anche lontano dal bersaglio, purché il **Principale resti dentro**; sagoma
   sul tavolo o orizzontale su un terreno, **mai** verticale o a mezz'aria
+- 🔴 **Il Bersaglio Principale non può essere un Marker** — né CAMO né IMP-1 né IMP-2.
+  Lo Speculativo ha etichetta *BS Attack*, quindi è un Attacco, e gli Attacchi contro i
+  Marker sono vietati: righe **13609–13610** (CAMO, «unless otherwise specified by a rule
+  or Skill») e **14207–14208** (IMP, senza clausola di eccezione). Lo Speculativo **non**
+  è una di quelle eccezioni: le sole due scritte sono l'**Attacco Intuitivo** (righe
+  4017–4022: il bersaglio deve essere «in a State that would normally prevent Attacks…
+  such as the Camouflaged State») e il **MSV L3** (righe 11011–11015: *BS Attack* su un
+  Marker CAMO **in LoF**, applicando il Mimetismo — e lo Speculativo è una Skill diversa
+  dal BS Attack, righe 11399–11401). Contro un Marker si usa l'Intuitivo (§1.3).
+- ✅ **Resta ammesso**: piazzare il **punto d'impatto** dove si vuole (righe 3916–3919) con
+  un Principale lecito altrove, e prendere il Marker come **bersaglio secondario** sotto la
+  sagoma; oppure un'arma **Targetless** (Fumo), che non richiede alcun Principale (righe
+  3763–3766). Se il Marker CAMO è costretto a un Tiro Salvezza, il CAMO cade (riga 13638);
+  l'Impersonation **no**, non ha quella clausola (righe 14236–14242).
 **L'attivo può dichiararlo?** IMM-A ❌ · IMM-B ❌ · Stordito ❌ (vietati gli Attacchi) ·
 Retreat! ❌ · Engaged ❌ (in Engaged solo Berserk/CC/Schivata/Idle/Reset) ·
 Isolato ✅ ma non riceve ordini dal Pool (usa il proprio Irregolare) ·
@@ -1305,6 +1331,110 @@ IMM-A/B, Isolato, Stordito), Jetpack, Overkill… uso singolo, uno per truppa.
 
 ---
 
+## 1.18 ENTRARE IN FORMA DI MARKER (Rientro CAMO · Cybermask · Rientro Impersonation)
+`ordine_rientro_camo.js` · azioni `'RIENTRARE IN CAMO'` e `'CYBERMASK'` ·
+tutte **Long Skill**, **nessun tiro**, **nessun bersaglio**.
+
+### A. Identità
+| | Rientro CAMO | Cybermask | Rientro Impersonation |
+|---|---|---|---|
+| Fonte | riga **13603** (Camouflaged State, ACTIVATION) | righe **5150–5171** (programma di Hacking) | riga **14202** (Impersonation State, ACTIVATION) |
+| Chi | chi ha la skill **Camouflage** ed è stato rivelato | un **Hacker** con Hacking Device o Killer (riga 5058) | chi ha la skill **Impersonation** |
+| Esito | Marker **CAMO** | Marker **IMP-2** (riga 5159) | Marker **IMP-1** o **IMP-2**, vedi D |
+| Etichette | — | **NFB**, No Roll (riga 5153) | — |
+
+### B. Requisito — è lo stesso per tutte tre
+> «**outside the LoF of enemy Markers or Troopers**» (13603 · 5156 · 14202).
+
+Tre cose che il testo dice e che si sbagliano facilmente:
+- Conta la LoF dei **Marker** nemici, non solo dei Modelli. Un Marker CAMO nemico che ti
+  vede blocca il rientro.
+- **Hidden Deployment non conta**: non è né Modello né Marker (riga 14307). Ma se si
+  rivela come ARO, il requisito cade nella Risoluzione → vedi C.
+- Non c'è nessun limite di distanza né di copertura: solo la LoF.
+
+### C. 🔴 Requisito fallito = **IDLE**, l'Ordine è speso
+Regola generale, righe **1240–1247**: solo Alert!, le Basic Short Skill, Jump e Climb
+verificano i requisiti alla dichiarazione; **tutte le altre skill alla Risoluzione**, e
+«the action is cancelled and the Trooper instead performs an **Idle**». Queste tre sono
+Long Skill, quindi cadono nel secondo gruppo.
+
+Il regolamento lo mostra in chiaro nell'esempio di pagina 164 (righe **14298–14316**):
+un nemico in Hidden Deployment si rivela come ARO, l'Ordine «cannot be carried out if it
+fails to comply with its **Requirements**» e l'attivo «**lose his Order** as it becomes
+illegal». Due conseguenze:
+1. La condizione di LoF del 13603/14202 **è un Requisito**, anche se è stampata sotto
+   ACTIVATION e non sotto REQUIREMENTS. La distinzione tipografica non regge.
+2. L'Ordine **è speso**. Non si torna indietro a dichiarare altro.
+
+⚠️ **Correzione**: questo capovolge quanto la chat REGOLE aveva scritto il 5 ottobre
+(«rientro CAMO = VIETA perché è una condizione di attivazione, non un requisito»).
+Sbagliato: è un requisito, e fa Idle come il Cybermask.
+
+### D. Cybermask dichiarato da un Marker CAMO — ammesso
+Nessuna regola lo vieta, ma il prezzo è che **ti riveli**:
+1. Si dichiara il Cybermask (Long Skill).
+2. Il CAMO cade subito, riga **13635** («declares a Long Skill of any kind, other than
+   Cautious Movement»), e la cancellazione vale per **tutto l'Ordine** anche se la skill
+   è l'ultima (righe 13645–13648). Il Marker è sostituito dal Modello e si dà
+   l'Informazione Pubblica completa (righe 13640–13641).
+3. Gli ARO si dichiarano **contro un Modello**: BS Attack, CC, Hacking, tutto, non le sole
+   quattro reazioni ammesse contro un Marker (riga 13621).
+4. Nella Risoluzione l'Hacker entra in **IMP-2** (righe 5159–5161).
+
+Cosa si guadagna e cosa si perde: in IMP-2 il nemico non può dichiarargli un **Attacco
+Intuitivo** (riga 14210) — il CAMO sì —; ma per **NFB** (righe 5167–5171 · 6677–6679) il
+Marker IMP-2 **non porta il Mimetismo**, quindi niente −3 su Scoprire e sugli attacchi.
+Il Marker CAMO invece lo mostra (riga 13607).
+
+### E. A che livello si rientra in Impersonation
+Lo decide la **notazione del profilo**, non lo Stato:
+| Notazione nel profilo | Schieramento | Rientro in Turno Attivo |
+|---|---|---|
+| `Impersonation` | IMP-1 (riga 8667) | **IMP-1** |
+| `Impersonation (IMP-2)` | IMP-2 | **IMP-2** |
+
+La riga **8669** scrive «may only deploy **and activate** the Impersonation-2 (IMP-2)
+State»: «activate» è proprio il rientro in partita, non solo lo schieramento. E l'esempio
+delle righe 14301–14305 fa rientrare un Modello con la skill `Impersonation` nel «**Impersonation-1**
+Marker State». Il **Cybermask** è un caso a parte: dà sempre IMP-2 (riga 5159), anche a chi
+non ha affatto la skill Impersonation.
+
+### F. Chi non può dichiararle
+| Blocco | Fonte |
+|---|---|
+| **In ARO** — sono Long Skill | Long Skill solo in Turno Attivo |
+| **Impetuous / Frenzy già scattato** | riga **13639** (CAMO) · **14242** (IMP): chi è o diventa Impetuoso non tiene lo stato. LETTURA: l'Ordine non è speso, perché non c'è un requisito che fallisce ma uno stato incompatibile |
+| **Retreat!** | stesse righe |
+| **Engaged** | in Engaged solo Berserk/CC/Schivata/Idle/Reset |
+| **Isolato — solo il Cybermask** | righe **14412–14413**: in Isolato tutti i programmi di Hacking sono disabilitati. Il rientro CAMO/IMP **resta** possibile (è una skill Automatica, riga 14413–14414) |
+| **Morto / Incosciente / Disconnesso** | stati Null |
+| **`Camouflage (1 Use)` già consumato** | FAQ **F07** |
+| **Già in forma di Marker** | per il rientro nello *stesso* stato: non c'è nulla in cui rientrare |
+
+### G. Reazioni
+Il Marker protegge **dall'Ordine dopo**, non da questo. Alla dichiarazione la truppa è
+ancora un **Modello** (o si rivela, caso D), quindi chi reagisce non ha le restrizioni
+degli ARO contro un Marker. Lo stato si applica in Risoluzione, dopo gli ARO.
+
+### H. Trappole
+- Una truppa rivelata che rientra conta come Marker **nuovo**: chi aveva fallito lo
+  Scoprire può ritentarlo subito (righe 13613–13614 · 14211–14212).
+- Il rientro **non** cancella il Bersagliato né gli altri stati: solo la forma cambia.
+- Non c'è nessun tiro: il Cybermask è «No Roll» (riga 5153), il rientro non ne ha mai avuto.
+
+### I. Controllo dell'app
+| Cosa | Atteso |
+|---|---|
+| Domanda sulla LoF, risposta NO | **IDLE** per tutte tre (non VIETATO), Ordine speso |
+| Domanda non risposta | non esegue, nessuna busta |
+| Frenzy attivo | VIETATO, Ordine non speso (LETTURA) |
+| Cybermask da Marker CAMO | ammesso, con nota «il CAMO cade alla dichiarazione, gli ARO sono contro un Modello» |
+| Cybermask in Isolato | non disponibile |
+| Marker risultante | CAMO col MOD di Mimetismo · IMP-2 **senza** MOD · IMP-1/IMP-2 secondo il profilo |
+
+---
+
 # 2. MATRICE MOD × ORDINE
 
 La tabella da guardare al volo. **Lato attaccante** nelle prime righe, **lato reattivo**
@@ -1620,3 +1750,23 @@ Motore (primo giro) `2026-09-21.3 · d904c200.403019`, catalogo `2026-09-21.1 ·
 | Sesto Senso: annulla la Sorpresa **solo** su Schivata e Reset | riga 9941 | ✅ |
 | Sorpresa letta dal profilo: (−6) dà −6, (CC−6) solo nel CC | righe 10134–10144 | ✅ |
 | Anteprima CC = risultato (funzione unica `M.modProfiloAvversario`) | — | ✅ |
+
+---
+
+**Entrare in forma di Marker — verifica del 6 ottobre 2026** (scheda §1.18). Metrica:
+`REGOLE_N5_v5.1.1.txt`, impronta `5ea7581f.904498`, 17029 righe. Wiki riletta: *Camouflaged
+State* (PDF 5.3, set 2026), *Impersonation State* (PDF 5.2, ott 2025), *Order Expenditure
+Sequence* (PDF 5.2, ott 2025) — tutte tre confermano il testo del PDF alla lettera.
+
+| Caso | Regola | Esito della verifica |
+|---|---|---|
+| Cybermask in LoF nemica → **IDLE** | 5155–5156 (REQUIREMENTS) + 1240–1247 | ✅ **confermato** |
+| Rientro CAMO in LoF nemica → **IDLE**, non VIETA | 13603 + 1240–1247 + esempio 14298–14316 («lose his Order») | ⚠️ **correzione**: la chat REGOLE il 5 ottobre aveva detto VIETA. Era sbagliato: il regolamento chiama *Requirement* la condizione del 14202, identica a quella del 13603 |
+| Rientro Impersonation in LoF nemica → **IDLE** | 14202, stessa clausola | ✅ |
+| Combat Jump / Ingresso in campo → **VIETA** | 8049–8053, nessun blocco REQUIREMENTS: vincolo di piazzamento | ✅ **resta VIETA** |
+| Trincerarsi (Sapper) → **IDLE** | **9841–9847**, testuale: «will perform an Idle instead» | ✅ confermato, ma le righe citate nel commento del motore (7415–7431) sono quelle di un esempio di Schivata: da correggere |
+| Speculativo contro IMP-1 / IMP-2 come Principale → **vietato** | 14207–14208, nessuna clausola di eccezione; 14210 per l'Intuitivo | ✅ **confermato** |
+| Speculativo contro Marker CAMO come Principale → **vietato** | 13609–13610 + le sole due eccezioni scritte: Intuitivo 4017–4022, MSV L3 11011–11015; 11399–11401 distingue BS Attack e Speculativo | ⚠️ **correzione**: oggi l'app lo ammette. LETTURA, non regola scritta: la pagina wiki *Speculative Attack* non è stata riletta |
+| Marker CAMO che dichiara Cybermask → **ammesso** | 13635 (il CAMO cade) + 13645–13648 + 5159–5161 | ✅ va permesso, con la nota sulla rivelazione |
+| Livello di rientro in Impersonation | 8667 · **8669** («deploy **and activate**») · esempio 14301–14305 | ✅ `Impersonation` → IMP-1 · `Impersonation (IMP-2)` → IMP-2 · Cybermask → sempre IMP-2 (5159) |
+| Cybermask in Isolato → non disponibile | 14412–14413 (programmi di Hacking disabilitati) | ✅ |

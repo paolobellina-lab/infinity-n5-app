@@ -1,4 +1,4 @@
-// @versione 2026-09-29.2 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.5 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -192,11 +192,43 @@ window.ROUTER_AZIONI = [
     { test: (a) => a === 'INGRESSO IN CAMPO' || a === 'REQUEST SPEEDBALL',
                                                       modulo: 'avviaFaseLogistica', nome: 'Logistica' },
     { test: (a) => a === 'TRINCERARSI',               modulo: 'avviaFaseTrincerarsi', nome: 'Trincerarsi' },
+    // Senza questa riga l'azione, che e` "senza tiro", cadrebbe nel modulo
+    // del Movimento: la truppa "muoverebbe" e resterebbe Modello.
+    { test: (a) => a === 'RIENTRARE IN CAMO',         modulo: 'avviaFaseRientroCamo', nome: 'Rientrare in CAMO' },
+    // Il Cybermask e` una Long Skill senza tiro con la stessa schermata del
+    // rientro (una domanda sulla LoF, poi il Marker): stesso modulo, che
+    // distingue le due Abilita` dall'azione. Senza questa riga cadrebbe nel
+    // Movimento, come ogni azione "senza tiro".
+    { test: (a) => a === 'CYBERMASK',                 modulo: 'avviaFaseRientroCamo', nome: 'Cybermask' },
     { test: (a) => a === 'PIAZZARE EQUIPAGGIAMENTO' || a === 'PIAZZA_DEPLOYABLE',
                                                       modulo: 'avviaFaseDeployable', nome: 'Piazza Deployable' },
     { test: (a) => a === 'MEDICO_INGEGNERE' || a === 'SUPPORTO_WIP' || a === 'SUPPORTO_BS',
                                                       modulo: 'avviaFaseSupporto',   nome: 'Supporto' }
 ];
+
+// SOSTITUIRE UN'UNITA` CON LA SUA VERSIONE AGGIORNATA — un posto solo.
+// Il motore calcola l'unita` nuova e non tocca quella vecchia; qui la si
+// applica all'oggetto dell'ordine E a quello del roster (stesso id), e si
+// avvisa l'Hub. Prima lo faceva solo applicaStatoDaAbilita, in linea: ora
+// lo usa anche il rientro in CAMO, e chi verra` dopo (Cybermask).
+//   -> true se l'Hub e` stato avvisato
+window.sostituisciUnita = function (unita, aggiornata, perche) {
+    if (!unita || !aggiornata) return false;
+    const M = window.MotoreN5;
+    const nelRoster = (window.roster || []).find(x => x && unita.id && x.id === unita.id);
+    const prima = String(unita.deployState || 'NORMAL');
+    [unita, nelRoster].filter(Boolean).forEach(x => Object.assign(x, aggiornata));
+    console.log(`🎭 ${M ? M.nomeUnita(unita) : (unita.alias || unita.id)}: ${prima} -> ${unita.deployState} (${perche || 'aggiornamento'}).`);
+    if (typeof window.aggiornaGraficaRoster === 'function') window.aggiornaGraficaRoster();
+    if (typeof window.inviaSchieramentoAllHub === 'function') {
+        window.inviaSchieramentoAllHub(document.title.includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA', {
+            roster: window.roster, strutture: window.activeStructures || [],
+            terreni: window.activeTerrains || [], motivo: 'AGGIORNAMENTO'
+        });
+        return true;
+    }
+    return false;
+};
 
 // Cambio di stato di schieramento causato dall'Abilita` dichiarata.
 //   -> { cambiato, prima, dopo, note } ; window.ultimoCambioStato per lo schermo
@@ -208,20 +240,24 @@ window.applicaStatoDaAbilita = function (unita, azione) {
     if (deploy === 'NORMAL' && !st.camo && !st.impersonation) return { cambiato: false };
     const r = M.statoDopoAbilita(unita, azione, {});
     if (!r || !r.dopo || !r.prima) return { cambiato: false };
-    const esito = { cambiato: false, prima: r.prima.deployState, dopo: r.dopo.deployState, note: r.note || [] };
+    // `azione` e `unita`: chi mostra window.ultimoCambioStato deve poter
+    // sapere se parla di QUESTO Ordine. Resta in memoria anche dopo.
+    const esito = { cambiato: false, prima: r.prima.deployState, dopo: r.dopo.deployState, note: r.note || [],
+                    azione: azione, unita: M.nomeUnita(unita) };
     if (r.dopo.daVerificare) { esito.note = esito.note.concat(['Cambio di stato DA VERIFICARE: non applicato, decidi al tavolo.']); window.ultimoCambioStato = esito; return esito; }
-    if (r.dopo.deployState === r.prima.deployState && JSON.stringify(r.unitaAggiornata.states || {}) === JSON.stringify(st)) return esito;
-    const nelRoster = (window.roster || []).find(x => x && unita.id && x.id === unita.id);
-    [unita, nelRoster].filter(Boolean).forEach(x => Object.assign(x, r.unitaAggiornata));
+    // "E` cambiato?" si chiede a CIO` CHE IL MOTORE VEDE (M.statoBersaglio),
+    // non al testo degli stati. Fino al 5 ottobre si confrontava
+    // JSON.stringify(states): un Marker del database nasce con
+    // deployState 'CAMO' e SENZA states, statoDopoAbilita gli scrive
+    // states.camo = true, e i due testi differivano. MISURATO: ogni Marker
+    // che muoveva Cauto risultava "cambiato" (CAMO -> CAMO) e partiva un
+    // AGGIORNAMENTO all'Hub per niente.
+    const vP = M.statoBersaglio(unita), vD = M.statoBersaglio(r.unitaAggiornata);
+    if (r.dopo.deployState === r.prima.deployState &&
+        vP.camo === vD.camo && vP.imp === vD.imp && vP.hidden === vD.hidden) return esito;
     esito.cambiato = true;
     window.ultimoCambioStato = esito;
-    console.log(`🎭 ${M.nomeUnita(unita)}: ${esito.prima} -> ${esito.dopo} (${azione}).`);
-    if (typeof window.inviaSchieramentoAllHub === 'function') {
-        window.inviaSchieramentoAllHub(document.title.includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA', {
-            roster: window.roster, strutture: window.activeStructures || [],
-            terreni: window.activeTerrains || [], motivo: 'AGGIORNAMENTO'
-        });
-    }
+    window.sostituisciUnita(unita, r.unitaAggiornata, azione);
     return esito;
 };
 
@@ -243,6 +279,27 @@ window.selectAction = (actionId, isSecondHalf = false) => {
     // ordine dichiarato; se lo stato cambia, l'Hub lo sa subito (AGGIORNAMENTO).
     // Se la regola e` ancora da verificare, lo si dice e non si cambia niente.
     window.applicaStatoDaAbilita(window.currentOrder.unit, azione);
+
+    // FOXHOLE: chi dichiara una Skill con etichetta Movimento puo` cancellare
+    // lo stato, e lo deve ANNUNCIARE alla dichiarazione (righe 13871-13874).
+    // Passa di qui ogni Ordine dichiarato, quindi la domanda sta qui una
+    // volta sola. La regola e i testi sono del motore e del catalogo.
+    (function () {
+        const M = window.MotoreN5, u = window.currentOrder.unit;
+        if (!M || !M.foxholeAllaDichiarazione || !u) return;
+        const fx = M.foxholeAllaDichiarazione(u, azione, {});
+        if (!fx.puoCancellare) return;
+        if (window.confirm(fx.domanda)) {
+            const r = M.cancellaFoxhole(u);
+            window.ultimoCambioStato = { cambiato: true, prima: 'FOXHOLE', dopo: 'NORMAL', note: r.note,
+                                         azione: azione, unita: M.nomeUnita(u) };
+            window.sostituisciUnita(u, r.unitaAggiornata, azione);
+            window.currentOrder.foxholeCancellato = true;
+        } else {
+            window.currentOrder.foxholeCancellato = false;
+            if (fx.seNonCancella) alert('⚠️ ' + fx.seNonCancella);
+        }
+    })();
 
     const voce = window.ROUTER_AZIONI.find(v => v.test(azione));
 
@@ -346,6 +403,7 @@ window.verificaRouter = () => {
         avviaFaseScenografia: 'ordine_scenografia.js',
         avviaFaseDeployable: 'ordine_piazzamento.js',
         avviaFaseTrincerarsi: 'ordine_trincerarsi.js',
+        avviaFaseRientroCamo: 'ordine_rientro_camo.js',
         avviaFaseOsservazione: 'ordine_osservazione.js',
         avviaFaseLogistica: 'ordine_logistica.js'
     };
@@ -558,7 +616,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-09-19.4', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-06.5', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

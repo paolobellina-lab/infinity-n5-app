@@ -1,4 +1,4 @@
-// @versione 2026-10-05.1 | ordine_logistica.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.4 | ordine_logistica.js | proprieta`: chat MOTORE
 // ==========================================
 // 🪂 INGRESSO IN CAMPO e REQUEST SPEEDBALL - ordine_logistica.js
 // ------------------------------------------
@@ -242,7 +242,10 @@
             }
             regole.isLongSkill = true;
             regole.seFallisce = e.seFallisce;
-            regole.senzaCoperturaParziale = true;
+            // Lo dice il motore (riga 8059, per azione nel catalogo): qui era
+            // un `true` scritto a mano che nessuno leggeva. Ora e` solo l'eco
+            // di cio` che M.risolviPayload applica comunque.
+            regole.senzaCoperturaParziale = !!(e.coperturaNegata && e.coperturaNegata.negata);
         } else {
             const daTiro = M.oggettoSpeedball(window.speedballTiro);
             if (!window.speedballScelto || !daTiro.oggetto) {
@@ -268,7 +271,37 @@
             return (azione === M.AZIONI.SPEEDBALL) ? window.renderSpeedball() : window.renderIngresso();
         }
 
-        const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode });
+        // 🔴 L'INGRESSO IN CAMPO GENERA ARO: "the Reactive Player declares all
+        // their AROs", riuscito o fallito il tiro (righe 8055 e 8058). Da qui
+        // l'allarme non partiva e la busta non diceva all'Hub di aspettare:
+        // MISURATO il 6 ottobre, zero allarmi e aroAtteso false. Senza ARO la
+        // Copertura Parziale negata (riga 8059) non aveva niente a cui
+        // applicarsi. Lo Speedball NON e` un Ordine: nessun allarme.
+        let aro = null;
+        if (azione === M.AZIONI.INGRESSO) {
+            // 🔴 PRIMA DI TUTTO LA TRUPPA VA SUL TAVOLO: si piazza prima del tiro
+            // (riga 8054), e l'avversario reagisce contro un Modello che deve
+            // vedere. Restando in Riserva, l'ARO si risolveva contro un'unita`
+            // che la vista pubblica non contiene. La regola e` del motore
+            // (M.entraInCampo); l'app sostituisce e avvisa l'Hub.
+            (window.coordUnits || [unita]).forEach(function (u) {
+                const ent = M.entraInCampo(u);
+                if (!ent.cambiata) return;
+                if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(u, ent.unitaAggiornata, M.AZIONI.INGRESSO);
+                else {
+                    console.error('⛔ window.sostituisciUnita manca (motore_core.js vecchio?): la truppa NON è stata portata sul tavolo.');
+                    alert('⛔ La truppa non è stata portata sul tavolo: motore_core.js non è aggiornato.');
+                }
+            });
+            const al = M.allarmeOrdine(M.AZIONI.INGRESSO, {
+                unita: unita, coordUnits: window.coordUnits, coordMode: window.coordMode,
+                azioneSeconda: window.currentOrder && window.currentOrder.action,
+                azioneMostrata: M.AZIONI.INGRESSO
+            });
+            if (al.payload && typeof window.inviaAllarmeAro === 'function') window.inviaAllarmeAro(al.payload);
+            aro = al.aro;
+        }
+        const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode, aroAtteso: !!(aro && aro.genera) });
         if (!spedito) { window.coordIndex--; window.coordPayloads.pop(); return; }
     };
 
@@ -278,7 +311,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_logistica.js', versione: '2026-10-05.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_logistica.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-09-29.1 | ordine_scoprire.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.4 | ordine_scoprire.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔍 SCOPRIRE (N5) - ordine_scoprire.js
 // ------------------------------------------
@@ -153,8 +153,16 @@
         const t = window.combatTargets[0];
         const dif = M.rosterNemico().find(u => u.id === t.id) || {};
         const arma = M.armaScoprire();
+        // 🔴 IL FIRETEAM VA DETTO ANCHE ALLA SCHERMATA. L'Hub lo conosce e
+        // applica il +3 Discover del Livello 3; qui non lo si passava, e con
+        // un Fireteam di Livello 3 o piu` la schermata restava 3 punti sotto
+        // l'Hub. I membri attivi li da` fireteam.js, il livello lo calcola il
+        // motore. (Revisione indipendente, 6 ottobre.)
+        const membriFT = (window.fireteamManager && unita && unita.states && unita.states.fireteam)
+            ? window.fireteamManager.getMembriAttivi(window.roster || [], unita.combatGroup, unita.states.fireteam) : [];
         const e = M.regoleScoprire(unita, dif, {
-            rangeIndex: t.rangeIndex, cover: t.cover, terrain: t.terrain
+            rangeIndex: t.rangeIndex, cover: t.cover, terrain: t.terrain,
+            fireteam: membriFT.length ? membriFT : undefined
         });
         window.scoprireEsito = e;
 
@@ -286,7 +294,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_scoprire.js', versione: '2026-09-14.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_scoprire.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-09-28.3 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.4 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
 // ==========================================
 // ☄️ FUOCO SPECULATIVO (N5) - ordine_fuoco_speculativo.js
 // ------------------------------------------
@@ -149,6 +149,9 @@
     // ==============================================================
     window.preparaModificatoriSpeculativo = function () {
         const M = motore(); if (!M) return;
+        // Si entra nella schermata: le domande del Drop Bear ripartono da
+        // NON RISPOSTO. Un punto nuovo e` una domanda nuova.
+        window.dropBearRisposte = {};
         const unita = window.coordUnits[window.coordIndex];
         if (window.mostraTitoloUnitaCorrente) window.mostraTitoloUnitaCorrente();
 
@@ -180,6 +183,7 @@
         const regole = M.regoleSpeculativo(arma, { rangeIndex: tgt.rangeIndex });
 
         const valoreBase = unita[String(regole.attributo).toLowerCase()] || 0;
+        const domDB = window.statoDomandeDropBear();
 
         let segmenti = '', etichette = '';
         arma.bands.forEach(function (b, i) {
@@ -230,7 +234,23 @@
                 • LoF — non serve: bersaglio e punto d'impatto si scelgono senza vederli<br>
                 <b style="color:#aaa;">Si applica invece:</b> la gittata, che nell'Attacco Intuitivo non conta.
                 ${regole.noteSagoma ? `<br><br><b style="color:#aaa;">Sagoma Circolare:</b> ${regole.noteSagoma}` : ''}
-            </div>`;
+            </div>
+            ${domDB ? `<div style="margin-top:14px;">
+                <div style="color:#cc99cc; font-size:13px; margin-bottom:8px;">Drop Bear: il punto d'impatto rispetta la restrizione di piazzamento. Il calcolatore non ha la mappa.</div>` +
+                domDB.domande.map(function (d) {
+                    const r = (window.dropBearRisposte || {})[d.id];
+                    return `<div style="background:#1a1020; border:1px solid #442255; padding:14px; border-radius:5px; margin-bottom:10px;">
+                        <div style="color:#fff; font-size:16px; margin-bottom:10px;">${d.testo}</div>
+                        <div style="display:flex; gap:8px;">
+                            <button class="huge-btn" style="flex:1; min-height:48px; ${r === true ? 'background:#553300; border-color:#ffaa33;' : 'background:#111;'}"
+                                onclick="window.rispondiDropBear('${d.id}', true)">SÌ</button>
+                            <button class="huge-btn" style="flex:1; min-height:48px; ${r === false ? 'background:#553300; border-color:#ffaa33;' : 'background:#111;'}"
+                                onclick="window.rispondiDropBear('${d.id}', false)">NO</button>
+                        </div>
+                    </div>`;
+                }).join('') +
+                (domDB.esito === 'BLOCCATA' ? `<div style="padding:10px; background:#330000; border:1px solid #ff3333; border-radius:4px; color:#ff9999; font-size:13px;">⛔ ${domDB.motivo} Scegli un altro punto.</div>` : '') +
+            `</div>` : ''}`;
 
         const btn = (document.getElementById('btn-esegui-calcolo') || document.querySelector('#step-modifiers .huge-btn'));
         if (btn) {
@@ -242,8 +262,31 @@
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
             nuovo.onclick = function () { window.eseguiCalcoloSpeculativo(); };
-            nuovo.innerText = 'LANCIA ATTACCO SPECULATIVO';
+            nuovo.innerText = (domDB && domDB.esito === 'NON_RISPOSTO') ? 'RISPONDI ALLE DOMANDE'
+                            : (domDB && domDB.esito === 'BLOCCATA') ? 'PUNTO NON AMMESSO'
+                            : 'LANCIA ATTACCO SPECULATIVO';
         }
+    };
+
+    // Le domande del Drop Bear in modo BS, valutate dal motore. null se
+    // l'arma non e` un Drop Bear in modo BS: nessuna domanda.
+    window.eDropBearBSCorrente = function () {
+        const M = motore(); if (!M || !window.currentOrder) return false;
+        const arma = M.profiloArma(window.currentOrder.weapon);
+        return /DROP BEARS \(BS MODE\)/i.test(String((arma && arma.nome) || ''));
+    };
+    window.statoDomandeDropBear = function () {
+        const M = motore(); if (!M || !window.eDropBearBSCorrente()) return null;
+        const R = window.dropBearRisposte || {};
+        const domande = M.domandeDropBearBS(R);
+        return Object.assign({ domande: domande }, M.valutaDomande(domande, R));
+    };
+    window.rispondiDropBear = function (id, valore) {
+        window.dropBearRisposte = window.dropBearRisposte || {};
+        window.dropBearRisposte[id] = valore;
+        // Cambiare la prima risposta riapre la seconda.
+        if (id === 'markerNellArea') delete window.dropBearRisposte.nemicoScopertoNellArea;
+        window.renderSpeculativo();
     };
 
     window.setTargetRangeSpeculativo = function (rangeIdx) {
@@ -264,15 +307,15 @@
 
         // DROP BEAR IN MODO BS: il PUNTO va scelto rispettando la domanda di
         // piazzamento — prima del tiro, non dopo (wiki "Drop Bears", N5.3).
-        const eDropBearBS = /DROP BEARS \(BS MODE\)/i.test(String(arma.nome || ''));
-        if (eDropBearBS) {
-            const d = (M.domandeDeployable('PIAZZAMENTO') || [])[0];
-            if (d && window.confirm(d.testo)) {
-                if (!window.confirm('C\'e` anche un nemico valido, NON camuffato, dentro l\'area di innesco?')) {
-                    alert('⛔ Punto non ammesso per il Drop Bear.\n\n' + d.seSi + '\n\nScegli un altro punto.');
-                    return;
-                }
-            }
+        // Le domande stanno a schermo (renderSpeculativo) e le valuta il
+        // motore: tre esiti, NON RISPOSTO non esegue. Prima erano due
+        // window.confirm, dove chiudere la finestra valeva "no".
+        const dom = window.statoDomandeDropBear();
+        if (dom && dom.esito === 'NON_RISPOSTO') {
+            return alert('⚠️ Rispondi alle domande sul punto d\'impatto del Drop Bear prima di lanciare.');
+        }
+        if (dom && dom.esito === 'BLOCCATA') {
+            return alert('⛔ Punto non ammesso per il Drop Bear.\n\n' + (dom.motivo || '') + '\n\nScegli un altro punto.');
         }
         const regole = M.regoleSpeculativo(arma, { rangeIndex: window.combatTargets[0].rangeIndex });
 
@@ -377,7 +420,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-09-14.2', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

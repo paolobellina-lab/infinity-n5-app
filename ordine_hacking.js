@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | ordine_hacking.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.4 | ordine_hacking.js | proprieta`: chat MOTORE
 // ==========================================
 // 💻 INFOGUERRA (HACKING) N5 - ordine_hacking.js
 // ------------------------------------------
@@ -18,6 +18,10 @@
 //    riconosciuti e mostrati come non gestiti, invece di non esistere.
 //  - il Burst viene dal programma, non da getWeaponProfile su una
 //    stringa che non era nel database armi (Carbonite non è un'arma).
+//  - il pulsante VIA REPEATER NEMICO, per bersaglio (righe 4797-4802 e
+//    4850-4852): Firewall -3 e solo contro Hacker. Scrive
+//    bersaglio.repeaterNemico; la regola sta in M.firewallApplicato e
+//    M.viaRepeaterNemico.
 //  - il MOD di attacco è calcolato: Bersagliato +3, Firewall nemico,
 //    bonus Fireteam. Prima la schermata non mostrava nulla.
 // ==========================================
@@ -99,6 +103,8 @@
             container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
                 <b style="color:#aaa;">Altri programmi del dispositivo, non gestiti da questa schermata:</b><br>` +
                 esito.nonAttacco.map(p => `• <b>${p.nome}</b> — ${p.note || p.tipo}`).join('<br>') + `</div>`;
+            // Il Cybermask NON e` "non gestito": e` una Long Skill a se`, e la
+            // sua nota di catalogo dice dove si dichiara.
         }
         if (esito.avvisi.length > 0) {
             container.innerHTML += `<div style="margin-top:10px; padding:10px; background:#221100; border:1px solid #664400; border-radius:5px; color:#cc9955; font-size:13px;">` +
@@ -171,6 +177,9 @@
             // L'Hacking ignora distanza, copertura e terreno.
             t.cover = false; t.rangeIndex = 0; t.rangeMod = 0; t.terrain = 'NESSUNO';
             t.ammo = programma.ammo;
+            // L'attacco passa da un Repeater nemico? Lo dice il giocatore col
+            // pulsante: nasce spento. UN campo, letto dal motore.
+            t.repeaterNemico = false;
         });
 
         window.renderTargetsAllocationHacking();
@@ -195,7 +204,9 @@
         window.combatTargets.forEach(function (tgt, index) {
             const dif = M.rosterNemico().find(u => u.id === tgt.id) || {};
             const fw = M.valoreFirewall ? M.valoreFirewall(dif) : 0;
-            const mods = M.modHacking(unita, dif, programma, { firewallNemico: fw });
+            const mods = M.modHacking(unita, dif, programma, { firewallNemico: fw, repeaterNemico: !!tgt.repeaterNemico });
+            const REP = (window.CATALOGO_N5 && window.CATALOGO_N5.REPEATER_NEMICO) || {};
+            const rep = !!tgt.repeaterNemico;
 
             const dettaglio = mods.voci.length
                 ? mods.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
@@ -220,6 +231,15 @@
                     </div>
                     <div style="border-top:1px solid #004455; padding-top:6px;">${dettaglio}</div>
                 </div>
+
+                <button onclick="window.toggleRepeaterNemicoHacking(${index})"
+                    style="width:100%; padding:12px; margin-bottom:10px; font-size:15px; font-weight:bold; border-radius:5px; cursor:pointer;
+                           background:${rep ? '#553300' : '#111'}; color:${rep ? '#ffaa33' : '#888'}; border:2px solid ${rep ? '#ffaa33' : '#444'};">
+                    📡 ${REP.pulsante || 'VIA REPEATER NEMICO'}: ${rep ? 'SÌ (Firewall ' + (REP.firewall || -3) + ')' : 'NO'}
+                </button>
+                ${rep ? `<div style="color:#aaa; font-size:12px; margin:-4px 0 10px; text-align:center;">${REP.spiegazione || ''}</div>` : ''}
+                ${mods.requisitoFallito ? `<div style="padding:10px; margin-bottom:10px; background:#330000; border:2px solid #ff3333; border-radius:5px; color:#ff9999; font-size:13px;">
+                    <b>⚠️ REQUISITO NON SODDISFATTO → IDLE</b><br>${mods.avvisi.join('<br>')}</div>` : ''}
 
                 <div style="text-align:center; padding:8px; background:#001122; border:1px solid ${COL.bordo}; color:${COL.bordo}; font-size:13px; border-radius:5px;">
                     Se fallisce il Tiro Salvezza: <b>${programma.effetto}</b>
@@ -248,6 +268,15 @@
         }
     };
 
+    // Il pulsante del Repeater nemico, come quello della Copertura
+    // nell'Attacco BS: cambia UN campo del bersaglio e ridisegna.
+    window.toggleRepeaterNemicoHacking = function (i) {
+        const tgt = window.combatTargets && window.combatTargets[i];
+        if (!tgt) return;
+        tgt.repeaterNemico = !tgt.repeaterNemico;
+        window.renderTargetsAllocationHacking();
+    };
+
     window.adjustTargetBurstHacking = function (i, delta) {
         const assegnati = window.combatTargets.reduce((s, t) => s + (t.burst || 0), 0);
         const tgt = window.combatTargets[i];
@@ -267,8 +296,12 @@
         const perBersaglio = window.combatTargets.map(function (t) {
             const dif = M.rosterNemico().find(u => u.id === t.id) || {};
             const fw = M.valoreFirewall ? M.valoreFirewall(dif) : 0;
-            const m = M.modHacking(unita, dif, programma, { firewallNemico: fw });
-            return { bersaglio: t.name, valoreSuccesso: m.valore, base: m.base, mod: m.mod, voci: m.voci, firewall: fw };
+            const m = M.modHacking(unita, dif, programma, { firewallNemico: fw, repeaterNemico: !!t.repeaterNemico });
+            // `firewall`: quello che SI APPLICA (proprio o del Repeater), non
+            // piu` solo il proprio.
+            return { bersaglio: t.name, valoreSuccesso: m.valore, base: m.base, mod: m.mod, voci: m.voci,
+                     firewall: m.firewall, firewallFonte: m.firewallFonte,
+                     repeaterNemico: !!t.repeaterNemico, requisitoFallito: !!m.requisitoFallito };
         });
 
         window.coordPayloads.push({
@@ -326,7 +359,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_hacking.js', versione: '2026-09-14.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_hacking.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

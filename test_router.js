@@ -21,6 +21,7 @@ console.error = errOrig;
 require('./ordine_scoprire.js');
 require('./ordine_supporto.js');
 require('./ordine_trincerarsi.js');
+require('./ordine_rientro_camo.js');
 require('./ordine_osservazione.js');
 require('./ordine_logistica.js');
 const scoprireVero = window.avviaFaseScoprire;

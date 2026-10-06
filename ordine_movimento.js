@@ -1,4 +1,4 @@
-// @versione 2026-09-29.2 | ordine_movimento.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.4 | ordine_movimento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏃 MOVIMENTO E INSTRADAMENTO (N5) - ordine_movimento.js
 // ------------------------------------------
@@ -144,8 +144,13 @@
         // l'ordine è finito e può risolvere gli eventuali ARO nemici.
         const esito = M.creaPayload([], { isCoordinated: window.coordMode, consentiVuoto: true,
                                           aroAtteso: !!(aro && aro.genera),
-                                          azioniDichiarate: [window.currentOrder.action1, window.currentOrder.action].filter(Boolean),
+                                          // senza doppioni: in un Ordine Intero action1 e action sono la stessa
+                                          azioniDichiarate: [window.currentOrder.action1, window.currentOrder.action].filter(function (a, i, l) { return a && l.indexOf(a) === i; }),
                                           attivo: M.nomeUnita(window.currentOrder.unit),
+                                          // Ordine Coordinato: TUTTE le truppe che muovono, non
+                                          // solo la prima. Serve al calcolo per sapere a chi e`
+                                          // negata la Copertura Parziale dopo un Salto.
+                                          attivi: (window.coordMode && Array.isArray(window.coordUnits)) ? window.coordUnits.map(function (u) { return M.nomeUnita(u); }) : undefined,
                                           attivoId: window.currentOrder.unit && window.currentOrder.unit.id });
         if (esito.ok && typeof window.inviaCalcoloAllHub === 'function') {
             window.inviaCalcoloAllHub(esito.payload);
@@ -277,7 +282,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_movimento.js', versione: '2026-09-23.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_movimento.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

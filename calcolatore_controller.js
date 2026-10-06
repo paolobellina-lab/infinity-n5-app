@@ -1,4 +1,4 @@
-// @versione 2026-09-28.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-06.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -611,8 +611,31 @@ window.mostraSchermataRisoluzione = (scontri) => {
         // "Successo al: -2 (o meno)" in verde, mentre sotto, piccolo, l'avviso
         // rosso diceva il contrario. Il flag lo leggiamo dai dati grezzi che
         // l'adattatore passa gia` (dati), senza riscrivere la regola del <1.
+        // 6 ottobre, due casi che il motore ora dichiara e che qui non si
+        // leggevano:
+        // - requisitoFallito: l'Abilita` dichiarata diventa un Idle (burst 0).
+        //   Il tabellone mostrava l'azione dichiarata e sotto "Nessun dado",
+        //   senza dire perche`: sembrava un calcolo mancato. Va letto PRIMA
+        //   del controllo sul burst, che qui e` 0 per forza.
+        // - successoAutomatico: lo Scoprire senza tiro arrivava come
+        //   "Successo al: Auto (o meno)".
         const valoreSuccesso = (lato) => {
+            if (lato && lato.dati && lato.dati.requisitoFallito) {
+                return `<span style="color:#ff9900; font-weight:bold; font-size:22px;">IDLE</span><br>` +
+                       `<span style="color:#cc8844; font-size:12px;">Requisito non soddisfatto: l'Abilit\u00e0 dichiarata non si esegue</span><br>`;
+            }
+            if (lato && lato.dati && lato.dati.successoAutomatico) {
+                return `<span style="color:#00ff00; font-weight:bold; font-size:22px;">SUCCESSO AUTOMATICO</span><br>` +
+                       `<span style="color:#888; font-size:12px;">Nessun tiro</span><br>`;
+            }
             if (!(lato && lato.burst > 0)) return `<br>`;
+            // Misurato il 6 ottobre con INGRESSO IN CAMPO e TRINCERARSI: il
+            // calcolo manda burst 1 e mod null, e qui usciva in verde
+            // "Successo al: null (o meno)". Un valore che non c'e` non si
+            // stampa come se ci fosse: si dice che manca.
+            if (lato.mod === null || lato.mod === undefined) {
+                return `<span style="color:#888; font-size:13px;">Valore di Successo non fornito dal calcolo</span><br>`;
+            }
             if (lato.dati && lato.dati.impossibile) {
                 return `<span style="color:#ff3333; font-weight:bold; font-size:22px;">FALLIMENTO AUTOMATICO</span><br>` +
                        `<span style="color:#aa6666; font-size:12px;">Valore di Successo ${lato.mod}: sotto 1 il tiro fallisce</span><br>`;
@@ -709,11 +732,24 @@ window.mostraSchermataRisoluzione = (scontri) => {
             `;
         }
 
+        // Le note DELLO SCONTRO (6 ottobre): dal calcolatore_math 2026-10-06.1
+        // arrivano scontro.note e scontro.coperturaNegata. La piu` importante
+        // e` la Copertura Parziale negata da Salto o Ingresso in Campo: se
+        // il reattivo l'aveva dichiarata e il calcolo l'ha ignorata, i due
+        // giocatori devono leggerlo SUL tabellone, non nei dettagli chiusi.
+        // Il testo e` del motore; qui solo il riquadro.
+        const noteScontro = Array.isArray(scontro.note) ? scontro.note.filter(Boolean) : [];
+        const noteScontroHtml = noteScontro.length
+            ? `<div style="margin-top:10px; padding:10px; background:#221500; border:1px solid #ff9900; border-radius:5px; color:#ffbb55; font-size:14px;">` +
+              (scontro.coperturaNegata ? '<b>⛔ COPERTURA PARZIALE NEGATA</b><br>' : '') + noteScontro.join('<br>') + `</div>`
+            : '';
+
         container.innerHTML += `
             <div style="background:#111; border:2px solid #444; border-radius:10px; padding:15px; margin-bottom:20px; box-shadow: 0 0 15px rgba(255,255,255,0.05);">
                 <h3 style="color:${isF2F ? '#00ff00' : '#ffcc00'}; text-align:center; margin-top:0; font-family:'Teko'; font-size:32px; letter-spacing:1px;">${scontro.titolo}</h3>
                 
                 ${htmlScontro}
+                ${noteScontroHtml}
 
                 <div style="text-align:center; margin-top:15px;">
                     <button onclick="window.toggleDettagli('dettagli-${index}')" style="background:#222; border:1px dashed #555; color:#aaa; font-family:'Share Tech Mono'; padding:5px 15px; cursor:pointer; font-size:12px; border-radius:5px;">🔍 MOSTRA DETTAGLI CALCOLI</button>
@@ -766,7 +802,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-09-28.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-10-06.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

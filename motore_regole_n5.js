@@ -1,4 +1,4 @@
-// @versione 2026-10-05.4 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.8 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-05.4';
+    M.VERSIONE = '2026-10-06.8';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -74,6 +74,7 @@
         PIAZZA_DEPLOYABLE: 'PIAZZARE EQUIPAGGIAMENTO',
         TRINCERARSI:  'TRINCERARSI',
         RIENTRO_CAMO: 'RIENTRARE IN CAMO',
+        CYBERMASK:    'CYBERMASK',
         FORWARD_OBSERVER: 'FORWARD OBSERVER',
         SENSOR:       'SENSOR',
         TRIANGULATED: 'TRIANGULATED FIRE',
@@ -126,7 +127,9 @@
         'ATTACCO GUIDATO':   { schieramento: 'nemico',  attributo: 'BS',  arma: 'obbligatoria', bersagli: 'obbligatori', burst: 'allocabile', gittata: true, primarioBersagliato: true },
         // Lo Scoprire ha bande di gittata PROPRIE (voce "SCOPRIRE" in
         // RULES_WEAPONS) e applica gli stessi MOD di un BS Attack.
-        'SCOPRIRE':          { schieramento: 'nemico',  attributo: 'WIP', arma: 'nessuna',      bersagli: 'obbligatori', burst: 'fisso1',     gittata: true, etichetta: 'Discover' },
+        // nonOffensiva: non infligge danno, quindi nessun Tiro Salvezza al
+        // bersaglio (lo legge M.risolviScontro).
+        'SCOPRIRE':          { schieramento: 'nemico',  attributo: 'WIP', arma: 'nessuna',      bersagli: 'obbligatori', burst: 'fisso1',     gittata: true, etichetta: 'Discover', nonOffensiva: true },
         'SUPPORTO_WIP':      { schieramento: 'alleato', attributo: 'WIP', arma: 'nessuna',      bersagli: 'obbligatori', burst: 'fisso1',     gittata: false },
         'SUPPORTO_BS':       { schieramento: 'alleato', attributo: 'BS',  arma: 'nessuna',      bersagli: 'obbligatori', burst: 'fisso1',     gittata: false },
         // Le due azioni che agiscono sulla SCENOGRAFIA: bersagli neutri,
@@ -145,6 +148,7 @@
         'REQUEST SPEEDBALL': { schieramento: 'nessuno', attributo: 'PH', arma: 'nessuna', bersagli: 'nessuno', burst: 'fisso1', gittata: false, etichetta: 'Request Speedball' },
         'TRINCERARSI': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Trincerarsi' },
         'RIENTRARE IN CAMO': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Rientrare in CAMO' },
+        'CYBERMASK': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Cybermask' },
         'PIAZZARE EQUIPAGGIAMENTO': { schieramento: 'nessuno', attributo: null, arma: 'obbligatoria', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Piazza Deployable' },
         'SCHIVATA':          { attributo: 'PH',  arma: 'nessuna',      bersagli: 'segnaposto',  burst: 'fisso1',     gittata: false },
         'RESET':             { attributo: 'WIP', arma: 'nessuna',      bersagli: 'segnaposto',  burst: 'fisso1',     gittata: false },
@@ -640,6 +644,11 @@
             // Schivata contro una mina. (Chat INTERFACCIA, 28 settembre.)
             attivo: opzioni.attivo || undefined,
             attivoId: opzioni.attivoId || undefined,
+            // TUTTE le truppe dell'Ordine, quando sono piu` di una e non ci
+            // sono attacchi a dirlo (un Salto in Ordine Coordinato): senza,
+            // il calcolo conosceva solo la prima, e la Copertura Parziale
+            // negata dal Salto valeva solo per lei. (6 ottobre.)
+            attivi: Array.isArray(opzioni.attivi) ? opzioni.attivi.slice() : undefined,
             attacchi: validati,
             motoreVersione: M.VERSIONE,
             timestamp: Date.now()
@@ -1273,6 +1282,21 @@
 
     // Lettura normalizzata dello stato. Oggi ogni modulo interroga u.state,
     // u.deployState e u.states.* in modo diverso: qui una volta sola.
+    // IMPERSONATION: UNO stato, DUE livelli (righe 14195-14244; dati in
+    // CATALOGO_N5.IMPERSONATION). Il livello sta nel deployState — 'IMP_1' o
+    // 'IMP_2', come lo scrivono il roster e l'editor — e in mancanza nel
+    // vecchio campo `state`. -> 1 | 2 | null. null = non e` in Impersonation
+    // OPPURE lo e` senza livello scritto: per distinguere si guarda
+    // M.statoBersaglio(u).imp. Assente non e` 1 e non e` 2.
+    M.livelloImpersonation = function (u) {
+        if (!u) return null;
+        const st = u.states || {};
+        if (st.impersonation === false) return null;
+        const re = /^IMP(?:ERSONATION)?[-_ ]?([12])(?![0-9])/;
+        const m = re.exec(String(u.deployState || '').toUpperCase()) || re.exec(String(u.state || '').toUpperCase());
+        return m ? parseInt(m[1], 10) : null;
+    };
+
     M.statoBersaglio = function (u) {
         u = u || {};
         const st = u.states || {};
@@ -1328,6 +1352,13 @@
         // ci mappa sopra le icone senza inventarsi la corrispondenza dai
         // nomi grezzi del profilo, che cambiano da un database all'altro.
         base.attivi = Object.keys(base).filter(function (k) { return base[k] === true; });
+        // Il livello dell'Impersonation: 1, 2, o null se non e` scritto. Sta
+        // DOPO `attivi` di proposito: non e` un interruttore, e` un valore.
+        // Il campo ESISTE SOLO per chi e` in Impersonation: un Marker CAMO
+        // non ha livelli (la distinzione Camo / TO Camo e` N4), e
+        // test_marker_mimetico controlla che nessun campo "livello" gli
+        // torni addosso.
+        if (base.imp) base.impLivello = M.livelloImpersonation(u);
 
         // --- stati che il profilo scrive ma qui non sono normalizzati ---
         // Vanno mostrati lo stesso: meglio un'icona mancante che uno stato
@@ -1417,7 +1448,7 @@
     function hackabile(u) {
         const s = skillsDi(u);
         const t = String((u && u.tipo) || 'LI').toUpperCase();
-        return s.indexOf('HACKABLE') >= 0 || s.indexOf('HACKER') >= 0 ||
+        return s.indexOf('HACKABLE') >= 0 || M.eHacker(u) ||
                t === 'HI' || t === 'TAG' || t === 'REM' || t === 'VH';
     }
     // Pubblica: la stessa condizione filtra i bersagli dei programmi e decide
@@ -1514,13 +1545,29 @@
                 case M.AZIONI.INTUITIVO:
                     // Filtro INVERSO del BS Attack: serve un bersaglio che
                     // normalmente non potresti attaccare senza Scoprirlo.
-                    if (!marker && !opzioni.fuoriLoF) {
+                    // 🔴 MAI contro un Marker Impersonation, ne` IMP-1 ne` IMP-2
+                    // (riga 14210). Prima passava: "in forma di Marker" bastava.
+                    if (s.imp) nega((catalogo('IMPERSONATION') || {}).intuitivo || 'Attacco Intuitivo vietato contro un Marker Impersonation (riga 14210).');
+                    else if (!marker && !opzioni.fuoriLoF) {
                         nega('L\'Attacco Intuitivo richiede un bersaglio in forma di Marker o fuori LoF per Zona di Visibilità Zero. Questo è visibile: usa un Attacco BS normale.');
                     }
                     break;
 
                 case M.AZIONI.SPECULATIVO:
-                    // Tiro parabolico su un punto: ignora la LoF, i Marker vanno bene.
+                    // Tiro parabolico su un punto: ignora la LoF. Ma un MARKER
+                    // non puo` essere il Bersaglio PRINCIPALE (chat REGOLE, 6
+                    // ottobre, PDF e wiki "Speculative Attack"):
+                    //  - Impersonation: righe 14207-14208, regola scritta;
+                    //  - CAMO: righe 13609-13610, "unless otherwise specified",
+                    //    e le sole eccezioni sono l'Intuitivo (4017-4022) e il
+                    //    MSV L3 (11011-11015). Lo Speculativo non e` nessuna
+                    //    delle due (righe 11399-11401).
+                    // Fino alla 2026-10-06.2 il Marker CAMO passava.
+                    // RESTA AMMESSO come bersaglio SECONDARIO sotto la sagoma
+                    // (righe 3914-3919): opzioni.ruolo === 'secondario'.
+                    if (opzioni.ruolo === 'secondario') break;
+                    if (s.imp) nega((catalogo('IMPERSONATION') || {}).speculativo || 'Marker Impersonation: non puo` essere il Bersaglio Principale (righe 14207-14208).');
+                    else if (marker) nega((catalogo('FUOCO_SPECULATIVO_MARKER') || {}).camo || 'Marker CAMO: non puo` essere il Bersaglio Principale (righe 13609-13610).');
                     break;
 
                 case M.AZIONI.GUIDATO:
@@ -1554,7 +1601,7 @@
                 case M.AZIONI.BERSERK:
                 case M.AZIONI.PROTHEION:
                     if (s.camo) nega('Marker CAMO: non si può entrare in contatto base-base con un Marker CAMO. Va Scoperto prima.');
-                    else if (s.imp) nega('Marker Impersonation: finché non è Scoperto conta come truppa amica.');
+                    else if (s.imp) nega((catalogo('IMPERSONATION') || {}).contatto || 'Marker Impersonation: non si puo` entrare in contatto di Silhouette (riga 14206).');
                     else if (s.incosciente) esito.note.push('Incosciente: il CC Attack diventa Colpo di Grazia (Morto automatico, nessun Tiro Salvezza) salvo Dogged/NWI attivi.');
                     break;
 
@@ -1564,7 +1611,7 @@
                         nega(`Non è hackerabile (tipo ${s.tipo}, nessun tratto Hackable/Hacker).`);
                         break;
                     }
-                    if (programma === 'TRINITY' && skillsDi(u).indexOf('HACKER') < 0) nega('Trinity colpisce solo Hacker nemici.');
+                    if (programma === 'TRINITY' && !M.eHacker(u)) nega('Trinity colpisce solo Hacker nemici.');
                     else if (programma === 'TOTAL CONTROL' && s.tipo !== 'TAG') nega('Total Control funziona solo contro i TAG.');
                     // 🔴 "an enemy TAG, or a TAG in Possessed State" (riga 5286).
                     // Un TAG ALLEATO Posseduto e` bersaglio legittimo: ogni
@@ -1587,14 +1634,21 @@
 
                 default:
                     // BS Attack, Attacco a Sorpresa e ogni futura azione a distanza
-                    if (s.camo || s.imp) {
+                    if (s.camo) {
                         if (attaccante && M.haMSV3(attaccante)) {
                             esito.note.push('Marker attaccabile senza Scoprire grazie al Multispectral Visor L3: applica comunque il Mimetismo.');
                         } else {
-                            nega(s.camo
-                                ? 'Marker CAMO: va Scoperto prima (oppure usa un Attacco Intuitivo).'
-                                : 'Marker Impersonation: va Scoperto prima.');
+                            nega('Marker CAMO: va Scoperto prima (oppure usa un Attacco Intuitivo).');
                         }
+                    } else if (s.imp) {
+                        // 🔴 IL LIVELLO DECIDE IL MOTIVO, e il Multispectral Visor
+                        // L3 NON vale: la sua regola nomina solo il Marker CAMO
+                        // (righe 11011-11015). Prima l'eccezione copriva anche
+                        // l'Impersonation, e un MSV L3 poteva sparare a un IMP-1.
+                        const I = catalogo('IMPERSONATION') || {};
+                        const liv = (I.livelli || {})[s.impLivello];
+                        nega((liv && liv.attacco) || I.attaccoSenzaLivello || 'Marker Impersonation: va Scoperto prima.');
+                        if (attaccante && M.haMSV3(attaccante) && I.msv3) esito.note.push(I.msv3);
                     }
                     break;
             }
@@ -2624,10 +2678,14 @@
         const dispositivi = M.dispositiviHacking(unita);
 
         if (dispositivi.length === 0) {
-            if (skillsDi(unita).indexOf('HACKER') >= 0) {
+            if (M.eHacker(unita)) {
+                // NON e` un errore di dato (chat REGOLE, 6 ottobre): le righe
+                // 4704-4708 ammettono un Hacker che usa "certain Programs
+                // without requiring a Device", ma il regolamento non dice
+                // quali. Il profilo puo` essere giusto: il buco e` nella fonte.
                 avvisi.push(err('A90',
-                    `${M.nomeUnita(unita)} risulta Hacker ma non ha un Dispositivo di Hacking nel profilo.`,
-                    'Senza dispositivo non si sa quali programmi possa usare.'));
+                    `${M.nomeUnita(unita)} ha la skill Hacker ma nessun Dispositivo di Hacking: nessun programma disponibile da catalogo.`,
+                    'Il regolamento ammette un Hacker senza Dispositivo (righe 4704-4708) ma non elenca i programmi che puo` usare.'));
             }
             return { programmi: [], dispositivi: [], avvisi: avvisi };
         }
@@ -2827,11 +2885,16 @@
     };
 
     // MOD di un attacco Comms.
-    // ctx: { firewallNemico, membriFireteam }
+    // ctx: { firewallNemico, membriFireteam, repeaterNemico }
+    //   repeaterNemico: l'attacco passa da un Repeater nemico (lo dice il
+    //   giocatore). Il Firewall lo calcola M.firewallApplicato; se il
+    //   bersaglio non e` un Hacker il Requisito manca: `requisitoFallito`.
     M.modHacking = function (attaccante, difensore, programma, ctx) {
         ctx = ctx || {};
         const voci = [];
         const note = [];
+        const avvisiRep = [];
+        let requisitoFallito = false;
         const base = parseInt((attaccante && attaccante.wip), 10) || 0;
         let mod = 0;
 
@@ -2848,11 +2911,25 @@
         }
 
         // Firewall del difensore (TinBot): il valore vero, non un -3 fisso.
-        const fw = parseInt(ctx.firewallNemico, 10) || 0;
+        // UN SOLO Firewall: quello proprio o quello del Repeater nemico.
+        const proprioFw = parseInt(ctx.firewallNemico, 10) || 0;
+        const fwA = M.firewallApplicato(difensore, { repeaterNemico: !!ctx.repeaterNemico, proprio: proprioFw });
+        const fw = fwA.valore;
         if (fw < 0) {
             mod += fw;
-            voci.push({ fonte: 'firewall', valore: fw, motivo: `Firewall nemico: ${fw} WIP` });
+            voci.push({ fonte: fwA.fonte === 'REPEATER_NEMICO' ? 'repeaterNemico' : 'firewall', valore: fw, motivo: fwA.motivo });
             note.push('Il Firewall dà anche +3 BTS al Tiro Salvezza del bersaglio.');
+        }
+        fwA.note.forEach(function (n) { note.push(n); });
+        // ECM (Hacking -N): si SOMMA al Firewall, e non da` il +3 alla salvezza.
+        const ecmH = M.valoreEcmHacking(difensore);
+        if (ecmH < 0) {
+            mod += ecmH;
+            voci.push({ fonte: 'ecm', valore: ecmH, motivo: `ECM (Hacking ${ecmH}) del bersaglio: ${ecmH} WIP` });
+        }
+        if (ctx.repeaterNemico) {
+            const via = M.viaRepeaterNemico(difensore);
+            if (!via.ammesso) { requisitoFallito = true; avvisiRep.push(via.motivo); note.push(via.motivo); }
         }
 
         // 🔴 NESSUN bonus Fireteam agli Attacchi Comms. Qui c'era "Fireteam
@@ -2874,20 +2951,102 @@
         // (Segnalato dalla chat REGOLE, giro del 20 settembre.)
 
         note.push('L\'Hacking agisce nell\'Area di Hacking: non servono LoF, gittata né copertura.');
-        return { valore, base, mod, voci, note, avvisi: [],
-                 impossibile: valore < 1, critici: M.critici(valore) };
+        return { valore, base, mod, voci, note, avvisi: avvisiRep,
+                 firewall: fw, firewallFonte: fwA.fonte,
+                 repeaterNemico: !!ctx.repeaterNemico, requisitoFallito: requisitoFallito,
+                 impossibile: valore < 1 || requisitoFallito, critici: M.critici(valore) };
+    };
+
+    // E` un HACKER? Il profilo lo scrive fra le skill ("Hacker") o porta un
+    // Dispositivo di Hacking.
+    // 🔴 NON basta cercare "HACKER" nel testo: "ECM (Hacker -3)" lo contiene,
+    // e 35 profili (Bambadroid, Vortex, Pi-Well, Marvin...) risultavano
+    // Hacker senza esserlo — bersagli validi di Trinity, e "Non è un Hacker"
+    // mai detto. MISURATO sul database il 6 ottobre: 121 col testo, 86 con
+    // un dispositivo.
+    // 🔴 IL TEST E` LA SKILL, non il Dispositivo (chat REGOLE, 6 ottobre):
+    // riga 4823, "does not have the Hacker Special Skill on their real Unit
+    // Profile"; riga 4704, il Dispositivo e` cio` che un Hacker PUO` avere.
+    // La 2026-10-06.2 accettava anche "ha un Dispositivo": piu` largo dello
+    // scritto. Sul database di oggi i due insiemi coincidono (86 e 86).
+    // 🔴 VOCE ESATTA nel campo `skills`, non sottostringa di skills+equip
+    // (suggerimento della chat DATABASE, 6 ottobre): cercare le lettere
+    // "HACKER" nel testo rifa` l'errore a ogni equip che le contenga. Si
+    // spezza sulle virgole FUORI parentesi e si confronta la voce: "Hacker"
+    // o "Hacker (...)". DATABASE ha verificato che la skill non e` mai
+    // scritta fuori dal campo skills.
+    M.eHacker = function (unita) {
+        if (!unita) return false;
+        const testo = String(unita.skills || '').toUpperCase();
+        const voci = []; let liv = 0, cur = '';
+        for (let i = 0; i < testo.length; i++) {
+            const c = testo[i];
+            if (c === '(' || c === '[') liv++;
+            else if (c === ')' || c === ']') liv = Math.max(0, liv - 1);
+            if (c === ',' && liv === 0) { voci.push(cur); cur = ''; } else cur += c;
+        }
+        voci.push(cur);
+        return voci.some(function (v) { return /^HACKER(\s*[\(\[].*)?$/.test(v.trim()); });
+    };
+
+    // ATTRAVERSO UN REPEATER NEMICO si colpiscono solo gli Hacker (righe
+    // 4799-4802, 4850-4852). Dati e testi in CATALOGO_N5.REPEATER_NEMICO.
+    M.viaRepeaterNemico = function (bersaglio) {
+        const R = catalogo('REPEATER_NEMICO') || {};
+        const hacker = M.eHacker(bersaglio);
+        const ammesso = !R.soloControHacker || hacker;
+        return { ammesso: ammesso, bersaglioHacker: hacker,
+                 esito: ammesso ? 'AMMESSO' : 'IDLE',
+                 motivo: ammesso ? null : (R.seNonHacker || 'Il bersaglio non e` un Hacker: Idle.'),
+                 fonti: ['righe 4797-4802', 'righe 4850-4852'] };
+    };
+
+    // QUALE Firewall si applica contro questo bersaglio, e quanto vale.
+    //   ctx.repeaterNemico  l'attacco passa da un Repeater nemico: -3
+    //   ctx.proprio         il Firewall proprio gia` calcolato da chi chiama
+    //                       (se manca, M.valoreFirewall)
+    // UN SOLO Firewall (righe 4761-4763 e 4844-4846): lo SCEGLIE IL
+    // GIOCATORE DEL BERSAGLIO. Non e` una regola di calcolo: l'app prende
+    // per default il piu` negativo (il +3 alla salvezza e` fisso in ogni
+    // ramo, righe 4771-4774, quindi la scelta cambia solo il MOD al WIP) e
+    // il motivo lo dice. Firewall (-6) via Repeater nemico: -6, NON -9.
+    // Il -3 del Repeater nemico E` un Firewall (righe 4837-4839): vale anche
+    // se il bersaglio non ne ha uno suo, o se il suo e` spento.
+    M.firewallApplicato = function (bersaglio, ctx) {
+        ctx = ctx || {};
+        const R = catalogo('REPEATER_NEMICO') || {};
+        const proprio = (ctx.proprio != null) ? (parseInt(ctx.proprio, 10) || 0) : M.valoreFirewall(bersaglio);
+        const rep = ctx.repeaterNemico ? (parseInt(R.firewall, 10) || -3) : 0;
+        const note = [];
+        let valore = proprio, fonte = proprio < 0 ? 'PROPRIO' : null;
+        if (rep < 0 && rep < proprio) { valore = rep; fonte = 'REPEATER_NEMICO'; }
+        else if (rep < 0 && proprio === 0) { valore = rep; fonte = 'REPEATER_NEMICO'; }
+        if (rep < 0 && proprio < 0) note.push(R.unSoloFirewall || 'Si applica un solo Firewall.');
+        const due = (rep < 0 && proprio < 0);
+        const coda = due ? ' — uno solo si applica, e lo sceglie il giocatore del bersaglio' : '';
+        return { valore: valore, fonte: fonte, proprio: proprio, repeater: rep,
+                 sceltaDelBersaglio: due, alternative: due ? [proprio, rep] : [],
+                 motivo: fonte === 'REPEATER_NEMICO' ? ((R.voce || 'Repeater nemico: Firewall') + coda)
+                       : (fonte ? `Firewall del bersaglio: ${valore} WIP${coda}` : null),
+                 note: note };
     };
 
 
-    // Valore reale del Firewall di una truppa (TinBot: -3 o -6).
-    // Il codice dell'Hub usava un -3 fisso: qui si legge il numero vero.
-    M.valoreFirewall = function (unita) {
+    // ECM (Hacking -N): MOD al tiro di chi dichiara un Programma di Hacking
+    // contro il portatore (righe 6655, 10729-10743).
+    // 🔴 NON E` UN FIREWALL (chat REGOLE, 6 ottobre). Fino alla 2026-10-06.2
+    // stava dentro M.valoreFirewall ("e` la stessa cosa, scritta
+    // diversamente"): sbagliato due volte.
+    //  - SI SOMMA al Firewall: la regola "uno solo" (righe 4761-4763) parla
+    //    di Firewall. Firewall (-3) + ECM (Hacking -3) = -6.
+    //  - NON da` il +3 al Tiro Salvezza: quello e` del Firewall (righe
+    //    4759-4760); l'ECM ha solo il MOD all'attacco (righe 10740-10743).
+    // I profili del database scrivono "ECM (Hacker -3)"; la notazione del
+    // regolamento e` "ECM (Hacking -3)" (fra parentesi c'e` il TIPO DI
+    // ATTACCO, non una skill). Si leggono tutte e due.
+    M.valoreEcmHacking = function (unita) {
         const s = skillsDi(unita);
-
-        // 🔴 I profili scrivono "ECM (Hacker -3)": il MOD ai tiri di Hacking
-        // dei nemici. E` la stessa cosa di un Firewall, scritta diversamente.
-        // Cercare solo "FIREWALL" lasciava a zero trenta e piu` profili.
-        const ecm = /ECM\s*[\(\[]\s*HACKER\s*(-?\d+)/.exec(s);
+        const ecm = /ECM\s*[\(\[]\s*HACK(?:ER|ING)\s*(-?\d+)/.exec(s);
         if (ecm) {
             const st0 = M.statoBersaglio(unita);
             // 🔴 L'ECM NON segue il Firewall. E` "Automatic Equipment" SENZA
@@ -2905,7 +3064,16 @@
             if (st0.morto || st0.incosciente || st0.disconnesso) return 0;
             return -Math.abs(parseInt(ecm[1], 10));
         }
+        return 0;
+    };
 
+    // Valore reale del Firewall di una truppa (TinBot: -3 o -6).
+    // Il codice dell'Hub usava un -3 fisso: qui si legge il numero vero.
+    M.valoreFirewall = function (unita) {
+        const s = skillsDi(unita);
+
+        // L'ECM (Hacking -N) NON sta piu` qui: non e` un Firewall. Vedi
+        // M.valoreEcmHacking.
         if (s.indexOf('FIREWALL') < 0) return 0;
 
         // Fonte: wiki "Firewall", FAQ 0.1 (set 2026) — F01, verificata dalla
@@ -3529,7 +3697,7 @@
 
             switch (v.id) {
                 case 'HACKING':
-                    if (sk.indexOf('HACKER') < 0) nega('Non è un Hacker.');
+                    if (!M.eHacker(unita)) nega('Non è un Hacker.');
                     else if (M.programmiAttacco(unita).programmi.length === 0) {
                         nega('Nessun programma d\'attacco con questo dispositivo.');
                     }
@@ -4235,6 +4403,38 @@
     // bersaglio: unità che subisce il colpo
     // colpo:     { arma, ammo, cover, ignoraCopertura, firewall }
     M.tiroSalvezza = function (bersaglio, colpo, ctx) {
+        // Un punto solo per tutte le uscite della funzione qui sotto.
+        return M.notaMarkerSuSalvezza(M._tiroSalvezza(bersaglio, colpo, ctx), bersaglio);
+    };
+
+    // UN MARKER COSTRETTO A UN TIRO SALVEZZA perde lo stato, anche se la
+    // salvezza riesce (CAMO riga 13638; Decoy 13781; Holoecho 13993;
+    // HoloMask 14073). Prima era solo un testo nell'elenco delle
+    // cancellazioni: nessuno lo diceva nel momento in cui serve.
+    //
+    // DECISIONE DI PAOLO (5 ottobre): niente domande al giocatore e niente
+    // cambio di stato automatico — l'app non sa se il dado e` stato tirato.
+    // E` una NOTA nel risultato del calcolatore, sul Tiro Salvezza di chi lo
+    // subisce. Lo stato lo toglie il giocatore dall'editor.
+    // Quali stati: il campo cadePerTiroSalvezza di CATALOGO_N5.STATI.
+    M.notaMarkerSuSalvezza = function (salvezza, bersaglio) {
+        if (!salvezza || !salvezza.offensivo || !bersaglio) return salvezza;
+        const st = M.statoBersaglio(bersaglio);
+        const S = (G.CATALOGO_N5 && G.CATALOGO_N5.STATI) || {};
+        const aggiunte = [];
+        Object.keys(S).forEach(function (k) {
+            const v = S[k];
+            if (!v || !v.cadePerTiroSalvezza || !st[k]) return;
+            aggiunte.push(`\u26a0\ufe0f ${M.nomeUnita(bersaglio)} \u00e8 in Stato ${v.nome}: costretta a un Tiro Salvezza, lo stato si CANCELLA anche se la salvezza riesce (riga ${v.cadePerTiroSalvezza.riga}). Sostituisci il Marker col Modello.`);
+        });
+        if (!aggiunte.length) return salvezza;
+        // noteMarker: le stesse note, a parte, perche` chi disegna possa
+        // metterle in evidenza (calcolatore_math). Restano anche in `note`:
+        // chi legge solo quello non le perde.
+        return Object.assign({}, salvezza, { note: (salvezza.note || []).concat(aggiunte), noteMarker: aggiunte, cancellaMarker: true });
+    };
+
+    M._tiroSalvezza = function (bersaglio, colpo, ctx) {
         colpo = colpo || {};
         ctx = ctx || {};
         const voci = [], note = [], avvisi = [];
@@ -4555,6 +4755,27 @@
         return (C && C.valoreDefault) ? C.valoreDefault : -6;
     };
 
+    // NFB IN USO. "The use of a Special Skill, Equipment, Hacking Program
+    // with the NFB Label is incompatible with any other with the same Label"
+    // (righe 6677-6679). Chi e` in Stato Impersonation — per skill o per
+    // Cybermask — STA usando una voce NFB, e finche` resta Marker le altre
+    // sue voci NFB non si applicano: "for example Mimetism, Albedo,
+    // Holoprojector" (righe 5167-5171).
+    // E` DERIVATO dallo stato, non un campo scritto sull'unita`: un campo
+    // andrebbe azzerato in ogni punto in cui il Marker cade (rivelazione,
+    // Idle, editor), e il primo dimenticato lascerebbe il Mimetismo spento
+    // per sempre.
+    // Fino al 5 ottobre il commento di M.conflittiNFB diceva "quello lo dice
+    // il tavolo": MISURATO, lo Scoprire contro un Hacker in IMP-2 col
+    // Mimetism (-3) nel profilo subiva il -3.
+    //   -> null | { voce, motivo }
+    M.nfbInUso = function (unita) {
+        const st = M.statoBersaglio(unita || {});
+        if (!st.imp) return null;
+        const I = catalogo('IMPERSONATION') || {};
+        return { voce: 'Impersonation', motivo: I.nfb || 'In Impersonation vale l\'etichetta NFB.' };
+    };
+
     M.valoreMimetismo = function (unita) {
         const s = skillsDi(unita);
         const m = /MIMETISM[^(]*\(\s*(-?\d+)/.exec(s);
@@ -4697,8 +4918,16 @@
                 aggiungi('programma', arma.modAttacco,
                     `${arma.nome}: ${arma.modAttacco > 0 ? '+' : ''}${arma.modAttacco} ${nomeAttr}`);
             }
-            const fw = M.valoreFirewall(difensore);
-            if (fw < 0) aggiungi('firewall', fw, `Firewall del bersaglio: ${fw} WIP`);
+            // UN SOLO Firewall: il proprio o quello del Repeater nemico.
+            const fwA = M.firewallApplicato(difensore, { repeaterNemico: !!ctx.repeaterNemico });
+            if (fwA.valore < 0) aggiungi(fwA.fonte === 'REPEATER_NEMICO' ? 'repeaterNemico' : 'firewall', fwA.valore, fwA.motivo);
+            fwA.note.forEach(function (n) { note.push(n); });
+            const ecmH = M.valoreEcmHacking(difensore);
+            if (ecmH < 0) aggiungi('ecm', ecmH, `ECM (Hacking ${ecmH}) del bersaglio: ${ecmH} ${nomeAttr}`);
+            if (ctx.repeaterNemico) {
+                const via = M.viaRepeaterNemico(difensore);
+                if (!via.ammesso) { ctx._requisitoFallito = via.motivo; avvisi.push(via.motivo); note.push(via.motivo); }
+            }
             // 🔴 Fra i Bonus Fireteam ufficiali NON c'e` un +1 WIP per gli
             // Attacchi Comms: il +1 di Livello 4 vale su BS Attack e sulle
             // armi con Tratto BS Weapon (PH)/(WIP), non sui Programmi.
@@ -4773,7 +5002,11 @@
                 // 🔴 ALBEDO: la regola era a catalogo ma il motore non la
                 // applicava. Colpisce SOLO chi ha un Multispectral Visor o
                 // Marksmanship — cioe` proprio chi il Mimetismo lo ignora.
-                const alb = M.valoreAlbedo(difensore);
+                // NFB: in Impersonation il bersaglio non applica ne` Albedo ne`
+                // Mimetism (M.nfbInUso).
+                const nfbD = M.nfbInUso(difensore);
+                const alb = nfbD ? 0 : M.valoreAlbedo(difensore);
+                if (nfbD && (M.valoreAlbedo(difensore) < 0 || M.valoreMimetismo(difensore) < 0)) note.push(nfbD.motivo);
                 if (alb < 0 && (tA.msv1 || tA.marksmanship)) {
                     aggiungi('albedo', alb, `Albedo del bersaglio: ${alb} a chi ha Multispectral Visor o Marksmanship`);
                 } else if (alb < 0) {
@@ -4781,7 +5014,7 @@
                 }
 
                 // Mimetismo, ridotto o annullato dai Multispectral Visor
-                const mim = M.valoreMimetismo(difensore);
+                const mim = nfbD ? 0 : M.valoreMimetismo(difensore);
                 if (mim < 0) {
                     if (tA.msv2) note.push(`Multispectral Visor L2+: il Mimetismo (${mim}) non si applica.`);
                     else if (tA.msv1) {
@@ -5074,6 +5307,9 @@
             esito = M.modHacking(difensore, attaccante,
                 reazione.arma || (difensore ? M.armaDaProgrammaDi(difensore, reazione.programma) : M.armaDaProgramma(reazione.programma)), {
                     firewallNemico: M.valoreFirewall(attaccante),
+                    // L'ARO di Hacking che passa da un Repeater dell'attivo
+                    // (esempio riga 4941): lo dice chi dichiara l'ARO.
+                    repeaterNemico: !!reazione.repeaterNemico,
                     membriFireteam: ctx.membriFireteam
                 });
         } else if (azReaz === 'CC_ATTACK') {
@@ -5331,25 +5567,55 @@
         // Numero plausibile, schermata sana — la specie peggiore. Si risolve
         // qui una volta, per tutti i percorsi. (Chat TEST, 23 settembre.)
         const risolvi = function (a) { return (typeof a === 'string') ? M.profiloArma(a) : (a || null); };
-        const arma = risolvi(attacco.arma);
-        if (reazione && typeof reazione.arma === 'string') reazione = Object.assign({}, reazione, { arma: risolvi(reazione.arma) });
+        // 🔴 UN PROGRAMMA DI HACKING NON E` UN'ARMA DEL DATABASE. La schermata
+        // ARO manda { azione: 'HACKING', arma: 'TRINITY' }: `risolvi` cercava
+        // 'TRINITY' fra le armi, non lo trovava, e il programma spariva —
+        // niente +3 di Trinity, e soprattutto NESSUN Tiro Salvezza per
+        // l'attivo ("Nessun danno"). MISURATO il 6 ottobre dalla chat
+        // INTERFACCIA col giro su tre dispositivi. Vale per l'attivo e per il
+        // reattivo: il programma lo descrive M.armaDaProgrammaDi.
+        function programmaDi(unita, a, nome) {
+            if (a && typeof a === 'object') return a;
+            const n = (typeof a === 'string' && a) || nome;
+            return n ? (unita ? M.armaDaProgrammaDi(unita, n) : M.armaDaProgramma(n)) : null;
+        }
+        const azAtt0 = M.azioneCanonica(attacco.azione) || attacco.azione;
+        const arma = (azAtt0 === M.AZIONI.HACKING)
+            ? programmaDi(attacco.attaccante, attacco.arma, attacco.programma)
+            : risolvi(attacco.arma);
+        if (reazione && reazione.azione === 'HACKING') {
+            reazione = Object.assign({}, reazione, { arma: programmaDi(reazione.difensore || attacco.bersaglio, reazione.arma, reazione.programma) });
+        } else if (reazione && typeof reazione.arma === 'string') reazione = Object.assign({}, reazione, { arma: risolvi(reazione.arma) });
 
         // --- 1. il tiro dell'attivo ---
-        const att = M.modAttacco(attaccante, difensore, arma, azione, {
+        const ctxAtt = {
             rangeIndex: attacco.rangeIndex,
             rangeMod: attacco.rangeMod,
             cover: attacco.cover,
             copertura: attacco.copertura,
+            repeaterNemico: attacco.repeaterNemico,
             terrain: attacco.terrain,
             zona: attacco.zona,
             livelloFireteam: ctx.livelloFireteamAtt, membriFireteam: ctx.membriFireteamAtt,
             distanzaPollici: ctx.distanzaPollici,
             inMischia: ctx.inMischia,
             reazione: reazione
-        });
+        };
+        // 🔴 LO SCOPRIRE HA LE SUE REGOLE (Sensor, Discover (+N), il +3 del
+        // Fireteam, il livello dell'Impersonation): qui si chiama la STESSA
+        // funzione della schermata. Con il modAttacco nudo l'Hub mostrava un
+        // numero diverso da quello che il giocatore aveva appena letto.
+        const att = (azione === M.AZIONI.SCOPRIRE)
+            ? M.regoleScoprire(attaccante, difensore, ctxAtt)
+            : M.modAttacco(attaccante, difensore, arma, azione, ctxAtt);
         att.avvisi.forEach(a => avvisi.push(a));
+        // Hacking via Repeater nemico contro chi non e` Hacker: il Requisito
+        // manca, Idle. Nessun tiro (righe 4799-4802).
+        if (ctxAtt._requisitoFallito) { att.requisitoFallito = true; att.impossibile = true; }
 
         let burstAtt = (attacco.burst != null) ? attacco.burst : ((arma && arma.burst) || 1);
+        // Un Idle non tira: nessun dado, nessun Tiro Salvezza.
+        if (att.requisitoFallito) burstAtt = 0;
         // 🔴 La Saturazione "cannot be reduced below 1" (wiki "Saturation").
         // Il pavimento era 0: un'arma a B1 attraverso la zona faceva 0 colpi.
         // burstMod ha oggi un solo contributore, la Saturazione.
@@ -5379,6 +5645,9 @@
             // la zona — anche quello del reattivo. modReazione calcolava gia` il
             // suo burstMod, e qui veniva buttato via. Mai sotto 1.
             if (reaz.burstMod && burstDif > 0) burstDif = Math.max(1, burstDif + reaz.burstMod);
+            // ARO di Hacking via Repeater nemico contro chi non e` Hacker:
+            // Requisito fallito, Idle (righe 4799-4802). Non tira.
+            if (reaz.requisitoFallito) burstDif = 0;
         }
 
         // --- 3. il tipo di confronto ---
@@ -5421,13 +5690,23 @@
         // Chi subisce il colpo dell'attivo:
         const shockAtt = M.armaConMunizioneDaSkill(attaccante, arma, azione);
         const armaSalvAtt = shockAtt.arma;
-        const salvDifensore = (burstAtt > 0)
+        // Un'azione NON OFFENSIVA non fa fare Tiri Salvezza: lo dice la
+        // specifica dell'azione (SPEC.nonOffensiva: lo Scoprire) o la busta
+        // del modulo (regole.nonOffensivo: Forward Observer che infligge uno
+        // Stato, Interagire, Deactivator). Senza, il Tiro Salvezza inesistente
+        // faceva anche comparire la nota "costretta a un Tiro Salvezza: lo
+        // stato CAMO si cancella" sotto ogni Scoprire contro un Marker —
+        // una nota mia del 5 ottobre, falsa in quel caso.
+        const nonOffensiva = !!attacco.nonOffensivo || !!((M.SPEC[azione] || {}).nonOffensiva);
+        const salvDifensore = nonOffensiva
+            ? { offensivo: false, note: ['Azione non offensiva: il bersaglio non fa nessun Tiro Salvezza.'] }
+            : (burstAtt > 0)
             ? M.tiroSalvezza(difensore, {
                   arma: armaSalvAtt, ammo: (armaSalvAtt !== arma) ? armaSalvAtt.ammo : (attacco.ammo || (arma && arma.ammo)),
                   cover: attacco.cover,
                   copertura: attacco.copertura,
                   ignoraCopertura: (azione === M.AZIONI.GUIDATO || azione === M.AZIONI.SPECULATIVO),
-                  firewall: (azione === M.AZIONI.HACKING) ? M.valoreFirewall(difensore) : 0
+                  firewall: (azione === M.AZIONI.HACKING) ? M.firewallApplicato(difensore, { repeaterNemico: !!attacco.repeaterNemico }).valore : 0
               })
             : { offensivo: false, note: ['L\'attaccante non tira: nessun danno.'] };
 
@@ -5453,7 +5732,7 @@
                   // e il +3 mai. Si legge `cover`, con coverAttaccante che vince
                   // se qualcuno lo passa esplicito. (Trovato col pulsante ARO.)
                   cover: (reazione.coverAttaccante != null) ? reazione.coverAttaccante : reazione.cover,
-                  firewall: (azReaz === M.AZIONI.HACKING) ? M.valoreFirewall(attaccante) : 0
+                  firewall: (azReaz === M.AZIONI.HACKING) ? M.firewallApplicato(attaccante, { repeaterNemico: !!reazione.repeaterNemico }).valore : 0
               })
             : { offensivo: false, note: ['Il reattivo non infligge danno.'] };
 
@@ -5471,12 +5750,19 @@
 
             attivo: {
                 nome: M.nomeUnita(attaccante),
-                azione: att.automatico ? 'ATTACCO A SAGOMA' : azione,
+                // `automatico` qui vuol dire SAGOMA DIRETTA (colpo senza tiro).
+                // Lo Scoprire automatico (Multispectral Visor L2+ contro un
+                // Marker CAMO) usa la stessa parola per un'altra cosa: resta
+                // uno Scoprire, senza tiro, e lo dice `successoAutomatico`.
+                azione: (att.automatico && azione !== M.AZIONI.SCOPRIRE) ? 'ATTACCO A SAGOMA' : azione,
                 attributo: att.attributo,
                 base: att.base,
                 mod: att.automatico ? 'Auto' : att.valore,
-                automatico: !!att.automatico,
+                automatico: !!att.automatico && azione !== M.AZIONI.SCOPRIRE,
+                successoAutomatico: !!att.automatico && azione === M.AZIONI.SCOPRIRE,
                 impossibile: !!att.impossibile,
+                requisitoFallito: !!att.requisitoFallito,
+                repeaterNemico: !!attacco.repeaterNemico,
                 lofBloccata: !!att.lofBloccata,
                 burst: burstAtt,
                 voci: att.voci,
@@ -5495,7 +5781,9 @@
                 attributo: reaz.attributo,
                 base: reaz.base,
                 mod: reaz.valore,
-                impossibile: !!reaz.impossibile,
+                impossibile: !!reaz.impossibile || !!reaz.requisitoFallito,
+                requisitoFallito: !!reaz.requisitoFallito,
+                repeaterNemico: !!reazione.repeaterNemico,
                 burst: burstDif,
                 voci: reaz.voci,
                 note: reaz.note,
@@ -5740,6 +6028,50 @@
                                       String(nomeDifensore).toUpperCase()) || null;
         }
 
+        // LA COPERTURA PARZIALE DELL'ATTIVO IN QUEST'ORDINE: se ha dichiarato
+        // un'Abilita` che la nega (Salto, Ingresso in Campo), chi gli tira
+        // contro non subisce il -3 e lui non ha il +3 alla salvezza, anche se
+        // la reazione arriva con la copertura dichiarata. Si calcola UNA
+        // volta, dalle azioni della busta, e si applica a ogni reazione che
+        // ha l'attivo per bersaglio.
+        const copNeg = M.coperturaNegataDaAzioni(
+            attacchi.map(function (a) { return a.azione; }).concat((payload && payload.azioniDichiarate) || []));
+        function senzaCoperturaSuAttivo(r) {
+            if (!copNeg.negata || !r) return r;
+            return Object.assign({}, r, { cover: false, coverAttaccante: false, copertura: null });
+        }
+        // CHI E` ATTIVO IN QUEST'ORDINE: ogni attaccante della busta, piu`
+        // `attivo` e `attivi`. In un Ordine Coordinato hanno dichiarato tutti
+        // la stessa Abilita`: se e` un Salto o un Ingresso in Campo, la
+        // Copertura Parziale e` negata a TUTTI, non al primo.
+        const nomiAttivi = {};
+        attacchi.forEach(function (a) { const n = M.nomeUnita(a.attaccante); if (n) nomiAttivi[n] = true; });
+        [payload && payload.attivo, payload && payload.unita, payload && payload.attaccante]
+            .concat((payload && Array.isArray(payload.attivi)) ? payload.attivi : [])
+            .forEach(function (x) { const n = x ? M.nomeUnita(x) : null; if (n) nomiAttivi[n] = true; });
+        function eAttivoDellOrdine(u) { const n = u ? M.nomeUnita(u) : null; return !!(n && nomiAttivi[n]); }
+
+        function notaCoperturaNegata(scontro, r) {
+            if (!scontro) return;
+            // La copertura conta per un Attacco BS: su una Schivata o un
+            // Reset la nota sarebbe solo rumore, salvo che la reazione
+            // dichiari davvero una copertura.
+            const idR = r ? (M.idAro ? M.idAro(r.azione) : r.azione) : null;
+            const coperturaDichiarata = !!(r && (r.cover === true || r.coverAttaccante === true));
+            if (idR !== 'BS_ATTACK' && !coperturaDichiarata) return;
+            // I divieti che l'app NON applica (Arrampicarsi) si dicono a chi
+            // tira contro l'attivo: e` lui che deve sapere se togliere la
+            // copertura.
+            if (!copNeg.negata) {
+                if (copNeg.note.length) scontro.note = (scontro.note || []).concat(copNeg.note);
+                return;
+            }
+            const dichiarata = !!(r && (r.cover === true || r.coverAttaccante === true));
+            scontro.coperturaNegata = { azione: copNeg.azione, riga: copNeg.riga, dichiarataEIgnorata: dichiarata };
+            scontro.note = (scontro.note || []).concat([
+                copNeg.motivo + (dichiarata ? ' La Copertura dichiarata nella reazione NON \u00e8 stata applicata.' : '')]);
+        }
+
         attacchi.forEach(function (att) {
             const spec = M.SPEC[att.azione] || {};
             const bersagli = att.bersagli || [];
@@ -5750,12 +6082,43 @@
                 const u = ctx.trovaUnita ? ctx.trovaUnita(att.attaccante) : att.attaccante;
                 const e = (att.azione === M.AZIONI.SCHIVATA) ? M.modSchivata(u, {})
                         : (att.azione === M.AZIONI.RESET) ? M.modReset(u, {})
-                        : { valore: null, base: null, mod: 0, voci: [], note: [], attributo: spec.attributo };
+                        : (function () {
+                            // 🔴 IL VALORE SI PERDEVA QUI. Per Ingresso in campo,
+                            // Supporto e Speedball il tiro lo calcola il modulo con
+                            // la funzione del motore e lo scrive nella busta
+                            // (regole.valoreSuccesso, voci, attributo): questo ramo
+                            // non lo leggeva e al tabellone arrivava "Successo al:
+                            // null". MISURATO il 6 ottobre dalla chat INTERFACCIA
+                            // (Hellcat, PH 12). E un'Abilita` SENZA TIRO
+                            // (Trincerarsi, rientro in CAMO, Cybermask) usciva
+                            // con burst 1: "1 dado" per un Ordine che non tira.
+                            const R = att.regole || {};
+                            if (spec.tiro === false) {
+                                return { valore: null, base: null, mod: 0, voci: [], note: [], attributo: null, senzaTiro: true };
+                            }
+                            const vs = (typeof R.valoreSuccesso === 'number') ? R.valoreSuccesso : null;
+                            const voci = Array.isArray(R.voci) ? R.voci : [];
+                            const sommaMod = voci.filter(function (v) { return v && v.fonte !== 'base'; })
+                                                 .reduce(function (s, v) { return s + (parseInt(v.valore, 10) || 0); }, 0);
+                            const base = (typeof R.base === 'number') ? R.base : (vs != null ? vs - sommaMod : null);
+                            return { valore: vs, base: base, mod: (typeof R.mod === 'number') ? R.mod : sommaMod,
+                                     voci: voci, note: Array.isArray(R.note) ? R.note : [],
+                                     attributo: R.attributo || spec.attributo,
+                                     impossibile: vs != null && vs < 1 };
+                        })();
                 scontri.push({
-                    tipo: M.CONFRONTO.NESSUNO, titolo: 'TIRO DI SUPPORTO / DIFESA',
+                    tipo: M.CONFRONTO.NESSUNO,
+                    titolo: e.senzaTiro ? 'ABILIT\u00c0 SENZA TIRO' : 'TIRO DI SUPPORTO / DIFESA',
                     attivo: { nome: M.nomeUnita(att.attaccante), azione: att.azione,
-                              attributo: e.attributo, base: e.base, mod: e.valore, burst: 1,
-                              voci: e.voci, note: e.note,
+                              attributo: e.attributo, base: e.base, mod: e.valore,
+                              // Chi non tira non ha dadi: 0, e lo dice `senzaTiro`.
+                              burst: e.senzaTiro ? 0 : 1, senzaTiro: !!e.senzaTiro,
+                              impossibile: !!e.impossibile,
+                              // Le note di un ordine SENZA TIRO (Trincerarsi, il
+                              // rientro in CAMO) viaggiavano nella busta e qui si
+                              // perdevano: il risultato del calcolatore non le
+                              // mostrava. (Misurato il 5 ottobre.)
+                              voci: e.voci, note: (e.note || []).concat((spec.tiro === false && att.regole && Array.isArray(att.regole.note)) ? att.regole.note : []),
                               salvezzaInflitta: { offensivo: false, note: ['Tiro non offensivo.'] } },
                     reattivo: null, note: [], avvisi: []
                 });
@@ -5795,8 +6158,17 @@
                     // Viaggia col cover: senza questa riga l'interfaccia lo scriveva
                     // e nessuno lo leggeva — il caso "un fatto, un campo" al rovescio.
                     copertura: b.copertura,
-                    rangeIndex: b.rangeIndex, rangeMod: b.rangeMod, terrain: b.terrain, zona: b.zona
-                }, r ? Object.assign({ difensore: dif }, r) : null, ctx));
+                    repeaterNemico: b.repeaterNemico,
+                    rangeIndex: b.rangeIndex, rangeMod: b.rangeMod, terrain: b.terrain, zona: b.zona,
+                    // 🔴 `regole.nonOffensivo` lo scrivono cinque moduli (Scoprire,
+                    // Osservazione, Scenografia, Supporto, Logistica) e fino al 5
+                    // ottobre NESSUNO lo leggeva: MISURATO, uno Scoprire e un
+                    // Forward Observer uscivano sull'Hub con un Tiro Salvezza
+                    // su ARM per il bersaglio.
+                    nonOffensivo: !!(att.regole && att.regole.nonOffensivo)
+                }, r ? Object.assign({ difensore: dif }, senzaCoperturaSuAttivo(r)) : null, ctx));
+                // La reazione di chi e` bersaglio colpisce l'attivo.
+                if (r && r.azione && r.azione !== M.AZIONI_ARO.NESSUNO) notaCoperturaNegata(scontri[scontri.length - 1], r);
                 if (iB === iSd) {
                     const ultimoSd = scontri[scontri.length - 1];
                     ultimoSd.attivo.sd = sdAttacco;
@@ -5847,10 +6219,11 @@
                 const f2f = M.risolviScontro({
                     attaccante: reattivo, azione: M.azioneCanonica(r.azione) || r.azione, arma: armaRf,
                     bersaglio: attaccante, burst: armaRf ? M.burstReattivo(reattivo, armaRf, ctx).valore : (r.burst || 1), ammo: r.ammo,
-                    rangeIndex: r.rangeIndex, rangeMod: r.rangeMod, cover: r.cover, terrain: r.terrain, zona: r.zona
+                    rangeIndex: r.rangeIndex, rangeMod: r.rangeMod, cover: senzaCoperturaSuAttivo(r).cover, terrain: r.terrain, zona: r.zona
                 }, { difensore: attaccante, azione: 'DODGE', bersaglio: reattivo }, ctx);
                 f2f.latiInvertiti = true;
                 f2f.schivataAttiva = true;
+                notaCoperturaNegata(f2f, r);
                 scontri.push(f2f);
                 return;
             }
@@ -5887,19 +6260,35 @@
             // Il reattivo che spara senza essere bersaglio: il suo Burst e` quello
             // REATTIVO (B1, B3 in Soppressione, pieno con Neurocinetics), non
             // quello dichiarato — prima usciva B1 anche in Soppressione.
-            const armaRo = M.armaReattivaEffettiva(reattivo, r.arma);
+            // Un ARO di Hacking: il "colpo" e` il Programma, non un'arma del
+            // database, e il suo Burst in ARO e` 1.
+            const eHackOrf = (M.idAro ? M.idAro(r.azione) : r.azione) === 'HACKING';
+            const armaRo = eHackOrf
+                ? ((r.arma && typeof r.arma === 'object') ? r.arma : M.armaDaProgrammaDi(reattivo, r.arma || r.programma))
+                : M.armaReattivaEffettiva(reattivo, r.arma);
+            // Il bersaglio di questa reazione e` l'attivo? Solo allora vale la
+            // Copertura Parziale negata dalle sue Abilita` dichiarate.
+            const bersaglioOrf = r.bersaglio ? (ctx.trovaUnita ? ctx.trovaUnita(r.bersaglio) : { alias: r.bersaglio })
+                                             : attaccante;
+            const controAttivo = M.nomeUnita(bersaglioOrf) === M.nomeUnita(attaccante) || eAttivoDellOrdine(bersaglioOrf);
+            const rOrf = controAttivo ? senzaCoperturaSuAttivo(r) : r;
             scontri.push(M.risolviScontro({
                 attaccante: reattivo,
                 azione: M.azioneCanonica(r.azione) || r.azione,
                 arma: armaRo,
-                bersaglio: r.bersaglio ? (ctx.trovaUnita ? ctx.trovaUnita(r.bersaglio) : { alias: r.bersaglio })
-                                       : attaccante,
-                burst: armaRo ? M.burstReattivo(reattivo, armaRo, ctx).valore : (r.burst || 1), ammo: r.ammo,
+                bersaglio: bersaglioOrf,
+                burst: eHackOrf ? 1 : (armaRo ? M.burstReattivo(reattivo, armaRo, ctx).valore : (r.burst || 1)), ammo: eHackOrf ? (armaRo && armaRo.ammo) : r.ammo,
+                // 🔴 L'ARO di Hacking via Repeater nemico vale anche quando
+                // l'attivo NON attacca (muove, e` Idle...): prima il campo si
+                // perdeva qui, e con lui il -3, il +3 alla salvezza e l'Idle
+                // contro chi non e` Hacker. (Chat INTERFACCIA, 6 ottobre.)
+                repeaterNemico: eHackOrf ? !!r.repeaterNemico : undefined,
                 rangeIndex: r.rangeIndex, rangeMod: r.rangeMod,
-                cover: (r.coverAttaccante != null) ? r.coverAttaccante : r.cover, terrain: r.terrain, zona: r.zona
+                cover: (rOrf.coverAttaccante != null) ? rOrf.coverAttaccante : rOrf.cover, terrain: r.terrain, zona: r.zona
             }, null, Object.assign({}, ctx, { reattivoNonBersagliato: true })));
 
             const ultimo = scontri[scontri.length - 1];
+            if (controAttivo) notaCoperturaNegata(ultimo, r);
             // Il reattivo sta nello slot `attivo` dello scontro: chi lo
             // traduce per il tabellone deve saperlo, o lo mette sotto la
             // fazione attiva. (Chat TEST, 23 settembre.)
@@ -6513,76 +6902,19 @@
     // bande di gittata proprie.
     // ==================================================================
 
-    // L'arma virtuale dello Scoprire: la voce "SCOPRIRE" del database armi.
-    M.armaScoprire = function () {
-        const p = M.profiloArma('SCOPRIRE');
-        if (p.nonTrovata) {
-            return { nome: 'Scoprire', bands: [], burst: 1, ammo: null, ammoOpzioni: [],
-                     isTemplate: false, isCC: false, notazioni: [], nonOffensiva: true,
-                     avvisi: [err('A57', 'Voce "SCOPRIRE" assente dal database armi: nessuna banda di gittata.')] };
-        }
-        return Object.assign({}, p, { nonOffensiva: true, burst: 1 });
-    };
-
-    // ctx: { rangeIndex, cover, terrain, livelloFireteam }
+    // 🔴 LO SCOPRIRE SI CALCOLA IN UN POSTO SOLO: M.regoleScoprire (PARTE 29,
+    // piu` sotto). Fino al 5 ottobre erano TRE, e non d'accordo:
+    //   M.modScoprire      questa, con il -3 dell'IMP-1 — che nessun modulo
+    //                      chiamava;
+    //   M.regoleScoprire   quella della schermata, con Sensor e Discover (+N)
+    //                      ma SENZA il -3 dell'IMP-1;
+    //   M.risolviScontro   quella dell'Hub, un modAttacco nudo: senza Sensor,
+    //                      senza Discover (+N), senza il +3 del Fireteam.
+    // MISURATO: un Sensor contro un Marker CAMO leggeva 19 sulla propria
+    // schermata e 13 sull'Hub. C'erano anche due M.armaScoprire, e vinceva
+    // la seconda. Il nome resta per chi lo chiama.
     M.modScoprire = function (utente, bersaglio, ctx) {
-        ctx = ctx || {};
-        const R = M.regoleAttacco(M.AZIONI.SCOPRIRE) || {};
-        const arma = M.armaScoprire();
-        const tU = M.trattiTiro(utente);
-        const st = M.statoBersaglio(bersaglio);
-        const s = skillsDi(utente);
-
-        // 🔴 Multispectral Visor L2+: lo Scoprire contro un CAMO
-        // riesce AUTOMATICAMENTE, senza tirare.
-        if (tU.msv2 && st.camo) {
-            return {
-                automatico: true, valore: null, base: null, mod: 0, attributo: 'WIP',
-                voci: [], avvisi: [],
-                note: ['Multispectral Visor L2+: lo Scoprire contro uno Stato CAMO riesce automaticamente, senza tiro.']
-            };
-        }
-
-        // Base: gli stessi MOD di un BS Attack, ma su WIP.
-        const esito = M.modAttacco(utente, bersaglio, arma, M.AZIONI.SCOPRIRE, {
-            rangeIndex: ctx.rangeIndex,
-            rangeMod: ctx.rangeMod,
-            cover: ctx.cover,
-            terrain: ctx.terrain
-        });
-
-        // Sensor: +6 WIP contro i Marker Mimetici.
-        if (s.indexOf('SENSOR') >= 0 && st.camo) {
-            esito.mod += 6; esito.valore += 6;
-            esito.voci.push({ fonte: 'sensor', valore: 6, motivo: 'Sensor: +6 WIP contro Marker Mimetici' });
-        }
-
-        // Impersonation-1 impone -3, che il Biometric Visor ignora.
-        const impUno = st.imp && /IMP[-_]?1/i.test(String(bersaglio && bersaglio.deployState || ''));
-        if (impUno) {
-            if (s.indexOf('BIOMETRIC VISOR') >= 0) {
-                esito.note.push('Biometric Visor: ignora il -3 dello Stato Impersonation-1.');
-            } else {
-                esito.mod -= 3; esito.valore -= 3;
-                esito.voci.push({ fonte: 'impersonation', valore: -3, motivo: 'Marker Impersonation-1: -3 WIP allo Scoprire' });
-            }
-        }
-
-        // Fireteam: il +3 Discover del Livello 3. Il +1 BS e il +1 SD NO.
-        let liv = parseInt(ctx.livelloFireteam, 10);
-        if (!isFinite(liv) && Array.isArray(ctx.fireteam)) liv = M.livelloFireteam(ctx.fireteam).livello;
-        if ((liv || 0) >= 3) {
-            esito.mod += 3; esito.valore += 3;
-            esito.voci.push({ fonte: 'fireteam', valore: 3, motivo: `Fireteam di Livello ${liv}: +3 Discover` });
-        }
-        if (R.noBonusFireteam) esito.note.push(R.noBonusFireteam);
-
-        esito.attributo = 'WIP';
-        esito.impossibile = (esito.valore < 1);
-        esito.critici = M.critici(esito.valore);
-        if (R.fallimento) esito.note.push(R.fallimento);
-        (arma.avvisi || []).forEach(a => esito.avvisi.push(a));
-        return esito;
+        return M.regoleScoprire(utente, bersaglio, ctx);
     };
 
 
@@ -6626,17 +6958,47 @@
         }
 
         // --- gli stessi MOD di un BS Attack, ma sul WIP ---
-        const e = M.modAttacco(attaccante, bersaglio, arma, M.AZIONI.SCOPRIRE, {
-            rangeIndex: ctx.rangeIndex, rangeMod: ctx.rangeMod,
-            cover: ctx.cover, terrain: ctx.terrain,
-            livelloFireteam: ctx.livelloFireteam, fireteam: ctx.fireteam
-        });
+        // Il contesto passa INTERO (zona, copertura, reazione...): questa
+        // funzione la usa anche lo scontro dell'Hub, e una copia a campi
+        // scelti ne perdeva meta`.
+        const e = M.modAttacco(attaccante, bersaglio, arma, M.AZIONI.SCOPRIRE, Object.assign({}, ctx));
         e.avvisi.forEach(function (a) { avvisi.push(a); });
 
         // --- Sensor: +6 contro i Marker Mimetici ---
         if (skillsDi(attaccante).indexOf('SENSOR') >= 0 && stD.camo) {
             e.mod += 6; e.valore += 6;
             e.voci.push({ fonte: 'sensor', valore: 6, motivo: 'Sensor: +6 WIP scoprendo un Marker Mimetico' });
+        }
+
+        // --- Impersonation: il LIVELLO decide (CATALOGO_N5.IMPERSONATION) ---
+        //   IMP-1  -3 allo Scoprire (riga 14227), che il Biometric Visor
+        //          ignora; riuscendo il Marker diventa IMP-2 (riga 14228) —
+        //          col Biometric Visor direttamente il Modello;
+        //   IMP-2  nessun MOD dello stato; riuscendo, il Modello (14234).
+        // Il Mimetism del profilo NON si applica: NFB (M.nfbInUso, dentro
+        // modAttacco).
+        let successoImp = null;
+        let livelloNonNoto = false;
+        if (stD.imp) {
+            const I = catalogo('IMPERSONATION') || {};
+            const liv = (I.livelli || {})[stD.impLivello];
+            const haBio = skillsDi(attaccante).indexOf('BIOMETRIC VISOR') >= 0;
+            if (!liv) {
+                livelloNonNoto = true;
+                note.push(I.senzaLivello || 'Marker Impersonation senza livello: il -3 dell\'IMP-1 non e` stato applicato.');
+            } else {
+                if (liv.modScoprire && haBio) {
+                    note.push('Biometric Visor: ignora il -3 dello Stato Impersonation-1.');
+                } else if (liv.modScoprire) {
+                    e.mod += liv.modScoprire; e.valore += liv.modScoprire;
+                    e.voci.push({ fonte: 'impersonation', valore: liv.modScoprire,
+                                  motivo: `Marker ${liv.nome}: ${liv.modScoprire} WIP allo Scoprire (riga 14227)` });
+                }
+                successoImp = (stD.impLivello === 1 && haBio)
+                    ? 'Se lo Scoprire riesce, col Biometric Visor il Marker IMP-1 si sostituisce direttamente col Modello. Toglilo dall\'editor.'
+                    : liv.seScoperto;
+                note.push(successoImp);
+            }
         }
 
         // --- Discover (+N) di profilo ---
@@ -6673,7 +7035,12 @@
             impossibile: e.valore < 1,
             critici: M.critici(e.valore),
             voci: e.voci, note: note, avvisi: avvisi,
-            arma: arma, successo: R.successo || null
+            arma: arma, successo: successoImp || R.successo || null,
+            // Cosa diventa il bersaglio se il tiro riesce: 'IMP_2', 'NORMAL', o
+            // null se non e` un Marker Impersonation (per il CAMO: il Modello).
+            impLivello: stD.imp ? stD.impLivello : null, livelloNonNoto: livelloNonNoto,
+            // dal modAttacco: servono allo scontro dell'Hub
+            lofBloccata: e.lofBloccata, burstMod: e.burstMod
         };
     };
 
@@ -8125,6 +8492,52 @@
 
     // Quest'azione e` permessa dagli stati dell'unita`?
     // `azioniPermesse` e` una lista CHIUSA: se c'e`, tutto il resto e` vietato.
+    // FOXHOLE ALLA DICHIARAZIONE (catalogo STATI.foxhole; chat REGOLE, 6
+    // ottobre). Chi e` in Foxhole e dichiara, nel Turno Attivo, una Skill con
+    // etichetta Movimento puo` cancellare lo stato — e lo deve annunciare
+    // SUBITO. E` una scelta del giocatore: il motore dice se la domanda va
+    // fatta e con che testo, chi dichiara la fa.
+    //   ctx.inAro: in ARO non si cancella.
+    M.foxholeAllaDichiarazione = function (unita, azione, ctx) {
+        ctx = ctx || {};
+        const F = (catalogo('STATI') || {}).foxhole || {};
+        const st = M.statoBersaglio(unita || {});
+        const az = M.azioneCanonica(azione) || String(azione || '').toUpperCase();
+        const conMovimento = (F.cancellaCon || []).some(function (x) {
+            return M.azioneCanonica(x) === az || String(x).toUpperCase() === az;
+        });
+        const puo = !!st.foxhole && conMovimento && !(ctx.inAro && F.cancellaSoloTurnoAttivo);
+        return {
+            inFoxhole: !!st.foxhole, etichettaMovimento: conMovimento,
+            puoCancellare: puo,
+            domanda: puo ? (F.domandaCancella || null) : null,
+            seCancella: F.seCancella || null, seNonCancella: F.seNonCancella || null,
+            nota: (st.foxhole && ctx.inAro) ? (F.inAro || null) : null,
+            nonModellato: st.foxhole ? (F.nonModellato || null) : null,
+            fonti: ['riga 13867', 'righe 13871-13876', 'righe 12620-12621']
+        };
+    };
+
+    // Toglie lo Stato Foxhole: il motore calcola l'unita` AGGIORNATA, l'app
+    // la sostituisce (come per ogni altro cambio di stato).
+    M.cancellaFoxhole = function (unita) {
+        const F = (catalogo('STATI') || {}).foxhole || {};
+        const st = M.statoBersaglio(unita || {});
+        if (!st.foxhole) return { cancellato: false, unitaAggiornata: unita, mutazioni: [], note: [] };
+        const u = Object.assign({}, unita);
+        const mutazioni = [];
+        if (String(unita.deployState || '').toUpperCase() === 'FOXHOLE') {
+            u.deployState = 'NORMAL'; mutazioni.push({ campo: 'deployState', da: 'FOXHOLE', a: 'NORMAL' });
+        }
+        if (String(unita.state || '').toUpperCase() === 'FOXHOLE') {
+            u.state = 'ACTIVE'; mutazioni.push({ campo: 'state', da: unita.state, a: 'ACTIVE' });
+        }
+        u.states = Object.assign({}, unita.states || {}, { foxhole: false });
+        mutazioni.push({ campo: 'states.foxhole', da: !!(unita.states || {}).foxhole, a: false });
+        return { cancellato: true, unitaAggiornata: u, mutazioni: mutazioni,
+                 note: [F.seCancella].filter(Boolean), fonti: ['righe 13871-13876'] };
+    };
+
     M.azionePermessaDaStati = function (unita, azione) {
         const az = M.azioneCanonica(azione) || String(azione || '').toUpperCase();
         const bloccanti = [];
@@ -8486,7 +8899,7 @@
     //                      'IDLE':  il requisito e` fallito, la truppa
     //                               esegue un Idle — l'Ordine E` speso
     // La differenza fra VIETA e IDLE e` di regolamento, non di forma:
-    // Trincerarsi senza spazio e` un Idle (righe 7415-7431); un punto di
+    // Trincerarsi senza spazio e` un Idle (Sapper, righe 9841-9847); un punto di
     // atterraggio non valido si riscegli prima di tirare.
     // ==================================================================
     M.RISPOSTA = { SI: 'SI', NO: 'NO', NON_RISPOSTO: 'NON_RISPOSTO' };
@@ -8561,12 +8974,36 @@
     // PIAZZAMENTO ("the player cannot place the Trooper..."). Agisce prima:
     // il punto non e` ammesso e se ne sceglie un altro, nessuna skill fallita
     // da convertire — percio` VIETA. Trincerarsi invece scrive "instead
-    // performs an Idle" (righe 7415-7431) — percio` IDLE.
+    // performs an Idle" (Sapper, righe 9841-9847) — percio` IDLE.
     M.domandeIngressoInCampo = function () {
         const R = catalogo('INGRESSO_IN_CAMPO') || {};
         return [{ id: 'puntoValido', testo: R.domanda || null,
                   blocca: true, rispostaBloccante: false, seBloccata: 'VIETA',
                   seNo: 'Il punto scelto non \u00e8 valido: scegline un altro prima di tirare.' }];
+    };
+
+    // DROP BEAR LANCIATO IN MODO BS (Fuoco Speculativo): il punto d'impatto
+    // rispetta la restrizione di piazzamento (wiki "Drop Bears", N5.3 — chat
+    // REGOLE, 28 settembre). Due domande, la seconda SOLO se la prima e` si`:
+    //   c'e` un Marker CAMO nell'area d'innesco?  no -> libero
+    //   si` -> c'e` anche un nemico valido scoperto?  no -> VIETA (altro punto)
+    // 🔴 Fino al 5 ottobre il modulo le faceva con due window.confirm: due
+    // esiti, e chiudere la finestra valeva "no" — cioe` "nessun Marker",
+    // quindi il lancio partiva. Ora passano da M.valutaDomande: NON RISPOSTO
+    // non esegue.
+    M.domandeDropBearBS = function (risposte) {
+        const D = catalogo('REGOLE_DEPLOYABLE') || {};
+        const dom = D.domande || {};
+        const base = M.domandeDeployable('PIAZZAMENTO')[0];
+        const out = [{ id: 'markerNellArea', testo: base.testo,
+                       // da sola non blocca: decide la seconda
+                       blocca: false, rispostaBloccante: true, seSi: null }];
+        if (M.rispostaDomanda((risposte || {}).markerNellArea) === M.RISPOSTA.SI) {
+            out.push({ id: 'nemicoScopertoNellArea', testo: dom.dropBearNemicoScoperto || null,
+                       blocca: true, rispostaBloccante: false, seBloccata: 'VIETA',
+                       seNo: base.seSi });
+        }
+        return out;
     };
 
     M.domandeDeployable = function (fase) {
@@ -9199,7 +9636,7 @@
     // grande almeno quanto la Silhouette dello Stato — l'app non lo puo`
     // verificare: non ha la mappa. Quindi lo chiede, e se la risposta e` no
     // la truppa esegue un IDLE, che e` cio` che dice il regolamento — non
-    // "l'ordine non si esegue". (PARTE_1, righe 7415-7431)
+    // "l'ordine non si esegue". (Sapper, righe 9841-9847)
     // ==================================================================
 
     M.puoTrincerarsi = function (unita) {
@@ -9474,12 +9911,50 @@
             voci: [{ fonte: 'base', valore: base, motivo: `PH di ${M.nomeUnita(unita)}: ${base}` }],
             divieti: R.divieti || [],
             domanda: R.domanda || null,
+            // Riga 8059: in quest'Ordine niente Copertura Parziale. Lo decide
+            // il catalogo per azione, non un campo che il modulo deve
+            // ricordarsi di scrivere.
+            coperturaNegata: M.coperturaNegataDaAzioni([M.AZIONI.INGRESSO]),
             // La stessa domanda nella forma del meccanismo unico.
             domande: M.domandeIngressoInCampo(),
             // Cosa succede fallendo: si dice PRIMA di tirare.
             seFallisce: R.seFallisce || null,
             note: note.filter(Boolean), avvisi: avvisi
         };
+    };
+
+    // CHI ENTRA CON L'INGRESSO IN CAMPO VIENE PIAZZATO SUL TAVOLO, e prima
+    // del tiro: "After placing the Trooper on their landing spot... the
+    // player performs a PH Roll" (riga 8054); poi il Reattivo dichiara gli
+    // ARO (righe 8055 e 8058).
+    // 🔴 Fino al 5 ottobre l'unita` restava in Riserva (deployState
+    // 'RESERVE'): per il motore non era sul tavolo, la vista pubblica non la
+    // conteneva, e un ARO contro di lei si risolveva contro un'unita`
+    // sconosciuta — Tiro Salvezza con ARM 0. (Trovato dalla revisione
+    // indipendente del 6 ottobre, dopo aver fatto partire l'allarme.)
+    // Entra come MODELLO. Chi puo` schierarsi come Marker o Decoy e supera
+    // il tiro lo imposta dall'editor: l'app non sa com'e` andato il dado.
+    //   -> { cambiata, unitaAggiornata, mutazioni[], note[] }
+    M.entraInCampo = function (unita) {
+        unita = unita || {};
+        const st = unita.states || {};
+        const deploy = String(unita.deployState || 'NORMAL').toUpperCase();
+        const fuori = deploy === 'RESERVE' || deploy === 'AD' || !!st.reserve;
+        if (!fuori) return { cambiata: false, unitaAggiornata: unita, mutazioni: [], note: [] };
+        const u = Object.assign({}, unita);
+        const mutazioni = [{ campo: 'deployState', da: deploy, a: 'NORMAL' }];
+        u.deployState = 'NORMAL';
+        if (Object.prototype.hasOwnProperty.call(unita, 'state') && /^(RESERVE|AD)$/i.test(String(unita.state || ''))) {
+            mutazioni.push({ campo: 'state', da: unita.state, a: 'ACTIVE' });
+            u.state = 'ACTIVE';
+        }
+        u.states = Object.assign({}, st, { reserve: false, hidden: false });
+        mutazioni.push({ campo: 'states.reserve', da: !!st.reserve, a: false });
+        const R = catalogo('INGRESSO_IN_CAMPO') || {};
+        return { cambiata: true, unitaAggiornata: u, mutazioni: mutazioni,
+                 note: [`${M.nomeUnita(unita)} entra in campo: si piazza il Modello sul punto scelto PRIMA del tiro (riga 8054).`,
+                        (R.seFallisce && R.seFallisce.perdeMarker) ? 'Se il tiro RIESCE e la truppa pu\u00f2 entrare come Marker o Decoy, impostalo dall\'editor. Se fallisce: ' + R.seFallisce.perdeMarker : null
+                 ].filter(Boolean) };
     };
 
     // La Speedball Chart: da un tiro all'oggetto.
@@ -9552,6 +10027,42 @@
         if (s.indexOf('NO COVER') >= 0) return Object.assign({ skill: 'No Cover' }, C['No Cover']);
         if (s.indexOf('LIMITED COVER') >= 0) return Object.assign({ skill: 'Limited Cover' }, C['Limited Cover']);
         return null;
+    };
+
+
+    // COPERTURA PARZIALE NEGATA DA UN'ABILITA` DICHIARATA NELL'ORDINE
+    // Salto (righe 2762-2763), Combat Jump (8059), Parachutist (9474-9475):
+    // chi le dichiara non beneficia della Copertura Parziale per tutto
+    // l'Ordine — ne` il -3 al tiro nemico ne` il +3 al Tiro Salvezza.
+    // 🔴 Fino al 5 ottobre era solo un testo: l'Ingresso in Campo scriveva
+    // regole.senzaCoperturaParziale nella busta e NESSUNO lo leggeva; per il
+    // Salto non c'era nemmeno quello. MISURATO: il reattivo che dichiarava
+    // il bersaglio in copertura tirava a -3 e l'attivo si salvava a +3.
+    // Le azioni stanno nel catalogo (COPERTURA_NEGATA_DA_AZIONE): qui non
+    // c'e` un elenco.
+    //   azioni: una o piu` Abilita` dichiarate nell'Ordine
+    //   -> { negata, azione, nome, riga, motivo, note[] }
+    //      note: i divieti che l'app NON applica (Arrampicarsi), da mostrare
+    M.coperturaNegataDaAzioni = function (azioni) {
+        const T = catalogo('COPERTURA_NEGATA_DA_AZIONE') || {};
+        const viste = [];
+        (Array.isArray(azioni) ? azioni : [azioni]).forEach(function (a) {
+            const k = M.azioneCanonica(a) || String(a || '').toUpperCase().trim();
+            if (k && viste.indexOf(k) < 0) viste.push(k);
+        });
+        const esito = { negata: false, azione: null, nome: null, riga: null, motivo: null, note: [] };
+        viste.forEach(function (k) {
+            const v = T[k];
+            if (!v) return;
+            if (v.durata === 'ORDINE') {
+                if (esito.negata) return;
+                esito.negata = true; esito.azione = k; esito.nome = v.nome; esito.riga = v.riga;
+                esito.motivo = `${v.nome} dichiarato in quest'Ordine: la truppa NON beneficia della Copertura Parziale, n\u00e9 il -3 al tiro nemico n\u00e9 il +3 al Tiro Salvezza (riga ${v.riga}).`;
+            } else if (v.nota) {
+                esito.note.push(v.nota);
+            }
+        });
+        return esito;
     };
 
 
@@ -9649,7 +10160,9 @@
         // lascerebbe l'unita` per meta` Marker.
         if (c.rivelata) {
             u.deployState = 'NORMAL';
-            u.state = (u.state === 'CAMO' || u.state === 'IMP') ? 'ACTIVE' : u.state;
+            // 'IMP_2' e 'CAMO_...' compresi: col confronto esatto un IMP-2
+            // rivelato restava con state 'IMP_2'.
+            u.state = /^(CAMO|IMP)/i.test(String(u.state || '')) ? 'ACTIVE' : u.state;
             u.states = Object.assign({}, u.states || {}, { camo: false, impersonation: false });
             mutazioni.push({ campo: 'deployState', da: unita.deployState || null, a: 'NORMAL' });
             mutazioni.push({ campo: 'states.camo', da: !!(unita.states && unita.states.camo), a: false });
@@ -9992,8 +10505,12 @@
         const eLunga = !!(senza && eLong(senza.tipo)) || !!(spec && eLong(spec.tipo));
 
         const skillMarker = /CAMOUFLAGE/.test(sk) ? 'CAMO' : (/IMPERSONATION/.test(sk) ? 'IMP' : null);
+        // 'IMP_1' e 'IMP_2' sono Impersonation quanto 'IMP': prima si
+        // confrontava con 'IMP' esatto, e il livello scritto dal roster
+        // faceva dipendere tutto da states.impersonation.
+        const eImpDeploy = deploy.indexOf('IMP') === 0 && st.impersonation !== false;
         const markerPrima = (deploy === 'CAMO' || st.camo) ? 'CAMO'
-                          : ((deploy === 'IMP' || st.impersonation) ? 'IMP' : null);
+                          : ((eImpDeploy || st.impersonation) ? 'IMP' : null);
         const prima = { deployState: deploy, marker: deploy === 'HIDDEN' ? null : markerPrima };
 
         let deployDopo = deploy, markerDopo = prima.marker;
@@ -10023,12 +10540,39 @@
                 if (skillMarker) fonti.push('riga 13921');
                 note.push('Hidden Deployment cancellato: si piazza il modello nella posizione annotata.');
             }
+        } else if (prima.marker && senza && senza.soloDaModello &&
+                   (senza.dichiarabileDaMarker || []).indexOf(prima.marker) < 0) {
+            // Un'Abilita` che un Marker non puo` dichiarare (oggi: Rientrare in
+            // CAMO) non e` una dichiarazione valida, quindi non cancella niente.
+            // Il campo sta nel catalogo (MOVIMENTO.senzaTiro). Trovato dal giro
+            // dalla schermata, 5 ottobre: il Marker veniva rivelato dal router
+            // e poi "rientrava".
+            note.push(`${senza.nome || az}: non dichiarabile da un Marker. Lo stato non cambia.`);
         } else if (prima.marker === 'CAMO') {
             const cade = conTiro || (eLunga && !eCauto);
             if (cade) {
                 deployDopo = 'NORMAL'; markerDopo = null;
                 fonti.push('righe 13634-13635');
                 note.push('Stato CAMO cancellato: si sostituisce il Marker col modello.');
+                // Cybermask da Marker CAMO: cosa si perde e cosa si guadagna.
+                if (az === M.AZIONI.CYBERMASK) {
+                    const CY = catalogo('CYBERMASK') || {};
+                    if (CY.daCamo) note.push(CY.daCamo);
+                }
+            }
+        } else if (prima.marker === 'IMP') {
+            // 🔴 L'IMPERSONATION NON CADEVA MAI. Questo ramo mancava: MISURATO
+            // il 6 ottobre, un Marker IMP che dichiarava un Attacco BS, uno
+            // Scoprire o un'Arrampicata restava Marker.
+            // Righe 14238-14239: cade se dichiara "an Attack or any Skill
+            // that requires a Roll", o una Long Skill diversa dal Movimento
+            // Cauto. A differenza del CAMO la lista NON nomina il Look Out!.
+            const conTiroImp = !!(spec && spec.attributo);
+            const cade = conTiroImp || (eLunga && !eCauto);
+            if (cade) {
+                deployDopo = 'NORMAL'; markerDopo = null;
+                fonti.push('righe 14238-14239');
+                note.push('Stato Impersonation cancellato: si sostituisce il Marker col modello.');
             }
         }
 
@@ -10037,7 +10581,21 @@
         // Il campo singolare `state` (vecchio) va tenuto coerente: lasciarlo a
         // "HIDDEN" mentre deployState dice altro e` un campo che mente, e il
         // difetto unit.state contro unit.states e` nato cosi`. (Chat TEST.)
-        if (Object.prototype.hasOwnProperty.call(unita, 'state')) u.state = deployDopo;
+        //
+        // 🔴 MA SOLO SE `state` CONTIENE UN VALORE DI SCHIERAMENTO. Fino al 5
+        // ottobre lo si sovrascriveva sempre con deployDopo: MISURATO, un
+        // Morto (state 'DEAD') o un Incosciente passati di qui tornavano con
+        // state 'NORMAL', e M.statoBersaglio non li vedeva piu` morti. Oggi
+        // nessun chiamante passa un Morto, ma l'oggetto restituito mentiva.
+        // NOTA: rivelando, qui `state` diventa 'NORMAL' (segue deployState,
+        // come fissa test_marker_mimetico); M.applicaIdle e l'editor degli
+        // stati scrivono invece 'ACTIVE'. Sono due valori per "Modello sul
+        // tavolo". Nessuno oggi confronta `state` con uno dei due, quindi non
+        // produce errori; unificarli vuol dire cambiare quel banco. Lasciato.
+        if (Object.prototype.hasOwnProperty.call(unita, 'state')) {
+            const statoPrima = String(unita.state == null ? '' : unita.state).toUpperCase();
+            if (statoPrima === '' || /^(CAMO|IMP|HIDDEN|NORMAL|ACTIVE)/.test(statoPrima)) u.state = deployDopo;
+        }
         u.states = Object.assign({}, st, { camo: markerDopo === 'CAMO', impersonation: markerDopo === 'IMP' });
         if (deploy === 'HIDDEN') u.states.hidden = false;
 
@@ -10101,18 +10659,21 @@
     // ==================================================================
     // PARTE 51-BIS: RIENTRARE IN CAMO (blocco ORD, punto 2)
     // ------------------------------------------------------------------
-    // REGOLA (riga 13597): nel Turno Attivo si torna in Stato CAMO solo
+    // REGOLA (REGOLE_N5_v5_1_1.txt riga 13603): nel Turno Attivo si torna in Stato CAMO solo
     // spendendo una Long Skill, fuori dalla LoF di Marker e Truppe nemiche.
     //  - Camouflage (1 Use): serve l'uso disponibile, e lo si consuma
     //    (FAQ F07) — M.puoEntrareInCamo / M.consumaCamo, gia` esistenti.
     //  - Nemici Incoscienti o Disconnessi non lo impediscono (FAQ F08): sta
     //    nel testo della domanda, perche` la LoF la vede solo il giocatore.
-    //  - Chi rientra NON conta come lo stesso Marker (riga 13605).
+    //  - Chi rientra NON conta come lo stesso Marker (righe 13613-13614).
     //
-    // LETTURA (chat MOTORE, 5 ottobre — da confermare con REGOLE): in LoF di
-    // un nemico l'effetto e` VIETA, non IDLE. La riga sta sotto ACTIVATION
-    // dello Stato, non fra i Requisiti di un'Abilita`. Il valore sta nel
-    // catalogo (seInLoFEffetto): se la lettura cambia, cambia li`.
+    // REGOLA (chat REGOLE, 6 ottobre): in LoF di un nemico l'effetto e`
+    // IDLE, Ordine speso. La riga 13603 e` un Requisito, e un Requisito che
+    // manca si risolve SEMPRE con un Idle, alla Risoluzione (righe
+    // 1240-1247; esempio righe 14298-14316). La lettura "VIETA" del 5
+    // ottobre e` stata ritirata. VIETA resta solo per i vincoli di
+    // piazzamento (Combat Jump). Il valore sta nel catalogo
+    // (seInLoFEffetto).
     //
     // 🔴 LIMITE DICHIARATO. "Chi ha fallito lo Scoprire non ritenta sullo
     // stesso Marker fino al prossimo Turno" oggi NON e` modellato: e` solo
@@ -10125,12 +10686,27 @@
     // sostituisce (come applicaIdle e creaDeployable). La rivelazione tocca
     // tre campi; il rientro pure: deployState, state, states.camo.
     // ==================================================================
-    M.domandeRientroCamo = function () {
+    // UNA domanda per tutti (la LoF), e una SECONDA solo per chi ha Frenzy:
+    // se e` gia` diventato Impetuoso non puo` stare in CAMO (riga 13639), e
+    // l'app non sa se ha gia` ferito qualcuno. Senza `unita` torna solo la
+    // prima. Chi mostra le domande le mostra TUTTE, in ordine.
+    //
+    // La stessa condizione sulla LoF vale per Holoecho (13943), HoloMask
+    // (14038) e Impersonation (14202); NON per il Foxhole (13861). Se un
+    // giorno questa domanda si riusa, si riusa per tre e si salta per uno
+    // (chat REGOLE, 5 ottobre).
+    M.domandeRientroCamo = function (unita) {
         const C = catalogo('RIENTRO_CAMO') || {};
-        return [{ id: 'fuoriDallaLoF', testo: C.domanda || null,
-                  blocca: true, rispostaBloccante: false,
-                  seBloccata: (C.seInLoFEffetto === 'IDLE') ? 'IDLE' : 'VIETA',
-                  seNo: C.seInLoF || null }];
+        const d = [{ id: 'fuoriDallaLoF', testo: C.domanda || null,
+                     blocca: true, rispostaBloccante: false,
+                     seBloccata: (C.seInLoFEffetto === 'IDLE') ? 'IDLE' : 'VIETA',
+                     seNo: C.seInLoF || null }];
+        if (unita && /FRENZY/.test(skillsDi(unita))) {
+            d.push({ id: 'frenzyAttivo', testo: C.domandaFrenzy || null,
+                     blocca: true, rispostaBloccante: true, seBloccata: 'VIETA',
+                     seSi: C.seFrenzyAttivo || null });
+        }
+        return d;
     };
 
     // Puo` DICHIARARLO? Cio` che il motore sa senza chiedere.
@@ -10142,23 +10718,31 @@
         const st = M.statoBersaglio(unita || {});
         const blocchi = [], avvisi = [];
 
-        if (ctx.inAro) blocchi.push('Solo nel Turno Attivo: non \u00e8 un\'ARO (riga 13597).');
+        if (ctx.inAro) blocchi.push('Solo nel Turno Attivo: non \u00e8 un\'ARO (riga 13603).');
         if (!/CAMOUFLAGE/.test(sk)) blocchi.push(`Serve l'Abilit\u00e0 ${C.skillRichiesta || 'Camouflage'}.`);
         if (st.camo || st.imp) blocchi.push('\u00c8 gi\u00e0 in forma di Marker.');
         if (st.hidden) blocchi.push('\u00c8 in Schieramento Nascosto: non \u00e8 sul tavolo.');
         // 🔴 NON M.eNullo: qui si chiede "puo` agire", come in puoTrincerarsi.
         if (st.morto || st.incosciente || st.disconnesso) blocchi.push('Non puo` agire: Morto, Incosciente o Disconnesso.');
-        // Ingaggiato e Ritirata! cancellano gli stati Marker
-        // (M.cancellaStatiMarker): entrarci sarebbe uscirne subito.
-        if (st.engaged) blocchi.push('\u00c8 Ingaggiato: lo Stato CAMO verrebbe cancellato subito.');
-        if (st.retreat) blocchi.push('\u00c8 in Ritirata!: lo Stato CAMO verrebbe cancellato subito.');
+        // GLI STATI CHE VIETANO DI DICHIARARLA li sa il catalogo
+        // (STATI.azioniPermesse, lista chiusa), tramite la funzione generale
+        // M.azionePermessaDaStati: Ingaggiato, Ritirata!, Immobilizzato-A
+        // ("cannot declare any Skill or ARO, except Dodge", riga 14130) e
+        // Immobilizzato-B (riga 14176).
+        // 🔴 Fino alla 2026-10-05, ottava consegna, qui c'era una lista a
+        // mano con Ingaggiato e Ritirata! soltanto: un Immobilizzato poteva
+        // rientrare (misura della chat INTERFACCIA). La funzione generale
+        // c'era gia` e lo sapeva; nessuno la chiamava.
+        const daStati = M.azionePermessaDaStati(unita, M.AZIONI.RIENTRO_CAMO);
+        daStati.bloccanti.forEach(function (b) { blocchi.push(b.motivo); });
         // Camouflage (1 Use), FAQ F07.
         const uso = /CAMOUFLAGE/.test(sk) ? M.puoEntrareInCamo(unita) : { puo: true, unUso: false };
         if (!uso.puo && !(st.camo || st.imp)) blocchi.push(uso.motivo);
-        // Impetuoso: lo stato si cancella, ma "e` Impetuoso" il motore non lo
-        // sa con certezza (Frenzy lo diventa in partita). Si avvisa, non si
-        // blocca.
-        if (/IMPETUOUS|FRENZY/.test(sk)) avvisi.push(C.impetuoso || null);
+        // Impetuoso PER PROFILO: blocca (riga 13639, "is or becomes
+        // Impetuous"). Frenzy NON e` qui: non rende Impetuosi subito, ed e`
+        // una domanda (M.domandeRientroCamo). Fino al 5 ottobre tutti e due
+        // erano un avviso.
+        if (/IMPETUOUS/.test(sk)) blocchi.push((C.impetuoso || 'Impetuosa.') + ' (riga 13639)');
 
         return {
             puo: blocchi.length === 0,
@@ -10166,16 +10750,17 @@
             motivo: blocchi.length ? blocchi[0] : null,
             tipo: C.tipo || 'LONG_SKILL',
             unUso: !!uso.unUso,
-            domande: M.domandeRientroCamo(),
+            domande: M.domandeRientroCamo(unita),
             avvisi: avvisi.filter(Boolean)
         };
     };
 
-    // L'esito, date le risposte del giocatore ({ fuoriDallaLoF: true|false }).
+    // L'esito, date le risposte del giocatore: { fuoriDallaLoF: true|false },
+    // e per chi ha Frenzy anche { frenzyAttivo: true|false }.
     //   esito: 'NON_DISPONIBILE'  non puo` dichiararlo (blocchi)
     //          'NON_RISPOSTO'     manca la risposta: NON esegue
-    //          'VIETATO'          in LoF: non si dichiara, Ordine non speso
-    //          'IDLE'             solo se il catalogo dira` seInLoFEffetto IDLE
+    //          'IDLE'             in LoF: Requisito fallito, Idle, Ordine SPESO
+    //          'VIETATO'          Frenzy attivo: non si dichiara (lettura)
     //          'RIENTRA'          entra in Stato CAMO
     M.rientraInCamo = function (unita, risposte, ctx) {
         const C = catalogo('RIENTRO_CAMO') || {};
@@ -10187,8 +10772,8 @@
         }
         const dom = M.valutaDomande(pre.domande, risposte || {});
         if (dom.esito === 'NON_RISPOSTO') {
-            return Object.assign(base, { esito: 'NON_RISPOSTO', incompleto: true,
-                                         motivo: 'Manca la risposta sulla Linea di Tiro dei nemici.' });
+            return Object.assign(base, { esito: 'NON_RISPOSTO', incompleto: true, mancanti: dom.mancanti,
+                                         motivo: dom.mancanti.length > 1 ? 'Mancano risposte.' : 'Manca una risposta.' });
         }
         if (dom.esito === 'BLOCCATA' && dom.effetto === 'IDLE') {
             const idle = M.applicaIdle(unita, null, { azione: M.AZIONI.RIENTRO_CAMO });
@@ -10220,6 +10805,7 @@
         const note = [
             `${M.nomeUnita(unita)} rientra in Stato CAMO: si sostituisce il Modello col Marker${mim ? ` (Mimetism ${mim})` : ''}.`,
             C.nuovoMarker || null,
+            C.seNonSiCompleta || null,
             pre.unUso ? 'Camouflage (1 Use): l\'uso \u00e8 consumato (FAQ F07).' : null,
             C.fireteam || null
         ].filter(Boolean);
@@ -10228,13 +10814,154 @@
             esito: 'RIENTRA', rientra: true, ordineSpeso: true, isLongSkill: true,
             generaAro: true,
             stato: 'camo', marker: 'CAMO', modMarker: mim,
-            // riga 13605: e` un Marker NUOVO. Oggi e` un'informazione, non una
+            // righe 13613-13614: e` un Marker NUOVO. Oggi e` un'informazione, non una
             // memoria azzerata (vedi il LIMITE in testa alla PARTE 51-BIS).
             nuovoMarker: true,
             unUsoConsumato: uso.mutazioni.length > 0,
             unitaAggiornata: u, mutazioni: mutazioni,
             note: note, avvisi: pre.avvisi,
-            fonti: ['riga 13597', 'riga 13605'].concat(pre.unUso ? ['FAQ F07'] : [])
+            fonti: ['riga 13603', 'righe 13613-13614'].concat(pre.unUso ? ['FAQ F07'] : [])
+        };
+    };
+
+
+    // ==================================================================
+    // PARTE 51-TER: CYBERMASK (blocco ORD, punto 3)
+    // ------------------------------------------------------------------
+    // REGOLA (righe 5150-5171; dati in CATALOGO_N5.CYBERMASK): Long Skill,
+    // NFB, senza tiro. REQUISITO: fuori dalla LoF di Modelli e Marker
+    // nemici. EFFETTO: l'Hacker entra in IMP-2.
+    //
+    // 🔴 DIVERSO DAL RIENTRO IN CAMO in un punto solo, che cambia l'esito:
+    // qui la LoF e` un REQUISITO di un'Abilita` dichiarata (riga 5155), e un
+    // requisito mancante si risolve con un IDLE — Ordine speso (righe
+    // 1240-1247 e 7457-7459). CONFERMATO dalla chat REGOLE il 6 ottobre, e
+    // vale UGUALE per il rientro in CAMO. Il valore sta nel catalogo
+    // (CYBERMASK.seInLoFEffetto).
+    //
+    // NFB: non c'e` niente da scrivere sull'unita`. Finche` e` in
+    // Impersonation, M.nfbInUso lo dice e modAttacco non applica Mimetism
+    // ne` Albedo. Quando il Marker cade, tornano da soli.
+    // Stesso schema del rientro: il motore calcola l'unita` AGGIORNATA,
+    // l'app la sostituisce.
+    // ==================================================================
+    M.domandeCybermask = function (unita) {
+        const C = catalogo('CYBERMASK') || {};
+        const d = [{ id: 'fuoriDallaLoF', testo: C.domanda || null,
+                     blocca: true, rispostaBloccante: false,
+                     seBloccata: (C.seInLoFEffetto === 'VIETA') ? 'VIETA' : 'IDLE',
+                     seNo: C.seInLoF || null }];
+        if (unita && /FRENZY/.test(skillsDi(unita))) {
+            d.push({ id: 'frenzyAttivo', testo: C.domandaFrenzy || null,
+                     blocca: true, rispostaBloccante: true, seBloccata: 'VIETA',
+                     seSi: C.seFrenzyAttivo || null });
+        }
+        return d;
+    };
+
+    // Puo` DICHIARARLO? Cio` che il motore sa senza chiedere.
+    M.puoUsareCybermask = function (unita, ctx) {
+        ctx = ctx || {};
+        const C = catalogo('CYBERMASK') || {};
+        const sk = skillsDi(unita);
+        const st = M.statoBersaglio(unita || {});
+        const blocchi = [];
+
+        if (ctx.inAro) blocchi.push('Solo nel Turno Attivo: il Cybermask è una Long Skill, non un\'ARO (riga 5151).');
+        if (!M.haProgramma(unita, 'CYBERMASK')) blocchi.push('Serve il programma Cybermask: Hacking Device Plus o Killer Hacking Device.');
+        // Da Marker CAMO SI PUO` (chat REGOLE, 6 ottobre; catalogo
+        // CYBERMASK.daCamo): il CAMO cade alla dichiarazione. Da IMP sarebbe
+        // lecito e inutile: resta bloccato per comodita`.
+        if (st.imp) blocchi.push('È già in Impersonation.');
+        if (st.hidden) blocchi.push('È in Schieramento Nascosto: non è sul tavolo.');
+        // 🔴 NON M.eNullo: qui si chiede "puo` agire".
+        if (st.morto || st.incosciente || st.disconnesso) blocchi.push('Non puo` agire: Morto, Incosciente o Disconnesso.');
+        // Gli stati che vietano di dichiararlo li sa il catalogo: Isolato
+        // (programmi disabilitati, righe 14412-14414), Immobilizzato-A e -B,
+        // Ingaggiato, Ritirata!. NON lo Stordito: vieta gli Attacchi (riga
+        // 14614), e il Cybermask non e` un Attacco.
+        M.azionePermessaDaStati(unita, M.AZIONI.CYBERMASK).bloccanti.forEach(function (b) { blocchi.push(b.motivo); });
+        // Impetuoso per profilo (riga 14242).
+        if (/IMPETUOUS/.test(sk)) blocchi.push((C.impetuoso || 'Impetuosa.') + ' (riga 14242)');
+
+        return {
+            puo: blocchi.length === 0,
+            blocchi: blocchi,
+            motivo: blocchi.length ? blocchi[0] : null,
+            tipo: C.tipo || 'LONG_SKILL',
+            domande: M.domandeCybermask(unita),
+            daCamo: !!st.camo,
+            avvisi: st.camo ? [C.daCamo].filter(Boolean) : []
+        };
+    };
+
+    // L'esito, date le risposte ({ fuoriDallaLoF }, e { frenzyAttivo } per
+    // chi ha Frenzy).
+    //   esito: 'NON_DISPONIBILE'  non puo` dichiararlo (blocchi)
+    //          'NON_RISPOSTO'     manca una risposta: NON esegue
+    //          'IDLE'             requisito fallito: Idle, Ordine SPESO
+    //          'VIETATO'          Frenzy attivo: non si dichiara, Ordine non speso
+    //          'ENTRA'            entra in IMP-2
+    M.attivaCybermask = function (unita, risposte, ctx) {
+        const C = catalogo('CYBERMASK') || {};
+        const pre = M.puoUsareCybermask(unita, ctx);
+        const base = { entra: false, ordineSpeso: false, generaAro: false,
+                       unitaAggiornata: unita, mutazioni: [], note: [], avvisi: pre.avvisi };
+        if (!pre.puo) {
+            return Object.assign(base, { esito: 'NON_DISPONIBILE', motivo: pre.motivo, blocchi: pre.blocchi });
+        }
+        const dom = M.valutaDomande(pre.domande, risposte || {});
+        if (dom.esito === 'NON_RISPOSTO') {
+            return Object.assign(base, { esito: 'NON_RISPOSTO', incompleto: true, mancanti: dom.mancanti,
+                                         motivo: dom.mancanti.length > 1 ? 'Mancano risposte.' : 'Manca una risposta.' });
+        }
+        if (dom.esito === 'BLOCCATA' && dom.effetto === 'IDLE') {
+            // Requisito fallito (righe 5155-5156 e 7457-7459): Idle, con le sue
+            // conseguenze. L'unita` qui e` un Modello: nessun Marker da rivelare.
+            const idle = M.applicaIdle(unita, null, { azione: M.AZIONI.CYBERMASK });
+            const regIdle = M.regoleIdle({ daRequisitoFallito: true });
+            return Object.assign(base, { esito: 'IDLE', idle: true, ordineSpeso: true, generaAro: regIdle.generaAro,
+                                         motivo: dom.motivo, unitaAggiornata: idle.unitaAggiornata,
+                                         mutazioni: idle.mutazioni,
+                                         note: ['L\'Ordine è comunque speso.'].concat(regIdle.note || []).concat(idle.note || []) });
+        }
+        if (dom.esito === 'BLOCCATA') {
+            return Object.assign(base, { esito: 'VIETATO', motivo: dom.motivo });
+        }
+
+        // Entra in IMP-2: i tre campi dello stato, come per ogni Marker.
+        const entra = C.entraIn || 'IMP_2';
+        const u = Object.assign({}, unita);
+        const mutazioni = [];
+        const deployPrima = String(unita.deployState || 'NORMAL').toUpperCase();
+        u.deployState = entra;
+        mutazioni.push({ campo: 'deployState', da: deployPrima, a: entra });
+        if (Object.prototype.hasOwnProperty.call(unita, 'state')) {
+            mutazioni.push({ campo: 'state', da: unita.state, a: entra });
+            u.state = entra;
+        }
+        const stPrima = unita.states || {};
+        u.states = Object.assign({}, stPrima, { impersonation: true, camo: false });
+        mutazioni.push({ campo: 'states.impersonation', da: !!stPrima.impersonation, a: true });
+
+        const I = catalogo('IMPERSONATION') || {};
+        const haNfb = M.valoreMimetismo(unita) < 0 || M.valoreAlbedo(unita) < 0;
+        const note = [
+            `${M.nomeUnita(unita)} attiva il Cybermask: ${C.effetto || 'si sostituisce il Modello con un Marker IMP-2.'}`,
+            C.durata || null,
+            haNfb ? (I.nfb || null) : null,
+            C.seNonSiCompleta || null,
+            C.fireteam || null
+        ].filter(Boolean);
+
+        return {
+            esito: 'ENTRA', entra: true, ordineSpeso: true, isLongSkill: true,
+            generaAro: true,
+            stato: 'impersonation', marker: 'IMP', impLivello: M.livelloImpersonation(u),
+            nuovoMarker: true,
+            unitaAggiornata: u, mutazioni: mutazioni,
+            note: note, avvisi: pre.avvisi,
+            fonti: ['righe 5150-5171']
         };
     };
 
@@ -10675,8 +11402,11 @@
     // NFB: le voci con l'etichetta presenti in un profilo. Due o piu` sono
     // incompatibili fra loro (righe 6677-6679): oggi nessun profilo dei nostri
     // database ne combina due, ma il giorno che succede il motore lo sa dire.
-    // Due casi durano nel tempo (righe 5167-5170 e 5345-5347): l'Hacker in
-    // IMP-2 e la Sagoma del White Noise sul tavolo — quelli li dice il tavolo.
+    // Due casi durano nel tempo: l'Hacker in IMP-2 (righe 5167-5171), che dal
+    // 6 ottobre e` MODELLATO — M.nfbInUso lo deriva dallo stato e modAttacco
+    // non applica Mimetism ne` Albedo — e la Sagoma del White Noise sul
+    // tavolo (righe 5345-5347), che resta al tavolo: l'app non sa se la
+    // Sagoma e` ancora li`.
     M.conflittiNFB = function (unita) {
         const testo = skillsDi(unita);
         const trovate = [];
@@ -10714,6 +11444,14 @@
             // l'avversario deve vedere l'attacco.
             azione: ctx.azioneMostrata || M.azioneDaRisolvere(actionId, ctx.azioneSeconda) || actionId,
             azionePrimaMeta: actionId,
+            // La Copertura Parziale dell'attivo in quest'Ordine: null se vale
+            // come sempre, altrimenti { azione, nome, riga, motivo }. Chi
+            // disegna la schermata ARO lo legge qui invece di rifare il
+            // conto. Il calcolo la nega comunque (M.risolviPayload).
+            coperturaNegata: (function () {
+                const c = M.coperturaNegataDaAzioni([actionId, ctx.azioneSeconda]);
+                return c.negata ? { azione: c.azione, nome: c.nome, riga: c.riga, motivo: c.motivo } : null;
+            })(),
             bersagli: [],
             timestamp: Date.now()
         } };
