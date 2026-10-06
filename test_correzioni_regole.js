@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | test_correzioni_regole.js | proprieta`: chat TEST
+// @versione 2026-10-06.1 | test_correzioni_regole.js | proprieta`: chat TEST
 // Correzioni segnalate dalla chat REGOLE, giro del 20 settembre
 // node test_correzioni_regole.js
 global.window = global;
@@ -353,13 +353,43 @@ ok(sorpPerScontro.every(v => v === 0 || v === -3),
 
 console.log('\n=== ECM (Hacker -N): Automatico, SENZA etichetta Comms ===');
 // Non segue il Firewall: l Isolato non lo spegne, il Disconnesso sì.
+//
+// CAMBIATO IL 6 OTTOBRE (chat REGOLE): l ECM NON è un Firewall. Il numero
+// si chiede a M.valoreEcmHacking; M.valoreFirewall dà 0.
+// Questo blocco lo chiedeva a valoreFirewall. Tre prove cadevano — e DUE
+// passavano per il motivo sbagliato: "Disconnessa: 0" e "Incosciente: 0"
+// erano verdi perché quella funzione ormai dà 0 SEMPRE per un ECM, non
+// perché quegli stati spegnano l ECM. Due verdi che non guardavano niente:
+// è la stessa famiglia del banco che non può andare rosso.
 const ecmU = { alias: 'ECM', bts: 3, skills: 'ECM (Hacker -3)', states: {} };
-const ecmCon = st => M.valoreFirewall(Object.assign({}, ecmU, { states: st }));
-ok(ecmCon({}) === -3, 'sana: -3');
+const conStato = st => Object.assign({}, ecmU, { states: st });
+const ecmCon = st => M.valoreEcmHacking(conStato(st));
+ok(ecmCon({}) === -3, `sana: -3 (ottenuto ${ecmCon({})})`);
 ok(ecmCon({ isolated: true }) === -3, 'Isolata: l hacker applica -3 — l ECM resta');
 ok(ecmCon({ disconnected: true }) === 0, 'Disconnessa: 0, perde gli Automatici');
 ok(ecmCon({ possessed: true }) === -3, 'Posseduta: -3, gli Automatici restano');
 ok(ecmCon({ unconscious: true }) === 0, 'Incosciente: 0, invariato');
+ok(ecmCon({ dead: true }) === 0, 'Morta: 0');
+
+// CONTROPROVA 1 — le due funzioni non sono due nomi della stessa cosa: lo
+// stesso profilo, chiesto come Firewall, dà 0 in OGNI stato.
+const comeFirewall = [{}, { isolated: true }, { possessed: true }, { disconnected: true }]
+    .map(st => M.valoreFirewall(conStato(st)));
+ok(comeFirewall.every(v => v === 0),
+   `lo stesso ECM come Firewall dà 0 in ogni stato (${comeFirewall.join(', ')})`);
+// CONTROPROVA 2 — e valoreEcmHacking non è una funzione che dice -3 a tutti:
+// senza la voce nelle skill dà 0. Senza questa, i -3 sopra non provano nulla.
+ok(M.valoreEcmHacking({ alias: 'X', bts: 3, skills: '', states: {} }) === 0,
+   'chi non ha l ECM: 0, non -3');
+// CONTROPROVA 3 — chi ha un Firewall vero fa lo specchio esatto.
+const conFw = { alias: 'F', bts: 3, skills: 'Hacker, Hacking Device, TinBot: Firewall (-6)', states: {} };
+ok(M.valoreFirewall(conFw) === -6 && M.valoreEcmHacking(conFw) === 0,
+   `chi ha il Firewall: firewall ${M.valoreFirewall(conFw)}, ecm ${M.valoreEcmHacking(conFw)}`);
+// CONTROPROVA 4 — la grafia nuova dei profili ("ECM (Hacking -3)") e quella
+// vecchia ("ECM (Hacker -3)") danno lo stesso numero: il motore legge
+// entrambe, e questo banco lo prova invece di fidarsi del commento.
+ok(M.valoreEcmHacking({ alias: 'N', bts: 3, skills: 'ECM (Hacking -3)', states: {} }) === -3,
+   'la grafia "ECM (Hacking -3)" dei profili di oggi dà lo stesso -3');
 
 console.log('\n=== SORPRESA N5.2: solo sui Faccia a Faccia dei bersagli ===');
 // Decisione di Paolo: vale la wiki. La 5.1.1 diceva "any Skill Roll" (10137).

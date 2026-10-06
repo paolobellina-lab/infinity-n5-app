@@ -1,4 +1,4 @@
-<!-- @versione 2026-10-06.1 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-10-06.5 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
 
 # PRONTUARIO ORDINI N5 — richiamo rapido durante la partita
 
@@ -25,7 +25,7 @@
 | 4 | Munizioni e Tiri Salvezza |
 | 5 | Skill che toccano il calcolo |
 | 6 | Equipaggiamento che tocca il calcolo |
-| 7 | Stati |
+| 7 | Stati · **7.1 che cosa si può dichiarare, stato per stato** |
 | 8 | Fireteam e Ordine Coordinato |
 | 9 | Cosa è cambiato in 5.2 e 5.3 |
 | 10 | Esito della verifica: cosa correggere |
@@ -102,6 +102,22 @@ Vale per ogni ordine, sempre.
 >
 > ⚠️ **Il livello non sta fra parentesi.** `Martial Arts L3`, `MSV L2`, `Fatality L1`:
 > il numero fa parte del **nome**. Fra parentesi c'è sempre un MOD, mai un livello.
+
+> 🔴 **I nomi del regolamento si contengono a vicenda: non si cercano per sottostringa.**
+> Non è una cautela astratta, sono coppie che esistono nel testo, e in ciascuna le due voci
+> hanno regole diverse:
+>
+> | Cercando | Si prende anche | Perché è un errore |
+> |---|---|---|
+> | `Hacker` | `ECM (Hacker −3)`, la forma dell'app ARMY | l'ECM non rende Hacker (§1.6): cambiava bersaglio lecito e Idle sul Ripetitore nemico. 35 profili sporcati, misurato da DATABASE il 6 ottobre |
+> | `Jump` | `Super-Jump` (10062), `Combat Jump` (8040), `Controlled Jump` (5130) | il Jump verifica i Requisiti **alla dichiarazione** (2748), gli altri tre no |
+> | `Climb` | `Climbing Plus` (7946) | il Climb è una Long Skill con Requisiti (2881), Climbing Plus è Automatic e cambia il Movimento |
+> | `Repeater` | `Deployable Repeater` (4795), e il Repeater dentro il FastPanda (10759) | le righe 4794–4798 le nominano separatamente |
+> | `Hacking Device` | `Killer`, `Plus`, `EVO` e le 17 forme con `UPGRADE:` | programmi diversi per tipo di Dispositivo (§1.6) |
+>
+> La forma giusta del confronto è sulla **voce esatta**: separare sulle virgole **fuori
+> parentesi** e confrontare per uguaglianza. Un nome reso per la lettura non è un campo:
+> se una decisione di regola dipende da come è scritta una stringa, la decisione è fragile.
 
 > 🧠 **Il malus fra parentesi non è tuo.** La Chimera ha `CC 24` e `CC Attack (-3)`:
 > tira sul **24 pieno**, è l'avversario ad applicare −3 al proprio CC nel Faccia a Faccia.
@@ -806,7 +822,31 @@ etichetta *Comms Attack* · attributo **WIP** · **nessuna LoF** · Burst del **
 - Un Hacking Device che contenga il programma (tabella sotto)
 - Bersaglio nella propria **Hacking Area** = ZdC propria + ZdC dei Ripetitori propri/alleati; se sei
   nella ZdC di un **Ripetitore nemico**, la tua Hacking Area comprende **tutti** i nemici sul tavolo
-- Bersaglio **in forma di Modello** e del tipo ammesso dal programma
+  (righe 4794–4799)
+- Bersaglio **in forma di Modello** (riga 4785: «Only Troopers in Model form may be targeted by
+  Hacking Programs») e del **tipo ammesso dal programma** — colonna TARGET della chart,
+  righe 5005–5045
+- 🔴 **La colonna TARGET è un Requisito**, non un filtro di comodo. Lo dice la skill
+  **Non-Hackable**, righe **9415–9417**: «cannot be the target of Hacking Attacks whose
+  **Requirements** require the target have a specific Unit Type (HI, REM, TAG, etc.)». Quindi
+  un Trinity su chi non è Hacker, o un Total Control su chi non è TAG, è un **requisito
+  fallito → Idle** (righe 1244–1247): niente tiro, Ordine o ARO speso, e un Marker si rivela
+  (righe 7462–7463). Non è "non dichiarabile": si dichiara e si risolve in Idle
+
+> 🔴 **Hackerare attraverso un Ripetitore NEMICO: le quattro cose da sapere.**
+>
+> | Cosa | Regola |
+> |---|---|
+> | Solo contro **Hacker** | Righe **4799–4802**: «if the Enemy Trooper is not a Hacker, any ARO or Hacking Program using the Enemy Repeater will **fail its Requirements, and instead an Idle** will be performed». Non è un divieto: è un requisito, quindi Ordine speso (righe 1244–1247) |
+> | Sempre **−3 Firewall** | Righe **4850–4852**: «may use it to apply Hacking Programs against any enemy Hacker, but applying **Firewall MODs (−3)**». Esempio alle righe 4941 e 4944–4945. Vale anche se il bersaglio non ha alcun Firewall sul profilo: la via del Ripetitore nemico **è** un Firewall (righe 4837–4839, che citano proprio «if attacking through an enemy Repeater») |
+> | **+3 alla salvezza** del bersaglio | Righe 4841–4842. Fisso a +3 qualunque sia il Firewall (righe 4771–4774) |
+> | Nessuna reazione contro il Ripetitore | Righe **4853–4854**: «There can be no reaction against a Repeater that is being used by an enemy Hacker, only against the Hacker, if possible» |
+>
+> **Due casi di HoloMask, entrambi Idle nella Risoluzione, entrambi rivelano qualcosa:**
+> - Righe **4818–4825** — il *bersaglio* è in HoloMask e sul profilo vero **non ha la skill Hacker**:
+>   Idle, e si scopre che non è un Hacker.
+> - Righe **4827–4833** — il *Ripetitore* è finto, cioè il nemico è in HoloMask e sul profilo vero
+>   **non ha un Repeater**: Idle, e si scopre che non ha il Ripetitore.
 **L'attivo può dichiararlo?** IMM-A ❌ · IMM-B ❌ · Stordito ❌ (vietati gli Attacchi) ·
 Retreat! ❌ · Engaged ❌ (in Engaged solo Berserk/CC/Schivata/Idle/Reset) ·
 Isolato ❌ (Programmi disabilitati) ·
@@ -835,8 +875,10 @@ Dust, Controlled Jump (supporto).
 |---|---|---|
 | Attack MOD del programma | vedi tabella | ✅ |
 | Bersaglio in Stato Bersagliato | **+3** | ✅ (vale anche per gli Attacchi Comms) |
-| Firewall del bersaglio (−3 / −6) | −3 / −6 | ✅ (uno solo: il migliore disponibile) |
-| ECM (Hacking −N) del bersaglio | −N | ✅ |
+| Firewall del bersaglio (−3 / −6) | −3 / −6 | ✅ **uno solo**, e lo **sceglie il giocatore del bersaglio**, non l'app: righe 4761–4763 «If a Trooper can benefit from more than one Firewall, **their player will decide which one to apply**». In pratica sceglierà il più alto, ma è una scelta, non un massimo automatico. Il Ripetitore nemico conta come Firewall (−3): col proprio `Firewall (−6)` il bersaglio ne ha due e ne applica uno |
+| ECM (Hacking −N) del bersaglio | −N | ✅ e **si somma** al Firewall: l'ECM è *Automatic Equipment* a sé (riga 10730), **non** un Firewall, quindi la regola «uno solo» non lo tocca. Notazione corretta: `ECM (Hacking −3)` — riga 6655 e wiki *Template:Modifiers-explained* (PDF 5.3, set 2026). Fra parentesi c'è il **tipo di attacco**, non una skill. Non dà alcun +3 alla salvezza |
+| `TinBot: Firewall (−X)` del bersaglio | −X | ✅ **ma è un Firewall**: righe 11162–11164, «the Enemy applies a −3 **Firewall** MOD». Quindi entra nella regola «uno solo» insieme al Firewall del profilo e a quello della via del Ripetitore nemico. Tre fonti, un solo MOD applicato |
+| `TinBot: Guided (−X)` del bersaglio | — | ❌ sull'Hacking: le righe 11166–11169 lo legano al **Guided Attack**, non all'Attacco Comms. E non è un Firewall: dà solo «a −6 MOD», senza il +3 alla salvezza |
 | Opponent MOD del programma avversario (Zero Pain) | −3 | ✅ solo nel F2F |
 | Surprise Attack proprio | −3/−6 al nemico | ✅ se venivi da Marker |
 | Stordito (attivo) | — | non puoi attaccare |
@@ -897,9 +939,13 @@ Firewall/ECM dell'attivo, Burst 1. Isolato ❌ (programmi disabilitati).
 
 
 ### G. Salvezza
-Su **BTS**, col PS del programma. **Firewall: +3** alla salvezza contro Attacchi Comms. **AP
-dimezza il BTS, DA no** (DA = due salvezze contro BTS pieno). Critico = +1 salvezza (con AP,
-ancora dimezzato). Immunity: non vale contro Comms, tranne Immunity (State).
+Su **BTS**, col PS del programma. **Firewall: +3** alla salvezza contro Attacchi Comms —
+**sempre +3**, mai scalato sul valore fra parentesi e mai sommato se i Firewall sono due
+(righe 4759–4763 e 4771–4774: «the MOD to the Saving Roll is always fixed (+3)»). Nel
+regolamento lo stesso effetto compare anche scritto al rovescio, come MOD al PS del programma
+(righe 4944–4945): è la stessa cosa, perché SV salvezza = BTS − PS. L'**ECM non dà nulla** alla
+salvezza. **AP dimezza il BTS, DA no** (DA = due salvezze contro BTS pieno). Critico = +1
+salvezza (con AP, ancora dimezzato). Immunity: non vale contro Comms, tranne Immunity (State).
 
 ### I. Controllo dell'app
 Voci attese: `programma`, `bersagliato +3`, `firewall`, `ecm`.
@@ -1295,7 +1341,11 @@ Nessun calcolo, salvo il caso CAMO nella Trigger Area → deve passare dall'Intu
 | Silhouette 3 | — |
 | Posizione fissa | nessun movimento; per muoversi o Schivare va cancellato all'inizio del movimento ⚠️ |
 
-Si cancella entrando in Prono o cancellandolo all'inizio di una skill con etichetta Movimento.
+Si cancella entrando in Prono (riga 13870) o annunciandolo **alla dichiarazione** di una skill
+con etichetta Movimento, o all'inizio di una Schivata, **solo in Turno Attivo** (righe
+13871–13874). Il Foxhole **non vieta nessuna dichiarazione**: vieta di *muoversi* (riga 13867).
+Da Trincerato si spara, si hackera e si schiva senza cancellare niente; per muoversi si
+cancella e si perde tutto quello che dava. Dettaglio completo e lista per stato in **§7.1**.
 
 ---
 
@@ -1399,6 +1449,16 @@ State»: «activate» è proprio il rientro in partita, non solo lo schieramento
 delle righe 14301–14305 fa rientrare un Modello con la skill `Impersonation` nel «**Impersonation-1**
 Marker State». Il **Cybermask** è un caso a parte: dà sempre IMP-2 (riga 5159), anche a chi
 non ha affatto la skill Impersonation.
+
+> ⚠️ **In partita, oggi, questa riga non serve.** Censimento DATABASE `2026-10-06.1`
+> (765 profili, `database_nomad.js 15cb7716.154798` + `database_panoceania.js 4a97dcf6.152854`,
+> controllato sulla fonte ARMY): **zero** truppe con `Impersonation` fra Nomadi e PanOceania,
+> in nessuna delle due notazioni. La skill esiste in `metadata.json` (id 249) ma non compare
+> su nessun profilo delle due fazioni. Il rientro in Impersonation vale come regola e serve
+> per leggere i Marker IMP-1/IMP-2 **nemici** (che il Cybermask può creare da entrambe le
+> parti), ma il primo profilo che lo userà arriverà con un'altra fazione (Combined Army,
+> Haqqislam/Hassassin, Tohaa, Druze). Il **Cybermask** invece è già in uso: è lui a mettere
+> IMP-2 sul tavolo, e non chiede la skill Impersonation.
 
 ### F. Chi non può dichiararle
 | Blocco | Fonte |
@@ -1647,8 +1707,8 @@ casella vale la scheda dell'ordine (§1).
 | **Stordito** | no | niente Attacchi; gli Automatici continuano a funzionare | −3 a ogni tiro tranne le salvezze | — | Dottore (VITA) / Ingegnere (STR), **e da solo** all'inizio della Fase Stati del Turno di Giocatore in cui è stato causato |
 | **Engaged** | no | solo Berserk, CC, Schivata, Idle, Reset | — | BS Attack nel CC: −6 per alleato coinvolto | uscire dal contatto (Schivata riuscita) |
 | **Fuoco di Soppressione** | no | ARO solo BS in SF Mode (B3) | — | −3 nei F2F entro 24" | vedi 1.10 |
-| **Ritirata!** | **no** | solo Basic Short Skill, Cauto, Schivata, Reset | — | — | inizio turno, Command Token |
-| **Foxhole** | no | posizione fissa | — | Copertura 360°, Mimetismo −3 | Prono, o cancellato all'inizio di un movimento |
+| **Ritirata!** | **no** | solo Basic Short Skill, Cauto, Schivata, Reset → **niente Salto, Arrampicarsi, BS Attack** (§7.1) | — | — | inizio turno, Command Token |
+| **Foxhole** | no | **tutto**, tranne muoversi; per muoversi si cancella (§7.1) | — | Copertura 360°, Mimetismo −3 | Prono, o cancellato all'inizio di un movimento |
 | **Disconnesso** | **sì** | niente (Periferica) | — | Automatici spenti | ritorno del Controller, Ingegnere, Coerenza |
 | **Posseduto** | **sì** | agisce per l'avversario | — | Automatici **attivi** | Command Token, Total Control del proprietario |
 | **Sepsitorizzato** | **sì** | agisce per l'avversario | — | Automatici attivi | — |
@@ -1658,6 +1718,163 @@ casella vale la scheda dell'ordine (§1).
 > **"Null"** (riga 14910) significa soltanto: niente Ordini né Punti Vittoria. Posseduto e
 > Sepsitorizzato sono Null ma **agiscono**. Nel motore: `M.eNullo` per le regole che dicono
 > "Null State"; la lista "può agire" per ARO e Foxhole.
+
+## 7.1 Che cosa si può dichiarare, stato per stato
+
+Le liste chiuse degli stati nominano **categorie** (Basic Short Skill, Long Skill, ARO), non
+nomi di abilità. Quindi prima serve la classificazione, e il regolamento ne ha una ufficiale:
+la **Orders and AROs Reference Chart**, righe **16619–16661**. È la tabella da cui partire
+ogni volta, perché smentisce tre cose che "sembrano" vere.
+
+**Le Basic Short Skill sono TRE, e sono queste** (righe 16620–16624):
+
+| Basic Short Skill | Riga |
+|---|---|
+| **Discover** (Scoprire) | 16622 |
+| **Idle** | 16623 |
+| **Move** (Movimento) | 16624 |
+
+Tutto il resto è Short Skill, Long Skill o ARO. Le tre sorprese che contano:
+
+- **Movimento Cauto è una LONG SKILL** (riga 16624, p.32). Non è una Basic Short Skill.
+- **Salto e Arrampicarsi sono LONG SKILL** (righe 16631 e 16627). Non sono Movimenti brevi.
+- **Schivata e Reset sono SHORT SKILL** (righe 16646 e 16655), non Basic Short.
+
+E due righe generali che si applicano sopra ogni lista di stato:
+- **Le Long Skill esistono solo in Turno Attivo** (riga 6732: «These Skills can only be
+  declared in the Active Turn»). Quindi in ARO cadono da sole, senza che lo stato le vieti.
+- **L'Idle non è un ARO**: non compare nella colonna AROS (righe 16639–16654). Nel Turno
+  Reattivo non si "dichiara Idle": si rinuncia all'ARO (righe 1209–1211).
+
+**La classificazione completa, dalla stessa chart** (righe 16620–16661). Serve per leggere
+le liste chiuse degli stati, che nominano categorie e non nomi:
+
+| Classe | Voci |
+|---|---|
+| **BASIC SHORT** | Discover · Idle · Move |
+| **SHORT** | Activate Disco Ball · BS Attack · Carbonite · CC Attack · Controlled Jump · Deactivator · Doctor · Dodge · Engineer · Forward Observer · GizmoKit · MediKit · Morpho-Scan · Oblivion · Place Deployable · Reload · Reset · Sensor · Spotlight · Total Control · Trinity · White Noise · Zero Pain |
+| **LONG** | Assisted Fire · Berserk · Cautious Movement · Climb · Combat Jump · Cybermask · Enhanced Reaction · Fairy Dust · Intuitive Attack · Jump · Parachutist · Sapper · Speculative Attack · Suppressive Fire · Triangulated Fire |
+| **ARO** | BS Attack · Carbonite · CC Attack · Controlled Jump · Discover · Dodge · Forward Observer · Look Out! · Oblivion · Place Deployable · Reload · Reset · Spotlight · Total Control · Trinity · Zero Pain |
+
+Si leggono incrociando le colonne. Le cose da ricordare:
+- **SHORT ma NON ARO**, cioè solo in Turno Attivo: tutto il **Supporto** (Doctor, Engineer,
+  MediKit, GizmoKit), **Sensor**, **Deactivator**, **Morpho-Scan**, **Activate Disco Ball**,
+  **White Noise**.
+- **Solo ARO**: **Look Out!**.
+- **ARO ma non SHORT**: solo Discover (che è Basic Short) e Look Out!. Tutti gli altri ARO
+  sono anche Short Skill.
+- La **Schivata** è una Short Skill *oltre* che un ARO (righe 16646 e 16644): in Turno Attivo
+  si dichiara come Breve, non è solo una reazione.
+- **Fuori chart: la classe AUTOMATIC.** `Alert!` non è nella tabella perché è una
+  **Automatic Skill** (righe 6774–6776), non consuma né Ordine né ARO e agisce nella
+  Conclusione (riga 6785). Per lo stesso motivo non ci sono Mimetism, ECM, Firewall, Courage.
+  Se il catalogo ha un campo di classe, serve una voce `AUTOMATIC` per queste, altrimenti
+  cercare `Alert!` nella chart dà nulla e sembra un buco.
+- **Fuori chart ma Long Skill per il testo dello stato**: `RIENTRARE IN CAMO` (riga 13603,
+  «by spending a Long Skill») e il rientro in Impersonation (riga 14202). Vedi §1.18.
+
+### Etichetta Movimento — quali abilità ce l'hanno
+Righe **12620–12621** («a Skill with the Movement Label such as Move, Cautious Movement,
+Climb, Jump, or the Berserk Special Skill») più le righe 12154 e 12164–12170 che aggiungono
+la **Schivata**. Quindi: **Movimento, Movimento Cauto, Arrampicarsi, Salto, Berserk,
+Schivata**. Tutte e sei.
+
+### Stato per stato
+
+| Stato | In Turno Attivo | In ARO | Fonte |
+|---|---|---|---|
+| **Foxhole** | **tutto**: nessuna restrizione sulle dichiarazioni. Per **muoversi** va cancellato, annunciandolo **nella dichiarazione** | tutto ciò che potrebbe dichiarare normalmente, **ma la Schivata non dà movimento** e il Foxhole **non cade** | 13863–13875 |
+| **Ritirata!** | Movimento, Scoprire, Idle (le tre Basic Short) + **Movimento Cauto**, Schivata, Reset. **Niente** Salto, Arrampicarsi, BS Attack, CC Attack, Hacking, Supporto | **solo** Scoprire, Schivata, Reset | 14557–14558, confermato dalla chart riassuntiva riga 16940 |
+| **IMM-A** | **solo Schivata** (PH−6) | **solo Schivata** | 14130–14131 |
+| **IMM-B** | **solo Reset** (WIP−3) | **solo Reset** | 14176–14177 |
+| **Engaged** | Berserk, CC Attack, Schivata, **Idle**, Reset + skill che dicono di valere in CC | CC Attack, Schivata, Reset | 13804–13806 |
+| **Stordito** | tutto **tranne gli Attacchi**, con −3 ai tiri | idem | 14614 |
+
+### Il Foxhole: i tre effetti che toccano il calcolo
+
+**Copertura Parziale a 360°** (riga 13865). Si applica **sempre e da sé**: riga **3453–3455**,
+«If the target is in Partial Cover, the attacker **will apply** a −3 MOD to their BS Attack
+Roll, and the target of the BS Attack applies a **+3** MOD to its Saving Roll (SR), if
+necessary». "Will apply" — non è una scelta dell'attaccante, non si dichiara. Però:
+- **Non vale nel Corpo a Corpo.** I MOD del CC sono una lista chiusa di due voci, righe
+  **4384–4388**: «The MODs are: » Close Combat against several enemies. » Special Skills,
+  Weapons and Equipment». La Copertura non c'è.
+- **Niente +3 alla salvezza contro le Sagome**, righe **3619–3621**: «Troopers affected by a
+  Template Weapon do not benefit from the +3 MOD to the Saving Roll (SR) for Partial Cover».
+- Restano tutte le regole che la togliano: Marksmanship (righe 8876), Jump (2762–2763), Climb
+  (2925–2926), Combat Jump (8059), Parachutist (9474–9475), Speculativo e Intuitivo che non
+  applicano i MOD negativi (3922 e 4030–4031).
+
+**Mimetism (−3)** (riga 13866). Il Foxhole **dà la skill**, non un MOD a parte, e la skill
+Mimetism è **NFB** (riga **9109**: «NFB, Obligatory»). Quindi:
+- 🔴 **non si somma** con il Mimetism di profilo. REGOLA SCRITTA: righe **6677–6680** e
+  **14897–14899**, «a Trooper will only be allowed to have **one active** piece of Equipment,
+  Hacking Program, or Special Skill with the Negative Feedback Trait». Mimetism (−6) in
+  Foxhole fa **−6, non −9**.
+- ⚠️ **quale dei due valga, il regolamento non lo dice.** Né il PDF né la wiki (pagine
+  *Foxhole State* e *Mimetism* rilette il 6 ottobre). Le due letture possibili:
+  **−6**, perché l'effetto del Mimetism rimanda al profilo («as shown in round brackets **in
+  the Unit Profile**», righe 9114–9115) e perché nella stessa lista di effetti il Foxhole
+  risolve già un conflitto analogo tenendo il valore del profilo quando è più alto (la
+  Silhouette, riga 13864);
+  **−3**, perché il glossario dell'NFB dice che l'ultimo attivato «cancel and override» gli
+  altri (righe 14891–14896), e l'ultimo attivato è quello del Foxhole.
+  Teniamo **−6**, l'analogia della Silhouette è nello stesso paragrafo. È una LETTURA: va
+  marcata come tale nel codice, perché è una riga da girare se Corvus Belli chiarisce.
+- Il Mimetism del Foxhole **è** soggetto all'NFB come quello di profilo, perché **è** quella
+  skill. Conseguenza: se la truppa attiva un'altra voce NFB — Albedo, Holoprojector, il
+  **Cybermask** (righe 5167–5171) — il Mimetism del Foxhole **cade**, e con esso il −3. Resta
+  la Copertura 360°, che non è una skill e non ha l'NFB.
+
+**Courage** (riga 13866) e **Silhouette 3** (riga 13864). Courage è Automatic, Optional, senza
+NFB (righe 8081–8083): passa automaticamente i Guts. La Silhouette diventa 3, **ma se il
+profilo ne ha una più alta si tiene quella** (riga 13864) — attenzione, la regola è "il valore
+più alto", non "il migliore": un S2 in Foxhole diventa S3, cioè un bersaglio più grande.
+
+### Il Foxhole: come funziona la cancellazione
+Riga **13867**: «Foxhole State is a fixed position which **doesn't allow its user to perform
+any type of movement, including movement granted by a successful Dodge Roll**». È un divieto
+di **muoversi**, non di dichiarare.
+
+Righe **13871–13874**: «A Trooper in Foxhole State **in the Active Turn** may automatically
+cancel this state at the beginning of their movement by declaring a Skill with the Movement
+Label. **The player must announce he is Canceling Foxhole State when declaring the Skill.**
+By doing so, the state is canceled at no cost… In the same way, in the Active Turn, the
+Trooper may automatically cancel this state at the beginning of a Dodge move.»
+
+Quindi, nell'ordine:
+1. Movimento, Movimento Cauto, Salto e Arrampicarsi **sono tutti dichiarabili** da
+   Trincerato: hanno tutti e quattro l'etichetta Movimento (righe 12620–12621).
+2. La cancellazione **non è obbligatoria**, ma senza di essa la truppa si muove di **zero**
+   (riga 13867). Dichiarare un Movimento senza cancellare è legale e inutile.
+3. L'annuncio va fatto **alla dichiarazione**, non dopo: «must announce… when declaring».
+   Per l'app è un interruttore nella schermata del movimento, non una domanda a posteriori.
+4. Cancellando si perde **tutto** quello che il Foxhole dava — Copertura 360°, Mimetismo −3,
+   Courage, S3 — e si recuperano MOV e Silhouette veri (righe 13875–13876).
+5. La cancellazione in Schivata vale **solo in Turno Attivo** (riga 13873). In ARO il
+   Trincerato schiva normalmente ma **non si sposta** (riga 13867), e resta Trincerato: la
+   lista di cancellazione (righe 13869–13875) ha solo il Prono e i due casi del Turno Attivo.
+   Un Trincerato è quindi un'ottima piattaforma d'ARO: spara, tiene la Copertura 360° e il
+   Mimetismo, e non si rivela.
+
+### L'Idle: è una Skill, e questo decide tre caselle
+Riga **16623**: IDLE, Basic Short Skill, Common, p.80. Riga **7444**: «Common Skill that
+allows the user to execute no action at all». **L'Idle è una Skill.** Quindi:
+
+- **IMM-A** (riga 14130, «cannot declare any Skill or ARO, **except Dodge**») e **IMM-B**
+  (riga 14176, «any Skill, Attack or ARO, **except Reset**»): l'Idle **non è dichiarabile**.
+- **Engaged** (righe 13804–13806): lo **nomina**, quindi sì. È la controprova che il
+  regolamento considera l'Idle una Skill da autorizzare esplicitamente.
+- **Ritirata!** (riga 14557): è una Basic Short Skill, quindi **sì**, è compreso.
+
+> 🔴 **E allora cosa dichiara un Immobilizzato che non vuole Schivare?** Niente, e il
+> regolamento chiama *quel niente* un Idle: righe **7454–7456**, «Whenever a Trooper that
+> received an Order in the Active Turn **chooses not to perform an action** with one of the
+> two Short Skills of that Order, that Trooper **is considered to declare Idle**».
+> Non è una dichiarazione del giocatore: è il nome che le regole danno all'inazione. Le due
+> righe non si contraddicono — la 14130 vieta di **dichiarare** l'Idle, la 7454 descrive cosa
+> **è** il non dichiarare nulla. Per l'app: l'Idle non va offerto nel menù di IMM-A e IMM-B,
+> e l'ordine che si chiude senza dichiarazioni si risolve come Idle da solo.
 
 ---
 
@@ -1770,3 +1987,73 @@ Sequence* (PDF 5.2, ott 2025) — tutte tre confermano il testo del PDF alla let
 | Marker CAMO che dichiara Cybermask → **ammesso** | 13635 (il CAMO cade) + 13645–13648 + 5159–5161 | ✅ va permesso, con la nota sulla rivelazione |
 | Livello di rientro in Impersonation | 8667 · **8669** («deploy **and activate**») · esempio 14301–14305 | ✅ `Impersonation` → IMP-1 · `Impersonation (IMP-2)` → IMP-2 · Cybermask → sempre IMP-2 (5159) |
 | Cybermask in Isolato → non disponibile | 14412–14413 (programmi di Hacking disabilitati) | ✅ |
+
+---
+
+**Hacking attraverso un Ripetitore nemico — verifica del 6 ottobre 2026** (scheda §1.6).
+Metrica: `REGOLE_N5_v5.1.1.txt`, impronta `5ea7581f.904498`. Wiki riletta: *Hacking Area*
+(PDF 5.2, ott 2025), *Firewall* (PDF 5.3, set 2026), *Speculative Attack* (oldid 3548,
+allineata a N5.3) — tutte e tre confermano il testo del PDF alla lettera.
+
+| Caso | Regola | Esito |
+|---|---|---|
+| −3 al WIP e +3 alla salvezza | 4837–4842 · 4850–4852 · 4941 · 4944–4945 | ✅ **confermato** |
+| Bersaglio non Hacker → Idle | 4799–4802 | ✅ **confermato**, è un Requisito: Ordine speso |
+| Due Firewall → **scelta del giocatore del bersaglio**, non massimo automatico | 4761–4763 · 4844–4846 | ⚠️ esito uguale, meccanica diversa. E il +3 alla salvezza è **fisso**, non scalato (4771–4774) |
+| «Hacker» = **skill Hacker**, non il Dispositivo | 4698–4701 (Automatic Skill, Obligatory) · 4704 (il Dispositivo è equip che l'Hacker *può* avere) · **4823** («the Hacker Special Skill on their real Unit Profile») | ⚠️ la lettura «skill **o** Dispositivo» è troppo larga: il test è la skill. Censimento a DATABASE |
+| `ECM (Hacking −3)` non rende Hacker | 10729–10743 (Automatic Equipment) · 6655 (fra parentesi c'è il tipo d'attacco) | ✅ confermato. E l'ECM **si somma** al Firewall, perché non è un Firewall; non dà +3 alla salvezza |
+| HoloMask: bersaglio finto Hacker | **4818–4825** | ⛔ non modellato, e non era in elenco: è il caso gemello di quello sotto |
+| HoloMask: Ripetitore finto | 4827–4833 | ⛔ non modellato |
+| Nessuna reazione contro il Ripetitore usato | 4853–4854 | da verificare nel modulo ARO |
+| Speculativo contro Marker CAMO come Principale: vietato | 13609–13610 + assenza di eccezione verificata su **PDF e wiki** | ✅ promosso da LETTURA a **ricerca esauriente**: la pagina wiki *Speculative Attack* non nomina mai Marker né Stati |
+
+---
+
+**Risposte di DATABASE `2026-10-06.1` e cosa chiudono** (765 profili;
+`database_nomad.js 15cb7716.154798`, `database_panoceania.js 4a97dcf6.152854`,
+`database_comune.js 1323de62.58651` invariato; fonte ARMY 7.26246.158).
+
+| Punto | Esito |
+|---|---|
+| **Hacker senza Dispositivo**: 0 profili | ✅ e la regola li **ammette**: righe 4707–4708, l'Hacker può «make direct use of certain Programs **without requiring a device**». Il regolamento però non dice **quali** programmi: nessun'altra occorrenza in 17029 righe. Quindi un Hacker senza Dispositivo è legale ma non implementabile — niente elenco nella fonte, nessun profilo nei dati. L'avviso A90 non vada trattato come errore di dato |
+| **Dispositivo senza la skill Hacker**: 0 profili | ✅ nelle due fazioni i due test coincidono. Il test resta però la **skill** (riga 4823), non il Dispositivo: è la condizione scritta, e regge quando arriverà una fazione nuova |
+| **Notazione `ECM (Hacking −X)`** | ✅ **confermata dalla fonte che prevale**: wiki *Template:Modifiers-explained*, PDF 5.3 set 2026, scrive `ECM (Hacking -3)` alla lettera, accanto a `Mimetism (-3)`, `Combat Jump (PH=10)` e `Immunity (POS)`. Non è solo il PDF del progetto: è la wiki a N5.3. L'app ARMY scrive `ECM: Hacker`, ma per la **notazione** vale la wiki |
+| **`Guided` non è una skill** | ✅ la controprova interna di DATABASE tiene: il regolamento scrive `BS Attack (Guided)` (riga 3333) e «Guided Attack» (riga 11168). È un tipo d'attacco, mai il nome di una skill. Coerente coi REQUIREMENTS dell'ECM (righe 10732–10736: «the **Attack type** listed in round brackets») |
+| **Impersonation**: 0 profili | ✅ nota aggiunta in §1.18. La regola resta scritta e serve a leggere i Marker IMP nemici, che il **Cybermask** mette sul tavolo già oggi senza la skill |
+| **Sottostringa `HACKER`** | ⚠️ non è un caso singolo: cinque coppie di nomi che si contengono esistono nel regolamento, elencate in §0. Rinominare l'ECM chiude il caso, non la classe |
+
+---
+
+**Dichiarazioni per stato — verifica del 6 ottobre 2026** (nuova §7.1). Nata da tre
+divergenze fra il menù di `app.html` e le liste chiuse del catalogo.
+
+| Caso | Chi aveva ragione | Regola |
+|---|---|---|
+| Foxhole: Movimento / Cauto / Salto / Arrampicarsi **dichiarabili** | **MOTORE** | 13867 vieta di *muoversi*, non di dichiarare; 13871–13874 danno la cancellazione. Tutte e quattro hanno l'etichetta Movimento (12620–12621) |
+| Foxhole: la cancellazione va **annunciata alla dichiarazione** | — | 13872, «must announce… when declaring». Nessuno dei due la chiedeva |
+| Ritirata!: **Salto vietato** | **INTERFACCIA** | il Salto è una **Long Skill** (chart riga 16631) e la riga 14557 ammette solo le Basic Short, il Cauto, la Schivata e il Reset |
+| Ritirata!: **Arrampicarsi vietato** | nessuno dei due | stessa ragione, chart riga 16627 |
+| Ritirata!: **Idle ammesso** | **INTERFACCIA** | l'Idle **è** una Basic Short Skill (chart riga 16623), quindi è compreso nella 14557. La lista chiusa del motore lo omette |
+| Ritirata!: **niente BS Attack in ARO** | — | il BS Attack è una Short Skill/ARO e la 14557 non lo nomina. Da verificare nel modulo ARO |
+| IMM-A e IMM-B: **Idle non dichiarabile** | **MOTORE** | l'Idle è una Skill (16623 + 7444) e le righe 14130 / 14176 vietano «any Skill… except Dodge / except Reset». L'inazione resta possibile ed **è** l'Idle (7454–7456) |
+| Engaged: **Idle dichiarabile** | **MOTORE** | 13805 lo nomina per esteso |
+| ARO: **non** vale la stessa lista del Turno Attivo | — | va intersecata con la colonna AROS della chart (16639–16654) e con la riga 6732 (le Long Skill solo in Attivo). IMM-A e IMM-B sono le uniche due che dicono già «or ARO» |
+
+---
+
+**Programmi, Foxhole e classi d'azione — verifica del 6 ottobre 2026, secondo giro.**
+Wiki riletta: *Foxhole State* (PDF 5.2, ott 2025) e *Mimetism* (oldid 3102) — nessuna delle
+due chiarisce il doppio Mimetism.
+
+| Caso | Esito |
+|---|---|
+| Programma contro un bersaglio del tipo sbagliato → **Idle** | ✅ **confermato**, e la prova è la skill **Non-Hackable**, righe **9415–9417**: chiama *Requirements* la colonna TARGET. Quindi 1244–1247: Ordine/ARO speso, Marker rivelato (7462–7463) |
+| Copertura 360° del Foxhole applicata **sempre**, senza dichiararla | ✅ righe 3453–3455, «the attacker **will apply**» |
+| Copertura **non** nel Corpo a Corpo | ✅ righe 4384–4388, lista chiusa di due MOD: la Copertura non c'è |
+| Niente **+3 alla salvezza** contro le Sagome | ⚠️ non era nell'elenco: righe 3619–3621 |
+| Mimetism del Foxhole: **non si somma** | ✅ **confermato**, NFB: 9109 + 6677–6680 + 14897–14899 |
+| Mimetism del Foxhole: **quale valore** | ⚠️ **non scritto da nessuna parte**. Teniamo −6 (9114–9115 rimanda al profilo; e la riga 13864 risolve così il conflitto gemello della Silhouette), ma è una **LETTURA**, non "il più negativo" come regola. La lettura contraria (−3, righe 14891–14896) è plausibile |
+| Mimetism del Foxhole soggetto a NFB | ✅ sì, **è** quella skill. Cade se la truppa attiva Albedo, Holoprojector o il Cybermask (5167–5171) |
+| CLASSI_AZIONE, tutte le voci dichiarate da MOTORE | ✅ **tutte corrette**, nessuna da cambiare. Movimento non è ARO, Scoprire sì (16624 e 16643) |
+| CLASSI_AZIONE: manca la classe **AUTOMATIC** | ⚠️ `Alert!` è una Automatic Skill (6774–6776) e per questo non è nella chart. Non consuma Ordine né ARO |
+| Silhouette del Foxhole | ℹ️ S3, **ma il profilo vince se è più alto** (13864): è "il più alto", non "il migliore" |

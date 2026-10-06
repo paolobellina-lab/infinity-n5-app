@@ -1,4 +1,4 @@
-// @versione 2026-10-06.2 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-06.4 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -657,7 +657,22 @@
             const i = (window.roster || []).findIndex(function (x) { return x && String(x.id) === String(id); });
             if (M && i >= 0) {
                 const e = M.annullaSoppressione(window.roster[i]);
-                window.roster[i] = e.unitaAggiornata;
+                // 6 ottobre. Qui si scriveva roster[i] = e.unitaAggiornata a
+                // mano e NON si avvisava l'Hub: chi usciva dalla Soppressione
+                // reagendo col modo normale restava "in Soppressione" sul
+                // tabellone e per l'avversario, che continuava ad applicarsi
+                // il -3. Il posto unico e` window.sostituisciUnita, che
+                // manda anche l'AGGIORNAMENTO (voluto: chat MOTORE).
+                if (typeof window.sostituisciUnita === 'function') {
+                    window.sostituisciUnita(window.roster[i], e.unitaAggiornata, 'Soppressione annullata in ARO');
+                } else {
+                    // Senza motore_core.js (i banchi che caricano solo questo
+                    // file) il cambio di stato NON si perde: si applica al
+                    // roster come prima e si DICE che l'Hub non e` stato
+                    // avvisato. Perdere il cambio sarebbe peggio.
+                    window.roster[i] = e.unitaAggiornata;
+                    console.error('\u26d4 window.sostituisciUnita manca (motore_core.js non caricato?): Soppressione annullata nel roster, Hub NON avvisato.');
+                }
             }
             window.aroSfMode = false;
         }
@@ -873,17 +888,39 @@
         const M = motore();
         const REP = (window.CATALOGO_N5 && window.CATALOGO_N5.REPEATER_NEMICO) || {};
         const rep = !!cfg.repeaterNemico;
-        let avviso = '';
-        if (rep && M && typeof M.viaRepeaterNemico === 'function') {
+        // 6 ottobre (richiesta di Paolo): l'avviso di Idle c'era SOLO col
+        // Repeater acceso. Ma un programma puo` fallire i Requisiti anche
+        // senza: Trinity vale solo contro un Hacker, Total Control solo
+        // contro un TAG (righe 9415-9417, 1244-1247). In quei casi il
+        // giocatore confermava l'ARO senza leggere niente e scopriva l'Idle
+        // sul tabellone, ad ARO speso. Il programma NON si toglie dalla
+        // scelta (chat REGOLE: il Requisito puo` fallire senza che il
+        // giocatore lo sappia, es. HoloMask): si AVVISA, e decide lui.
+        // La validita` la chiede al motore con la STESSA chiamata che il
+        // motore fa quando risolve la reazione (M.bersagliValidi con
+        // attaccante = chi reagisce e programma = quello scelto).
+        const motivi = [];
+        if (M) {
             const nemico = (M.rosterNemico() || []).find(x => M.nomeUnita(x) === String(cfg.bersaglio || '').trim());
+            const io = (window.roster || []).find(x => String(x.id) === String(cfg.id));
             // Se il bersaglio non si trova nel roster nemico NON si avvisa:
             // un avviso inventato sarebbe peggio di nessuno. Il calcolo
             // dell'Hub lo decide comunque sull'unita` vera.
             if (nemico) {
-                const via = M.viaRepeaterNemico(nemico);
-                if (!via.ammesso) avviso = '<div style="margin:0 0 12px; padding:10px; background:#330000; border:1px solid #ff3333; color:#ff6666; font-size:13px; border-radius:5px;"><b>⚠️ REQUISITO NON SODDISFATTO → IDLE</b><br>' + (via.motivo || '') + '</div>';
+                if (io && cfg.arma && typeof M.bersagliValidi === 'function') {
+                    const g = M.bersagliValidi(M.AZIONI.HACKING, [nemico], { attaccante: io, programma: cfg.arma })[0];
+                    if (g && g.ammesso === false) motivi.push(cfg.arma + ': ' + (g.motivo || 'bersaglio non valido per questo programma.'));
+                }
+                if (rep && typeof M.viaRepeaterNemico === 'function') {
+                    const via = M.viaRepeaterNemico(nemico);
+                    if (!via.ammesso && via.motivo) motivi.push(via.motivo);
+                }
             }
         }
+        const avviso = motivi.length
+            ? '<div style="margin:0 0 12px; padding:10px; background:#330000; border:1px solid #ff3333; color:#ff6666; font-size:13px; border-radius:5px;"><b>⚠️ REQUISITO NON SODDISFATTO → IDLE</b><br>'
+              + motivi.join('<br>') + '<br><span style="color:#cc8888;">Se confermi, l\'ARO e` speso e non si tira. Puoi tornare indietro e scegliere altro.</span></div>'
+            : '';
         return '<button type="button" class="huge-btn" style="margin:0 0 10px; min-height:50px; font-size:15px; '
             + (rep ? 'background:#553300; color:#ffaa33; border-color:#ffaa33;' : 'background:#111; color:#aaa; border-color:#555;')
             + '" onclick="window.toggleAroRepeater()">📡 ' + (REP.pulsante || 'VIA REPEATER NEMICO') + ': '
@@ -989,7 +1026,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-10-06.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-10-06.4', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

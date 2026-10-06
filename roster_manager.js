@@ -1,4 +1,4 @@
-// @versione 2026-09-28.3 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-06.1 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -865,7 +865,19 @@ window.infiltrazioneFallita = (index) => {
     // L'unita` aggiornata la calcola il motore; qui si sostituisce e basta,
     // come per applicaIdle. Non si toccano altri campi di nostra iniziativa.
     const esito = M.consumaCamo(u);
-    if (esito && esito.unitaAggiornata) window.roster[index] = esito.unitaAggiornata;
+    // 6 ottobre: non piu` roster[index] scritto a mano ma il posto unico,
+    // window.sostituisciUnita. SENZA INVIO: siamo in schieramento, prima
+    // della conferma, e l'avversario non deve ancora vedere niente (chat
+    // MOTORE). L'invio vero parte con la conferma dello schieramento.
+    if (esito && esito.unitaAggiornata) {
+        if (typeof window.sostituisciUnita === 'function') {
+            window.sostituisciUnita(u, esito.unitaAggiornata, 'Infiltrazione fallita: uso del CAMO consumato', { senzaInvio: true });
+        } else {
+            // Senza motore_core.js il cambio non si perde: come prima.
+            window.roster[index] = esito.unitaAggiornata;
+            console.error('\u26d4 window.sostituisciUnita manca (motore_core.js non caricato?): uso del CAMO segnato a mano.');
+        }
+    }
     window.apriDeployStati(index);
     if (window.renderDeployUnits) window.renderDeployUnits();
 };
@@ -1144,7 +1156,15 @@ window.schieraPiazzabile = (index, k) => {
 
     // Il portatore con l'uso scalato: va tenuto, altrimenti app e motore
     // contano usi diversi e il pulsante resterebbe per sempre.
-    window.roster[index] = Object.assign({}, portatore, e.portatoreAggiornato);
+    // 6 ottobre: stesso posto unico, e anche qui SENZA INVIO (schieramento,
+    // prima della conferma).
+    if (typeof window.sostituisciUnita === 'function') {
+        window.sostituisciUnita(portatore, e.portatoreAggiornato, 'Deployable piazzato in schieramento', { senzaInvio: true });
+    } else {
+        // Senza motore_core.js il cambio non si perde: come prima.
+        window.roster[index] = Object.assign({}, portatore, e.portatoreAggiornato);
+        console.error('\u26d4 window.sostituisciUnita manca (motore_core.js non caricato?): usi del portatore scalati a mano.');
+    }
 
     // Il gettone del motore ha una forma sua (armi, isCamo, proprietario...):
     // qui si aggiungono solo i campi che la lista dello schieramento legge.
@@ -1251,7 +1271,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-09-28.3', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-10-06.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

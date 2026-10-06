@@ -1,4 +1,4 @@
-// @versione 2026-09-23.2 | test_gestori_schermate.js | proprieta`: chat TEST
+// @versione 2026-10-06.1 | test_gestori_schermate.js | proprieta`: chat TEST
 // ============================================================================
 // I gestori on* delle schermate sono CODICE dentro una stringa: nessun
 // controllo di sintassi li guarda, e un errore si scopre con un dito su uno
@@ -20,14 +20,20 @@
 //     il banco restava verde. Gli apostrofi contano in due punti veri, e ora
 //     sono quelli a essere provati (sezioni 3 e 4).
 //
-// USO:  node test_gestori_schermate.js            (legge /mnt/project/)
-//       CARTELLA=. node test_gestori_schermate.js (prova una copia)
+// USO:  node test_gestori_schermate.js            (legge la propria cartella)
+//       CARTELLA=/percorso/ node test_gestori_schermate.js (prova una copia)
+//
+// 6 OTTOBRE: la cartella predefinita era '/mnt/project/' scritta in fisso.
+// Quando il progetto non e` montato la`, il banco non diventa rosso: muore
+// prima della prima prova, e porta via tutte le sue. Il predefinito ora e`
+// la cartella del banco stesso, che esiste sempre; CARTELLA resta lo
+// scavalco. Nessuna asserzione cambia — cambia solo che si possono leggere.
 // ============================================================================
 let passati = 0, falliti = 0;
 const ok = (c, m) => { if (c) { passati++; console.log('  ✅ ' + m); } else { falliti++; console.log('  ❌ ' + m); } };
 
 const fs = require('fs'), vm = require('vm'), path = require('path');
-const DIR = (process.env.CARTELLA || '/mnt/project/').replace(/\/?$/, '/');
+const DIR = (process.env.CARTELLA || __dirname).replace(/\/?$/, '/');
 const h = fs.readFileSync(DIR + 'app.html', 'utf8');
 
 const g = {}; g.window = g; g.globalThis = g; g.console = { log: () => {}, warn: () => {}, error: () => {} };

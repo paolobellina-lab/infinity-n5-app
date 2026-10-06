@@ -1,5 +1,23 @@
-// @versione 2026-09-23.1 | test_modulo_intuitivo.js | proprieta`: chat TEST
+// @versione 2026-10-06.1 | test_modulo_intuitivo.js | proprieta`: chat TEST
 // Test end-to-end del modulo Intuitivo — node test_modulo_intuitivo.js
+//
+// AGGIORNATO IL 6 OTTOBRE, regola dalla chat REGOLE: l'Attacco Intuitivo
+// contro un Marker Impersonation e` VIETATO, ne` IMP-1 ne` IMP-2 (riga
+// 14210). Contro un Marker CAMO resta valido. Prima questo banco pretendeva
+// "i 2 Marker" e sei prove cadevano: il motore aveva ragione, il banco no.
+//
+// Le due esclusioni sono DIVERSE e vanno distinte, altrimenti un bersaglio
+// escluso per il motivo sbagliato passa per escluso bene:
+//   - Speculo (Impersonation): vietato SEMPRE, anche dichiarando la Zona di
+//     Visibilita` Zero. E` la controprova che il divieto non e` un effetto
+//     collaterale della LoF.
+//   - Fusilier (in piena vista): vietato per la LoF, e la Zona di
+//     Visibilita` Zero lo RIAMMETTE. E` la controprova che il filtro guarda
+//     davvero la LoF e non rifiuta tutto per abitudine.
+// La schermata offre solo i bottoni legali; il divieto vero sta all'invio.
+// Si provano entrambi i lati: scegliPrincipaleIntuitivo() accetta qualunque
+// id nemico, quindi un filtro di sola schermata non basterebbe a chiamarlo
+// regola.
 global.window = global;
 
 let passati = 0, falliti = 0;
@@ -56,28 +74,43 @@ window.startUnitIntuitivoLoop();
 ok(nodo('weapon-buttons-container').innerHTML.includes('Nessuna arma utilizzabile'),
    'unità senza Sagome: nessuna arma offerta');
 
-console.log('\n=== 2. ERRORE CORRETTO: il bersaglio dev essere Marker o fuori LoF ===');
+console.log('\n=== 2. Il bersaglio dev essere Marker CAMO, o fuori LoF ===');
 nuovo(lanciafiamme);
 window.currentOrder.weapon = 'Light Flamethrower';
 window.setupTargetSelectionIntuitivo();
-ok(window.validTargets.length === 2, `con LoF: solo i 2 Marker (trovati ${window.validTargets.length})`);
-ok(window.validTargets.every(u => u.states.camo || u.states.impersonation), 'sono Croc Man e Speculo');
-ok(window.targetsScartati.some(t => t.nome === 'Fusilier'),
-   'il Fusilier in piena vista è escluso (prima era ammesso: non era legale)');
+const nomiOfferti = () => window.validTargets.map(u => u.alias).sort().join(', ');
+ok(window.validTargets.length === 1,
+   `con LoF: solo il Marker CAMO (offerti ${window.validTargets.length}: ${nomiOfferti()})`);
+// Il "every" di prima passava anche con un solo elemento: l'etichetta diceva
+// due nomi e la prova ne controllava uno. Qui si nomina chi c'e`.
+ok(nomiOfferti() === 'Croc Man', `l unico offerto è il Croc Man (${nomiOfferti()})`);
+
+const scarto = (n) => (window.targetsScartati.find(t => t.nome === n) || {}).motivo || '';
+ok(/Impersonation/.test(scarto('Speculo')) && /14210/.test(scarto('Speculo')),
+   `Speculo escluso PERCHÉ Impersonation, con la riga citata (${scarto('Speculo').slice(0, 70)}…)`);
+ok(/Marker o fuori LoF|Zona di Visibilit/.test(scarto('Fusilier')) &&
+   !/Impersonation/.test(scarto('Fusilier')),
+   'il Fusilier è escluso per la LoF, NON per l Impersonation: due motivi distinti');
 console.log('   ' + window.targetsScartati.map(t => `${t.nome}: ${t.motivo.slice(0, 55)}…`).join('\n   '));
 
 window.toggleIntuitivoFuoriLoF();
-ok(window.validTargets.length === 3,
-   'dichiarando la Zona di Visibilità Zero: anche il Fusilier diventa bersagliabile');
+ok(window.validTargets.length === 2 && /Fusilier/.test(nomiOfferti()),
+   `dichiarando la Zona di Visibilità Zero il Fusilier rientra (offerti ${window.validTargets.length}: ${nomiOfferti()})`);
+// CONTROPROVA del divieto: la Zona di Visibilita` Zero riammette il Fusilier
+// ma NON il Marker Impersonation. Senza questa prova, "Speculo escluso"
+// potrebbe essere solo un effetto della LoF.
+ok(!/Speculo/.test(nomiOfferti()) && /Impersonation/.test(scarto('Speculo')),
+   'ma il Marker Impersonation resta vietato anche fuori LoF (riga 14210)');
 
 console.log('\n=== 3. ERRORE CORRETTO: un solo Bersaglio Principale ===');
 nuovo(lanciafiamme);
 window.currentOrder.weapon = 'Light Flamethrower';
 window.setupTargetSelectionIntuitivo();
+window.toggleIntuitivoFuoriLoF();   // servono due bersagli legali per provare la sostituzione
 window.scegliPrincipaleIntuitivo('p1');
 ok(window.combatTargets.length === 1 && window.combatTargets[0].name === 'Croc Man', 'primo scelto');
-window.scegliPrincipaleIntuitivo('p2');
-ok(window.combatTargets.length === 1 && window.combatTargets[0].name === 'Speculo',
+window.scegliPrincipaleIntuitivo('p3');
+ok(window.combatTargets.length === 1 && window.combatTargets[0].name === 'Fusilier',
    'il secondo SOSTITUISCE il primo, non si accumula');
 
 console.log('\n=== 4. ERRORE CORRETTO: il tiro è nudo ===');
@@ -102,13 +135,21 @@ ok(regole.contaComeBsAttack && regole.plusUnSD === false,
    'conta come BS Attack per i MOD, ma niente +1 SD (è una Long Skill)');
 ok(h.includes('Faccia a Faccia') && h.includes('Critico'), 'le regole sono spiegate a schermo');
 
-console.log('\n=== 6. Invio ===');
+console.log('\n=== 6. Invio: il Marker CAMO passa ===');
+// Il caso che DEVE arrivare in fondo. Se cadesse questo, il divieto
+// sull'Impersonation si sarebbe mangiato anche il CAMO.
+nuovo(lanciafiamme);
+window.currentOrder.weapon = 'Light Flamethrower';
+window.setupTargetSelectionIntuitivo();
+window.scegliPrincipaleIntuitivo('p1');       // Marker CAMO, in LoF
+window.preparaModificatoriIntuitivo();
 window.eseguiCalcoloIntuitivo();
-ok(inviato !== null, 'attacco valido spedito');
+ok(inviato !== null, 'attacco sul Marker CAMO spedito');
 ok(inviato && inviato.attacchi[0].arma.burst === 1, 'Burst forzato a 1 nel payload');
 ok(inviato && inviato.attacchi[0].azione === M.AZIONI.INTUITIVO, 'azione dal vocabolario canonico');
 ok(inviato && inviato.attacchi[0].bersagli.length === 1, 'un solo bersaglio nel payload');
 
+console.log('\n=== 7. Invio: i due rifiuti, ciascuno col suo motivo ===');
 nuovo(lanciafiamme);
 window.currentOrder.weapon = 'Light Flamethrower';
 window.combatTargets = [];
@@ -116,11 +157,24 @@ window.preparaModificatoriIntuitivo();
 ok(alertUltimo && alertUltimo.includes('Nessun Bersaglio Principale'),
    'senza bersaglio: si ferma e lo dice (nessun fantasma inventato)');
 
+// Il Marker Impersonation: scegliPrincipaleIntuitivo lo accetta (la schermata
+// non gli dava il bottone, ma la funzione non controlla), quindi il NO deve
+// venire dall'invio, con la riga di regolamento in chiaro.
+nuovo(lanciafiamme);
+window.currentOrder.weapon = 'Light Flamethrower';
+window.combatTargets = [{ id: 'p2', name: 'Speculo', burst: 1 }];
+window.eseguiCalcoloIntuitivo();
+ok(inviato === null, 'Intuitivo su Marker Impersonation: BLOCCATO all invio');
+ok(String(alertUltimo).includes('Impersonation') && String(alertUltimo).includes('14210'),
+   'e l avviso dice Impersonation e cita la riga 14210');
+
 nuovo(lanciafiamme);
 window.currentOrder.weapon = 'Light Flamethrower';
 window.combatTargets = [{ id: 'p3', name: 'Fusilier', burst: 1 }];
 window.eseguiCalcoloIntuitivo();
 ok(inviato === null, 'Intuitivo su bersaglio in piena vista: BLOCCATO all invio');
+ok(!String(alertUltimo).includes('Impersonation'),
+   'col motivo della LoF, non quello dell Impersonation');
 console.log('   ' + String(alertUltimo).split('\n').filter(Boolean)[2]);
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

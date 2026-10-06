@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | test_modulo_bs.js | proprieta`: chat TEST
+// @versione 2026-10-06.1 | test_modulo_bs.js | proprieta`: chat TEST
 // Test end-to-end del modulo BS riscritto — node test_modulo_bs.js
 // Simula il minimo DOM che il modulo tocca, così si può collaudare senza browser.
 global.window = global;
@@ -33,6 +33,7 @@ global.inviaCalcoloAllHub = (p) => { inviato = p; };
 global.goToStep = (s) => { global.ultimoStep = s; };
 global.renderTargetButtons = () => { global.renderChiamato = true; };
 
+const DIR_DB = (process.env.CARTELLA ? process.env.CARTELLA.replace(/\/?$/, '/') : './');
 require('./catalogo_n5.js');
 require('./database_comune.js');
 const M = require('./motore_regole_n5.js');
@@ -180,6 +181,43 @@ window.goToModifiersBS('ATTACCO BS');
 window.combatTargets[0].burst = 5;
 window.eseguiCalcoloBS();
 ok(inviato === null && alertUltimo.includes('5'), '5 dadi con un Combi da 3: bloccato');
+
+console.log('\n=== 10. BS-06 del piano: il Croc Man nasce Marker ===');
+// Il piano di collaudo dava BS-06 per difetto ("anello sulla scelta
+// dell'arma"). Non e` un difetto: nel database il Croc Man nasce
+// deployState 'CAMO', e contro un Marker l'Attacco BS non si dichiara —
+// l'app avvisa e torna alla scelta dell'arma. Era lo SCENARIO a essere
+// sbagliato: ci vuole un Croc Man rivelato.
+// Si usano i profili VERI del database, non una copia scritta a mano: una
+// copia a mano e` sempre piu` ordinata della realta`, ed e` il modo piu`
+// comodo per non accorgersi di come nascono davvero le unita`.
+require(DIR_DB + 'database_nomad.js'); require(DIR_DB + 'database_panoceania.js');
+const TUTTI = [].concat(window.DB_NOMADI || [], window.DB_PANOCEANIA || []);
+const crocVero = TUTTI.find(u => /^Croc Man \(MULTI Sniper/.test(u.nome));
+const algVero  = TUTTI.find(u => /^Alguacil \(Combi/.test(u.nome));
+ok(crocVero && String(crocVero.deployState).toUpperCase() === 'CAMO',
+   `nel database il Croc Man nasce Marker (deployState ${crocVero && crocVero.deployState})`);
+const comeNasce = M.bersagliValidi(M.AZIONI.BS_ATTACK, [crocVero], { attaccante: algVero })[0];
+ok(!comeNasce.ammesso && /Scoperto/.test(String(comeNasce.motivo)),
+   `e come nasce l Attacco BS non si dichiara (${String(comeNasce.motivo).slice(0, 55)}…)`);
+
+// CONTROPROVA: rivelato è un bersaglio legittimo, e i numeri del piano sono
+// quelli. Senza questa metà, "rifiutato" non distingue "va Scoperto prima"
+// da "questo profilo non è bersagliabile".
+const crocRivelato = Object.assign(JSON.parse(JSON.stringify(crocVero)),
+    { deployState: 'NORMAL', state: 'ACTIVE', states: { camo: false } });
+const rivelato = M.bersagliValidi(M.AZIONI.BS_ATTACK, [crocRivelato], { attaccante: algVero })[0];
+ok(rivelato.ammesso, 'rivelato (Modello) è bersagliabile');
+const bs06 = M.modAttacco(algVero, crocRivelato, M.profiloArma('Combi Rifle'),
+    M.AZIONI.BS_ATTACK, { rangeIndex: 1, cover: true });
+ok(bs06.valore === 5,
+   `BS-06: 11 +3 gittata −3 copertura −6 Mimetismo = 5 (ottenuto ${bs06.valore})`);
+const sc06 = M.risolviScontro(
+    { attaccante: algVero, azione: M.AZIONI.BS_ATTACK, arma: M.profiloArma('Combi Rifle'),
+      bersaglio: crocRivelato, burst: 1, rangeIndex: 1, cover: true },
+    { difensore: crocRivelato, azione: 'NESSUNA' }, {});
+ok(sc06.attivo.salvezzaInflitta && sc06.attivo.salvezzaInflitta.valoreSuccesso === 11,
+   `e la salvezza è ARM VS 11 (ottenuto ${sc06.attivo.salvezzaInflitta && sc06.attivo.salvezzaInflitta.valoreSuccesso})`);
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

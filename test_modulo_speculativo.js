@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | test_modulo_speculativo.js | proprieta`: chat TEST
+// @versione 2026-10-06.1 | test_modulo_speculativo.js | proprieta`: chat TEST
 // Test end-to-end del modulo Speculativo — node test_modulo_speculativo.js
 global.window = global;
 let passati = 0, falliti = 0;
@@ -91,12 +91,39 @@ ok(window.combatTargets[0].cover === false, 'la copertura del bersaglio è azzer
 window.setTargetRangeSpeculativo(1);
 ok(window.combatTargets[0].rangeMod === -3, 'cambio banda: MOD aggiornato dall arma');
 
-console.log('\n=== 6. Bersagli: i Marker sono validi ===');
+console.log('\n=== 6. Bersagli: il Marker NON può essere Bersaglio Principale ===');
+// CAMBIATO IL 6 OTTOBRE (chat REGOLE): fino alla 2026-10-06.2 il Marker CAMO
+// passava come principale e questo banco lo pretendeva. Non e` vero: righe
+// 13609-13610 per il CAMO, 14207-14208 per l'Impersonation. Lo Speculativo
+// ignora la LoF, che e` un'altra cosa dall'essere un Marker.
 nuovo(granatiere);
 window.currentOrder.weapon = 'Grenades';
 window.setupTargetSelectionSpeculativo();
-ok(window.validTargets.length === 2,
-   'anche il Marker CAMO è bersagliabile (lo Speculativo non richiede LoF)');
+const offerti = window.validTargets.map(u => u.alias).sort().join(', ');
+ok(window.validTargets.length === 1 && offerti === 'Fusilier',
+   `come principale resta solo il Modello (offerti ${window.validTargets.length}: ${offerti})`);
+const motivoCroc = (window.targetsScartati.find(t => t.nome === 'Croc Man') || {}).motivo || '';
+ok(/Bersaglio Principale/.test(motivoCroc) && /13609/.test(motivoCroc),
+   `il Croc Man è escluso come PRINCIPALE, con le righe citate (${motivoCroc.slice(0, 60)}…)`);
+
+// CONTROPROVA, due volte. Senza queste due prove "Croc Man escluso" non
+// distingue "non puo` essere principale" da "non e` bersagliabile affatto":
+// sotto la Sagoma il Marker si prende eccome (righe 3914-3919).
+const croc = M.rosterNemico().find(u => u.id === 'p2');
+const speculo = { id: 'p9', alias: 'Speculo', tipo: 'LI', deployState: 'IMP', states: { imp: true } };
+// Il motivo si legge con String(): quando il bersaglio e` ammesso il campo
+// e` null, e un .slice() su null farebbe CADERE il banco invece di farlo
+// diventare rosso — cioe` porterebbe via le prove che restano. Visto il
+// 6 ottobre provando a rompere il motore di proposito.
+const comePrincipale = (b) => M.bersagliValidi(M.AZIONI.SPECULATIVO, [b], { attaccante: granatiere })[0];
+const comeSecondario = (b) => M.bersagliValidi(M.AZIONI.SPECULATIVO, [b], { attaccante: granatiere, ruolo: 'secondario' })[0];
+const perche = (g) => String((g && g.motivo) || '');
+ok(comeSecondario(croc).ammesso,
+   'lo stesso Marker CAMO è ammesso con ruolo secondario: è preso dalla Sagoma');
+ok(!comePrincipale(speculo).ammesso && /1420[78]/.test(perche(comePrincipale(speculo))),
+   `anche il Marker Impersonation è fuori come principale (${perche(comePrincipale(speculo)).slice(0, 55)}…)`);
+ok(comeSecondario(speculo).ammesso,
+   'e anche lui rientra come secondario: l esclusione è sul ruolo, non sul bersaglio');
 
 console.log('\n=== 7. Invio ===');
 nuovo(granatiere);

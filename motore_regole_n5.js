@@ -1,4 +1,4 @@
-// @versione 2026-10-06.8 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.12 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-06.8';
+    M.VERSIONE = '2026-10-06.12';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -2886,6 +2886,7 @@
 
     // MOD di un attacco Comms.
     // ctx: { firewallNemico, membriFireteam, repeaterNemico }
+    //   firewallNemico: FACOLTATIVO. Se manca lo legge il motore dal bersaglio.
     //   repeaterNemico: l'attacco passa da un Repeater nemico (lo dice il
     //   giocatore). Il Firewall lo calcola M.firewallApplicato; se il
     //   bersaglio non e` un Hacker il Requisito manca: `requisitoFallito`.
@@ -2912,7 +2913,18 @@
 
         // Firewall del difensore (TinBot): il valore vero, non un -3 fisso.
         // UN SOLO Firewall: quello proprio o quello del Repeater nemico.
-        const proprioFw = parseInt(ctx.firewallNemico, 10) || 0;
+        // 🔴 "NON PASSATO" NON E` "ZERO". Qui c'era
+        // `parseInt(ctx.firewallNemico, 10) || 0`: chi chiamava senza quel
+        // campo otteneva un bersaglio SENZA Firewall, mentre
+        // M.firewallApplicato sullo stesso bersaglio rispondeva -6. Due
+        // funzioni, una domanda, due risposte a seconda che il chiamante si
+        // ricordasse di un campo. MISURATO dalla chat TEST il 6 ottobre:
+        // Mobile Brigada (Firewall -6) via Repeater dava -3 invece di -6.
+        // Al tavolo i conti erano giusti solo perche` ordine_hacking.js il
+        // campo lo passa. Ora: se il campo manca, il Firewall del bersaglio
+        // lo legge il motore (M.valoreFirewall, dentro firewallApplicato);
+        // se c'e`, vale quello — anche quando e` 0.
+        const proprioFw = (ctx.firewallNemico != null) ? (parseInt(ctx.firewallNemico, 10) || 0) : null;
         const fwA = M.firewallApplicato(difensore, { repeaterNemico: !!ctx.repeaterNemico, proprio: proprioFw });
         const fw = fwA.valore;
         if (fw < 0) {
@@ -4568,7 +4580,10 @@
             // l'attacco la ignora. La regola sta in una funzione sola.
             if (attr === 'ARM') {
                 const cop = M.coperturaValeSullaSalvezza({
-                    inCopertura: !!colpo.cover,
+                    // Foxhole: Copertura a 360 gradi, anche se chi tira non
+                    // l'ha dichiarata (riga 13865).
+                    // Non in Corpo a Corpo: la Copertura non vale in mischia.
+                    inCopertura: !!colpo.cover || (!!M.statoBersaglio(bersaglio || {}).foxhole && !(arma && arma.isCC)),
                     arma: arma,
                     ignoraCopertura: !!colpo.ignoraCopertura,
                     copertura: colpo.copertura
@@ -4985,8 +5000,14 @@
                 aggiungi('speculativo', -6, 'Fuoco Speculativo: -6 fisso');
                 note.push('Fuoco Speculativo: ignora i MOD NEGATIVI di Copertura, Mimetismo e Zone di Visibilità.');
             } else {
-                // Copertura Parziale del bersaglio
-                if (ctx.cover) {
+                // Copertura Parziale del bersaglio. Chi e` in FOXHOLE ce l'ha
+                // SEMPRE, da ogni direzione (riga 13865): non dipende da cio`
+                // che dichiara chi tira.
+                const FOX = statoD.foxhole ? ((catalogo('STATI') || {}).foxhole || {}) : null;
+                // La nota c'e` SEMPRE, anche se chi tira ha dichiarato la
+                // Copertura: dice da dove viene. (Chat INTERFACCIA, 6 ottobre.)
+                if (FOX) note.push(FOX.copertura360 || 'Foxhole: Copertura Parziale a 360 gradi.');
+                if (ctx.cover || FOX) {
                     // 🔴 No Cover e Limited Cover fanno cadere ENTRAMBE il -3.
                     // La differenza fra loro sta sulla SALVEZZA, non qui.
                     const cs = M.coperturaSkill(difensore);
@@ -5014,7 +5035,26 @@
                 }
 
                 // Mimetismo, ridotto o annullato dai Multispectral Visor
-                const mim = nfbD ? 0 : M.valoreMimetismo(difensore);
+                // Il Foxhole DA` LA SKILL Mimetism (-3) (riga 13866), non un MOD
+                // a parte. Chat REGOLE, 6 ottobre:
+                //  - NON SI SOMMA con un Mimetism di profilo: REGOLA SCRITTA, e`
+                //    la stessa skill ed e` NFB (righe 9109, 6677-6680,
+                //    14897-14899).
+                //  - QUALE valore vale non lo scrive nessuno. LETTURA: il valore
+                //    viene dal PROFILO quando c'e` (righe 9114-9115, e per
+                //    analogia con la Silhouette alla riga 13864); il (-3) del
+                //    Foxhole vale per chi non ha Mimetism. NON e` "si applica il
+                //    piu` negativo": quella regola non esiste. Lettura contraria
+                //    (righe 14891-14896): l'ultimo NFB attivato cancella l'altro,
+                //    quindi -3.
+                //  - E` NFB come quello di profilo: in IMP-2 da Cybermask cade
+                //    (righe 5167-5171), e lo fa `nfbD` qui sotto. La Copertura a
+                //    360 gradi invece resta: non e` una skill.
+                const mimProfilo = M.valoreMimetismo(difensore);
+                const mimFox = (FOX && typeof FOX.mimetismo === 'number') ? FOX.mimetismo : 0;
+                const mim = nfbD ? 0 : (mimProfilo < 0 ? mimProfilo : mimFox);
+                if (nfbD && mimFox < 0 && mimProfilo === 0) note.push(nfbD.motivo);
+                if (mim < 0 && mimProfilo === 0) note.push('Mimetism (-3) dallo Stato Foxhole.');
                 if (mim < 0) {
                     if (tA.msv2) note.push(`Multispectral Visor L2+: il Mimetismo (${mim}) non si applica.`);
                     else if (tA.msv1) {
@@ -5612,6 +5652,17 @@
         // Hacking via Repeater nemico contro chi non e` Hacker: il Requisito
         // manca, Idle. Nessun tiro (righe 4799-4802).
         if (ctxAtt._requisitoFallito) { att.requisitoFallito = true; att.impossibile = true; }
+        // Lo stesso giudizio quando il Programma sta nello slot dell'attacco:
+        // e` il caso dell'ARO di Hacking contro un attivo che non attacca.
+        if (azAtt0 === M.AZIONI.HACKING && arma && arma.nome && !att.requisitoFallito && ctx.reattivoNonBersagliato) {
+            const g = M.bersagliValidi(M.AZIONI.HACKING, [difensore], { attaccante: attaccante, programma: arma.nome })[0];
+            if (g && g.ammesso === false) {
+                att.requisitoFallito = true; att.impossibile = true; att.bersaglioNonValido = true;
+                const mot = `${arma.nome} in ARO: ${g.motivo || 'bersaglio non valido'} Requisito fallito: Idle, l'ARO e\u0300 speso.` +
+                    (M.inFormaMarker(M.statoBersaglio(attaccante)) ? ' Era in forma di Marker: l\'Idle lo rivela.' : '');
+                (att.note = att.note || []).push(mot); avvisi.push(mot);
+            }
+        }
 
         let burstAtt = (attacco.burst != null) ? attacco.burst : ((arma && arma.burst) || 1);
         // Un Idle non tira: nessun dado, nessun Tiro Salvezza.
@@ -5645,6 +5696,24 @@
             // la zona — anche quello del reattivo. modReazione calcolava gia` il
             // suo burstMod, e qui veniva buttato via. Mai sotto 1.
             if (reaz.burstMod && burstDif > 0) burstDif = Math.max(1, burstDif + reaz.burstMod);
+            // 🔴 IL PROGRAMMA IN ARO CONTRO UN BERSAGLIO CHE NON PUO` COLPIRE.
+            // Dal lato attivo la schermata filtra i bersagli con
+            // M.bersagliValidi; in ARO il bersaglio e` l'attivo e nessuno lo
+            // controllava: un Trinity si risolveva contro un non Hacker.
+            // (MISURATO il 6 ottobre.) Stessa funzione, stesso giudizio.
+            // LETTURA della chat MOTORE: bersaglio non valido = Requisito
+            // fallito = Idle (righe 1244-1247).
+            if (reazione.azione === 'HACKING' && reazione.arma && reazione.arma.nome && !reaz.requisitoFallito) {
+                const g = M.bersagliValidi(M.AZIONI.HACKING, [attaccante], { attaccante: difensore, programma: reazione.arma.nome })[0];
+                if (g && g.ammesso === false) {
+                    reaz.requisitoFallito = true; reaz.bersaglioNonValido = true;
+                    // In ARO non c'e` un Ordine da spendere: l'ARO e` speso. E
+                    // un Idle RIVELA chi era in forma di Marker (righe 7462-7463).
+                    const mot = `${reazione.arma.nome} in ARO: ${g.motivo || 'bersaglio non valido'} Requisito fallito: Idle, l'ARO e\u0300 speso.` +
+                        (M.inFormaMarker(M.statoBersaglio(difensore)) ? ' Era in forma di Marker: l\'Idle lo rivela.' : '');
+                    (reaz.note = reaz.note || []).push(mot); avvisi.push(mot);
+                }
+            }
             // ARO di Hacking via Repeater nemico contro chi non e` Hacker:
             // Requisito fallito, Idle (righe 4799-4802). Non tira.
             if (reaz.requisitoFallito) burstDif = 0;
@@ -6293,8 +6362,13 @@
             // traduce per il tabellone deve saperlo, o lo mette sotto la
             // fazione attiva. (Chat TEST, 23 settembre.)
             ultimo.reattivoNonBersagliato = true;
-            ultimo.note = (ultimo.note || []).concat([
-                `${M.nomeUnita(reattivo)} reagisce senza essere bersaglio dell'attacco: il suo è un Tiro Normale a sé.`
+            // Se l'ARO si e` risolto in Idle (Requisito fallito) non c'e`
+            // nessun tiro: dire "Tiro Normale" sotto un "NESSUN TIRO" era una
+            // contraddizione. (Chat INTERFACCIA, 6 ottobre.)
+            const idleOrf = !!(ultimo.attivo && ultimo.attivo.requisitoFallito);
+            ultimo.note = (ultimo.note || []).concat([idleOrf
+                ? `${M.nomeUnita(reattivo)} reagisce senza essere bersaglio dell'attacco, ma il Requisito non è soddisfatto: esegue un Idle e non tira.`
+                : `${M.nomeUnita(reattivo)} reagisce senza essere bersaglio dell'attacco: il suo è un Tiro Normale a sé.`
             ]);
         });
 
@@ -8492,6 +8566,27 @@
 
     // Quest'azione e` permessa dagli stati dell'unita`?
     // `azioniPermesse` e` una lista CHIUSA: se c'e`, tutto il resto e` vietato.
+    // LA CLASSE DI UN'AZIONE (catalogo CLASSI_AZIONE, righe 16619-16661):
+    // 'BASIC_SHORT' | 'SHORT' | 'LONG' | 'ARO' | 'AUTOMATIC' (fuori tabella:
+    // non consuma Ordine ne` ARO) | null se il catalogo non la conosce.
+    //   -> { classe, aro, nomeRegola } ; per l'Hacking passa il Programma.
+    M.classeAzione = function (azione, programma) {
+        const C = catalogo('CLASSI_AZIONE') || {};
+        const az = M.azioneCanonica(azione) || String(azione || '').toUpperCase();
+        if (programma) {
+            const p = (C.programmi || {})[String((programma && programma.nome) || programma).toUpperCase()];
+            if (p) return { classe: p.classe, aro: !!p.aro, nomeRegola: null };
+        }
+        const chiavi = Object.keys(C.azioni || {});
+        for (let i = 0; i < chiavi.length; i++) {
+            if (chiavi[i] === az || M.azioneCanonica(chiavi[i]) === az) {
+                const v = C.azioni[chiavi[i]];
+                return { classe: v.classe, aro: !!v.aro, nomeRegola: v.nomeRegola || null };
+            }
+        }
+        return { classe: null, aro: null, nomeRegola: null };
+    };
+
     // FOXHOLE ALLA DICHIARAZIONE (catalogo STATI.foxhole; chat REGOLE, 6
     // ottobre). Chi e` in Foxhole e dichiara, nel Turno Attivo, una Skill con
     // etichetta Movimento puo` cancellare lo stato — e lo deve annunciare
@@ -8548,13 +8643,19 @@
                 bloccanti.push({ stato: s.stato, motivo: `Stato ${s.nome || s.stato}: ${azione} non è permessa.` });
                 return;
             }
-            if (Array.isArray(s.azioniPermesse) && s.azioniPermesse.length > 0) {
-                const dentro = s.azioniPermesse.some(function (x) {
+            // La lista chiusa di uno Stato puo` nominare CLASSI ("Basic Short
+            // Skills", riga 14557) oltre che nomi: classiPermesse.
+            const classi = Array.isArray(s.classiPermesse) ? s.classiPermesse : [];
+            if ((Array.isArray(s.azioniPermesse) && s.azioniPermesse.length > 0) || classi.length > 0) {
+                const perNome = (s.azioniPermesse || []).some(function (x) {
                     return M.azioneCanonica(x) === az || String(x).toUpperCase() === az;
                 });
-                if (!dentro) {
+                const perClasse = classi.length > 0 && classi.indexOf(M.classeAzione(az).classe) >= 0;
+                if (!perNome && !perClasse) {
+                    const elenco = classi.map(function (c) { return c === 'BASIC_SHORT' ? 'le Basic Short Skill (Movimento, Scoprire, Idle)' : c; })
+                                         .concat(s.azioniPermesse || []);
                     bloccanti.push({ stato: s.stato,
-                        motivo: `Stato ${s.nome || s.stato}: permette solo ${s.azioniPermesse.join(', ')}.` });
+                        motivo: `Stato ${s.nome || s.stato}: permette solo ${elenco.join(', ')}.` });
                 }
             }
         });

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-06.3 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-06.4 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -489,7 +489,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-06.3', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-10-06.4', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -1844,11 +1844,27 @@
 
             // L'unita` aggiornata la calcola il motore: qui si sostituisce e basta.
             if (regole.daApplicare !== false && regole.unitaAggiornata) {
-                const i = window.roster.indexOf(unita);
-                if (i >= 0) {
-                    window.roster[i] = Object.assign({}, window.roster[i], regole.unitaAggiornata);
-                    window.spearheadUnit = window.roster[i];
-                    if (window.sincronizzaStatiConHub) window.sincronizzaStatiConHub(i);
+                // 🔴 6 ottobre, difetto di questa chat. Qui si scriveva
+                // roster[i] a mano e poi si chiamava
+                // window.sincronizzaStatiConHub(i): una funzione che NON
+                // ESISTE in nessun file del progetto. Il controllo "se
+                // c'e`" la saltava in silenzio, quindi l'Hub non veniva mai
+                // avvisato: un Marker rivelato da un Idle da requisito
+                // fallito restava Marker sul tabellone e per l'avversario,
+                // fino al prossimo invio fatto per altri motivi.
+                // Ora passa da window.sostituisciUnita (motore_core.js), il
+                // posto unico: aggiorna l'unita` dell'Ordine e quella del
+                // roster e manda l'AGGIORNAMENTO all'Hub.
+                if (typeof window.sostituisciUnita === 'function') {
+                    window.sostituisciUnita(unita, regole.unitaAggiornata, 'Idle da requisito fallito');
+                } else {
+                    // Senza motore_core.js (i banchi che caricano solo questo
+                    // file) il cambio di stato NON si perde: si applica al
+                    // roster come prima e si DICE che l'Hub non e` stato
+                    // avvisato. Perdere il cambio sarebbe peggio.
+                    const i = window.roster.indexOf(unita);
+                    if (i >= 0) { window.roster[i] = Object.assign({}, window.roster[i], regole.unitaAggiornata); window.spearheadUnit = window.roster[i]; }
+                    console.error('\u26d4 window.sostituisciUnita manca (motore_core.js non caricato?): truppa aggiornata nel roster, Hub NON avvisato.');
                 }
             }
 
@@ -2028,6 +2044,14 @@
         window.testoCambioStato = () => {
             const c = window.ultimoCambioStato;
             if (!c || c.cambiato !== true || c === window._cambioStatoVecchio) return '';
+            // Dal motore_core 2026-10-06.6 il cambio porta l'identificativo
+            // dell'Ordine che lo ha causato (campo `ordine`). Quando c'e` e
+            // c'e` anche quello dell'Ordine in corso, si confrontano: e` il
+            // dato giusto, e non dipende piu` dal fatto che l'oggetto sia
+            // nuovo a ogni cambio. Il confronto qui sopra resta per i casi
+            // in cui uno dei due manca.
+            const ordineOra = (window.currentOrder && window.currentOrder.id) || null;
+            if (c.ordine && ordineOra && c.ordine !== ordineOra) return '';
             const nomi = { CAMO: 'Marker CAMO', IMP_1: 'Marker IMP-1', IMP_2: 'Marker IMP-2', IMP: 'Marker Impersonation',
                            HIDDEN: 'Schieramento Nascosto', FOXHOLE: 'Foxhole', NORMAL: 'Modello sul tavolo' };
             const dire = (s) => nomi[String(s || '').toUpperCase()] || String(s || '?');

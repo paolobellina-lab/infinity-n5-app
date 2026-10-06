@@ -1,4 +1,4 @@
-// @versione 2026-10-06.2 | test_aro_filtro_repeater.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-06.5 | test_aro_filtro_repeater.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 6 ottobre 2026.
 //
@@ -23,7 +23,18 @@
 //
 //  USO:  CARTELLA=/percorso/ node test_aro_filtro_repeater.js
 // ============================================================================
-const DIR = (process.env.CARTELLA || '/mnt/project/').replace(/\/?$/, '/');
+// 🔴 6 ottobre (misura della chat TEST). Qui la cartella predefinita era
+// '/mnt/project/' scritta in fisso: dove quel percorso non esiste il banco
+// moriva all'avvio (app.html non trovato) SENZA un solo rosso e senza la riga
+// di riepilogo, cioe` le sue prove sparivano dal conto invece di fallire.
+// Ora, senza CARTELLA, si usa la cartella in cui sta il banco; e se li` la
+// pagina non c'e` lo si DICE, con un rosso e il riepilogo.
+const DIR = (process.env.CARTELLA || (__dirname + '/')).replace(/\/?$/, '/');
+if (!require('fs').existsSync(DIR + 'app.html')) {
+  console.log('  \u2717 app.html non trovato in ' + DIR + ' (imposta CARTELLA=/percorso/ oppure metti il banco accanto ai file)');
+  console.log('\n0 passati, 1 falliti');
+  process.exit(1);
+}
 const fs = require('fs'), vm = require('vm');
 const nonCaricati = [], assenti = [];
 let passati = 0, falliti = 0;
@@ -132,7 +143,15 @@ ok(a.aroReactions[0].repeaterNemico === true, 'e la reazione porta repeaterNemic
 let b = hack([/^Fusilier \(Combi/]);
 b.toggleAroRepeater();
 ok(/REQUISITO NON SODDISFATTO/.test(b.schermo()) && b.schermo().includes(REP.seNonHacker), 'acceso contro un NON Hacker: avviso di Idle, col testo del catalogo', b.schermo().replace(/<[^>]+>/g, ' ').slice(-300));
-b.toggleAroRepeater(); b.salvaAroCorrente();
+b.toggleAroRepeater();
+// L'avviso anche SENZA Repeater (Paolo, 6 ottobre): Trinity contro un non
+// Hacker e` un Idle comunque, e va letto prima di confermare.
+const gB = b.MotoreN5.bersagliValidi(b.MotoreN5.AZIONI.HACKING, [b.MotoreN5.rosterNemico()[0]], { attaccante: b.roster[0], programma: 'TRINITY' })[0];
+ok(gB.ammesso === false, 'premessa: per il motore Trinity contro il Fusilier non Hacker non e` valido', gB);
+ok(/: NO</.test(b.schermo()) && /REQUISITO NON SODDISFATTO/.test(b.schermo()) && b.schermo().includes(gB.motivo), 'Repeater SPENTO contro un NON Hacker: avviso di Idle lo stesso, col motivo del motore', b.schermo().replace(/<[^>]+>/g, ' ').slice(0, 400));
+ok(/selezionaArmaAro|TRINITY/.test(b.el('aro-weapon-list').innerHTML), 'e il programma resta nella scelta: non viene tolto');
+ok(!/REQUISITO NON SODDISFATTO/.test(a.schermo()), 'controprova: contro un Hacker nessun avviso');
+b.salvaAroCorrente();
 ok(b.aroReactions[0].repeaterNemico === false, 'spento: repeaterNemico false (non assente)', b.aroReactions[0].repeaterNemico);
 let c = tavolo(/^Alguacil \(Combi/); c.aro('ATTACCO BS'); c.selezionaAzioneAro('BS_ATTACK'); c.selezionaArmaAro('Combi Rifle'); c.selezionaBersaglioAro('Attivo0');
 ok(!/toggleAroRepeater/.test(c.el('aro-modifiers-content').innerHTML), 'controprova: in un Attacco BS il pulsante non compare');
@@ -162,8 +181,16 @@ console.log('\n--- 4. sul tabellone dell\'Hub ---');
   const lato = d.scontri[0] && d.scontri[0].reattivo;
   ok(lato && lato.dati && lato.dati.requisitoFallito === true && lato.burst === 0, 'premessa: il motore da` requisitoFallito e burst 0 al reattivo', d.errore || (lato && { burst: lato.burst, dati: lato.dati && lato.dati.requisitoFallito }));
   ok(/IDLE/.test(d.testo) && /Requisito non soddisfatto/.test(d.testo), 'e il tabellone lo DICE: IDLE, requisito non soddisfatto', d.testo.slice(0, 400));
+  // 🔴 6 ottobre, corretto con il motore 2026-10-06.10. La controprova qui
+  // diceva "senza Repeater, contro un NON Hacker, e` un tiro normale". Era
+  // vero per il motore di allora e falso per la regola (righe 9415-9417,
+  // 1244-1247): Trinity vale solo contro un Hacker, con o senza Repeater.
+  // Ora il caso e` un Idle anche lui, e la controprova usa un attivo Hacker.
   let e2; try { e2 = disegna(false); } catch (e) { e2 = { testo: 'ERR ' + e.message }; }
-  ok(!/IDLE/.test(e2.testo) && /Successo al/.test(e2.testo), 'controprova: senza Repeater e` un tiro normale, niente IDLE', e2.testo.slice(0, 300));
+  ok(/IDLE/.test(e2.testo), 'Trinity contro un NON Hacker senza Repeater: Idle anche lui', e2.testo.slice(0, 300));
+  w.gameState.panoceania[0] = Object.assign({}, a.MotoreN5._statoGioco.panoceania[0]);   // il Fusilier Hacker del database
+  let e3; try { e3 = disegna(false); } catch (e) { e3 = { testo: 'ERR ' + e.message }; }
+  ok(!/IDLE/.test(e3.testo) && /Successo al/.test(e3.testo), 'controprova: contro un Hacker e` un tiro, niente IDLE', e3.testo.slice(0, 300));
 
   // Le note dello scontro e i valori mancanti. Qui lo scontro e` scritto a
   // mano nella forma che esce da generaRisoluzioneDaDati: si prova solo il

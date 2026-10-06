@@ -1,4 +1,4 @@
-// @versione 2026-09-29.2 | test_giro_da_selectaction.js | proprieta`: chat TEST
+// @versione 2026-10-06.1 | test_giro_da_selectaction.js | proprieta`: chat TEST
 // ============================================================================
 //  test_giro_da_selectaction.js
 //  Dalla chat INTERFACCIA, 29 settembre 2026.
@@ -42,7 +42,7 @@
 // candidati — cioè proprio il momento in cui un banco serve di più. (Chiesto
 // da MOTORE il 29 settembre: senza, non poteva provare il router prima di
 // consegnarlo, e il suo verso rosso ha finito per misurare il router sano.)
-const DIR = (process.env.CARTELLA || '/mnt/project/').replace(/\/?$/, '/');
+const DIR = (process.env.CARTELLA || __dirname).replace(/\/?$/, '/');
 // Un file che non si carica NON si salta in silenzio: è la forma del catalogo
 // sparito del 28 settembre, dove a nominarlo fu test_caricamento_pagine. Qui
 // si contano e si dicono, e la prova cade.

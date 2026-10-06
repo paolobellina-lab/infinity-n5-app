@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | test_collaudo_node.js | proprieta`: chat TEST
+// @versione 2026-10-06.1 | test_collaudo_node.js | proprieta`: chat TEST
 // Sette difetti del collaudo in Node — node test_collaudo_node.js
 global.window = global;
 require('./catalogo_n5.js'); require('./database_comune.js');
@@ -85,11 +85,23 @@ const normale = { alias: 'N', bs: 12, cc: 13, ph: 11, wip: 13, skills: '', state
 ok(M.azioniAroPossibili(normale, 'ATTACCO BS').filter(a => a.ammesso).length >= 3,
    'una truppa senza stati conserva le proprie opzioni');
 
-console.log('\n=== 7. ECM: si accetta la grafia dei profili ===');
+console.log('\n=== 7. ECM: si accetta la grafia dei profili, ma non è un Firewall ===');
 const tik = { alias: 'Tikbalang', arm: 5, bts: 6, skills: 'ECM (Guided -6)', states: {} };
 const meteor = { alias: 'Meteor Zond', arm: 0, bts: 3, skills: 'ECM (Hacker -3)', states: {} };
 ok(M.trattiTiro(tik).tinBotGuided === true, '"ECM (Guided -6)" riconosciuto');
-ok(M.valoreFirewall(meteor) === -3, '"ECM (Hacker -3)" dà -3, non 0');
+// CAMBIATO IL 6 OTTOBRE (chat REGOLE): l'ECM non e` un Firewall. Il numero
+// esiste, ma sta in un'altra funzione — e chiederlo a valoreFirewall dava
+// -3 solo perche` le due cose erano confuse in un posto solo.
+ok(M.valoreFirewall(meteor) === 0,
+   `l ECM non è un Firewall: valoreFirewall dà 0 (ottenuto ${M.valoreFirewall(meteor)})`);
+ok(M.valoreEcmHacking(meteor) === -3,
+   `il -3 c è, e sta in valoreEcmHacking (ottenuto ${M.valoreEcmHacking(meteor)})`);
+// CONTROPROVA: le due funzioni non sono due nomi della stessa cosa. Chi ha
+// un Firewall vero risponde a valoreFirewall e tace all ECM, e viceversa.
+// Senza questa prova, "0 e -3" non distingue "separate" da "sempre 0 e -3".
+const conFirewall = { alias: 'F', arm: 1, bts: 3, skills: 'Hacker, Hacking Device, TinBot: Firewall (-3)', states: {} };
+ok(M.valoreFirewall(conFirewall) === -3 && M.valoreEcmHacking(conFirewall) === 0,
+   `chi ha il Firewall: firewall ${M.valoreFirewall(conFirewall)}, ecm ${M.valoreEcmHacking(conFirewall)} (lo specchio dell ECM)`);
 const att = { alias: 'A', bs: 11, skills: '', states: {} };
 const gui = M.modAttacco(att, tik, M.profiloArma('Missile Launcher (Blast Mode)'),
     M.AZIONI.GUIDATO, { rangeIndex: 3 });

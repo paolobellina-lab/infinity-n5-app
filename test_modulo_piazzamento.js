@@ -1,6 +1,7 @@
-// @versione 2026-09-27.1 | test_modulo_piazzamento.js | proprieta`: chat TEST
+// @versione 2026-10-06.1 | test_modulo_piazzamento.js | proprieta`: chat TEST
 // Passata 3: piazzamento e innesco da ZdC — node test_modulo_piazzamento.js
 global.window = global;
+const DIR = (process.env.CARTELLA || __dirname).replace(/\/?$/, '/');
 let passati = 0, falliti = 0;
 function ok(c, n, e) { if (c) { passati++; console.log(`  ✅ ${n}`); } else { falliti++; console.log(`  ❌ ${n}${e ? '\n       ' + e : ''}`); } }
 
@@ -137,11 +138,65 @@ ok(sc.reattivo.mod === 10, 'la Schivata è a PH pieno: la LoF non c entra');
 ok(sc.attivo.salvezzaInflitta.valoreSuccesso === 6, 'e il Fusilier si salva su ARM VS 6');
 
 console.log('\n=== 11. logica_aro conosce i deployable ===');
-const src = require('fs').readFileSync('./logica_aro.js', 'utf8');
-ok(/innescoDeployable/.test(src), 'logica_aro chiama innescoDeployable');
-ok(/attivaDeployable/.test(src), 'e ha il gestore della risposta');
+// Queste tre sono ricerche di testo nel sorgente: dicono che il file CHIAMA
+// quelle funzioni, non che l'ARO funzioni. Il comportamento vero lo misura
+// test_aro_filtro_repeater.js, che logica_aro.js lo carica per davvero.
+// Si pretende la forma dell'assegnazione, non la parola: "attivaDeployable"
+// comparirebbe anche solo in un commento.
+const src = require('fs').readFileSync(DIR + 'logica_aro.js', 'utf8');
+ok(/innescoDeployable\s*\(/.test(src), 'logica_aro chiama innescoDeployable');
+ok(/(window|G)\.attivaDeployable\s*=\s*function/.test(src),
+   'e il gestore della risposta è DEFINITO, non solo nominato');
 ok(/ordineDiPiazzamento/.test(src), 'e legge l Ordine di piazzamento (riga 5532)');
-ok(typeof window.attivaDeployable === 'undefined' || true, 'la funzione è esposta dal file');
+// 🔴 TOLTA il 6 ottobre: qui c'era
+//     ok(typeof window.attivaDeployable === 'undefined' || true, ...)
+// che con "|| true" era verde sempre. Una prova che non può fallire non è
+// una prova: è una riga che fa salire il totale. Sostituita da quella sopra.
+
+console.log('\n=== 12. D-03: PIAZZARE EQUIPAGGIAMENTO alza l allarme ===');
+// Il piano di collaudo lo dava per difetto: l'ordine passava al calcolatore
+// senza generare ARO. Dal 5 ottobre ordine_piazzamento.js chiama
+// M.allarmeOrdine e manda aroAtteso. Qui si misura, invece di leggere il
+// codice: un allarme che nessuno riceve è la stessa cosa di nessun allarme.
+let allarmi = [];
+global.inviaAllarmeAro = (p) => { allarmi.push(p); };
+nuovo(moran());
+window.scegliArmaDaPiazzare('CrazyKoalas');
+window.deployableDomande.forEach(d => window.rispondiDeployable(d.id, d.rispostaBloccante === false));
+allarmi = [];
+window.eseguiPiazzamento();
+ok(allarmi.length === 1, `l allarme parte, una volta sola (${allarmi.length})`);
+const al = allarmi[0] || {};
+ok(al.azione === 'PIAZZARE EQUIPAGGIAMENTO',
+   `e dice quale azione è stata dichiarata (${al.azione})`);
+ok(al.attaccante === 'Moran' && Array.isArray(al.bersagli) && al.bersagli.length === 0,
+   `col nome di chi la dichiara e nessun bersaglio (${al.attaccante})`);
+ok(inviato && inviato.aroAtteso === true,
+   `e la busta del calcolo dice all Hub di aspettare l ARO (aroAtteso ${inviato && inviato.aroAtteso})`);
+
+// CONTROPROVA 1 — aroAtteso non è inchiodato a true: un'azione che NON
+// genera ARO non lo alza. Senza, "true" non distingue "letto" da "scritto".
+// L'unica azione del vocabolario che non genera ARO e` ALLERTA (misurato il
+// 6 ottobre su tutto l'elenco: Trincerarsi, Rientro in CAMO e Cybermask lo
+// generano, al contrario di quanto avevo supposto scrivendo questa prova).
+const senzaAro = M.allarmeOrdine('ALLERTA', { unita: moran(), coordUnits: [moran()] });
+ok(senzaAro.aro && senzaAro.aro.genera === false && senzaAro.payload === null,
+   `Allerta non genera ARO e non ha allarme (genera ${senzaAro.aro && senzaAro.aro.genera})`);
+// CONTROPROVA 2 — il piazzamento BLOCCATO non alza l allarme: l'ordine non
+// è stato dichiarato, e avvisare l'avversario di un ordine che non c'è è
+// peggio che tacere.
+nuovo(moran());
+window.scegliArmaDaPiazzare('CrazyKoalas');
+window.rispondiDeployable('markerNellArea', true);
+allarmi = [];
+window.eseguiPiazzamento();
+ok(allarmi.length === 0, `piazzamento bloccato: nessun allarme (${allarmi.length})`);
+
+// La nota sulla schermata parla del TOKEN, non dell ARO: sono due canali
+// diversi, e leggerla come "non è partito nulla" sarebbe un errore.
+ok(/NON è stato spedito/.test(nodo('calc-result').innerHTML) === false ||
+   /token NON è stato spedito/.test(nodo('calc-result').innerHTML),
+   'la nota in schermata riguarda il token, non l allarme ARO');
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

@@ -1,4 +1,4 @@
-// @versione 2026-09-27.1 | test_collaudo_suite.js | proprieta`: chat TEST
+// @versione 2026-10-06.1 | test_collaudo_suite.js | proprieta`: chat TEST
 // ================================================================
 // Il banco che guarda gli altri banchi.
 // Nasce dal 26 settembre: test_modulo_piazzamento.js cadeva con un
@@ -23,7 +23,15 @@ const RIEPILOGO = /(\d+) passati, (\d+) falliti/;
 
 console.log('\n=== 1. Ogni banco arriva in fondo e dice come è andata ===');
 const esiti = banchi.map(f => {
-    const r = spawnSync(process.execPath, [f], { cwd: DIR, encoding: 'utf8', timeout: 300000 });
+    // CARTELLA si passa ai figli (6 ottobre). Dieci banchi avevano
+    // '/mnt/project/' scritto in fisso come cartella predefinita: appena il
+    // progetto non e` montato la` muoiono all'avvio, e con loro se ne vanno
+    // 205 prove senza un solo rosso. E` la ragione per cui questo banco
+    // esiste: li ha trovati muti. Chi sa dove sono i file e` questo banco,
+    // quindi e` lui a dirlo, invece di sperare che ogni figlio indovini.
+    const r = spawnSync(process.execPath, [f],
+        { cwd: DIR, encoding: 'utf8', timeout: 300000,
+          env: Object.assign({}, process.env, { CARTELLA: DIR }) });
     const testo = (r.stdout || '') + (r.stderr || '');
     const m = testo.match(RIEPILOGO);
     return { f, uscita: r.status, passati: m ? +m[1] : null, falliti: m ? +m[2] : null,

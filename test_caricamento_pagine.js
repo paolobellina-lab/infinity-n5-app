@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | test_caricamento_pagine.js | proprieta`: chat TEST
+// @versione 2026-10-06.1 | test_caricamento_pagine.js | proprieta`: chat TEST
 // ============================================================================
 //  test_caricamento_pagine.js
 //  Dalla chat INTERFACCIA, 23 settembre 2026.
@@ -34,7 +34,7 @@
 const fs=require('fs'), vm=require('vm'), path=require('path');
 // La cartella si puo` passare, per provare una correzione PRIMA di
 // caricarla nel progetto:  CARTELLA=/percorso/ node test_caricamento_pagine.js
-const cartella=(process.env.CARTELLA || '/mnt/project/').replace(/\/?$/,'/');
+const cartella=(process.env.CARTELLA || __dirname).replace(/\/?$/,'/');
 function prova(pagina){
   const h=fs.readFileSync(cartella+pagina,'utf8');
   const g={}; g.window=g; g.globalThis=g; g.console={log:()=>{},warn:()=>{},error:()=>{}};
@@ -80,7 +80,7 @@ function prova(pagina){
 // banco dava "0 problemi" sull'Hub mentre il suo calcolatore_cloud.js era
 // rotto, perche` il motore caricato da app.html era ancora li`.
 // (Segnalato dalla chat TEST il 23 settembre: e` la specie del catch vuoto,
-//  ma piu` nascosta \u2014 li` si ingoia un errore, qui lo si impedisce.)
+//  ma piu` nascosta — li` si ingoia un errore, qui lo si impedisce.)
 const PAGINE=['app.html','calcolatore_hub.html'];
 if (process.argv[2]) {
   // processo figlio: una pagina sola

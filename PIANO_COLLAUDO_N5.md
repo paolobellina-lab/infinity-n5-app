@@ -1,15 +1,30 @@
-<!-- @versione 2026-09-30.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-10-06.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 7)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 8)
 
-Sostituisce la revisione 6 del 29 settembre.
+Sostituisce la revisione 7 del 30 settembre.
 
-# 0. Quello che è cambiato dalla revisione 6
+# 0. Quello che è cambiato dalla revisione 7
 
-**Tre difetti trovati al tavolo sono aperti**, e tre prove di questo piano oggi
-non arrivano in fondo: l'anello della scelta dell'arma (BS-06), il Burst della
-Soppressione in reazione (BS-12), e gli ordini senza tiro che non avvisano
-l'avversario (A-13). Stanno tutti nel blocco V, con la riga di regolamento.
+**Due dei tre difetti aperti sono chiusi, e uno dei due non era un difetto.**
+
+- **BS-06 non è un anello: era lo scenario a essere sbagliato.** Nel database il
+  Croc Man nasce `deployState: 'CAMO'`, cioè Marker. Contro un Marker l'Attacco
+  BS non si dichiara: l'app avvisa — *«Marker CAMO: va Scoperto prima, oppure
+  usa un Attacco Intuitivo»* — e torna alla scelta dell'arma. Quello che Paolo
+  ha visto come anello era l'app che faceva la cosa giusta. La prova ora chiede
+  un Croc Man **rivelato** (un Modello). **I numeri attesi non cambiano: 5,
+  salvezza ARM VS 11**, rimisurati il 6 ottobre sul motore `8bd59418.632824`.
+  Fissato in `test_modulo_bs.js` sezione 10, sui profili veri del database.
+- **A-13 / D-03 è chiuso.** `ordine_piazzamento.js` chiama `M.allarmeOrdine` e
+  manda `aroAtteso`. Misurato, non letto: `test_modulo_piazzamento.js` sezione
+  12 pretende che l'allarme parta una volta sola, con l'azione dichiarata e il
+  nome di chi la dichiara, e che `aroAtteso` sia `true` nella busta. Con due
+  controprove: un'azione che non genera ARO (**Allerta** è la sola del
+  vocabolario) non alza l'allarme, e un piazzamento **bloccato** non lo alza
+  nemmeno — avvisare di un ordine che non c'è è peggio che tacere.
+- **Resta aperto un difetto solo**: il Burst della Soppressione in reazione
+  (BS-12 / D-02). Sta nel blocco V, con la riga di regolamento.
 
 **Cinque prove avevano il bersaglio sbagliato**, e sono corrette: BS-22 usava il
 Morlock, che è Nomade come l'attaccante; BS-23 lo Zondnautica-A, idem; BS-16
@@ -29,9 +44,11 @@ un numero diverso da quello scritto qui, guarda prima la scheda ufficiale — il
 piano invecchia insieme ai dati.
 
 Le prove si eseguono **dall'app**. Tutto ciò che si poteva verificare col motore è
-verde: 71 file di test, 2596 prove, banco di confronto a zero divergenze.
-I valori attesi sono calcolati con `motore_regole_n5.js` 2026-09-29.2 sui profili
-veri. Le regole citate rimandano a `REGOLE_N5_v5_1_1.txt`, con `grep -n`.
+verde: **79 file di test, 2820 prove, 0 falliti**, nessun banco muto, banco di
+confronto a zero divergenze (354 scontri identici). I valori attesi sono
+calcolati con `motore_regole_n5.js` **2026-10-06.11, impronta
+`8bd59418.632824`** sui profili veri. Le regole citate rimandano a
+`REGOLE_N5_v5_1_1.txt` (impronta `5ea7581f.904498`, 17029 righe), con `grep -n`.
 
 ## Come leggere una prova
 
@@ -240,15 +257,18 @@ sempre non è un difetto.
 **BS-05 — MSV L1**
 - Grenzer (FO, Sensor) · Combi @ banda 1 vs Zulu-Cobra · Atteso: **16**, con la nota sul visore.
 
-**BS-06 — Mimetismo −6 e copertura** **[DIFETTO APERTO: anello]**
+**BS-06 — Mimetismo −6 e copertura**
 - Alguacil · Combi @ banda 1 vs **Croc Man (MULTI Sniper Rifle)**, PanOceania,
-  **in copertura** · Atteso: **5**, salvezza ARM **VS 11**. I numeri sono giusti,
-  verificati sul motore.
-- **Oggi la prova non arriva in fondo**: dopo la scelta dell'arma l'app torna a
-  chiedere l'arma, in anello (trovato da Paolo il 30 settembre). Ha la stessa
-  firma dell'anello dell'hacking chiuso il 29: la seconda metà non ritrova
-  l'arma della prima. Segnalando, indica **quale arma** avevi scelto — se aveva
-  una parentesi o una modalità, è quasi certamente lo stesso punto.
+  **rivelato** (Modello, non Marker), **in copertura** · Atteso: **5**
+  (11 +3 gittata −3 copertura −6 Mimetismo), salvezza ARM **VS 11**.
+- **Prepara il bersaglio prima**: nel database il Croc Man nasce Marker
+  (`deployState: 'CAMO'`). **Scoprilo** — o schieralo come Modello — altrimenti
+  l'app rifiuta l'Attacco BS e torna alla scelta dell'arma. **Non è un anello:
+  è il rifiuto che deve fare.** Nella revisione 7 questa prova era segnata come
+  difetto aperto proprio per quel motivo, ed era lo scenario a sbagliare.
+- Se vedi il rifiuto, guarda che l'avviso nomini il Marker: *«va Scoperto
+  prima, oppure usa un Attacco Intuitivo»*. Un rifiuto senza quel motivo è
+  un'altra cosa, e va segnalato.
 
 **BS-07 — MSV L2 annulla il −6**
 - Intruder · HMG @ banda 2 vs Croc Man in copertura · Atteso: 13 +3 −3 = **13** B4.
@@ -984,18 +1004,27 @@ costruire; la terza esiste già ed è il modello.
 
 ## Difetti trovati al tavolo, non ancora chiusi
 
-**D-01 — L'anello della scelta dell'arma (BS-06).** Dopo la scelta, l'app torna a
-chiederla. Stessa firma dell'anello dell'hacking chiuso il 29 settembre: la
-seconda metà non ritrova l'arma della prima. → MOTORE.
-
 **D-02 — Il Burst della Soppressione in reazione (BS-12).** Con un attacco attivo
 il reattivo in Fuoco di Soppressione scende a **Burst 1**; senza attacco resta
 **3**. La regola (riga 14649) dice 3 sempre: la regola generale dell'ARO sta
 scavalcando la Soppressione, come faceva con Neurocinetics. → MOTORE.
 
-**D-03 — Gli ordini senza tiro che non avvisano (A-13).** PIAZZARE
-EQUIPAGGIAMENTO e IDLE passano al calcolo **senza generare l'ARO**. Il motore
-dice che lo genererebbero; i due moduli non chiamano `inviaAllarmeAro`. → MOTORE.
+## Chiusi il 6 ottobre
+
+**D-01 — L'anello della scelta dell'arma (BS-06). NON ERA UN DIFETTO.** Il Croc
+Man nasce Marker e contro un Marker l'Attacco BS si rifiuta: l'app tornava alla
+scelta dell'arma perché è quello che deve fare. Lo scenario della prova voleva un
+Modello rivelato. Riprodotto da MOTORE, rimisurato qui il 6 ottobre: come nasce
+il bersaglio è rifiutato con il motivo giusto, rivelato dà **5** e salvezza
+**ARM VS 11**. Fissato in `test_modulo_bs.js` sezione 10. BS-06 corretto in
+questa revisione.
+
+**D-03 — Gli ordini senza tiro che non avvisano (A-13). CHIUSO per
+PIAZZARE EQUIPAGGIAMENTO.** `ordine_piazzamento.js` chiama `M.allarmeOrdine` e
+manda `aroAtteso: true`. Misurato in `test_modulo_piazzamento.js` sezione 12,
+con le due controprove (Allerta non alza l'allarme; un piazzamento bloccato non
+lo alza). **Resta da misurare l'IDLE**, che nella segnalazione originale era il
+secondo caso: nessun banco lo copre ancora.
 
 ## Divergenze note, che restano aperte per una ragione
 

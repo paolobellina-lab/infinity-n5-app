@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | test_modulo_hacking.js | proprieta`: chat TEST
+// @versione 2026-10-06.1 | test_modulo_hacking.js | proprieta`: chat TEST
 // Test end-to-end del modulo Hacking — node test_modulo_hacking.js
 global.window = global;
 let passati = 0, falliti = 0;
@@ -212,6 +212,73 @@ const esito = M.riprendiOrdine('HACKING', { isSecondHalf: true, unita: hacker,
 ok(esito.ok === false || /non è fra quelli|non riconosciut/i.test(String(esito.motivo || '')),
    `un programma che l unità non ha viene rifiutato (${JSON.stringify(esito.motivo || esito.ok)})`);
 window.goToStep = goVero; window.inviaCalcoloAllHub = inviaVero;
+
+console.log('\n=== 10. Punto 14: il pulsante del Repeater nemico ===');
+// Richiesto da MOTORE il 6 ottobre. Il pulsante tocca UN campo di UN
+// bersaglio, nasce false, e quel campo deve arrivare fino in busta e in
+// regole.perBersaglio: un interruttore che cambia la schermata e non arriva
+// all'Hub e` la stessa cosa di un interruttore che non c'e`.
+// I conti del Firewall stanno in test_hacking_firewall.js; qui si guarda
+// solo che il valore viaggi.
+const buste10 = [];
+const goTeniamo = window.goToStep, inviaTeniamo = window.inviaCalcoloAllHub;
+window.goToStep = () => {}; window.inviaCalcoloAllHub = (p) => buste10.push(p);
+const att10 = Object.assign(JSON.parse(JSON.stringify(TUTTI.find(u => /^Interventor \(Hacker/.test(u.nome)))), { states: {} });
+// Due bersagli: con uno solo non si distingue "cambia quello giusto" da
+// "cambia tutto". Il bersaglio di CARBONITE dev'essere legale, percio` sono
+// due unita` con un Dispositivo di Hacking.
+// I bersagli vanno RIVELATI: diversi profili Hacker nascono deployState
+// 'CAMO' nel database, e contro un Marker l'Attacco Comms non si dichiara —
+// l'app rifiuta, giustamente, e la busta non parte. E` la terza volta che
+// questo schema fa cadere uno scenario (BS-06, il Croc Man dello Speculativo,
+// e qui): se un profilo serve come bersaglio, va messo in forma di Modello.
+const bersagli10 = TUTTI.filter(u => M.eHacker(u) && !/^Interventor/.test(u.nome)).slice(0, 2)
+    .map(u => Object.assign(JSON.parse(JSON.stringify(u)),
+        { states: { camo: false, imp: false, hidden: false }, deployState: 'NORMAL', state: 'ACTIVE' }));
+ok(bersagli10.length === 2, `due bersagli Hacker per la prova (${bersagli10.length})`);
+M._rosterProprio = [att10]; M._rosterNemico = bersagli10;
+window.coordUnits = [att10]; window.coordIndex = 0; window.coordPayloads = [];
+window.currentOrder = { unit: att10, action: 'HACKING', action1: 'HACKING', weapon: 'CARBONITE' };
+// Un dado per bersaglio: con burst 0 su tutti il motore rifiuta l'invio
+// ("Nessun dado assegnato"), e la busta non arriverebbe mai.
+window.combatTargets = bersagli10.map(u => ({ id: u.id, name: u.nome, skills: '',
+    rangeIndex: 0, rangeMod: 0, burst: 1, cover: false, terrain: 'NESSUNO' }));
+
+ok(typeof window.toggleRepeaterNemicoHacking === 'function',
+   'window.toggleRepeaterNemicoHacking esiste');
+ok(window.combatTargets.every(t => !t.repeaterNemico),
+   `nasce false su tutti i bersagli (${JSON.stringify(window.combatTargets.map(t => !!t.repeaterNemico))})`);
+const primaDi = JSON.parse(JSON.stringify(window.combatTargets));
+window.toggleRepeaterNemicoHacking(0);
+ok(window.combatTargets[0].repeaterNemico === true,
+   `premuto su 0: il bersaglio 0 diventa true (${window.combatTargets[0].repeaterNemico})`);
+ok(window.combatTargets[1].repeaterNemico !== true,
+   `e il bersaglio 1 NON viene toccato (${window.combatTargets[1].repeaterNemico})`);
+// CONTROPROVA sul "solo quel campo": tutto il resto del bersaglio 0 e`
+// identico a prima. Senza, "true" non distingue "ha acceso il campo" da
+// "ha riscritto il bersaglio".
+const soloQuelCampo = Object.keys(primaDi[0]).every(k =>
+    k === 'repeaterNemico' || JSON.stringify(primaDi[0][k]) === JSON.stringify(window.combatTargets[0][k]));
+ok(soloQuelCampo, 'e del bersaglio 0 non cambia nient altro');
+window.toggleRepeaterNemicoHacking(0);
+ok(window.combatTargets[0].repeaterNemico === false,
+   `premuto di nuovo: torna false (${window.combatTargets[0].repeaterNemico})`);
+
+// Il viaggio: accendo il bersaglio 1 e spedisco.
+window.toggleRepeaterNemicoHacking(1);
+buste10.length = 0; window.coordPayloads = [];
+try { window.eseguiCalcoloHacking(); } catch (e) { ok(false, 'eseguiCalcoloHacking non cade', e.message); }
+const busta10 = buste10[0] || (window.coordPayloads[0] ? { attacchi: window.coordPayloads } : null);
+ok(!!busta10, `la busta e stata prodotta (${buste10.length} spedite, ${window.coordPayloads.length} in coda)`);
+const att = busta10 && (busta10.attacchi ? busta10.attacchi[0] : busta10);
+const perB = att && att.regole && att.regole.perBersaglio;
+ok(Array.isArray(perB) && perB.length === 2,
+   `regole.perBersaglio ha una riga per bersaglio (${Array.isArray(perB) ? perB.length : typeof perB})`);
+ok(perB && perB[0].repeaterNemico === false && perB[1].repeaterNemico === true,
+   `e porta il valore giusto per ciascuno (${JSON.stringify(perB && perB.map(x => x.repeaterNemico))})`);
+ok(att && Array.isArray(att.bersagli) && att.bersagli[1] && att.bersagli[1].repeaterNemico === true,
+   `e il campo viaggia anche nei bersagli della busta (${JSON.stringify(att && att.bersagli && att.bersagli.map(b => b.repeaterNemico))})`);
+window.goToStep = goTeniamo; window.inviaCalcoloAllHub = inviaTeniamo;
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

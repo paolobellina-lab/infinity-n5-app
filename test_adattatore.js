@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | test_adattatore.js | proprieta`: chat TEST
+// @versione 2026-10-06.1 | test_adattatore.js | proprieta`: chat TEST
 // Test dell'adattatore calcolatore_math.js — node test_adattatore.js
 global.window = global;
 require('./catalogo_n5.js'); require('./database_comune.js');
@@ -135,6 +135,123 @@ ok(!src.includes('-= 99') && !src.includes('- 99'), 'nessun -99 come segnaposto'
 const codice = src.split('\n').filter(r => !/^\s*\/\//.test(r)).join('\n');
 ok(!codice.includes('window.currentOrder'),
    'il programma di hacking non viene più da window.currentOrder (resta solo il commento che lo documenta)');
+
+console.log('\n=== 10. Punto 22: i campi che il motore scrive e il tabellone legge ===');
+// Richiesto da MOTORE il 6 ottobre. L'adattatore e` l'ultimo passaggio
+// prima degli occhi del giocatore: quello che il motore calcola e lui non
+// copia non esiste per chi gioca.
+// NOTA SULLA FORMA: generaRisoluzioneDaDati prende la BUSTA, non gli
+// scontri gia` risolti. Passandogli un array di scontri risponde con un
+// array VUOTO e nessun errore (provato il 6 ottobre) — percio` ogni prova
+// qui pretende prima che lo scontro ci sia.
+prepara([{ nome: 'Fusilier', azione: 'ATTACCO BS', arma: combi, hasLoF: true, burst: 3, rangeIndex: 1 }]);
+// La Copertura negata da un'Abilita` dichiarata nell'Ordine. MISURATO il 6
+// ottobre quali la negano: il SALTO (righe 2762-2763) e l'Ingresso in campo;
+// il Movimento NO. Scrivere qui "MOVIMENTO", come avevo fatto, dava un campo
+// assente e una prova rossa per lo scenario, non per il codice.
+const conNegata = window.generaRisoluzioneDaDati({
+    attacchi: [{ attaccante: 'Alguacil', azione: M.AZIONI.BS_ATTACK, arma: combi,
+                 bersagli: [{ name: 'Fusilier', burst: 3, rangeIndex: 1, rangeMod: 0, cover: true, ammo: 'N', terrain: 'NESSUNO' }],
+                 azionePrimaMeta: 'SALTO' }],
+    azioniDichiarate: ['SALTO', 'ATTACCO BS']
+});
+ok(Array.isArray(conNegata) && conNegata.length === 1,
+   `lo scontro viene prodotto (${Array.isArray(conNegata) ? conNegata.length : typeof conNegata})`);
+const cn = conNegata[0] || {};
+ok(!!cn.coperturaNegata,
+   `coperturaNegata arriva al tabellone (${JSON.stringify(cn.coperturaNegata && cn.coperturaNegata.nome)})`);
+// `riga` e` una STRINGA, non un numero: per il Salto vale '2762-2763', un
+// intervallo. Pretendere un numero la faceva cadere.
+ok(cn.coperturaNegata && /\d{3,}/.test(String(cn.coperturaNegata.riga)),
+   `con la riga di regolamento (${cn.coperturaNegata && cn.coperturaNegata.riga})`);
+// CONTROPROVA: senza il Movimento dichiarato il campo non compare. Senza di
+// essa, "arriva" non distingue "copiato" da "sempre presente".
+const senzaNegata = risolvi([{ name: 'Fusilier', burst: 3, rangeIndex: 1, rangeMod: 0, cover: true, ammo: 'N', terrain: 'NESSUNO' }]);
+ok(!(senzaNegata[0] || {}).coperturaNegata,
+   `senza l Abilita che la nega il campo non c e (${JSON.stringify((senzaNegata[0] || {}).coperturaNegata)})`);
+
+// Lo scontro orfano: l'attiva muove, la reattiva spara. Il motore marca
+// reattivoNonBersagliato, e l'adattatore scambia i lati perche` l'attiva
+// resti a sinistra.
+prepara([{ nome: 'Fusilier', azione: 'ATTACCO BS', arma: combi, hasLoF: true, burst: 3, rangeIndex: 1 }]);
+const orfano = window.generaRisoluzioneDaDati({
+    attacchi: [{ attaccante: 'Alguacil', azione: 'MOVIMENTO', arma: null, bersagli: [] }],
+    azioniDichiarate: ['MOVIMENTO']
+});
+ok(Array.isArray(orfano) && orfano.length >= 1,
+   `lo scontro orfano viene prodotto (${Array.isArray(orfano) ? orfano.length : typeof orfano})`);
+const or0 = orfano[0] || {};
+ok(or0.reattivoNonBersagliato === true,
+   `reattivoNonBersagliato arriva (${or0.reattivoNonBersagliato})`);
+
+console.log('\n=== 11. Punto 22: rendiVoci non ripete la riga della base ===');
+// La voce con fonte 'base' dice la stessa cosa della riga "Statistica Base"
+// scritta sopra: ristamparla come modificatore la fa sembrare un bonus.
+const perVoci = risolvi([{ name: 'Fusilier', burst: 3, rangeIndex: 1, rangeMod: 0, cover: false, ammo: 'N', terrain: 'NESSUNO' }]);
+const s8 = perVoci[0] || {};
+// Una volta PER RIQUADRO: i due lati dello scontro hanno ciascuno la sua
+// base, e sommare i due testi conta due volte a ragione.
+const dettAttivo = String((s8.attivo || {}).dettagliMod || '');
+const dettReatt = String((s8.reattivo || {}).dettagliMod || '');
+const dettagli = dettAttivo + ' ' + dettReatt;
+ok(/Statistica Base/.test(dettAttivo), `la riga "Statistica Base" c e (${(/Statistica Base[^<]*/.exec(dettAttivo) || [])[0]})`);
+ok((dettAttivo.match(/Statistica Base/g) || []).length === 1,
+   `e nel riquadro dell attivo compare una volta sola (${(dettAttivo.match(/Statistica Base/g) || []).length})`);
+ok((dettReatt.match(/Statistica Base/g) || []).length <= 1,
+   `e in quello del reattivo al massimo una (${(dettReatt.match(/Statistica Base/g) || []).length})`);
+// Il motivo della voce 'base' non deve comparire col segno, cioe` nella
+// forma dei modificatori.
+// SERVE LA BUSTA GIUSTA: un Attacco BS senza modificatori non produce
+// NESSUNA voce, percio` nemmeno una di fonte 'base', e la prova passerebbe
+// a vuoto (verificato il 6 ottobre: con la lista vuota un .every() e` vero
+// qualunque cosa faccia rendiVoci, e la rottura non si vedeva).
+// Le voci con fonte 'base' le fornisce il modulo del Supporto.
+const bustaSupporto = {
+    attacchi: [{ attaccante: 'Alguacil', azione: M.AZIONI.SUPPORTO_WIP,
+        arma: { nome: 'MediKit', burst: 1, ammo: null, ammoOpzioni: [], bands: [],
+                isTemplate: false, isCC: false, isDifesa: true, notazioni: [] },
+        bersagli: [], burstDisponibile: 1,
+        regole: { senzaTiro: false, attributo: 'WIP', valoreSuccesso: 12, base: 12, mod: 0,
+                  voci: [{ fonte: 'base', valore: 12, motivo: 'WIP dell Alguacil: 12' }] } }]
+};
+window.latestAroData = [];
+const sup = window.generaRisoluzioneDaDati(bustaSupporto) || [];
+ok(sup.length === 1, `la busta del Supporto produce uno scontro (${sup.length})`);
+const vociBase = (((sup[0] || {}).attivo || {}).dati || {}).voci || [];
+ok(vociBase.some(v => v && v.fonte === 'base'),
+   `e porta una voce di fonte "base" (${JSON.stringify(vociBase.map(v => v.fonte))})`);
+const dettSup = String(((sup[0] || {}).attivo || {}).dettagliMod || '');
+ok(/Statistica Base/.test(dettSup), `la riga della Statistica Base c e (${(/Statistica Base[^<]*/.exec(dettSup) || [])[0]})`);
+const motivoBase = String((vociBase.find(v => v.fonte === 'base') || {}).motivo || '');
+ok(motivoBase.length > 0 && dettSup.indexOf(motivoBase) < 0,
+   `e il motivo della voce base NON viene ristampato ("${motivoBase}")`);
+
+console.log('\n=== 12. Punto 22: requisito fallito e valore sotto 1 si leggono diversi ===');
+// Due motivi diversi per "non si tira": un Requisito fallito e` un Idle.
+// Un solo messaggio per entrambi farebbe credere a un tiro fallito.
+const srcMath = require('fs').readFileSync((process.env.CARTELLA || '.').replace(/\/?$/, '/') + 'calcolatore_math.js', 'utf8');
+ok(/Requisito non soddisfatto: Idle, nessun tiro/.test(srcMath),
+   'la frase del requisito fallito esiste nell adattatore');
+ok(/Valore di Successo sotto 1/.test(srcMath),
+   'e la frase del valore sotto 1 e un altra');
+// E si misura il comportamento, non solo la presenza del testo: un ARO di
+// Hacking dichiarato da chi non e` Hacker produce requisitoFallito.
+require('./database_nomad.js'); require('./database_panoceania.js');
+const TUTTI9 = [].concat(window.DB_NOMADI || [], window.DB_PANOCEANIA || []);
+const nonHacker = Object.assign(JSON.parse(JSON.stringify(TUTTI9.find(u => /^Fusilier \(Combi Rifle\)/.test(u.nome)))), { states: {}, combatGroup: 1 });
+const bersaglio9 = Object.assign(JSON.parse(JSON.stringify(TUTTI9.find(u => /^Alguacil \(Combi Rifle\)/.test(u.nome)))), { states: {}, combatGroup: 1 });
+window.gameState = { activeFaction: 'NOMADI', nomads: [bersaglio9], panoceania: [nonHacker] };
+window.latestAroData = [{ nome: nonHacker.nome, azione: 'HACKING', arma: 'TRINITY', burst: 1 }];
+const r9 = window.generaRisoluzioneDaDati({
+    attacchi: [{ attaccante: bersaglio9.nome, azione: M.AZIONI.BS_ATTACK, arma: combi,
+                 bersagli: [{ name: nonHacker.nome, burst: 3, rangeIndex: 1, rangeMod: 0, cover: false, ammo: 'N', terrain: 'NESSUNO' }] }]
+});
+ok(Array.isArray(r9) && r9.length >= 1, `lo scontro con l ARO di Hacking viene prodotto (${Array.isArray(r9) ? r9.length : typeof r9})`);
+const d9 = String(((r9[0] || {}).attivo || {}).dettagliMod || '') + ' ' + String(((r9[0] || {}).reattivo || {}).dettagliMod || '');
+const haIdle = /Requisito non soddisfatto: Idle, nessun tiro/.test(d9);
+const haSotto1 = /Valore di Successo sotto 1/.test(d9);
+ok(!(haIdle && haSotto1),
+   `e i due messaggi non compaiono insieme (idle ${haIdle}, sotto1 ${haSotto1})`);
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

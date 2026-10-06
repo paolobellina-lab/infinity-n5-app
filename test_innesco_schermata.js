@@ -1,4 +1,4 @@
-// @versione 2026-10-05.1 | test_innesco_schermata.js | proprieta`: chat TEST
+// @versione 2026-10-06.1 | test_innesco_schermata.js | proprieta`: chat TEST
 // ============================================================================
 //  Dalla chat INTERFACCIA, 5 ottobre 2026.
 //
@@ -24,8 +24,11 @@
 //  (M.innescoDeployable).
 //
 //  USO:  CARTELLA=/percorso/ node test_innesco_schermata.js
+//  6 OTTOBRE: il predefinito era '/mnt/project/' in fisso. Senza quel
+//  montaggio il banco non diventava rosso: moriva prima della prima prova.
+//  Ora il predefinito e` la cartella del banco; CARTELLA resta lo scavalco.
 // ============================================================================
-const DIR = (process.env.CARTELLA || '/mnt/project/').replace(/\/?$/, '/');
+const DIR = (process.env.CARTELLA || __dirname).replace(/\/?$/, '/');
 const fs = require('fs'), vm = require('vm');
 const nonCaricati = [], assenti = [];
 let passati = 0, falliti = 0;

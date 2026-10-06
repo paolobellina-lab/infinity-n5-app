@@ -1,4 +1,4 @@
-// @versione 2026-10-06.1 | test_voce_cybermask.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-06.5 | test_voce_cybermask.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 6 ottobre 2026.
 //
@@ -16,7 +16,18 @@
 //
 //  USO:  CARTELLA=/percorso/ node test_voce_cybermask.js
 // ============================================================================
-const DIR = (process.env.CARTELLA || '/mnt/project/').replace(/\/?$/, '/');
+// 🔴 6 ottobre (misura della chat TEST). Qui la cartella predefinita era
+// '/mnt/project/' scritta in fisso: dove quel percorso non esiste il banco
+// moriva all'avvio (app.html non trovato) SENZA un solo rosso e senza la riga
+// di riepilogo, cioe` le sue prove sparivano dal conto invece di fallire.
+// Ora, senza CARTELLA, si usa la cartella in cui sta il banco; e se li` la
+// pagina non c'e` lo si DICE, con un rosso e il riepilogo.
+const DIR = (process.env.CARTELLA || (__dirname + '/')).replace(/\/?$/, '/');
+if (!require('fs').existsSync(DIR + 'app.html')) {
+  console.log('  \u2717 app.html non trovato in ' + DIR + ' (imposta CARTELLA=/percorso/ oppure metti il banco accanto ai file)');
+  console.log('\n0 passati, 1 falliti');
+  process.exit(1);
+}
 const fs = require('fs'), vm = require('vm');
 const nonCaricati = [], assenti = [];
 let passati = 0, falliti = 0;

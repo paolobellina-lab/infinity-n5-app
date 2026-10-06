@@ -1,4 +1,4 @@
-// @versione 2026-10-06.5 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-10-06.7 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -1734,6 +1734,71 @@ window.CATALOGO_N5.CYBERMASK = {
 };
 
 // ------------------------------------------------------------------
+// CLASSI DELLE AZIONI — ORDERS AND AROS REFERENCE CHART
+// ------------------------------------------------------------------
+// REGOLE_N5_v5_1_1.txt, righe 16619-16661 (chat REGOLE, 6 ottobre). Le
+// liste chiuse degli Stati nominano CATEGORIE ("Basic Short Skills"), non
+// nomi: senza questa tabella si leggevano a intuito, e MOTORE e
+// INTERFACCIA le avevano lette in due modi diversi.
+//   - Le BASIC SHORT SKILL sono TRE: Discover, Idle, Move.
+//   - Le LONG SKILL si dichiarano solo nel Turno Attivo (riga 6732).
+//   - L'IDLE non e` un ARO: in Reattivo si rinuncia (righe 1209-1211).
+// Le chiavi sono gli id che l'app usa per dichiarare. Dove un id copre
+// piu` voci della tabella (HACKING: ogni Programma ha la sua riga) la
+// classe sta sul Programma, in `programmi`.
+// ------------------------------------------------------------------
+window.CATALOGO_N5.CLASSI_AZIONE = {
+    fonte: 'regolamento, righe 16619-16661',
+    azioni: {
+        'SCOPRIRE':          { classe: 'BASIC_SHORT', aro: true,  nomeRegola: 'Discover' },
+        'IDLE':              { classe: 'BASIC_SHORT', aro: false, nomeRegola: 'Idle' },
+        'MOVIMENTO':         { classe: 'BASIC_SHORT', aro: false, nomeRegola: 'Move' },
+        'CAUTO':             { classe: 'LONG', aro: false, nomeRegola: 'Cautious Movement' },
+        'ARRAMPICARSI':      { classe: 'LONG', aro: false, nomeRegola: 'Climb' },
+        'SALTO':             { classe: 'LONG', aro: false, nomeRegola: 'Jump' },
+        'BERSERK':           { classe: 'LONG', aro: false, nomeRegola: 'Berserk' },
+        'CYBERMASK':         { classe: 'LONG', aro: false, nomeRegola: 'Cybermask' },
+        'INGRESSO IN CAMPO': { classe: 'LONG', aro: false, nomeRegola: 'Combat Jump / Parachutist' },
+        'TRINCERARSI':       { classe: 'LONG', aro: false, nomeRegola: 'Sapper' },
+        'ATTACCO INTUITIVO': { classe: 'LONG', aro: false, nomeRegola: 'Intuitive Attack' },
+        'FUOCO SPECULATIVO': { classe: 'LONG', aro: false, nomeRegola: 'Speculative Attack' },
+        'SOPPRESSIONE':      { classe: 'LONG', aro: false, nomeRegola: 'Suppressive Fire' },
+        'TRIANGULATED FIRE': { classe: 'LONG', aro: false, nomeRegola: 'Triangulated Fire' },
+        // Non e` nella tabella: e` l'attivazione di uno Stato che costa una
+        // Long Skill (riga 13603).
+        'RIENTRARE IN CAMO': { classe: 'LONG', aro: false, nomeRegola: 'Camouflaged State, Activation', fuoriTabella: true },
+        'ATTACCO BS':        { classe: 'SHORT', aro: true,  nomeRegola: 'BS Attack' },
+        'CC_ATTACK':         { classe: 'SHORT', aro: true,  nomeRegola: 'CC Attack' },
+        'SCHIVATA':          { classe: 'SHORT', aro: true,  nomeRegola: 'Dodge' },
+        'RESET':             { classe: 'SHORT', aro: true,  nomeRegola: 'Reset' },
+        'FORWARD OBSERVER':  { classe: 'SHORT', aro: true,  nomeRegola: 'Forward Observer' },
+        'PIAZZARE EQUIPAGGIAMENTO': { classe: 'SHORT', aro: true, nomeRegola: 'Place Deployable' },
+        'RICARICARE':        { classe: 'SHORT', aro: true,  nomeRegola: 'Reload' },
+        'SENSOR':            { classe: 'SHORT', aro: false, nomeRegola: 'Sensor' },
+        'DEACTIVATOR':       { classe: 'SHORT', aro: false, nomeRegola: 'Deactivator' },
+        'GUARDA_FUORI':      { classe: 'ARO',   aro: true,  nomeRegola: 'Look Out!' },
+        // Tutto il Supporto e` SHORT e NON e` un ARO (Doctor 16645, Engineer
+        // 16647, MediKit 16650, GizmoKit 16649).
+        'SUPPORTO_WIP':      { classe: 'SHORT', aro: false, nomeRegola: 'Doctor / Engineer' },
+        'SUPPORTO_BS':       { classe: 'SHORT', aro: false, nomeRegola: 'MediKit / GizmoKit' },
+        // AUTOMATIC: fuori dalla tabella perche` non consuma Ordine ne` ARO
+        // (Alert!: righe 6774-6791). Non e` un buco nei dati. Alert! e` una
+        // delle quattro che verificano i Requisiti alla dichiarazione (riga
+        // 1238). Mimetism, ECM, Firewall, Courage, Non-Hackable sono
+        // Automatic allo stesso modo e non si dichiarano: non stanno qui.
+        'ALLERTA':           { classe: 'AUTOMATIC', aro: false, nomeRegola: 'Alert!', fuoriTabella: true }
+    },
+    programmi: {
+        'CARBONITE':        { classe: 'SHORT', aro: true },  'OBLIVION':      { classe: 'SHORT', aro: true },
+        'SPOTLIGHT':        { classe: 'SHORT', aro: true },  'TOTAL CONTROL': { classe: 'SHORT', aro: true },
+        'TRINITY':          { classe: 'SHORT', aro: true },  'ZERO PAIN':     { classe: 'SHORT', aro: true },
+        'CONTROLLED JUMP':  { classe: 'SHORT', aro: true },  'WHITE NOISE':   { classe: 'SHORT', aro: false },
+        'CYBERMASK':        { classe: 'LONG',  aro: false }, 'ASSISTED FIRE': { classe: 'LONG',  aro: false },
+        'ENHANCED REACTION':{ classe: 'LONG',  aro: false }, 'FAIRY DUST':    { classe: 'LONG',  aro: false }
+    }
+};
+
+// ------------------------------------------------------------------
 // FUOCO SPECULATIVO CONTRO UN MARKER (chat REGOLE, 6 ottobre)
 // ------------------------------------------------------------------
 // Righe 13609-13610: "You cannot declare Attacks against Camouflaged
@@ -2620,7 +2685,7 @@ window.CATALOGO_N5.STATI = {
                    ] },
     suppressive:{ vecchiaChiave: 'SOPPRESSIONE', chiave: 'suppressive', nome: 'Fuoco di Soppressione', categoria: 'POSTURA', modNemiciEntro24: -3, aroSoloBS_SF: true, sfMode: { gittate:{z0:16, m3:24, x96:96}, burst:3 }, note:'Nemici entro 0-24" hanno -3 in tutti i F2F. In ARO usa SF Mode Weapon.', cancellazione: ['Dichiara un Ordine.', 'Dichiara un ARO diverso da BS Attack in SF Mode.', "Usa un'arma senza il Tratto Suppressive Fire.", 'Fallisce un Guts Roll.', 'Entra in Engaged, Isolato, Ritirata!, in qualsiasi stato Null o Immobilizzato.', 'Perdita del Tenente.', 'Entra in un Fireteam.'] },
     engaged:     { vecchiaChiave: 'ENGAGED', chiave: 'engaged', nome: 'Ingaggiato', categoria: 'POSTURA', azioniPermesse: ['ATTACCO CC','BERSERK','SCHIVATA','RESET','IDLE'], cancellazione: ['Non e` piu` in contatto di Silhouette con nemici.', 'Automatica: alla fase Effetti di un Ordine tutti i nemici in contatto sono Immobilizzati o in uno stato Null (eccetto Posseduto e Sepsitorizzato).', 'Schivata riuscita, Normale o Faccia a Faccia, muovendo fino a 2" per uscire dal contatto. Senza una posizione valida resta Ingaggiato.'] },
-    retreat:     { vecchiaChiave: 'RETREAT', chiave: 'retreat', nome: 'Ritirata!', categoria: 'NULLO', azioniPermesse: ['MOVIMENTO','SCOPRIRE','IDLE','CAUTO','SCHIVATA','RESET'], fontiAzioni: 'righe 14557-14558 e 16940: Basic Short Skill (Move, Discover, Idle: righe 16620-16624) + Cautious Movement, Dodge, Reset. SALTO e ARRAMPICARSI sono Long Skill non nominate: NO (chat REGOLE, 6 ottobre).', cancellazione: ['Non si cancella: finisce con la situazione di Ritirata.'] },
+    retreat:     { vecchiaChiave: 'RETREAT', chiave: 'retreat', nome: 'Ritirata!', categoria: 'NULLO', classiPermesse: ['BASIC_SHORT'], azioniPermesse: ['CAUTO','SCHIVATA','RESET'], fontiAzioni: 'righe 14557-14558 e 16940: Basic Short Skill (Move, Discover, Idle: righe 16620-16624) + Cautious Movement, Dodge, Reset. SALTO e ARRAMPICARSI sono Long Skill non nominate: NO (chat REGOLE, 6 ottobre).', cancellazione: ['Non si cancella: finisce con la situazione di Ritirata.'] },
     disconnesso: { vecchiaChiave: 'DISCONNESSO', chiave: 'disconnected', statoNullo: true, nome: 'Disconnesso', categoria: 'INFOGUERRA', nonAttivabile: true, note:'Periferiche: no ordini/ARO.', cancellazione: ['Ingegnere.', 'Il Controller torna in uno stato valido.', 'La truppa rientra in Coerenza.'] },
     // 🔴 Posseduto e Sepsitorizzato NON erano voci del catalogo: vivevano solo
     // come flag dell'unita` (states.possessed / states.sepsitorized). Per
@@ -2665,7 +2730,18 @@ window.CATALOGO_N5.STATI = {
                 seCancella: 'Foxhole cancellato alla dichiarazione: la truppa si muove con MOV e Silhouette veri e perde, per tutto l\'Ordine, Copertura a 360 gradi, Mimetism (-3), Courage e S3 (righe 13871-13876).',
                 seNonCancella: 'Resta in Foxhole: lo stato non permette nessun movimento, nemmeno quello di una Schivata riuscita (riga 13867).',
                 inAro: 'In ARO il Foxhole non si cancella e non cade: la truppa reagisce tenendo Copertura a 360 gradi e Mimetism (-3), ma una Schivata riuscita non la fa muovere (righe 13867, 13873).',
-                nonModellato: 'NON MODELLATO nel calcolo: Copertura a 360 gradi, Mimetism (-3), Courage e S3 del Foxhole vanno applicati al tavolo.',
+                // Dalla 2026-10-06.6 il calcolo APPLICA Copertura a 360 gradi e
+                // Mimetism (-3) (righe 13864-13866). La Copertura c'e` sempre
+                // (righe 3453-3455: "will apply"), non in Corpo a Corpo (righe
+                // 4384-4388) e senza +3 alla salvezza contro le Sagome (righe
+                // 3619-3621). Il Mimetism e` la skill, NFB: non si somma a
+                // quello di profilo (regola scritta); che valga il valore del
+                // profilo e` LETTURA (righe 9114-9115, analogia con 13864).
+                // S3: "il valore piu` ALTO" fra 3 e il profilo (riga 13864) —
+                // puo` andare CONTRO la truppa.
+                copertura360: 'Foxhole: Copertura Parziale a 360 gradi, da ogni direzione (riga 13865).',
+                mimetismo: -3,
+                nonModellato: 'NON MODELLATO nel calcolo: Courage e Silhouette S3 del Foxhole vanno applicati al tavolo.',
                 cancellazione: ['Entra in Stato Prono.', 'Turno Attivo: dichiara una Skill con etichetta Movimento e ANNUNCIA la cancellazione.', 'Turno Attivo: all\'inizio del movimento di una Schivata.'] }
 };
 
@@ -2696,7 +2772,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-10-06.5', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-10-06.7', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

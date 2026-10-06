@@ -1,4 +1,4 @@
-// @versione 2026-10-06.5 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.6 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -212,7 +212,11 @@ window.ROUTER_AZIONI = [
 // avvisa l'Hub. Prima lo faceva solo applicaStatoDaAbilita, in linea: ora
 // lo usa anche il rientro in CAMO, e chi verra` dopo (Cybermask).
 //   -> true se l'Hub e` stato avvisato
-window.sostituisciUnita = function (unita, aggiornata, perche) {
+//   opzioni.senzaInvio: aggiorna il roster SENZA avvisare l'Hub. Serve in
+//   schieramento, prima della conferma: li` l'avversario non deve ancora
+//   vedere niente, e l'invio vero parte con la conferma. (Domanda della
+//   chat INTERFACCIA, 6 ottobre.) Senza il campo si comporta come prima.
+window.sostituisciUnita = function (unita, aggiornata, perche, opzioni) {
     if (!unita || !aggiornata) return false;
     const M = window.MotoreN5;
     const nelRoster = (window.roster || []).find(x => x && unita.id && x.id === unita.id);
@@ -220,6 +224,7 @@ window.sostituisciUnita = function (unita, aggiornata, perche) {
     [unita, nelRoster].filter(Boolean).forEach(x => Object.assign(x, aggiornata));
     console.log(`🎭 ${M ? M.nomeUnita(unita) : (unita.alias || unita.id)}: ${prima} -> ${unita.deployState} (${perche || 'aggiornamento'}).`);
     if (typeof window.aggiornaGraficaRoster === 'function') window.aggiornaGraficaRoster();
+    if (opzioni && opzioni.senzaInvio) return false;
     if (typeof window.inviaSchieramentoAllHub === 'function') {
         window.inviaSchieramentoAllHub(document.title.includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA', {
             roster: window.roster, strutture: window.activeStructures || [],
@@ -242,8 +247,13 @@ window.applicaStatoDaAbilita = function (unita, azione) {
     if (!r || !r.dopo || !r.prima) return { cambiato: false };
     // `azione` e `unita`: chi mostra window.ultimoCambioStato deve poter
     // sapere se parla di QUESTO Ordine. Resta in memoria anche dopo.
+    // `ordine`: l'identificativo dell'Ordine che ha causato il cambio. Chi
+    // legge non deve piu` riconoscere "quello di adesso" confrontando
+    // l'oggetto. L'oggetto resta comunque NUOVO a ogni cambio, mai
+    // modificato sul posto: app.html oggi lo riconosce cosi`.
     const esito = { cambiato: false, prima: r.prima.deployState, dopo: r.dopo.deployState, note: r.note || [],
-                    azione: azione, unita: M.nomeUnita(unita) };
+                    azione: azione, unita: M.nomeUnita(unita),
+                    ordine: (window.currentOrder && window.currentOrder.id) || null };
     if (r.dopo.daVerificare) { esito.note = esito.note.concat(['Cambio di stato DA VERIFICARE: non applicato, decidi al tavolo.']); window.ultimoCambioStato = esito; return esito; }
     // "E` cambiato?" si chiede a CIO` CHE IL MOTORE VEDE (M.statoBersaglio),
     // non al testo degli stati. Fino al 5 ottobre si confrontava
@@ -292,7 +302,8 @@ window.selectAction = (actionId, isSecondHalf = false) => {
         if (window.confirm(fx.domanda)) {
             const r = M.cancellaFoxhole(u);
             window.ultimoCambioStato = { cambiato: true, prima: 'FOXHOLE', dopo: 'NORMAL', note: r.note,
-                                         azione: azione, unita: M.nomeUnita(u) };
+                                         azione: azione, unita: M.nomeUnita(u),
+                                         ordine: (window.currentOrder && window.currentOrder.id) || null };
             window.sostituisciUnita(u, r.unitaAggiornata, azione);
             window.currentOrder.foxholeCancellato = true;
         } else {
@@ -616,7 +627,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-06.5', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-06.6', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
