@@ -1,0 +1,103 @@
+CONTEGGIO DELLA SUITE — chat TEST, 6 ottobre 2026
+motore_regole_n5.js 2026-10-06.16 f451aff1.641214 | motore_core.js 2026-10-06.7 0efaad76.38530 | calcolatore_math.js 2026-10-06.5 6756727a.17333 | ordine_fuoco_speculativo.js 2026-10-06.5 d7734875.28023
+
+CONVENZIONE: un file = una riga di riepilogo; si somma su TUTTI i file
+test_*.js, test_collaudo_suite.js COMPRESO. banco_confronto.js NON
+stampa la riga e non entra nel conto. Nessun banco stampa piu di una
+riga (verificato): prendere la prima o l ultima da lo stesso totale.
+
+banco                              prove  versione        impronta
+----------------------------------------  ---------------------------------
+test_adattatore.js                     76  2026-10-06.2    70a5355a.21854
+test_allarme.js                        21  2026-09-25.1    316d6d88.6818
+test_allarme_una_volta.js              39  2026-10-06.2    cb34830c.18915
+test_armi.js                           32  2026-09-23.1    11e1b5d3.7460
+test_aro_filtro_repeater.js            47  2026-10-06.5    d405dfd8.16589
+test_azioni_equivalenti.js             11  2026-09-22.1    afcf33c5.4417
+test_bersagli_piazzamento.js           10  2026-09-21.1    6d98bb51.3335
+test_camo_cybermask.js                 41  2026-10-06.1    7f955a97.11941
+test_camuffato.js                      34  2026-09-22.1    4dea4099.11009
+test_caricamento_pagine.js              2  2026-10-06.1    679907c4.6117
+test_casi_regole.js                    20  2026-09-24.2    c1eb90c3.7070
+test_coerenza_dati.js                  11  2026-09-29.4    09514db3.12936
+test_collaudo_node.js                  58  2026-10-06.1    721b3e48.12963
+test_collaudo_suite.js                  7  2026-10-06.1    a6297213.4345
+test_confronto.js                      18  2026-09-23.1    85f1912b.4782
+test_contratto_payload.js              29  2026-09-23.2    07bb9543.9288
+test_coordinato.js                     48  2026-09-23.1    449384fe.9490
+test_correzioni_regole.js             175  2026-10-06.1    cb7eb6fa.47017
+test_creadeployable.js                 41  2026-09-23.1    eb349363.7918
+test_dado_speciale.js                  15  2026-09-29.1    e90279e8.5950
+test_dcharges_percorso.js              13  2026-09-23.1    ba0763a8.4600
+test_deployable.js                     94  2026-09-23.1    168ab722.17037
+test_detonazione.js                    12  2026-09-29.1    12fd1900.5768
+test_file_immutabili.js                10  2026-09-21.1    81a37506.3861
+test_file_intestazioni.js               8  2026-10-05.1    ac73f610.3721
+test_finiture.js                      213  2026-09-23.1    918b7ab5.35864
+test_fonte_ufficiale.js                 6  2026-09-29.3    7c8abb24.9271
+test_gestori_schermate.js              26  2026-10-06.1    78e2d742.18705
+test_giro_aggiornamento.js             52  2026-10-06.5    5e409393.26868
+test_giro_da_selectaction.js           11  2026-10-06.1    bffe2658.10324
+test_giro_ritorno.js                   17  2026-09-29.1    1e285571.10831
+test_hacking_firewall.js               65  2026-10-06.2    272ec918.21985
+test_innesco_schermata.js              26  2026-10-06.1    602e34c1.11056
+test_integrazione.js                   38  2026-09-23.1    2c56026d.9555
+test_marker_mimetico.js                34  2026-09-21.4    4dda8a58.11126
+test_marker_salvezza.js                21  2026-10-05.1    8009613d.6636
+test_menu_stati.js                     27  2026-10-06.5    fa7bc13a.8360
+test_minelayer.js                      31  2026-09-22.1    0c6a5c5f.7019
+test_mittente_unico.js                  8  2026-09-25.1    821373bf.4844
+test_mod_attacco.js                    33  2026-09-23.1    881344b3.6321
+test_modulo_aro.js                     34  2026-09-23.1    05f1cbd7.7650
+test_modulo_bs.js                      31  2026-10-06.1    cee3a73c.11104
+test_modulo_cc.js                      37  2026-09-23.1    66f3ee11.8405
+test_modulo_difesa.js                  46  2026-09-23.1    bb957157.8650
+test_modulo_guidato.js                 31  2026-09-23.1    4b24bcf1.6783
+test_modulo_hacking.js                 62  2026-10-06.1    e2dbbb32.17362
+test_modulo_intuitivo.js               32  2026-10-06.1    b81db84e.9889
+test_modulo_logistica.js               60  2026-09-23.1    3c5f9b62.7656
+test_modulo_movimento.js               35  2026-09-23.1    b01e6b9b.8120
+test_modulo_osservazione.js            43  2026-09-23.1    471b3854.7883
+test_modulo_piazzamento.js             48  2026-10-06.1    a2f716c8.11547
+test_modulo_scenografia.js             32  2026-09-22.1    0fe51316.7551
+test_modulo_scoprire.js                27  2026-09-23.1    947c9188.6831
+test_modulo_speculativo.js             79  2026-10-06.2    530e2ebb.21278
+test_modulo_supporto.js                39  2026-09-23.1    6501b821.8444
+test_modulo_trincerarsi.js             36  2026-09-23.1    6d8fe4be.6252
+test_motore.js                         17  2026-09-23.1    32239867.7504
+test_munizioni.js                      38  2026-09-23.1    ae8dc5f4.8105
+test_munizioni_condizionali.js         80  2026-09-23.1    f993bb3d.12716
+test_notazioni.js                     106  2026-09-23.1    c3dd9086.17180
+test_orchestratore.js                  31  2026-09-23.1    54e73733.6254
+test_ordini_senza_tiro.js              80  2026-10-06.2    5f1212c6.20408
+test_otto_decisioni.js                 93  2026-09-23.1    dac967bc.15603
+test_piano_schieramento.js             15  2026-10-06.1    289ae329.9410
+test_produttori_busta.js               21  2026-09-25.3    71d0754b.9486
+test_prosa_stati.js                    17  2026-09-24.1    7872300c.8821
+test_pulsante_calcolo.js               26  2026-09-23.1    1f742b1f.4441
+test_reazione.js                       19  2026-09-26.1    ea231f12.7617
+test_remdriver_supporto.js             22  2026-09-29.3    77dbe934.7301
+test_requisito_fallito.js              19  2026-10-06.5    81092f77.9556
+test_ripresa_hub.js                    28  2026-09-27.1    87bada27.11386
+test_riquadro_cambio_stato.js          15  2026-10-06.5    5a75e6de.7669
+test_ritorno_stati.js                  15  2026-09-21.1    98a6accd.4951
+test_router.js                         51  2026-09-23.1    df00e833.10672
+test_sagome_multibersaglio.js          18  2026-09-23.1    6a4a387b.6581
+test_salvezza.js                       33  2026-09-23.1    86851822.5305
+test_scenografia.js                    53  2026-09-22.1    d5d0ab91.9993
+test_schieramento.js                   48  2026-09-25.1    6c660cc6.10728
+test_seconda_meta.js                   18  2026-09-23.1    049bc9a2.5973
+test_seconda_meta_calcolo.js           21  2026-09-23.1    dab088e4.7034
+test_sei_casi.js                      139  2026-10-06.2    344ef186.37466
+test_sostituzione_unita.js             18  2026-10-06.1    475b1e13.8959
+test_stati.js                          72  2026-09-23.1    b810e312.10190
+test_stati_classi_foxhole.js           79  2026-10-06.1    61077425.14872
+test_template.js                       28  2026-09-23.1    04dc2fae.4842
+test_tendina_terreno.js                14  2026-10-05.2    5d41dea1.5698
+test_usi_disposable.js                 21  2026-09-29.1    77051b4c.7148
+test_voce_cybermask.js                 18  2026-10-06.5    02d649e9.8221
+test_voce_rientro_camo.js              16  2026-10-06.5    17ca4e43.8491
+----------------------------------------
+TOTALE                               3441   su 89 file, 0 falliti
+
+File senza riga di riepilogo: nessuno.

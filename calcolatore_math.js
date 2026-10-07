@@ -1,4 +1,4 @@
-// @versione 2026-10-06.2 | calcolatore_math.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.5 | calcolatore_math.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧮 CALCOLATORE N5 — adattatore sopra MotoreN5
 // ------------------------------------------
@@ -201,7 +201,7 @@
         const ctx = {
             trovaUnita: function (nome, id) {
                 return cercaPerId(rosterAtt, id) || cercaPerId(rosterDif, id) ||
-                       cercaIn(rosterAtt, nome) || cercaIn(rosterDif, nome) || { alias: nome };
+                       cercaIn(rosterAtt, nome) || cercaIn(rosterDif, nome) || { alias: nome, nonRisolto: true };
             }
         };
 
@@ -294,9 +294,10 @@
             // il motore scriveva s.coperturaNegata e s.note, e al tabellone
             // arrivavano solo attivo/reattivo/titolo/motivoConfronto.
             // (Chat INTERFACCIA, 6 ottobre: non poteva mostrarli.)
-            if (s.coperturaNegata) out.coperturaNegata = s.coperturaNegata;
+            // bersaglioDiSagoma mancava dall'elenco (chat INTERFACCIA, 6 ottobre):
+            // un campo nuovo dello scontro va aggiunto QUI, o non arriva.
+            ['coperturaNegata', 'reattivoNonBersagliato', 'bersaglioDiSagoma', 'attaccanteNonRisolto'].forEach(k => { if (s[k]) out[k] = s[k]; });
             if (s.note && s.note.length) out.note = s.note;
-            if (s.reattivoNonBersagliato) out.reattivoNonBersagliato = true;
             return out;
         });
     };
@@ -310,7 +311,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_math.js', versione: '2026-10-06.2', proprieta: 'MOTORE' };
+    var v = { file: 'calcolatore_math.js', versione: '2026-10-06.5', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-06.12 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.16 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-06.12';
+    M.VERSIONE = '2026-10-06.16';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -1479,7 +1479,20 @@
         opzioni = opzioni || {};
         const spec = M.SPEC[azione];
         const attaccante = opzioni.attaccante || null;
-        const programma = String(opzioni.programma || '').toUpperCase();
+        // 🔴 Il programma si passa per NOME; chi passa l'OGGETTO del catalogo
+        // otteneva "[OBJECT OBJECT]", nessuna restrizione combaciava e ogni
+        // programma risultava ammesso su ogni bersaglio — un silenzio che
+        // somiglia a un esito (chat TEST, 6 ottobre). Ora dell'oggetto si
+        // legge .nome; qualunque altra cosa e` un errore del chiamante e lo
+        // si dice, invece di rispondere "nessuna restrizione".
+        const progIn = opzioni.programma;
+        const programma = String((progIn && typeof progIn === 'object') ? (progIn.nome || '') : (progIn || '')).toUpperCase();
+        // NON un'eccezione: questa funzione disegna schermate (l'ARO di
+        // Hacking la chiama fuori da un try, chat INTERFACCIA 6 ottobre) e al
+        // tavolo una schermata che cade e` peggio. Chiamata sbagliata =
+        // NESSUN bersaglio ammesso, col motivo scritto: rumoroso e innocuo.
+        const programmaIlleggibile = (progIn != null && progIn !== '' && !programma)
+            ? 'Chiamata sbagliata di M.bersagliValidi: opzioni.programma dev\'essere il NOME del programma o un oggetto con .nome.' : null;
 
         if (!Array.isArray(candidati)) {
             const pool = (spec && spec.schieramento === 'alleato') ? M.rosterProprio() : M.rosterNemico();
@@ -1490,6 +1503,7 @@
             const nome = M.nomeUnita(u);
             const s = M.statoBersaglio(u);
             const esito = { unita: u, nome: nome, stato: s, ammesso: true, motivo: null, note: [] };
+            if (programmaIlleggibile) { esito.ammesso = false; esito.motivo = programmaIlleggibile; esito.chiamataSbagliata = true; return esito; }
 
             // I bersagli che l'arma DICHIARA (D-Charges Demolition Mode:
             // strutture, edifici, nemici Immobilizzati o Null; mai Posseduti o
@@ -4803,8 +4817,18 @@
     //   membriFireteam, reazione, distanzaPollici
     // }
     M.modAttacco = function (attaccante, difensore, arma, azione, ctx) {
+        // L'azione e` il QUARTO argomento. Chi la mette dentro ctx
+        // ({ azione: ... }) la perdeva: il calcolo scendeva nel ramo generale
+        // e applicava, per dire, il Mimetismo a un Fuoco Speculativo (chat
+        // TEST, 6 ottobre). Se il quarto argomento e` proprio il ctx, lo si
+        // riconosce. Se l'azione manca del tutto il calcolo NON si ferma (al
+        // tavolo un'eccezione nell'Hub e` peggio di un avviso), ma lo dice:
+        // un avviso nel risultato, che arriva fino allo scontro.
+        if (azione && typeof azione === 'object' && ctx === undefined) { ctx = azione; azione = ctx.azione; }
         ctx = ctx || {};
+        if (azione == null && ctx.azione != null) azione = ctx.azione;
         const voci = [], note = [], avvisi = [];
+        if (azione == null) avvisi.push('M.modAttacco chiamato SENZA azione: il calcolo usa il ramo generale e puo` applicare MOD che l\'Abilita` dichiarata non prevede. Il risultato non e` affidabile.');
         const spec = M.SPEC[azione] || {};
         const tA = M.trattiTiro(attaccante);
         const tD = M.trattiTiro(difensore);
@@ -5813,8 +5837,13 @@
         if (shockDif.nota && salvAttaccante && salvAttaccante.note) salvAttaccante.note.push(shockDif.nota);
         return {
             tipo: conf.tipo,
+            // Lo Scoprire che riesce da solo (Multispectral Visor L2+ contro
+            // un CAMO) NON e` un "TIRO NORMALE" con un dado: non si tira.
+            // MISURATO il 6 ottobre: titolo 'TIRO NORMALE' e burst 1 accanto a
+            // "SUCCESSO AUTOMATICO". Se qualcuno reagisce il suo tiro resta.
             titolo: conf.tipo === M.CONFRONTO.F2F ? 'TIRO FACCIA A FACCIA'
-                  : conf.tipo === M.CONFRONTO.NESSUNO ? 'NESSUN TIRO' : 'TIRO NORMALE',
+                  : conf.tipo === M.CONFRONTO.NESSUNO ? 'NESSUN TIRO'
+                  : (att.automatico && azione === M.AZIONI.SCOPRIRE && !reaz) ? 'SUCCESSO AUTOMATICO' : 'TIRO NORMALE',
             motivoConfronto: conf.motivo,
 
             attivo: {
@@ -5833,7 +5862,7 @@
                 requisitoFallito: !!att.requisitoFallito,
                 repeaterNemico: !!attacco.repeaterNemico,
                 lofBloccata: !!att.lofBloccata,
-                burst: burstAtt,
+                burst: (att.automatico && azione === M.AZIONI.SCOPRIRE) ? 0 : burstAtt,
                 voci: att.voci,
                 note: att.note,
                 // 🔴 Due cose diverse, e l'interfaccia mostrava la sbagliata.
@@ -6163,7 +6192,13 @@
                             // con burst 1: "1 dado" per un Ordine che non tira.
                             const R = att.regole || {};
                             if (spec.tiro === false) {
-                                return { valore: null, base: null, mod: 0, voci: [], note: [], attributo: null, senzaTiro: true };
+                                // L'Abilita` senza tiro che si e` risolta in un IDLE
+                                // (Requisito fallito: in LoF per Cybermask e rientro
+                                // in CAMO, senza spazio per Trincerarsi). Lo scrive il
+                                // modulo in regole.idle; il tabellone mostrava
+                                // l'Abilita` dichiarata come se fosse riuscita.
+                                return { valore: null, base: null, mod: 0, voci: [], note: [], attributo: null, senzaTiro: true,
+                                         requisitoFallito: !!R.idle };
                             }
                             const vs = (typeof R.valoreSuccesso === 'number') ? R.valoreSuccesso : null;
                             const voci = Array.isArray(R.voci) ? R.voci : [];
@@ -6177,11 +6212,13 @@
                         })();
                 scontri.push({
                     tipo: M.CONFRONTO.NESSUNO,
-                    titolo: e.senzaTiro ? 'ABILIT\u00c0 SENZA TIRO' : 'TIRO DI SUPPORTO / DIFESA',
+                    titolo: e.requisitoFallito ? 'IDLE (REQUISITO FALLITO)'
+                          : e.senzaTiro ? 'ABILIT\u00c0 SENZA TIRO' : 'TIRO DI SUPPORTO / DIFESA',
                     attivo: { nome: M.nomeUnita(att.attaccante), azione: att.azione,
                               attributo: e.attributo, base: e.base, mod: e.valore,
                               // Chi non tira non ha dadi: 0, e lo dice `senzaTiro`.
                               burst: e.senzaTiro ? 0 : 1, senzaTiro: !!e.senzaTiro,
+                              requisitoFallito: !!e.requisitoFallito,
                               impossibile: !!e.impossibile,
                               // Le note di un ordine SENZA TIRO (Trincerarsi, il
                               // rientro in CAMO) viaggiavano nella busta e qui si
@@ -6217,10 +6254,22 @@
                 const dif = ctx.trovaUnita ? ctx.trovaUnita(nomeB, b.id) : b;
                 const r = trovaReazione(nomeB || M.nomeUnita(dif));
                 if (r) usate.push(r);
+                // 🔴 CHI ATTACCA DEV'ESSERE UN'UNITA`, NON UN NOME. Con il solo
+                // nome e nessun ctx.trovaUnita il calcolo girava su un'unita`
+                // vuota e restituiva un numero plausibile: MISURATO il 6
+                // ottobre (domanda della chat TEST) — uno Scoprire con visore
+                // L2 contro un CAMO usciva "TIRO NORMALE, -6" invece di
+                // "SUCCESSO AUTOMATICO". Il calcolo resta quello, ma ora lo
+                // scontro lo DICE: attaccanteNonRisolto e un avviso.
+                const attObj = ctx.trovaUnita
+                    ? ctx.trovaUnita(att.attaccante, att.attaccanteId)
+                    : att.attaccante;
+                // `nonRisolto`: lo scrive chi cerca le unita` (l'adattatore)
+                // quando non trova niente e restituisce un segnaposto col solo
+                // nome. Senza, il segnaposto passava per un'unita` vera.
+                const attNonRisolto = !attObj || typeof attObj !== 'object' || attObj.nonRisolto === true;
                 scontri.push(M.risolviScontro({
-                    attaccante: ctx.trovaUnita
-                        ? ctx.trovaUnita(att.attaccante, att.attaccanteId)
-                        : att.attaccante,
+                    attaccante: attObj,
                     azione: att.azione, arma: att.arma, bersaglio: dif,
                     burst: b.burst, ammo: b.ammo, cover: b.cover,
                     // `copertura`: DA QUALE copertura ('VITROFERRO', 'CUTTING_FOAM').
@@ -6236,12 +6285,33 @@
                     // su ARM per il bersaglio.
                     nonOffensivo: !!(att.regole && att.regole.nonOffensivo)
                 }, r ? Object.assign({ difensore: dif }, senzaCoperturaSuAttivo(r)) : null, ctx));
+                if (attNonRisolto) {
+                    const sNR = scontri[scontri.length - 1];
+                    const testoNR = `Attaccante "${M.nomeUnita(att.attaccante) || '?'}" non trovato: il calcolo NON ha le sue statistiche, abilita\u0300 ed equipaggiamento. Il risultato non e\u0300 affidabile.`;
+                    sNR.attaccanteNonRisolto = true;
+                    sNR.avvisi = (sNR.avvisi || []).concat([testoNR]);
+                    sNR.note = (sNR.note || []).concat([testoNR]);
+                }
                 // La reazione di chi e` bersaglio colpisce l'attivo.
                 if (r && r.azione && r.azione !== M.AZIONI_ARO.NESSUNO) notaCoperturaNegata(scontri[scontri.length - 1], r);
                 if (iB === iSd) {
                     const ultimoSd = scontri[scontri.length - 1];
                     ultimoSd.attivo.sd = sdAttacco;
                     ultimoSd.note = (ultimoSd.note || []).concat([`Dado Speciale (+${sdAttacco} SD): su QUESTO bersaglio tira ${sdAttacco} dado in pi\u00f9, poi scartane ${sdAttacco}. Non aumenta il Burst e non consuma usi.`]);
+                }
+                // UNA SAGOMA, PIU` BERSAGLI: il tabellone mostra uno scontro
+                // per bersaglio, ma il tiro e` UNO. Senza dirlo, al tavolo si
+                // tirerebbe un dado per riquadro. Il ruolo lo scrive la
+                // busta (bersaglio.ruolo) o lo da` la posizione: il primo e`
+                // il Principale.
+                const armaSag = (typeof att.arma === 'string') ? M.profiloArma(att.arma) : att.arma;
+                if (armaSag && armaSag.isTemplate && bersagli.length > 1) {
+                    const ultimoSag = scontri[scontri.length - 1];
+                    const principale = (b.ruolo ? /^princip|^primar/i.test(String(b.ruolo)) : iB === 0);
+                    ultimoSag.bersaglioDiSagoma = principale ? 'PRINCIPALE' : 'SECONDARIO';
+                    ultimoSag.note = (ultimoSag.note || []).concat([
+                        `Sagoma: UN SOLO tiro vale per tutti i ${bersagli.length} bersagli sotto l'area. ` +
+                        (principale ? 'Questo \u00e8 il Bersaglio Principale.' : 'Questo \u00e8 un bersaglio secondario.')]);
                 }
             });
 
@@ -9766,6 +9836,20 @@
 
     // Esito dell'ordine, data la risposta sullo spazio.
     M.risolviTrincerarsi = function (unita, spazioSufficiente) {
+        // Il secondo argomento e` la RISPOSTA: true, false, o assente. Chi
+        // passa un oggetto di risposte ({ spazioSufficiente: true }), come
+        // vogliono M.rientraInCamo e M.attivaCybermask, otteneva "Manca la
+        // risposta": una frase sensata per una chiamata sbagliata (chat TEST,
+        // 6 ottobre). Dell'oggetto si legge il campo; altro e` un errore.
+        if (spazioSufficiente && typeof spazioSufficiente === 'object') {
+            if (!Object.prototype.hasOwnProperty.call(spazioSufficiente, 'spazioSufficiente')) {
+                // Non un'eccezione (al tavolo la schermata non deve cadere):
+                // non esegue, e dice che e` la CHIAMATA a essere sbagliata.
+                return { entra: false, idle: false, incompleto: true, chiamataSbagliata: true,
+                         motivo: 'Chiamata sbagliata di M.risolviTrincerarsi: il secondo argomento e` true/false, oppure { spazioSufficiente: true/false }.' };
+            }
+            spazioSufficiente = spazioSufficiente.spazioSufficiente;
+        }
         const T = catalogo('TRINCERARSI');
         const pre = M.puoTrincerarsi(unita);
         if (!pre.puo) {
@@ -11461,6 +11545,7 @@
         messagingSenderId: "506923243459",
         appId: "1:506923243459:web:4aa5e59c84c9d8156c4f76"
     };
+    M.ascoltatoriCanali = M.ascoltatoriCanali || [];
     M.installaTrasportoCloud = function (opzioni) {
         opzioni = opzioni || {};
         const fb = G.firebase;
@@ -11483,6 +11568,15 @@
                 } else {
                     originalRemoveItem.call(ls, canale);
                 }
+                // Chi vuole sapere che su un canale e` PASSATO qualcosa (anche
+                // se quando guardera` non ci sara` piu`) si iscrive qui:
+                // M.ascoltatoriCanali.push(fn(canale, dati)). L'evento
+                // 'storage' non basta: parte solo per i valori non nulli, e
+                // una pagina puo` averne un solo ascoltatore utile. Lo usa
+                // motore_core.js per la coda degli allarmi.
+                (M.ascoltatoriCanali || []).forEach(function (fn) {
+                    try { fn(canale, dati); } catch (e) { console.error('ascoltatore di canale:', e); }
+                });
                 attesa.segna(canale);
             });
         });

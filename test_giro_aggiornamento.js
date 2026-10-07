@@ -1,4 +1,4 @@
-// @versione 2026-10-06.2 | test_giro_aggiornamento.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-06.5 | test_giro_aggiornamento.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  IL GIRO DELL'AGGIORNAMENTO: app attiva -> Hub -> app avversaria.
 //
@@ -371,6 +371,73 @@ ok(!transito.some(t => t.chiave === C.STATO_PARTITA && t.da !== 'HUB'),
    'e nessun altro lo scrive');
 ok(!transito.some(t => t.chiave === C.SETUP_NOMADI && t.da === 'app PANOCEANIA'),
    'nessuna app scrive sul canale di setup dell altra');
+
+console.log('\n=== 6. I DUE TRATTI dell allarme, uno per volta: NIENTE si perde ===');
+// I cicli di lettura sono due e in serie (Hub: calcolatore_controller.js;
+// app reattiva: motore_core.js; entrambi a 1000 ms), e ogni tratto tiene UN
+// valore: "l'ultima scrittura vince". Un allarme poteva perdersi in due
+// punti:
+//   (a) due scritture dell'app entro un giro dell'Hub
+//   (b) due inoltri dell'Hub entro un giro dell'app reattiva
+// Fino a motore_core.js 2026-10-06.6 si perdevano tutti e due: questa
+// sezione, nella versione .4 del banco, fissava la perdita di (b) come
+// LIMITE NOTO (il reattivo mostrava solo ["IDLE"]). Dalla 2026-10-06.7 chi
+// spedisce tiene una CODA: un allarme parte solo quando quello prima e`
+// stato consumato su tutti e due i tratti. Il limite non c'e` piu`, e le
+// prove dicono il contrario di prima: arrivano entrambi, in ordine.
+// Qui i giri si danno a mano, un dispositivo per volta. Gli allarmi li
+// costruisce il motore (window.inviaAllarmeOrdine -> M.allarmeOrdine).
+// NOTA PER CHI SCRIVE PROVE: nel banco setTimeout esegue subito, quindi la
+// coda non si risveglia da sola ogni 200 ms come nel browser: dopo che il
+// reattivo ha consumato, la si sveglia con window.spedisciAllarmiInCoda().
+const mostrati = [];
+const bannerVero = pano.g.mostraBannerAllarme;
+pano.g.mostraBannerAllarme = function () {
+    mostrati.push(String((pano.g.currentAttackData || {}).azione || '').toUpperCase());
+    return (typeof bannerVero === 'function') ? bannerVero.apply(this, arguments) : undefined;
+};
+pano.g.isReactiveMode = true;
+const spedisci = (azione) => nomadi.g.inviaAllarmeOrdine(azione, { unita: nomadi.g.roster[0] });
+const azioniDi = (da, chiave, dal) => transito.filter(x => x.quando >= dal && !x.vuoto && x.da === da && x.chiave === chiave)
+    .map(x => { try { return String(JSON.parse(x.valore).azione || '').toUpperCase(); } catch (e) { return '?'; } });
+const inCoda = () => (nomadi.g._codaAllarmi || []).length;
+ok(typeof nomadi.g.spedisciAllarmiInCoda === 'function' && Array.isArray(nomadi.g._codaAllarmi),
+   'premessa: l app ha la coda degli allarmi (motore_core.js dalla 2026-10-06.7)');
+
+// --- un allarme solo: parte subito, come sempre ---
+nomadi.g.currentOrder = { unit: nomadi.g.roster[0], id: 'ordine_prova_tratti_0' };
+let dal6 = transito.length; mostrati.length = 0;
+spedisci('MOVIMENTO');
+ok(J(azioniDi('app NOMADI', C.COMUNICAZIONE, dal6)) === J(['MOVIMENTO']) && inCoda() === 0,
+   `un allarme solo parte subito, niente in coda (${J(azioniDi('app NOMADI', C.COMUNICAZIONE, dal6))}, coda ${inCoda()})`);
+hub.giro(); pano.giro(); nomadi.g.spedisciAllarmiInCoda();
+ok(J(mostrati) === J(['MOVIMENTO']), `e il reattivo lo mostra (${J(mostrati)})`);
+
+// --- caso (a): due dichiarazioni di fila, l'Hub non ha ancora girato ---
+nomadi.g.currentOrder = { unit: nomadi.g.roster[0], id: 'ordine_prova_tratti_a' };
+dal6 = transito.length; mostrati.length = 0;
+spedisci('MOVIMENTO'); spedisci('IDLE');
+ok(J(azioniDi('app NOMADI', C.COMUNICAZIONE, dal6)) === J(['MOVIMENTO']),
+   `(a) sul canale verso l Hub c e solo il primo: il secondo NON lo copre (${J(azioniDi('app NOMADI', C.COMUNICAZIONE, dal6))})`);
+ok(inCoda() === 1, `(a) e il secondo aspetta in coda (${inCoda()})`);
+hub.giro();
+ok(J(azioniDi('HUB', C.ALLARME_ATTACCO, dal6)) === J(['MOVIMENTO']), `(a) l Hub inoltra il primo (${J(azioniDi('HUB', C.ALLARME_ATTACCO, dal6))})`);
+
+// --- caso (b): l'Hub gira ancora, il reattivo NON ha ancora letto ---
+nomadi.g.spedisciAllarmiInCoda(); hub.giro();
+ok(J(azioniDi('HUB', C.ALLARME_ATTACCO, dal6)) === J(['MOVIMENTO']) && inCoda() === 1,
+   `(b) finche il reattivo non ha letto il primo, il secondo resta in coda e l Hub non lo inoltra (${J(azioniDi('HUB', C.ALLARME_ATTACCO, dal6))}, coda ${inCoda()})`);
+pano.giro();
+ok(J(mostrati) === J(['MOVIMENTO']), `il reattivo legge e mostra il primo (${J(mostrati)})`);
+nomadi.g.spedisciAllarmiInCoda();
+ok(inCoda() === 0 && J(azioniDi('app NOMADI', C.COMUNICAZIONE, dal6)) === J(['MOVIMENTO', 'IDLE']),
+   `consumato il primo, il secondo parte (${J(azioniDi('app NOMADI', C.COMUNICAZIONE, dal6))}, coda ${inCoda()})`);
+hub.giro(); pano.giro();
+ok(J(azioniDi('HUB', C.ALLARME_ATTACCO, dal6)) === J(['MOVIMENTO', 'IDLE']), `l Hub inoltra anche il secondo (${J(azioniDi('HUB', C.ALLARME_ATTACCO, dal6))})`);
+ok(J(mostrati) === J(['MOVIMENTO', 'IDLE']), `e il reattivo li ha mostrati TUTTI E DUE, in ordine (${J(mostrati)})`);
+pano.g.mostraBannerAllarme = bannerVero;
+// NON PROVATO QUI: l'attesa massima di 4000 ms (se nessuno consuma, il
+// successivo parte comunque). Il banco non governa l'orologio.
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

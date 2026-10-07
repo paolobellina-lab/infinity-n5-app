@@ -1,4 +1,4 @@
-// @versione 2026-10-06.1 | test_allarme_una_volta.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.2 | test_allarme_una_volta.js | proprieta`: chat MOTORE
 // ============================================================================
 //  UN ALLARME PER ORDINE, ALLA PRIMA ABILITA`.
 //
@@ -34,6 +34,7 @@ const DIR = (process.env.CARTELLA || (__dirname + '/')).replace(/\/?$/, '/');
 const fs = require('fs'), vm = require('vm');
 
 let passati = 0, falliti = 0;
+const J = JSON.stringify;
 function ok(c, d, visto) {
     if (c) { passati++; console.log('  ✓ ' + d); }
     else { falliti++; console.log('  ✗ ' + d + (visto !== undefined ? '  [visto: ' + JSON.stringify(visto) + ']' : '')); }
@@ -83,16 +84,45 @@ function apri() {
     g.prompt = () => null;
     ['scrollTo', 'addEventListener'].forEach(k => g[k] = () => {});
     g.setInterval = () => 0; g.setTimeout = (fn) => { fn && fn(); return 0; };
+    // UN OROLOGIO PILOTABILE. La coda degli allarmi misura il tempo con
+    // Date.now(): senza poterlo muovere, l'attesa massima di 4000 ms non si
+    // puo` provare — e infatti nessuno l'aveva provata. Qui `orologio.avanti`
+    // sposta il tempo in avanti senza far aspettare il banco.
+    g.__ora = Date.now();
+    g.Date = function () { return new Date(g.__ora); };
+    g.Date.now = () => g.__ora;
+    g.Date.prototype = Date.prototype;
     g.history = { pushState: () => {} }; g.navigator = {};
+    // IL TRASPORTO FINTO DEVE FARE L'ECO.
+    // Il motore non scrive il canale nel localStorage: intercetta setItem e lo
+    // manda al trasporto, che lo riporta indietro con l'eco e avvisa
+    // M.ascoltatoriCanali. Da quell'avviso la coda capisce che l'allarme in
+    // volo e` stato VISTO (motore_core.js 2026-10-06.7).
+    // Senza l'eco, questo banco vedeva il canale sempre vuoto e `visto` sempre
+    // false: la coda non si liberava mai e il secondo allarme non partiva —
+    // un difetto del banco che sembrava un difetto della coda. Trovato il
+    // 6 ottobre, misurando perche` consuma() non sbloccava niente.
     g.firebase = { initializeApp: () => {}, database: () => ({ ref: (k) => {
         const nome = String(k).split('/').pop();
-        return { on: () => {}, remove: () => {}, set: (v) => {
-            // IL REGISTRO. Si annota la scrittura con il canale e il contenuto:
-            // cosi` due allarmi fanno due righe, non una riga sovrascritta.
-            let dato = v;
-            if (typeof v === 'string') { try { dato = JSON.parse(v); } catch (e) { dato = v; } }
-            registro.push({ canale: nome, dato: dato });
-        } };
+        const avvisa = (dati) => {
+            const asc = (g.MotoreN5 && g.MotoreN5.ascoltatoriCanali) || [];
+            asc.forEach(fn => { try { fn(nome, dati); } catch (e) {} });
+        };
+        return {
+            on: () => {},
+            remove: () => { delete locale[nome]; avvisa(null); },
+            set: (v) => {
+                // IL REGISTRO. Si annota la scrittura con il canale e il
+                // contenuto: cosi` due allarmi fanno due righe, non una riga
+                // sovrascritta.
+                let dato = v;
+                if (typeof v === 'string') { try { dato = JSON.parse(v); } catch (e) { dato = v; } }
+                registro.push({ canale: nome, dato: dato });
+                // L'eco: la copia locale e l'avviso, come fa Firebase.
+                locale[nome] = (typeof v === 'string') ? v : JSON.stringify(v);
+                avvisa(dato);
+            }
+        };
     } }) };
     const ctx = vm.createContext(g);
     g.cloudPronto = Promise.resolve({ confermato: true });
@@ -142,9 +172,30 @@ function nuovoOrdine() {
     g.coordMode = false; g.coordIndex = 0; g.coordUnits = [g.roster[0]];
     g.coordPayloads = []; g.combatTargets = []; g.pendingTargets = [];
     g.currentOrder = { unit: g.roster[0] };
+    // Si parte sempre a tratti liberi e coda vuota: una sezione che
+    // cominciasse con l'allarme di quella prima ancora in volo misurerebbe la
+    // coda invece dell'Ordine.
+    consuma();
+    g._codaAllarmi = []; g._allarmeInVolo = null;
     registro = []; buste = [];
     g.inviaCalcoloAllHub = (p) => { buste.push(p); };
 }
+// CHI LEGGE. Dalla 2026-10-06.7 di motore_core.js un allarme non parte se
+// quello prima non e` stato consumato su TUTTI E DUE i tratti (COMUNICAZIONE
+// verso l'Hub, ALLARME_ATTACCO verso il reattivo): niente piu` allarmi che si
+// coprono. Questo banco ha UNA pagina sola e nessun Hub, percio` deve fare
+// lui la parte di chi legge, altrimenti dal secondo Ordine la coda non si
+// svuota e il conto degli allarmi e` zero — che e` esattamente il rosso con
+// cui questo banco si e` presentato sulla .7.
+// Si cancellano i due canali (e` quello che fa chi li legge) e si da` un
+// passo alla coda: nei banchi setTimeout esegue subito, quindi la coda non si
+// risveglia da sola.
+function consuma() {
+    g.localStorage.removeItem(M.CANALI.COMUNICAZIONE);
+    g.localStorage.removeItem(M.CANALI.ALLARME_ATTACCO);
+    if (typeof g.spedisciAllarmiInCoda === 'function') g.spedisciAllarmiInCoda();
+}
+const inCoda = () => (g._codaAllarmi || []).length;
 const allarmi = () => registro.filter(r => r.canale === CANALE_ALLARME);
 const azioni = () => allarmi().map(a => (a.dato && a.dato.azione) || '(senza azione)');
 
@@ -183,6 +234,11 @@ nuovoOrdine();
 g.selectAction('IDLE', false);
 const primo = g.currentOrder.id;
 const dopoUno = allarmi().length;
+// FRA I DUE ORDINI SI CONSUMA, come fa chi legge. Dalla 2026-10-06.7 il
+// secondo allarme NON parte finche` il primo e` sui canali: senza questo
+// passaggio il banco misurerebbe la coda e direbbe "il secondo Ordine non
+// alza l allarme", che e` falso.
+consuma();
 g.currentOrder = { unit: g.roster[0] };     // il giocatore dichiara un altro Ordine
 g.selectAction('IDLE', false);
 const secondo = g.currentOrder.id;
@@ -218,6 +274,75 @@ ok(buste.length === 1 && buste[0].aroAtteso === false,
    `e non chiede di aspettare l ARO: aroAtteso false, voluto (${buste.length === 1 ? buste[0].aroAtteso : 'nessuna busta'})`);
 ok(allarmi().length === 1,
    `l allarme resta uno: è partito con la prima metà (${allarmi().length})`, azioni());
+
+console.log('\n=== 7. LA CODA DEGLI ALLARMI (motore_core.js 2026-10-06.7) ===');
+// Nasce dalla misura di questo banco e di quello del giro: due allarmi dentro
+// la finestra di lettura (1000 ms per tratto) e il secondo COPRIVA il primo,
+// che andava perso. Ora chi spedisce aspetta. Si prova il contratto intero,
+// perche` una coda che non si svuota e` peggio di un allarme perso: li perde
+// tutti.
+nuovoOrdine();
+ok(Array.isArray(g._codaAllarmi) && inCoda() === 0 && g._allarmeInVolo === null,
+   `si parte con la coda vuota e nessun allarme in volo (${inCoda()})`);
+ok(typeof g.spedisciAllarmiInCoda === 'function', 'window.spedisciAllarmiInCoda esiste');
+
+// UN ALLARME SOLO: parte subito, coda 0. E` il caso di sempre, e non deve
+// essere peggiorato dalla coda.
+g.inviaAllarmeAro({ attaccante: 'Zero', azione: 'PROVA 1', bersagli: [] });
+ok(allarmi().length === 1, `un allarme solo parte subito (${allarmi().length})`, azioni());
+ok(inCoda() === 0, `e la coda resta vuota (${inCoda()})`);
+ok(!!g._allarmeInVolo, 'ma resta segnato in volo: nessuno l ha ancora letto');
+
+// DUE DI FILA CON L'HUB FERMO: sul canale solo il primo, coda 1.
+g.inviaAllarmeAro({ attaccante: 'Zero', azione: 'PROVA 2', bersagli: [] });
+ok(allarmi().length === 1,
+   `col primo ancora sul canale, il secondo NON parte (${allarmi().length})`, azioni());
+ok(inCoda() === 1, `e aspetta in coda (${inCoda()})`);
+ok(azioni()[0] === 'PROVA 1', `sul canale c e ancora il PRIMO, non il secondo (${azioni()[0]})`);
+
+// CHI LEGGE SVUOTA I TRATTI: allora parte il secondo, e in ORDINE.
+consuma();
+ok(allarmi().length === 2, `consumato il primo, parte il secondo (${allarmi().length})`, azioni());
+ok(J(azioni()) === J(['PROVA 1', 'PROVA 2']),
+   `e l ordine e quello di partenza, non invertito (${J(azioni())})`);
+ok(inCoda() === 0, `coda di nuovo vuota (${inCoda()})`);
+
+console.log('\n=== 8. L attesa massima: dopo 4000 ms il successivo parte comunque ===');
+// Dichiarata da MOTORE come NON PROVATA DA NESSUNO. Si prova con l'orologio
+// pilotabile: senza poter spostare il tempo servirebbero quattro secondi di
+// attesa vera a ogni giro della suite, e nessuno li paga.
+// La ragione della regola: se il reattivo e` spento o l'Hub e` chiuso,
+// aspettare per sempre vorrebbe dire non avvisare mai piu` nessuno.
+nuovoOrdine();
+g.inviaAllarmeAro({ attaccante: 'Zero', azione: 'BLOCCANTE', bersagli: [] });
+g.inviaAllarmeAro({ attaccante: 'Zero', azione: 'IN ATTESA', bersagli: [] });
+ok(inCoda() === 1 && allarmi().length === 1,
+   `col lettore fermo: uno sul canale, uno in coda (${allarmi().length}, coda ${inCoda()})`);
+// Si avanza di poco: NON deve partire. Senza questa meta`, "parte dopo 4000"
+// non distingue "aspetta il tempo giusto" da "parte sempre".
+g.__ora += 3000;
+g.spedisciAllarmiInCoda();
+ok(allarmi().length === 1, `dopo 3000 ms aspetta ancora (${allarmi().length})`, azioni());
+// Oltre la soglia: parte comunque, e nessuno lo ha consumato.
+g.__ora += 1500;
+g.spedisciAllarmiInCoda();
+ok(allarmi().length === 2,
+   `dopo 4500 ms parte comunque, senza che nessuno abbia letto (${allarmi().length})`, azioni());
+ok(J(azioni()) === J(['BLOCCANTE', 'IN ATTESA']), `e nell ordine giusto (${J(azioni())})`);
+ok(inCoda() === 0, `e la coda si e svuotata (${inCoda()})`);
+
+console.log('\n=== 9. CONTROPROVA: la coda non e` un tappo ===');
+// Il rischio di una coda e` l'opposto del difetto che chiude: che non si
+// svuoti mai e gli allarmi non partano piu`. Tre Ordini di fila, consumando
+// fra l'uno e l'altro come fa chi legge, devono dare TRE allarmi.
+nuovoOrdine();
+['UNO', 'DUE', 'TRE'].forEach(function (et) {
+    g.inviaAllarmeAro({ attaccante: 'Zero', azione: et, bersagli: [] });
+    consuma();
+});
+ok(allarmi().length === 3, `tre allarmi consumati, tre partiti (${allarmi().length})`, azioni());
+ok(J(azioni()) === J(['UNO', 'DUE', 'TRE']), `in ordine (${J(azioni())})`);
+ok(inCoda() === 0, `e niente resta appeso in coda (${inCoda()})`);
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

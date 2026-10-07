@@ -1,10 +1,53 @@
-<!-- @versione 2026-10-06.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-10-06.4 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 8)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 11)
 
-Sostituisce la revisione 7 del 30 settembre.
+Sostituisce la revisione 10 del 6 ottobre. Cambia solo il blocco **BAN**, che
+cresce di tre voci: i **bersagli secondari sotto la Sagoma**, i **sei casi**
+che nessuno aveva mai misurato, e i **ripari del motore .16** contro le
+chiamate sbagliate. In più, `attaccanteNonRisolto` **non è più un limite
+noto**: l'adattatore .5 lo fa arrivare al tabellone, e il banco lo tiene. Le
+prove da eseguire al tavolo sono le stesse della revisione 10.
 
-# 0. Quello che è cambiato dalla revisione 7
+# 0. Quello che è cambiato dalla revisione 8
+
+**Tre profili del roster non si potevano schierare.** Segnalato da Paolo, e
+controllate poi tutte e 35 le righe delle due tabelle contro il database:
+
+- **Il Kulak era fra i PanOceania, ed è nomade.** Non era un nome sbagliato:
+  era dalla parte sbagliata del tavolo, e nell'app non compariva perché non
+  doveva comparire. Spostato fra i Nomadi (riga 23), col profilo intero
+  `Kulak (Hacker, Killer Hacking Device)`, che è quello col Disco Baller. Le
+  prove che lo usano — HK-11 e DEP-09 — sono prove nomadi, quindi ora tornano.
+- **`Puppetbot (Minelayer)` non esiste**: mescolava le skill di due truppe.
+  `BS Attack (+1B)` e `Dodge (+3)` sono del Puppetbot, il Minelayer no. La
+  riga 17 è ora `Puppetbot (Red Fury)`, ed è stata aggiunta la riga 22,
+  `Puppet Masters (Minelayer)`, che il Minelayer ce l'ha davvero.
+- **`Machinist` è una famiglia, non un profilo**: tre profili la portano. Ora
+  `Machinist (Combi Rifle)`.
+
+**DEP-01 chiedeva una cosa impossibile.** Diceva che PIAZZARE EQUIPAGGIAMENTO
+compare al **Puppetbot**: nessuno dei suoi sei profili ha un'arma col Tratto
+Deployable. Misurato con `M.armiPiazzabili` su tutto il roster: le truppe che
+possono piazzare sono quattro, e sono nominate nel blocco O.
+
+**Questo controllo ora è un banco.** `test_piano_schieramento.js` legge le due
+tabelle di questo file e pretende che ogni profilo esista, col nome intero,
+nel database della fazione sotto cui è scritto. Il database ha 765 profili e
+cambia; un piano che li nomina a memoria invecchia in silenzio. Dalla
+revisione 9 non può più: se un profilo sparisce o cambia fazione, il banco
+diventa rosso prima che tu perda tempo al tavolo.
+
+**Quello che oggi è coperto da un banco, e che quindi NON vale ripetere al
+tavolo**, sta nel nuovo blocco **BAN** in fondo. Vale la pena leggerlo prima
+di cominciare: venticinque gruppi di comportamenti che fino a ieri erano da
+verificare a mano adesso hanno una prova che li tiene, e il tempo al tavolo si
+spende meglio sulle schermate e sul giro a tre dispositivi.
+
+**Resta aperto un difetto solo**, il Burst della Soppressione in reazione
+(BS-12 / D-02).
+
+# 0-bis. Quello che era cambiato dalla revisione 7
 
 **Due dei tre difetti aperti sono chiusi, e uno dei due non era un difetto.**
 
@@ -44,11 +87,17 @@ un numero diverso da quello scritto qui, guarda prima la scheda ufficiale — il
 piano invecchia insieme ai dati.
 
 Le prove si eseguono **dall'app**. Tutto ciò che si poteva verificare col motore è
-verde: **79 file di test, 2820 prove, 0 falliti**, nessun banco muto, banco di
-confronto a zero divergenze (354 scontri identici). I valori attesi sono
-calcolati con `motore_regole_n5.js` **2026-10-06.11, impronta
-`8bd59418.632824`** sui profili veri. Le regole citate rimandano a
+verde: **89 file di test, 3441 prove, 0 falliti**, nessun banco muto, banco di
+confronto a zero divergenze (354 scontri identici, uscita 0). I valori attesi
+sono calcolati con `motore_regole_n5.js` **2026-10-06.16, impronta
+`f451aff1.641214`**, `motore_core.js` **2026-10-06.7, impronta
+`0efaad76.38530`** e `calcolatore_math.js` **2026-10-06.5, impronta
+`6756727a.17333`**, sui profili veri. Le regole citate rimandano a
 `REGOLE_N5_v5_1_1.txt` (impronta `5ea7581f.904498`, 17029 righe), con `grep -n`.
+
+Il conteggio si legge così: **un file, una riga di riepilogo**, e si somma su
+tutti i file `test_*.js`, `test_collaudo_suite.js` compreso. `banco_confronto.js`
+non stampa quella riga e non entra nel totale.
 
 ## Come leggere una prova
 
@@ -92,11 +141,13 @@ salta fra le due.
 | 14 | Chimera | Natural Born Warrior, CC Attack (-3) |
 | 15 | Reaktion Zond (HMG) | Total Reaction, REM |
 | 16 | Mobile Brigada (HMG) | HI, ARM 5 |
-| 17 | Puppetbot (Minelayer) | BS Attack (+1B), Dodge (+3), **Minelayer** |
+| 17 | Puppetbot (Red Fury) | BS Attack (+1B), Dodge (+3) |
 | 18 | Zondmate (REM) | PARA CC Weapon |
 | 19 | **Moran (Surprise Attack, Camouflage)** | **CrazyKoalas, D-Charges** |
 | 20 | **Sin-Eater (MULTI Sniper Rifle)** | **Neurocinetics** |
 | 21 | **Mary Problems (Hacker)** | Pitcher, Zapper, upgrade hacking |
+| 22 | **Puppet Masters (Minelayer)** | **Minelayer**, Shock Mine 3/3 |
+| 23 | **Kulak (Hacker, Killer Hacking Device)** | **Disco Baller** → Disco Ball, Cybermine 3/3 |
 
 **PanOceania**
 
@@ -114,8 +165,7 @@ salta fra le due.
 | 10 | Zulu-Cobra (Triangulated Fire, Sensor) | Camo, **Triangulated Fire** |
 | 11 | Aquila | MSV L3, ARM 6 |
 | 12 | **Squalo Mk-II (MULTI Marksman Rifle)** | **Combat Instinct**, TAG |
-| 13 | **Kulak** | **Disco Baller** → Disco Ball |
-| 14 | Machinist | Ingegnere lato Pano |
+| 13 | Machinist (Combi Rifle) | Ingegnere lato Pano, Deployable Cover |
 
 ## 1.2 Terreni
 
@@ -707,7 +757,16 @@ Imposta lo stato e guarda **la lista ordini**.
 # 17. Blocco O — Deployable *(blocco nuovo)*
 
 **DEP-01 — Chi può piazzare**
-- Atteso: PIAZZARE EQUIPAGGIAMENTO compare al **Moran** (CrazyKoalas, usi 2/2), all'**Heckler** (Cybermine 3/3), al **Puppetbot**. Non compare a chi non ha armi col Tratto Deployable.
+- Atteso: PIAZZARE EQUIPAGGIAMENTO compare a **quattro** truppe del roster, e
+  solo a quelle — misurato sul database il 6 ottobre con `M.armiPiazzabili`:
+  **Moran** (CrazyKoalas 2/2), **Zero** (Shock Mine 3/3), **Puppet Masters**
+  (Shock Mine 3/3), **Kulak** (Cybermine 3/3).
+- **Non** compare al **Puppetbot**: nessuno dei suoi sei profili ha un'arma col
+  Tratto Deployable. La revisione 8 lo elencava, e lo elencava a torto.
+  Nemmeno all'**Heckler (Boarding Shotgun)**: la Cybermine la porta
+  l'`Heckler (Hacker, Killer Hacking Device)`, che nel roster non c'è — il suo
+  caso lo copre il Kulak, che ha la stessa arma.
+- E non compare a nessun'altra delle 23 truppe nomadi del roster.
 
 **DEP-02 — Le due domande bloccano prima**
 - Attivo: Moran · PIAZZARE EQUIPAGGIAMENTO · CrazyKoalas
@@ -1000,6 +1059,148 @@ costruire; la terza esiste già ed è il modello.
 
 ---
 
+# 23-sexies. Blocco BAN — Quello che un banco già tiene
+
+Leggi questo blocco **prima di cominciare**. Venticinque gruppi di
+comportamenti che fino alla revisione 8 erano da verificare a mano adesso hanno
+una prova che li misura a ogni giro, con la controprova e con la verifica che il banco sappia
+andare rosso. Al tavolo non vale ripeterli: il tempo si spende meglio sulle
+schermate, sul giro a tre dispositivi e sui casi del blocco V.
+
+Per ciascuno è scritto **dove** sta la prova, così se un numero al tavolo non
+torna sai subito quale banco contraddire.
+
+**Rientro in CAMO e Cybermask** — `test_camo_cybermask.js`
+Rientro dentro la LoF → `IDLE`, Ordine speso, genera ARO, non rientra, stato
+invariato. Col Frenzy attivo → `VIETATO`, Ordine **non** speso. Cybermask
+dentro la LoF → `IDLE`, non entra in IMP-2. Un Marker CAMO **può** usare il
+Cybermask e dopo è `NORMAL`, con la nota che perde il MOD del Mimetism; un
+Marker IMP-2 non può e **non viene rivelato**. Da Isolato: Cybermask no,
+rientro in CAMO sì.
+
+**Hacker, Firewall, ECM, Repeater** — `test_hacking_firewall.js`
+`M.eHacker` è vero su **86 profili su 765**, e guarda la voce esatta: chi ha
+solo l'`ECM (Hacking -3)` non è un Hacker. Due Firewall non si sommano: −6, mai
+−9, e il motivo dice che la scelta è del giocatore del bersaglio. L'ECM **si
+somma** al Firewall ma **non** dà il +3 alla salvezza. Il +3 del Firewall è
+sempre **una sola voce da +3**, anche con un Firewall −6 e un Repeater insieme.
+ARO di Hacking, Intruder KHD (WIP 14) con TRINITY contro
+`Fusilier (Hacker, Hacking Device)`: **17** e salvezza **BTS 6** senza
+Repeater, **14** e **BTS 9** con. L'avviso **A90** non scatta su nessun profilo.
+
+**Classi d'azione, Stati, Foxhole** — `test_stati_classi_foxhole.js`
+Le quattro classi per tredici azioni. In **Ritirata!** passano solo MOVIMENTO,
+SCOPRIRE, IDLE, CAUTO, SCHIVATA, RESET; cadono SALTO, ARRAMPICARSI, ATTACCO BS,
+e in ARO sono negati BS_ATTACK, CC_ATTACK e HACKING. L'IDLE è negato da
+Immobilizzato-A e -B, permesso da Ingaggiato. Il **Foxhole non nega nessuna
+azione**. I numeri: reattivo in Foxhole → l'attivo da **15 a 9**, la salvezza
+del reattivo da **8 a 11**, identico con la Copertura dichiarata; attivo in
+Foxhole → il reattivo da **14 a 8**, salvezza dell'attivo **11**; cancellato il
+Foxhole muovendo, nessun bonus. Mimetism −6 in Foxhole resta **−6**, non −9. In
+Corpo a Corpo nessuna copertura; con la Sagoma Diretta nessun +3.
+
+**Ordini che non tirano, e l'adattatore** — `test_ordini_senza_tiro.js`,
+`test_adattatore.js`
+Ingresso in campo, Supporto e Speedball: `attivo.mod` è il valore della busta,
+base valorizzata, burst 1. Trincerarsi, Rientrare in CAMO e Cybermask: titolo
+**ABILITÀ SENZA TIRO**, burst **0**, mod null, e la nota della busta arriva al
+tabellone. Chi decide è la specifica dell'azione nel motore, non la busta: una
+busta che dichiara il contrario non fa tirare Trincerarsi. Sul tabellone
+arrivano `coperturaNegata` (la nega il **SALTO**, non il Movimento), le note e
+`reattivoNonBersagliato`; la riga della Statistica Base non viene ripetuta come
+modificatore; un requisito fallito si legge **"Requisito non soddisfatto: Idle,
+nessun tiro"**, diverso dal valore sotto 1.
+
+**L'allarme e il giro** — `test_allarme_una_volta.js`,
+`test_giro_aggiornamento.js`, `test_modulo_hacking.js`
+Un allarme per Ordine. Il pulsante del Repeater nemico tocca un bersaglio solo
+e il valore viaggia fino in busta. Il giro attivo → Hub → avversario, con i
+valori del blocco V.
+
+**Bersagli secondari sotto la Sagoma** — `test_modulo_speculativo.js` sez. 8
+Arma a Sagoma Circolare: il riquadro **ANCHE SOTTO LA SAGOMA** elenca gli altri
+nemici, **non** il Bersaglio Principale, e un Marker CAMO **sì** (escluso come
+principale, ammesso come secondario). Toccato, entra con `ruolo 'secondario'`,
+Burst **1**, gittata e munizione **del Principale**; ritoccato esce; un id non
+ammesso e l'id del Principale non fanno niente. `setTargetRangeSpeculativo(1)`
+porta tutti e tre a **−3**. In busta **un solo attacco** con **tre bersagli** e
+i ruoli dentro. Sul tabellone **tre scontri**, `bersaglioDiSagoma`
+PRINCIPALE/SECONDARIO/SECONDARIO, **MOD identico 9** (PH 12 −6 +3) e nessuna
+voce di Mimetismo sul Marker, ciascuno la sua salvezza ARM 0 contro PS 7, e sul
+solo Marker `cancellaMarker` con la nota della **riga 13638**. Il ruolo lo
+decide la busta, non la posizione: a busta rovescia il Principale è il secondo.
+Un'arma col Tratto Speculative ma **senza** Sagoma (Pitcher): nessun riquadro.
+
+**I sei casi mai misurati** — `test_sei_casi.js`
+*Total Control*: solo contro i TAG; una HI con Hacking Device e una REM sono
+rifiutate col motivo, un TAG **Posseduto** è ammesso (serve a liberarlo), un TAG
+in forma di Marker va Scoperto prima; il Carbonite accetta la stessa HI e la
+stessa REM, lo Spotlight è il solo a passare sopra all'hackerabilità, il Trinity
+rifiuta il TAG perché non è un Hacker.
+*Coordinato col SALTO*: la Copertura è negata a **tutti** gli attivi, non al
+primo, con la **riga 2762-2763** e `dichiarataEIgnorata`; l'Arrampicarsi è il
+caso intermedio (nota, non negazione); senza SALTO il campo **non c'è**.
+*Cybermask e Rientro in CAMO*: tre esiti, non due — NON RISPOSTO non spende
+l'Ordine, requisito fallito **sì** (Ordine speso, ARO generato, Disposable
+spesi, Marker rivelato), requisito soddisfatto entra senza tiro; e il motore
+restituisce una **copia**, l'unità originale non viene toccata.
+*Ingresso in campo e Trincerarsi*: due facce opposte. L'Ingresso si tira su
+**PH 11**, ha cinque divieti e **VIETA** (scegli un altro punto, l'Ordine non è
+perso); il Trincerarsi fa un **IDLE** (l'Ordine è perso) e richiede il Sapper.
+*Schieramento Nascosto*: non è bersaglio valido **e** non lo prende la Sagoma
+(due regole distinte, due funzioni che concordano), ma in ARO **può dichiarare**
+Attacco BS, Corpo a Corpo e Schivata: rivelarsi è una sua scelta.
+*Successo automatico*: una parola, due significati. MSV L2 contro un Marker CAMO
+→ titolo **SUCCESSO AUTOMATICO**, mod **"Auto"**, Burst **0**,
+`successoAutomatico: true`, `automatico: false`. Se qualcuno reagisce il titolo
+torna TIRO NORMALE ma l'attivo non tira comunque. Una Sagoma diretta
+(Lanciafiamme) → azione **ATTACCO A SAGOMA**, `automatico: true`,
+`successoAutomatico: false`.
+
+**I ripari del motore .16** — `test_sei_casi.js` sez. 7, `test_adattatore.js` sez. 13
+Quattro firme del motore, chiamate male, rispondevano un numero **plausibile**
+invece di un errore. Dalla .16 una chiamata sbagliata si **dichiara**, e
+**nessuna** solleva eccezioni (la schermata ARO chiama `M.bersagliValidi` fuori
+da un `try`: al tavolo un Hub che cade è peggio di un numero sbagliato).
+`M.modAttacco` accetta l'azione posizionale, dentro `ctx` al quarto posto o
+dentro `ctx` al quinto — tutte e tre danno **mod −3** su Hellcat con Grenades
+contro un Croc Man con Mimetism (−3), voci `[gittata, speculativo]`, nessun
+Mimetismo; **senza** azione da nessuna parte esce **mod 0** col Mimetismo
+applicato, ma con **un** avviso che il calcolo non è affidabile.
+`M.bersagliValidi` accetta `programma` come nome **o** come oggetto con
+`.nome`; un oggetto senza `.nome` nega **ogni** candidato con
+`chiamataSbagliata: true`, mentre `programma` **assente** resta il caso
+legittimo (tutti ammessi, nessuna bandiera). `M.risolviTrincerarsi` accetta il
+booleano **e** `{ spazioSufficiente }`; un oggetto senza quel campo alza
+`chiamataSbagliata`, e così i due "incompleto" si distinguono da `undefined`.
+E **`attaccanteNonRisolto` non è più un limite noto**: con l'adattatore .5 il
+campo, la nota e l'avviso arrivano al tabellone per un attaccante assente dai
+roster (mod **0** contro **11**), mentre un **bersaglio** fantasma non alza
+nessuna bandiera e la sua salvezza viene calcolata su un'unità vuota — è il
+buco che resta, e il banco lo dichiara.
+
+## Quattro trappole di scenario, da sapere prima di scrivere una prova nuova
+
+Sono emerse costruendo questi banchi, e valgono anche per chi esegue a mano:
+una prova che guarda il posto sbagliato sembra un difetto dell'app.
+
+1. **Molti profili nascono Marker.** Croc Man, Intruder (Hacker, KHD), Heckler,
+   Zero, Scarecrow e altri hanno `deployState: 'CAMO'` nel database. Contro un
+   Marker l'Attacco BS e l'Attacco Comms **non si dichiarano**, e l'app rifiuta
+   — giustamente. Se un profilo ti serve come bersaglio, **scoprilo prima**.
+2. **Il nome della famiglia non basta.** "Machinist" sono tre profili con
+   equipaggiamento diverso, e i numeri attesi valgono per uno solo. Nel piano i
+   profili si scrivono per intero, e il banco lo pretende.
+3. **Il filtro per l'avversario riscrive il nome.** Una truppa in forma di
+   Marker si vede `MARKER` / `SEGNALINO MIMETICO`, e i suoi stati sono
+   nascosti. Cercarla per nome sul tabellone avversario non la trova: è
+   arrivata travestita, come deve.
+4. **Un programma colpisce solo i bersagli che la sua regola ammette.** TRINITY
+   vuole un **Hacker nemico**: contro un Fusilier normale il motore risponde
+   "requisito non soddisfatto" e non c'è nessun tiro. Non è un difetto.
+
+---
+
 # 24. Blocco V — Difetti aperti e divergenze note
 
 ## Difetti trovati al tavolo, non ancora chiusi
@@ -1023,8 +1224,25 @@ questa revisione.
 PIAZZARE EQUIPAGGIAMENTO.** `ordine_piazzamento.js` chiama `M.allarmeOrdine` e
 manda `aroAtteso: true`. Misurato in `test_modulo_piazzamento.js` sezione 12,
 con le due controprove (Allerta non alza l'allarme; un piazzamento bloccato non
-lo alza). **Resta da misurare l'IDLE**, che nella segnalazione originale era il
-secondo caso: nessun banco lo copre ancora.
+lo alza).
+
+**D-03 è ora chiuso anche per l'IDLE**, il secondo caso della segnalazione.
+Misurato dalla pagina intera in `test_allarme_una_volta.js`: l'allarme parte
+**una volta per Ordine, alla prima Abilità**. IDLE da solo → un allarme, azione
+`IDLE`; MOVIMENTO poi IDLE come seconda metà → un allarme, azione `MOVIMENTO`,
+identificativo conservato; IDLE poi IDLE → un allarme. La busta di chiusura di
+un Ordine in due metà porta `aroAtteso: false`, ed è voluto: l'allarme è partito
+con la prima metà. Il guardiano che lo garantisce è `ordine_movimento.js` riga
+84 — se qualcuno riscrive `eseguiMovimentoAutomatico`, è quella la riga da non
+perdere, e ora c'è un banco che lo dice.
+
+**Il giro a tre dispositivi è coperto.** `test_giro_aggiornamento.js` esegue
+attivo → Hub → avversario con tre contesti separati, e fissa i due casi che
+INTERFACCIA aveva misurato a mano: un Marker CAMO che si rivela (Hub e
+avversario passano da `MARKER` / `CAMO` a `Intruder (HMG)` / `NORMAL` / camo
+false) e la Soppressione annullata in ARO (`suppressive` da true a false su
+tutti e due). Con la controprova che conta: con `senzaInvio` il roster di chi
+agisce cambia e **l'Hub resta allo stato vecchio**.
 
 ## Divergenze note, che restano aperte per una ragione
 

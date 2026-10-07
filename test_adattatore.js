@@ -1,4 +1,4 @@
-// @versione 2026-10-06.1 | test_adattatore.js | proprieta`: chat TEST
+// @versione 2026-10-06.2 | test_adattatore.js | proprieta`: chat TEST
 // Test dell'adattatore calcolatore_math.js — node test_adattatore.js
 global.window = global;
 require('./catalogo_n5.js'); require('./database_comune.js');
@@ -252,6 +252,89 @@ const haIdle = /Requisito non soddisfatto: Idle, nessun tiro/.test(d9);
 const haSotto1 = /Valore di Successo sotto 1/.test(d9);
 ok(!(haIdle && haSotto1),
    `e i due messaggi non compaiono insieme (idle ${haIdle}, sotto1 ${haSotto1})`);
+
+console.log('\n=== 13. attaccanteNonRisolto arriva al tabellone (adattatore .5) ===');
+// Campo del motore .14, aggiunto all'elenco che l'adattatore copia.
+// STORIA DI QUESTA SEZIONE, perche` serve a chi la leggera` dopo:
+//   .4 dell'adattatore -> il campo NON arrivava mai. Non per colpa
+//      dell'elenco dei campi copiati (c'era), ma del ctx.trovaUnita
+//      costruito dall'adattatore, che finiva con `|| { alias: nome }`
+//      (riga 204): un attaccante assente dai due roster veniva "risolto"
+//      a un oggetto finto col solo alias, e il motore non aveva motivo di
+//      segnalarlo. La rete di sicurezza della .14 era disinnescata
+//      proprio nel punto dove serviva. Fissato come LIMITE NOTO, con la
+//      prova che stava nell'ADATTATORE e non nel motore.
+//   .5 dell'adattatore -> il ripiego e` `{ alias: nome, nonRisolto: true }`
+//      e il motore tratta attObj.nonRisolto === true come non risolto.
+//      Il limite e` CHIUSO: questa sezione e` girata il 6 ottobre.
+// Il caso realistico: una busta che nomina una truppa che l'Hub non ha nei
+// due roster. L'adattatore fornisce lui ctx.trovaUnita dai roster, quindi
+// basta un nome che non c'e`.
+prepara([]);
+const bustaFantasma = window.generaRisoluzioneDaDati({
+    attacchi: [{ attaccante: 'Truppa Che Non Esiste', azione: M.AZIONI.BS_ATTACK, arma: combi,
+                 bersagli: [{ name: 'Fusilier', burst: 3, rangeIndex: 1, rangeMod: 0, cover: false, ammo: 'N', terrain: 'NESSUNO' }] }]
+}) || [];
+ok(bustaFantasma.length === 1, `lo scontro viene prodotto comunque (${bustaFantasma.length})`);
+const bf = bustaFantasma[0] || {};
+ok(bf.attaccanteNonRisolto === true,
+   `il campo ARRIVA al tabellone passando dall adattatore (${JSON.stringify(bf.attaccanteNonRisolto)})`);
+// CONTROPROVA: con un attaccante che l Hub HA nei roster il campo non c e.
+// Senza, "true" non distingue "copiato" da "sempre presente".
+const bustaBuona = risolvi([{ name: 'Fusilier', burst: 3, rangeIndex: 1, rangeMod: 0, cover: false, ammo: 'N', terrain: 'NESSUNO' }]);
+ok(!(bustaBuona[0] || {}).attaccanteNonRisolto,
+   `con l attaccante nei roster il campo non c e (${JSON.stringify((bustaBuona[0] || {}).attaccanteNonRisolto)})`);
+// E il MOD lo dice: 0 contro 11, perche` il calcolo gira su un unita` senza
+// statistiche. Questa prova distingue "segnalato" da "segnalato e corretto":
+// il campo e` un avvertimento, non una riparazione.
+ok((bf.attivo || {}).mod === 0 && ((bustaBuona[0] || {}).attivo || {}).mod === 11,
+   `e il MOD resta quello di un unita` + ` senza statistiche: 0 contro 11 (${(bf.attivo || {}).mod} / ${((bustaBuona[0] || {}).attivo || {}).mod})`);
+
+// L avvertimento deve essere LEGGIBILE, non solo un flag.
+// ATTENZIONE AGLI ACCENTI: i testi del motore usano l'accento SCOMPOSTO
+// ("e" + U+0300), non il precomposto. Si normalizza prima di confrontare,
+// altrimenti la prova cerca un carattere che non c'e` su un testo che a
+// leggerlo e` identico.
+const noteFantasma = String((bf.note || []).join(' | ')).normalize('NFC');
+ok(/non trovato/.test(noteFantasma),
+   `la nota arriva, e nomina la truppa (${noteFantasma.slice(0, 55)}…)`);
+ok(/non \u00e8 affidabile/.test(noteFantasma) || /NON ha le sue statistiche/.test(noteFantasma),
+   'e dice perche` il calcolo non e` affidabile, non solo che qualcosa manca');
+ok(!/non trovato/.test(String(((bustaBuona[0] || {}).note || []).join(' ')).normalize('NFC')),
+   'CONTROPROVA: con l attaccante nei roster quella nota NON c e');
+// L avviso, che e` il canale a parte: l adattatore lo copia in out.avvisi.
+const avvFantasma = ((bf.avvisi || []).map(a => String(a.testo || a.messaggio || a)).join(' | ')).normalize('NFC');
+ok(/non trovato/.test(avvFantasma),
+   `e l avviso del motore viaggia in out.avvisi (${avvFantasma.slice(0, 50)}…)`);
+
+// IL CONFINE DEL CONTROLLO, dichiarato da MOTORE: il segnaposto col
+// nonRisolto vale per OGNI ricerca dell'adattatore, ma il motore lo
+// controlla SOLO su chi attacca. Un bersaglio fantasma non alza nessuna
+// bandiera, e la sua salvezza viene calcolata su un unita` vuota (ARM 0).
+// Si fissa il confine: il giorno che il motore estende il controllo questa
+// prova diventa rossa e si viene a sapere, invece di scoprirlo per caso.
+const bersFantasma = window.generaRisoluzioneDaDati({
+    attacchi: [{ attaccante: 'Alguacil', azione: M.AZIONI.BS_ATTACK, arma: combi,
+                 bersagli: [{ name: 'Bersaglio Inesistente', burst: 3, rangeIndex: 1, rangeMod: 0, cover: false, ammo: 'N', terrain: 'NESSUNO' }] }]
+}) || [];
+const bfz = bersFantasma[0] || {};
+ok(bfz.attaccanteNonRisolto === undefined,
+   'un BERSAGLIO fantasma non alza la bandiera: il controllo del motore e` su chi attacca');
+ok((bfz.note || []).length === 0,
+   `e nessuna nota lo segnala (${(bfz.note || []).length} note)`);
+ok(/Munizione/.test(String((bfz.reattivo || {}).salvezza || '')),
+   'ma la salvezza viene calcolata comunque, su un unita` vuota: e` il buco che resta');
+
+// L elenco dei quattro campi copiati, provato per intero: i tre di prima
+// sono gia` in alto, qui si pretende che l aggiunta non ne abbia perso uno.
+ok(/attaccanteNonRisolto/.test(srcMath) && /bersaglioDiSagoma/.test(srcMath) &&
+   /coperturaNegata/.test(srcMath) && /reattivoNonBersagliato/.test(srcMath),
+   'e l adattatore nomina tutti e quattro i campi dello scontro');
+// E il ripiego del trovaUnita, letto nel sorgente: e` il punto esatto che
+// era rotto nella .4. Una prova sul testo, perche` il comportamento sopra
+// non dice QUALE riga lo produce.
+ok(/nonRisolto:\s*true/.test(srcMath),
+   'il ripiego di ctx.trovaUnita marca il segnaposto con nonRisolto: true');
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

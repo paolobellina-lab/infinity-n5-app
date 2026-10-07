@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.5 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
 // ==========================================
 // ☄️ FUOCO SPECULATIVO (N5) - ordine_fuoco_speculativo.js
 // ------------------------------------------
@@ -227,6 +227,8 @@
                 <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${etichette}</div>
             </div>
 
+            ${window.htmlSecondariSpeculativo()}
+
             <div style="padding:12px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:12px; line-height:1.7;">
                 <b style="color:#aaa;">Cosa NON si applica a questo tiro:</b><br>
                 • Mimetismo del bersaglio — ignorato<br>
@@ -292,8 +294,70 @@
     window.setTargetRangeSpeculativo = function (rangeIdx) {
         const M = motore(); if (!M) return;
         const arma = M.profiloArma(window.currentOrder.weapon);
-        window.combatTargets[0].rangeIndex = rangeIdx;
-        window.combatTargets[0].rangeMod = arma.bands[rangeIdx] ? arma.bands[rangeIdx].mod : 0;
+        // La gittata del Principale vale per tutti: la Sagoma e` una sola.
+        window.combatTargets.forEach(function (t) {
+            t.rangeIndex = rangeIdx;
+            t.rangeMod = arma.bands[rangeIdx] ? arma.bands[rangeIdx].mod : 0;
+        });
+        window.renderSpeculativo();
+    };
+
+    // ==============================================================
+    // 3-BIS. BERSAGLI SECONDARI SOTTO LA SAGOMA
+    // --------------------------------------------------------------
+    // Con un'arma a Sagoma Circolare il centro si puo` mettere altrove,
+    // purche` il Principale stia dentro l'area (righe 3914-3919): chi
+    // altro sta sotto la Sagoma e` un bersaglio SECONDARIO. Un Marker non
+    // puo` essere il Principale (righe 13609-13610, 14207-14208) ma come
+    // secondario SI`. Fino alla 2026-10-06.4 la schermata teneva un solo
+    // bersaglio: il motore ammetteva il secondario e non c'era modo di
+    // dichiararlo. Chi e` ammesso lo decide M.bersagliValidi col ruolo
+    // 'secondario'; l'app non ha la mappa, quindi chi sta sotto la Sagoma
+    // lo dice il giocatore.
+    // ==============================================================
+    function candidatiSecondari(M) {
+        const arma = M.profiloArma(window.currentOrder.weapon);
+        const tpl = arma ? M.regoleTemplate(arma) : null;
+        if (!tpl || tpl.forma !== 'Circular') return null;      // null: l'arma non ha una Sagoma Circolare
+        const unita = window.coordUnits[window.coordIndex];
+        const primo = window.combatTargets[0];
+        return M.bersagliValidi(M.AZIONI.SPECULATIVO, M.rosterNemico(), { attaccante: unita, ruolo: 'secondario' })
+            .filter(function (g) { return g.ammesso && g.unita && String(g.unita.id) !== String(primo.id); });
+    }
+
+    window.htmlSecondariSpeculativo = function () {
+        const M = motore(); if (!M) return '';
+        const cand = candidatiSecondari(M);
+        if (cand === null || cand.length === 0) return '';
+        const scelti = window.combatTargets.slice(1).map(function (t) { return String(t.id); });
+        return `<div style="background:#1a1020; border:1px solid #553355; padding:12px; border-radius:5px; margin-bottom:15px;">
+            <div style="color:#cc99cc; font-size:13px; margin-bottom:8px;"><b>ANCHE SOTTO LA SAGOMA</b> — bersagli secondari.
+                Il calcolatore non ha la mappa: tocca chi sta dentro l'area. Un Marker qui è ammesso.</div>` +
+            cand.map(function (g) {
+                const si = scelti.indexOf(String(g.unita.id)) >= 0;
+                return `<button type="button" onclick="window.toggleSecondarioSpeculativo('${g.unita.id}')"
+                    style="width:100%; padding:10px; margin-bottom:6px; font-size:14px; font-weight:bold; border-radius:5px; cursor:pointer; text-align:left;
+                           background:${si ? '#553300' : '#111'}; color:${si ? '#ffaa33' : '#888'}; border:2px solid ${si ? '#ffaa33' : '#444'};">
+                    ${si ? '☑' : '☐'} ${M.nomeUnita(g.unita)}</button>`;
+            }).join('') + `</div>`;
+    };
+
+    window.toggleSecondarioSpeculativo = function (id) {
+        const M = motore(); if (!M) return;
+        const cand = candidatiSecondari(M) || [];
+        const i = window.combatTargets.findIndex(function (t, k) { return k > 0 && String(t.id) === String(id); });
+        if (i > 0) window.combatTargets.splice(i, 1);
+        else {
+            const g = cand.find(function (x) { return String(x.unita.id) === String(id); });
+            if (!g) return;                                   // non ammesso: non si aggiunge
+            const primo = window.combatTargets[0];
+            // Gittata, munizione e dado sono quelli del Principale: la
+            // Sagoma e` una sola.
+            window.combatTargets.push({ id: g.unita.id, name: M.nomeUnita(g.unita), burst: 1, cover: false,
+                rangeIndex: primo.rangeIndex, rangeMod: primo.rangeMod, ammo: primo.ammo,
+                terrain: primo.terrain || 'NESSUNO', ruolo: 'secondario' });
+        }
+        window.combatTargets[0].ruolo = 'principale';
         window.renderSpeculativo();
     };
 
@@ -420,7 +484,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-06.5', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

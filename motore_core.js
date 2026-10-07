@@ -1,4 +1,4 @@
-// @versione 2026-10-06.6 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-06.7 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -54,9 +54,83 @@ window.inviaAllarmeAro = (payload) => {
     if (payload && payload.ordineId == null && window.currentOrder && window.currentOrder.id) {
         payload.ordineId = window.currentOrder.id;
     }
-    localStorage.setItem(window.MotoreN5.CANALI.COMUNICAZIONE, JSON.stringify(payload));
-    console.log("🚨 Core: Allarme ARO inviato all'Hub.", payload);
+    window._codaAllarmi.push(payload);
+    spedisciAllarmiInCoda();
 };
+
+// 🔴 UN ALLARME NON DEVE COPRIRE QUELLO PRIMA.
+// I due tratti che un allarme percorre — app -> Hub (canale COMUNICAZIONE) e
+// Hub -> reattivo (canale ALLARME_ATTACCO) — tengono UN valore ciascuno, e
+// chi legge passa una volta al secondo (calcolatore_controller.js e il ciclo
+// in fondo a questo file). Due allarmi dello stesso giocatore dentro quella
+// finestra: il secondo copriva il primo, che andava PERSO, non in ritardo.
+// MISURATO dalla chat TEST il 6 ottobre nel banco del giro: senza un giro
+// dell'Hub fra MOVIMENTO e IDLE l'Hub inoltrava solo ["IDLE"].
+// Qui chi SPEDISCE aspetta: un allarme parte solo quando quello prima e`
+// stato consumato su TUTTI E DUE i tratti. Si vede da qui perche` ogni
+// dispositivo ha la copia di tutti i canali, e chi legge un canale lo
+// cancella. Con un allarme solo — il caso di sempre — non cambia niente:
+// parte subito.
+// Se nessuno lo consuma (reattivo spento, Hub chiuso) non si aspetta per
+// sempre: dopo ATTESA_ALLARME_MS il successivo parte comunque, e lo si dice.
+window._codaAllarmi = window._codaAllarmi || [];
+window._allarmeInVolo = null;
+const ATTESA_ALLARME_MS = 4000, PASSO_ALLARME_MS = 200;
+
+function trattiOccupati() {
+    const C = window.MotoreN5.CANALI;
+    return !!(localStorage.getItem(C.COMUNICAZIONE) || localStorage.getItem(C.ALLARME_ATTACCO));
+}
+
+// L'allarme in volo e` arrivato? Lo si e` VISTO sui canali e ora non c'e`
+// piu`. "Non c'e`" da solo non basta: con Firebase la copia locale arriva
+// con l'eco, un attimo dopo la scrittura.
+function aggiornaAllarmeInVolo() {
+    const v = window._allarmeInVolo;
+    if (!v) return;
+    const occupati = trattiOccupati();
+    if (occupati) v.visto = true;
+    if (v.visto && !occupati) { window._allarmeInVolo = null; return; }
+    if (Date.now() - v.quando > ATTESA_ALLARME_MS) {
+        console.warn('⚠️ Core: l\'allarme precedente non risulta consumato dopo ' + ATTESA_ALLARME_MS + ' ms: il successivo parte comunque.');
+        window._allarmeInVolo = null;
+    }
+}
+
+function spedisciAllarmiInCoda() {
+    // Un setTimeout che esegue SUBITO (i banchi ne hanno) richiamerebbe
+    // questa funzione da dentro se stessa, all'infinito: se e` gia` in
+    // corso si esce, il prossimo passo lo fara` chi chiama dopo.
+    if (window._allarmiInGiro) return;
+    window._allarmiInGiro = true;
+    try { passoAllarmi(); } finally { window._allarmiInGiro = false; }
+}
+
+function passoAllarmi() {
+    aggiornaAllarmeInVolo();
+    if (!window._allarmeInVolo && window._codaAllarmi.length) {
+        const payload = window._codaAllarmi.shift();
+        localStorage.setItem(window.MotoreN5.CANALI.COMUNICAZIONE, JSON.stringify(payload));
+        window._allarmeInVolo = { quando: Date.now(), visto: false };
+        aggiornaAllarmeInVolo();
+        console.log("🚨 Core: Allarme ARO inviato all'Hub.", payload);
+    }
+    // Si continua a guardare finche` c'e` qualcosa in volo o in coda.
+    if ((window._allarmeInVolo || window._codaAllarmi.length) && !window._timerAllarmi) {
+        window._timerAllarmi = setTimeout(function () { window._timerAllarmi = null; spedisciAllarmiInCoda(); }, PASSO_ALLARME_MS);
+    }
+}
+window.spedisciAllarmiInCoda = spedisciAllarmiInCoda;
+// Il trasporto avvisa a ogni arrivo su un canale: cosi` l'allarme in volo
+// risulta VISTO anche se viene consumato prima del prossimo controllo.
+if (window.MotoreN5 && Array.isArray(window.MotoreN5.ascoltatoriCanali)) {
+    window.MotoreN5.ascoltatoriCanali.push(function (canale, dati) {
+        const C = window.MotoreN5.CANALI;
+        if (window._allarmeInVolo && dati !== null && (canale === C.COMUNICAZIONE || canale === C.ALLARME_ATTACCO)) {
+            window._allarmeInVolo.visto = true;
+        }
+    });
+}
 
 // Scala gli usi Disposable delle armi che hanno sparato, sulle unita` del
 // roster di QUESTO giocatore. Un punto solo per tutti i moduli d'attacco
@@ -552,6 +626,13 @@ window.riprendiDaStato = function () {
 // --- 5. ASCOLTATORI GLOBALI (Event Listeners) ---
 
 window.addEventListener('storage', (event) => {
+    // L'allarme in volo e` stato VISTO passare: sul canale verso l'Hub (l'eco
+    // della propria scrittura) o gia` inoltrato al reattivo. Serve a
+    // distinguere "consumato" da "non ancora arrivato": vedi inviaAllarmeAro.
+    if (window._allarmeInVolo && event.newValue != null &&
+        (event.key === window.MotoreN5.CANALI.COMUNICAZIONE || event.key === window.MotoreN5.CANALI.ALLARME_ATTACCO)) {
+        window._allarmeInVolo.visto = true;
+    }
     if (event.key === window.MotoreN5.CANALI.HUB_TURNO) {
         window.applicaCambioTurno(event.newValue);
     }
@@ -627,7 +708,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-06.6', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-06.7', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
