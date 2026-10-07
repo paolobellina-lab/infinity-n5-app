@@ -1,4 +1,4 @@
-// @versione 2026-10-07.5 | ordine_piazzamento.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.7 | ordine_piazzamento.js | proprieta`: chat MOTORE
 // ==========================================
 // 📦 PIAZZARE EQUIPAGGIAMENTO (N5) - ordine_piazzamento.js
 // ------------------------------------------
@@ -68,6 +68,21 @@
             });
             if (al.payload && typeof window.inviaAllarmeAro === 'function') window.inviaAllarmeAro(al.payload);
             window.currentOrder.aroDaIdleImplicito = !!(al.aro && al.aro.genera);
+        }
+        // 🔴 SCOPRIRE + PIAZZARE (Basic Short + Short, righe 1047-1054). La
+        // prima meta` era uno Scoprire: prima si fissano i SUOI modificatori
+        // (gittata, copertura, Linea di Tiro), poi si piazza, e la busta porta
+        // tutte e due le Abilita`. Fino alla 2026-10-07.5 partiva solo il
+        // piazzamento e lo Scoprire andava perso. Solo Ordine singolo.
+        const sc = (!window.coordMode && M.scoprireInCorso) ? M.scoprireInCorso() : null;
+        if (sc && !sc.fatto) {
+            sc.poiAttacco = true;                     // la schermata dello Scoprire e` un passo
+            sc.etichetta = 'AVANTI: PIAZZA EQUIPAGGIAMENTO';
+            sc.extraBusta = { giaDichiarato: true };  // l'esito non condiziona il piazzamento
+            sc.prosegui = function () { window.combatTargets = []; window.mostraArmiPiazzabili(); };
+            window.combatTargets = [sc.bersaglio];
+            window.coordPayloads = [];
+            return window.preparaModificatoriScoprire();
         }
         window.mostraArmiPiazzabili();
     };
@@ -171,7 +186,11 @@
         const M = motore(); if (!M) return;
         const arma = armaScelta(M, window.coordUnits[window.coordIndex]);
 
-        let domande = M.domandeDeployable('PIAZZAMENTO');
+        // SCOPRIRE + PIAZZARE: la domanda sul Marker nell'area si divide in
+        // due (M.domandePiazzamento), perche` quel Marker puo` essere proprio
+        // quello che si sta Scoprendo. Senza Scoprire resta la domanda sola.
+        const scD = (!window.coordMode && M.scoprireInCorso) ? M.scoprireInCorso() : null;
+        let domande = M.domandePiazzamento(window.deployableRisposte, { scoprendo: scD ? scD.bersaglio.name : null });
         // Col Tratto Perimeter si piazza ovunque dentro la ZdC, ma il
         // percorso dev'essere percorribile: è una domanda in più.
         if (/PERIMETER/i.test(String(arma.traits || ''))) {
@@ -327,20 +346,31 @@
             });
         }
 
+        // SCOPRIRE + PIAZZARE: prima la voce dello Scoprire, poi il piazzamento.
+        const scP = (!window.coordMode && M.scoprireInCorso) ? M.scoprireInCorso() : null;
+        if (scP && scP.busta && window.coordPayloads.indexOf(scP.busta) < 0) window.coordPayloads.push(scP.busta);
+
         window.coordPayloads.push({
             attaccante: e.portatoreAggiornato,
             azione: M.AZIONI.PIAZZA_DEPLOYABLE,
             arma: arma,
             bersagli: [],
             burstDisponibile: 0,
-            regole: {
+            regole: Object.assign(M.piazzamentoCondizionato(window.deployableRisposte) && scP ? {
+                // Il Marker nell'area d'innesco e` quello dello Scoprire: il
+                // segnalino si piazza alla Conclusione, quindi SOLO se lo
+                // Scoprire e` riuscito (righe 7563 e 7572, LETTURA). L'app non
+                // conosce l'esito del tiro: lo dice a vista.
+                condizionatoDaScoprire: true,
+                noteScontro: [`PIAZZAMENTO CONDIZIONATO: ${e.token.nome} resta sul tavolo SOLO SE lo Scoprire contro ${scP.bersaglio.name} è riuscito (o se il Marker si è rivelato con un ARO). Se lo Scoprire è fallito il segnalino NON si piazza: toglilo mettendolo in stato Morto. L'uso dichiarato è consumato comunque.`]
+            } : {}, {
                 senzaTiro: true,
                 token: e.token,
                 portatoreAggiornato: e.portatoreAggiornato,
                 ordineDiPiazzamento: ordineId,
                 nonBersagliabileInQuestOrdine: true,
                 avvisi: e.avvisi
-            }
+            })
         });
 
         window.coordIndex++;
@@ -394,7 +424,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-07.5', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-07.7', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

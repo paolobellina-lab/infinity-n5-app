@@ -1,4 +1,4 @@
-// @versione 2026-10-07.5 | ordine_scoprire.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.6 | ordine_scoprire.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔍 SCOPRIRE (N5) - ordine_scoprire.js
 // ------------------------------------------
@@ -130,7 +130,7 @@
         // prenderlo a bersaglio e la busta porta tutte e due le Abilita`.
         // Lo Scoprire e` sempre la PRIMA meta` (Basic Short + Short).
         window.currentOrder.scoprire = window.currentOrder.isSecondHalf ? null
-            : { bersaglio: Object.assign({}, window.combatTargets[0]), busta: null, poiAttacco: false };
+            : { bersaglio: Object.assign({}, window.combatTargets[0]), busta: null, poiAttacco: false, prosegui: null, etichetta: null };
         if (window.confirmMultiAro) window.confirmMultiAro(false);
         else window.preparaModificatoriScoprire();
     };
@@ -241,7 +241,7 @@
             const sc = window.currentOrder.scoprire;
             if (sc && sc.poiAttacco) {
                 nuovo.onclick = function () { window.confermaScoprirePoiAttacco(); };
-                nuovo.innerText = 'AVANTI: ATTACCO BS';
+                nuovo.innerText = sc.etichetta || 'AVANTI: ATTACCO BS';
                 nuovo.style.background = M.COLORE_TASTO.valido;
             } else {
                 M.tastoConRequisiti(nuovo, M.requisitiDichiarati([t], ['lof', 'gittata']), e.automatico ? 'SCOPRI (AUTOMATICO)' : 'ESEGUI TIRO DI SCOPERTA', function () { window.eseguiCalcoloScoprire(); });
@@ -299,14 +299,20 @@
     // Se allo Scoprire manca il requisito non si tira: il Marker resta
     // Marker, e i dadi dell'Attacco assegnati a LUI si perdono (righe
     // 3111-3114); quelli su altri bersagli no.
+    // Chi viene DOPO lo Scoprire lo dice in sc.prosegui (una funzione) e
+    // sc.etichetta (il testo del tasto): l'Attacco BS, o Piazzare
+    // Equipaggiamento. sc.extraBusta sono i campi di `regole` della voce:
+    // { poiAttacco: true } lega l'esito a un Attacco, { giaDichiarato: true }
+    // dice solo che lo Scoprire e` la prima meta` di una combinazione.
     window.confermaScoprirePoiAttacco = function () {
         const M = motore(); if (!M) return;
         const sc = window.currentOrder.scoprire; if (!sc) return;
         const req = M.requisitiDichiarati([window.combatTargets[0]], ['lof', 'gittata']);
         sc.bersaglio = Object.assign({}, window.combatTargets[0]);
         sc.requisitoMancante = req.idle ? req.motivo : null;
-        sc.busta = req.idle ? null : window.bustaScoprire({ poiAttacco: true });
+        sc.busta = req.idle ? null : window.bustaScoprire(sc.extraBusta || { poiAttacco: true });
         sc.fatto = true;
+        if (typeof sc.prosegui === 'function') return sc.prosegui(req);
         window.combatTargets = sc.bersagliAttacco || [];
         window.combatTargets.forEach(function (t) {
             if (String(t.id) === String(sc.bersaglio.id)) t.nonScoperto = !!req.idle;
@@ -353,7 +359,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_scoprire.js', versione: '2026-10-07.5', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_scoprire.js', versione: '2026-10-07.6', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

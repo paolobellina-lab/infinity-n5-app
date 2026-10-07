@@ -1,4 +1,4 @@
-// @versione 2026-10-07.11 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.13 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-07.11';
+    M.VERSIONE = '2026-10-07.13';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -485,7 +485,7 @@
                         // SCOPRIRE + ATTACCO: il Marker dichiarato nello Scoprire
                         // della prima meta` (lo scrive ordine_attacco_bs.js).
                         scoprendo: input.scoprendo,
-                        scoprireGiaDichiarato: !!(input.regole && input.regole.poiAttacco),
+                        scoprireGiaDichiarato: !!(input.regole && (input.regole.poiAttacco || input.regole.giaDichiarato)),
                         ruolo: (i === 0) ? 'primario' : 'secondario'
                     })[0];
                     if (giudizio && !giudizio.ammesso) {
@@ -6468,7 +6468,11 @@
                               // mostrava. (Misurato il 5 ottobre.)
                               voci: e.voci, note: (e.note || []).concat((spec.tiro === false && att.regole && Array.isArray(att.regole.note)) ? att.regole.note : []),
                               salvezzaInflitta: { offensivo: false, note: ['Tiro non offensivo.'] } },
-                    reattivo: null, note: [], avvisi: []
+                    // `noteScontro`: quello che deve leggersi A VISTA sul
+                    // tabellone, non dentro i dettagli (il piazzamento
+                    // condizionato dallo Scoprire).
+                    reattivo: null, note: (att.regole && Array.isArray(att.regole.noteScontro)) ? att.regole.noteScontro.slice() : [], avvisi: [],
+                    condizionatoDaScoprire: !!(att.regole && att.regole.condizionatoDaScoprire) || undefined
                 });
                 return;
             }
@@ -6510,7 +6514,12 @@
                 // NON si consuma qui: resta per l'Attacco della seconda meta`
                 // (Faccia a Faccia) o, se l'Attacco e` su un altro, esce da
                 // sola come Tiro Normale.
-                const scoprireCombinato = att.azione === M.AZIONI.SCOPRIRE && !!(att.regole && att.regole.poiAttacco);
+                // `giaDichiarato`: lo Scoprire della prima meta` di una
+                // combinazione qualunque (anche SCOPRIRE + PIAZZARE). Se il
+                // Marker si e` rivelato non si tira, come sopra. `poiAttacco`
+                // in piu` lega l'esito a un Attacco della seconda meta`.
+                const scoprireCombinato = att.azione === M.AZIONI.SCOPRIRE && !!(att.regole && (att.regole.poiAttacco || att.regole.giaDichiarato));
+                const scoprirePoiAttacco = scoprireCombinato && !!att.regole.poiAttacco;
                 // Rivelato: ha dichiarato un ARO, oppure NON e` piu` un Marker
                 // (la pagina lo rivela appena dichiara: quando la busta arriva
                 // e` gia` un Modello).
@@ -6583,7 +6592,7 @@
                 (function () {
                     const sSc = scontri[scontri.length - 1];
                     if (scoprireCombinato) {
-                        sSc.scoprirePoiAttacco = true;
+                        if (scoprirePoiAttacco) sSc.scoprirePoiAttacco = true;
                         if (scoprireSuperato) {
                             sSc.titolo = 'SCOPRIRE: NON SI TIRA';
                             sSc.scoprireSuperato = true;
@@ -6594,13 +6603,18 @@
                             // Anche le note generiche dello Scoprire (come si tira,
                             // chi fallisce non ritenta) parlano di un tiro assente.
                             if (sSc.attivo) { sSc.attivo.burst = 0; sSc.attivo.nonSiTira = true; sSc.attivo.mod = 'Non si tira'; sSc.attivo.voci = []; sSc.attivo.note = []; }
-                            sSc.note = (sSc.note || []).concat([`${M.nomeUnita(dif) || nomeB} ha dichiarato un ARO: si è rivelato da solo. Lo Scoprire non si tira; risolvi direttamente l'Attacco.`]);
+                            sSc.note = (sSc.note || []).concat([`${M.nomeUnita(dif) || nomeB} ha dichiarato un ARO: si è rivelato da solo. Lo Scoprire non si tira` + (scoprirePoiAttacco ? '; risolvi direttamente l\'Attacco.' : '.')]);
+                        } else if (!scoprirePoiAttacco) {
+                            // Scoprire + un'Abilita` che non dipende dal suo esito
+                            // (Piazzare): nessuna istruzione in piu`.
                         } else if (sSc.attivo && sSc.attivo.successoAutomatico) {
                             // Niente tiro: le istruzioni sul tiro non servono.
                             sSc.note = (sSc.note || []).concat(['SCOPRIRE + ATTACCO: lo Scoprire riesce da solo, senza tiro. Risolvi direttamente l\'Attacco contro il Marker.']);
                         } else {
                             sSc.note = (sSc.note || []).concat([
-                                'SCOPRIRE + ATTACCO: tira PRIMA questo Scoprire. Se riesce, risolvi l\'Attacco contro il Marker. Se invece fallisce: quell\'Attacco è perso (Ordine speso, uso Disposable consumato) e su questo Marker non potrai ritentare lo Scoprire fino al prossimo Turno di Giocatore.']);
+                                'SCOPRIRE + ATTACCO: tira PRIMA questo Scoprire. Se riesce, risolvi l\'Attacco contro il Marker. Se invece fallisce: quell\'Attacco è perso (Ordine speso, uso Disposable consumato) e su questo Marker non potrai ritentare lo Scoprire fino al prossimo Turno di Giocatore.']
+                                .concat((attacchi.filter(function (x) { return x.azione === M.AZIONI.SCOPRIRE && x.regole && x.regole.poiAttacco; }).length > 1)
+                                    ? ['Ordine Coordinato: ogni partecipante tira il proprio Scoprire. ⚠️ LETTURA (righe 11424-11429, bersaglio comune): basta UNO Scoprire riuscito perché il Marker sia rivelato per tutti gli Attacchi. Chi FALLISCE il proprio tiro non potrà ritentare lo Scoprire su questo Marker fino al prossimo Turno di Giocatore, anche se un compagno è riuscito.'] : []));
                         }
                     }
                     if (b.dopoScoprire) {
@@ -6609,7 +6623,9 @@
                         const libero = !!r || nonPiuMarker || !!(scPrima && (scPrima.scoprireSuperato || (scPrima.attivo && scPrima.attivo.successoAutomatico)));
                         sSc.note = (sSc.note || []).concat([libero
                             ? `Scoprire + Attacco: ${M.nomeUnita(dif) || nomeB} è già rivelato (ARO dichiarato o Scoprire automatico): questo Attacco si risolve senza aspettare altro.`
-                            : `Scoprire + Attacco: questo Attacco si risolve SOLO SE lo Scoprire contro ${nomeB} è riuscito. Se è fallito, non tirare.`]);
+                            : (attacchi.filter(function (x) { return x.azione === M.AZIONI.SCOPRIRE && x.regole && x.regole.poiAttacco; }).length > 1
+                                ? `Scoprire + Attacco, Ordine Coordinato: questo Attacco si risolve SOLO SE almeno uno degli Scoprire contro ${nomeB} è riuscito (⚠️ LETTURA). Se sono falliti tutti, non tirare.`
+                                : `Scoprire + Attacco: questo Attacco si risolve SOLO SE lo Scoprire contro ${nomeB} è riuscito. Se è fallito, non tirare.`)]);
                     }
                 })();
                 // 🔴 LO STESSO PER IL BERSAGLIO. Il controllo c'era solo su chi
@@ -8817,6 +8833,18 @@
     };
 
     // Comodita` per i moduli: legge da window i campi soliti.
+    // LO SCOPRIRE DICHIARATO NELLA PRIMA META` DI QUEST'ORDINE, se c'e`.
+    // Lo scrive ordine_scoprire.js in currentOrder.scoprire; lo leggono le
+    // schermate della seconda meta` che compongono una busta con lui: Attacco
+    // BS e Piazzare Equipaggiamento. Sta qui perche` lo leggono in due.
+    // Vale anche in Ordine Coordinato: tutti dichiarano la stessa sequenza
+    // contro lo stesso bersaglio (righe 11355-11359).
+    M.scoprireInCorso = function () {
+        const o = G.currentOrder || {};
+        if (!o.isSecondHalf || !o.scoprire || !o.scoprire.bersaglio) return null;
+        return (String(o.action1 || '').toUpperCase() === 'SCOPRIRE') ? o.scoprire : null;
+    };
+
     M.riprendiOrdineDaFinestra = function (azione, isSecondHalf) {
         return M.riprendiOrdine(azione, {
             isSecondHalf: isSecondHalf,
@@ -9514,6 +9542,36 @@
                        seNo: base.seSi });
         }
         return out;
+    };
+
+    // LE DOMANDE DEL PIAZZAMENTO, quando la prima meta` dell'Ordine e` uno
+    // SCOPRIRE (chat REGOLE, 7 ottobre). La domanda unica "c'e` un Marker
+    // nell'area?" raccoglieva UN fatto dove ce ne sono due:
+    //   - il Marker nell'area e` QUELLO che si sta Scoprendo: il segnalino si
+    //     piazza alla Conclusione dell'Ordine (riga 7563), DOPO lo Scoprire;
+    //     se lo Scoprire riesce nell'area c'e` un nemico scoperto e la
+    //     restrizione non vale piu` (riga 7572). Piazzamento CONDIZIONATO.
+    //     ⚠️ LETTURA: la 7572 dice "cannot be placed" e non dice quando si
+    //     controlla.
+    //   - e` un ALTRO Marker: la restrizione resta, piazzamento negato.
+    // ctx.scoprendo: il nome del Marker dello Scoprire; senza, torna la
+    // domanda di sempre.
+    M.domandePiazzamento = function (risposte, ctx) {
+        const base = M.domandeDeployable('PIAZZAMENTO')[0];
+        const chi = ctx && ctx.scoprendo;
+        if (!chi) return [base];
+        const out = [Object.assign({}, base, { blocca: false, seSi: null })];   // da sola non blocca: decide la seconda
+        if (M.rispostaDomanda((risposte || {}).markerNellArea) === M.RISPOSTA.SI) {
+            out.push({ id: 'markerEQuelloScoperto', blocca: true, rispostaBloccante: false, seBloccata: 'VIETA',
+                       testo: `Quel Marker è proprio quello che stai Scoprendo (${chi}), e non ce ne sono altri nell'area?`,
+                       seNo: base.seSi });
+        }
+        return out;
+    };
+    // Il piazzamento dipende dall'esito dello Scoprire?
+    M.piazzamentoCondizionato = function (risposte) {
+        return M.rispostaDomanda((risposte || {}).markerNellArea) === M.RISPOSTA.SI &&
+               M.rispostaDomanda((risposte || {}).markerEQuelloScoperto) === M.RISPOSTA.SI;
     };
 
     M.domandeDeployable = function (fase) {

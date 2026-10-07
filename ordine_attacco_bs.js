@@ -1,4 +1,4 @@
-// @versione 2026-10-07.6 | ordine_attacco_bs.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.7 | ordine_attacco_bs.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎯 ATTACCO BS (TIRO A DISTANZA) - ordine_attacco_bs.js
 // ------------------------------------------
@@ -68,6 +68,7 @@
                 // Arma e bersagli confermati: ora i modificatori dello Scoprire.
                 sc.bersagliAttacco = window.combatTargets;
                 sc.poiAttacco = true;
+                sc.prosegui = null; sc.etichetta = 'AVANTI: ATTACCO BS'; sc.extraBusta = { poiAttacco: true };
                 window.currentOrder.weaponAttacco = window.currentOrder.weapon;
                 window.combatTargets = [sc.bersaglio];
                 return window.preparaModificatoriScoprire();
@@ -93,13 +94,14 @@
         }
     };
 
-    // Lo Scoprire dichiarato nella PRIMA meta` di quest'Ordine, se c'e`.
-    // Solo Ordine singolo: in un Ordine Coordinato la combinazione non e`
-    // costruita, e si resta al giro di sempre.
+    // Lo Scoprire dichiarato nella PRIMA meta` di quest'Ordine, se c'e`: la
+    // regola e` del motore (M.scoprireInCorso), una per tutte le schermate.
+    // Dalla 2026-10-07.7 vale anche in ORDINE COORDINATO: ogni partecipante
+    // fissa il suo Scoprire e il suo Attacco, uno dopo l'altro, contro lo
+    // stesso Marker (righe 11355-11359), e la busta li porta tutti.
     window.scoprireInCorso = function () {
-        const o = window.currentOrder || {};
-        if (!o.isSecondHalf || window.coordMode || !o.scoprire || !o.scoprire.bersaglio) return null;
-        return (String(o.action1 || '').toUpperCase() === 'SCOPRIRE') ? o.scoprire : null;
+        const M = window.MotoreN5;
+        return (M && M.scoprireInCorso) ? M.scoprireInCorso() : null;
     };
 
     // ==============================================================
@@ -562,6 +564,9 @@
         if (window.coordIndex < window.coordUnits.length) {
             window.combatTargets = [];
             window.pendingTargets = [];
+            // SCOPRIRE + ATTACCO coordinato: il prossimo partecipante fissa il
+            // SUO Scoprire e il SUO Attacco. Il Marker resta lo stesso.
+            if (scEs) { scEs.busta = null; scEs.fatto = false; scEs.bersagliAttacco = null; window.currentOrder.attaccoSceltoPer = null; }
             return window.startUnitAllocationLoopBS();
         }
 
@@ -598,7 +603,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-07.6', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-07.7', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
