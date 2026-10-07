@@ -1,4 +1,4 @@
-<!-- @versione 2026-10-06.5 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-10-07.2 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
 
 # PRONTUARIO ORDINI N5 — richiamo rapido durante la partita
 
@@ -68,6 +68,17 @@ Vale per ogni ordine, sempre.
   regolamento (righe 2862–2864) finisce con «he performs an Idle instead». Quindi
   l'Ordine **è speso**, gli usi Disposable **si consumano**, e un Marker si **rivela**
   (righe 7462–7463). Non esiste un requisito fallito che restituisca l'Ordine. ✅
+- **🔴 Un Idle da requisito fallito NON riapre gli ARO.** La dichiarazione degli ARO è il
+  passo 4, la verifica dei Requisiti il passo 5 (righe 1196–1217): quando il requisito cade,
+  la finestra degli ARO è già chiusa. E ogni nemico ha **un solo ARO per Ordine**, righe
+  **1097–1101**: «each eligible enemy Trooper gets **one single ARO**, regardless of the number
+  of Skills the Active Player declares during that Order». Gli ARO già dichiarati restano e si
+  risolvono. ⚠️ Ma **cambiano tipo di tiro**: se l'attivo non fa più niente, l'ARO non ha più
+  nulla da contrastare, quindi non è più un Faccia a Faccia ma un **Tiro Normale** (righe
+  2068–2070: «For actions to be resolved with a Face to Face Roll, both Troopers' actions must
+  affect each other directly»). L'unica riapertura prevista è un'altra cosa: se la **seconda**
+  metà dell'Ordine dà l'ARO a nemici che non l'avevano contro la prima, quelli dichiarano
+  (righe 1092–1095).
 - **Quando invece l'Ordine NON è speso** (il giocatore sceglie altro): solo se la regola
   non è un *Requisito* ma un **vincolo di piazzamento**, cioè un divieto scritto come
   «the player cannot place…» / «is not permitted». L'unico caso nell'app è il
@@ -143,9 +154,63 @@ attributo **BS** (o PH/WIP se l'arma ha il Tratto BS Weapon (PH)/(WIP)) · **ser
 Burst **pieno** in Attivo (MOD inclusi, tetto 6), **1** in ARO.
 
 ### B. Requisiti
-- Arma BS (o skill/equip capace di Attacco BS) scelta dal proprio profilo
-- LoF dal punto di tiro al bersaglio; bersaglio in Copertura **Totale** = non attaccabile
-- Burst diviso fra più bersagli: **tutti i colpi dallo stesso punto**; una sola munizione per tutto il Burst
+I Requisiti dell'Attacco BS sono **due soli**, righe **3320–3323**:
+1. «Be using a **BS Weapon**, or a Skill or piece of Equipment capable of making a BS Attack.»
+2. «Be able to draw **Line of Fire (LoF)** from the position of your Attack to the position of
+   the target, unless the BS Weapon, Skill or piece of Equipment used doesn't require LoF.»
+
+🔴 **La gittata NON è un Requisito.** Non è in quell'elenco. Fuori dalla gittata massima
+l'attacco **fallisce automaticamente**: righe **3512–3514**, «If the target is beyond the
+maximum Range… then the BS Attack automatically fails (the Order is spent, Disposable weapons
+lose a use, etc.)». È una cosa diversa da un requisito mancante, e serve al punto sotto.
+
+- Bersaglio in Copertura **Totale** = non attaccabile con armi che richiedono LoF (righe
+  3451–3452): è il caso "nessuna LoF", cioè il Requisito 2 che cade
+- Burst diviso fra più bersagli: **tutti i colpi dallo stesso punto** (righe 3331 e 3362–3363);
+  una sola munizione per tutto il Burst (riga 3332)
+
+> 🔴 **BURST DIVISO E REQUISITO MANCANTE: si perdono solo quei dadi.** REGOLA SCRITTA, righe
+> **3111–3114**:
+>
+> «If, during the **Resolution of the Order**, it is verified that **some of the dice of the
+> Burst (B) assigned to a target do not meet the necessary Requirements, then those dice will be
+> lost. The rest of the dice of the B that do meet the Requirements will be resolved
+> normally.**»
+>
+> È l'**eccezione espressa** alla regola generale delle righe 1244–1247 (requisito mancante →
+> l'intera azione si annulla e si fa un Idle). Quella vale quando il requisito cade per
+> l'Abilità; questa quando cade **per una parte dei dadi**. Quindi:
+>
+> | Caso | Esito |
+> |---|---|
+> | Burst 3 diviso 2+1, il bersaglio del dado singolo è senza LoF | si perde **quel dado**; i due sull'altro bersaglio si tirano normalmente |
+> | **Tutti** i dadi perdono il requisito (unico bersaglio senza LoF, o entrambi i bersagli senza LoF) | non resta nessun dado da tirare: si ricade sulla regola generale, **Idle**, Ordine speso |
+> | Uso **Disposable** dichiarato | **si consuma comunque**, in tutti e due i casi: righe 1246–1247 («any declared uses of Disposable items are expended and lost») e, per la gittata, riga 3513 («Disposable weapons lose a use») |
+>
+> **La riga parla di "dice of the Burst assigned to a target"**, non di armi BS: vale per
+> qualunque attacco col Burst diviso, quindi anche CC Attack con più bersagli e i programmi di
+> Hacking a B2 divisa.
+>
+> **Gittata contro LoF: base giuridica diversa, esito identico.**
+> - *Nessuna LoF* = Requisito 2 che cade (3322–3323) → **il dado si perde**, non si tira.
+> - *Fuori gittata* = non è un requisito → **l'attacco si fa e fallisce** (3512–3514). Il dado
+>   esiste e produce un fallimento.
+> - Per il risultato non cambia nulla: un dado perso e un dado che fallisce producono entrambi
+>   zero successi contro quel bersaglio, e consumano entrambi l'uso Disposable. ⚠️ Che la riga
+>   3512 si applichi **per bersaglio** quando il Burst è diviso è una **LETTURA**: quel testo è
+>   scritto al singolare, per il caso a bersaglio unico. Ma le gittate si misurano bersaglio per
+>   bersaglio, quindi è l'unica lettura coerente.
+>
+> **L'ARO di quel bersaglio diventa un Tiro NORMALE.** Righe **2068–2070**: «For actions to be
+> resolved with a Face to Face Roll, both Troopers' actions must affect each other directly.
+> **If either action does not affect the outcome of the other, use Normal Rolls instead**».
+> Un dado perso non arriva al bersaglio, e un dado fuori gittata non può colpirlo: in nessuno
+> dei due casi l'azione dell'attivo influenza l'esito del reattivo. L'ARO resta valido — era
+> stato dichiarato al passo 4 e non si riapre — ma si risolve come Tiro Normale. Una Schivata
+> Normale riuscita dà comunque il movimento (righe 7271–7273).
+> ⚠️ Per il caso *fuori gittata* questa è una LETTURA: il regolamento lo chiama fallimento, non
+> non-azione. L'esito però è lo stesso, perché un attacco che non può avere successi non
+> cancella nulla nel confronto.
 - Bersaglio **in forma di Modello**: un Marker CAMO/Impersonation va prima Scoperto (o si usa l'Intuitivo). Eccezione: MSV L3 ⚠️
 - Fuori gittata massima = fallimento automatico (ordine speso, Disposable perde un uso)
 **L'attivo può dichiararlo?** IMM-A ❌ · IMM-B ❌ · Stordito ❌ (vietati gli Attacchi) ·
@@ -165,7 +230,7 @@ Bersagliato ✅
 | Nanoscreen del bersaglio | **−3** (e +3 alla sua salvezza) | ✅ (❌ con Marksmanship) |
 | Zone di Visibilità | Bassa −3 · Pessima −6 · Zero = niente LoF | ✅ (MSV riduce/annulla) |
 | Bersaglio in Stato Bersagliato | **+3** | ✅ |
-| Bersaglio in Engaged con alleati | **−6 per ogni alleato** nel CC | ✅ (ogni colpo fallito prende un alleato) |
+| Bersaglio in Engaged con **tuoi** alleati | **−6 per ogni alleato** nel CC | ✅ si somma a gittata, copertura e mimetismo, poi tronca a −12 — righe **3389–3391**, «in addition to any MODs for Range, Cover, Mimetism… for the target». Dettaglio sotto |
 | Bersaglio in Fuoco di Soppressione, entro 24" | **−3** | ✅ **solo se c'è Faccia a Faccia** |
 | Fireteam Livello 4 | **+1** | ✅ |
 | Fireteam Livello 2 | `+1 SD` | ✅ (non su Sagoma Diretta) |
@@ -173,6 +238,34 @@ Bersagliato ✅
 | `BS Attack (+1B)` / arma `(+1B)` | +1 Burst | ✅ solo in Attivo |
 | Stordito (attivo) | −3 | — lo Stordito non può attaccare |
 | Martial Arts, `CC Attack (±N)` | — | ❌ sono del CC |
+
+> 🔴 **SPARARE DENTRO UN CORPO A CORPO — righe 3389–3396.**
+>
+> «If a BS Attack is declared against an enemy Trooper that is engaged in CC Combat a **−6 MOD
+> must be applied for each Allied Trooper engaged in the CC** (in addition to any MODs for
+> Range, Cover, Mimetism… for the target). Every failed BS Attack Roll **will hit the Allied
+> Trooper**, forcing them to perform a Saving Roll. If there are several Allied Troopers locked
+> in that Close Combat, then the **Trooper's player chooses** which one of them receives each
+> hit.»
+>
+> - **"Allied" = alleato di chi SPARA.** Lo dimostra la frase dopo: ogni tiro fallito *colpisce
+>   l'alleato*, e il giocatore *di chi spara* sceglie chi lo prende. È fuoco amico, quindi sono
+>   i propri.
+> - **Si conta per alleato, non per nemico.** Due tuoi alleati in quel CC = **−12**. Nessun tuo
+>   alleato in quel CC — il bersaglio è Ingaggiato con un neutrale, o per una regola di
+>   scenario — = **nessun MOD**. Il default 1 va bene nel caso normale, ma lo zero esiste.
+> - **Si somma a tutto il resto** (gittata, copertura, mimetismo, zone) e poi vale il tetto di
+>   −12, come ogni altra somma di MOD.
+> - **La Copertura Parziale del bersaglio ingaggiato resta**, sia il −3 al tiro (la riga 3391 la
+>   nomina esplicitamente) sia il **+3 alla sua salvezza** (righe 3453–3455: niente nelle righe
+>   3389–3396 la toglie).
+> - **Il prezzo del fallimento:** ogni tiro fallito diventa un colpo sull'alleato, che fa un
+>   Tiro Salvezza. Con Burst 3 e due fallimenti, l'alleato salva due volte.
+> - ⚠️ **Con un'arma a Sagoma il colpo non si penalizza: si annulla.** Righe **3622–3626**, le
+>   Sagome su un gruppo in Corpo a Corpo «will always affect **every** Trooper involved»; e
+>   righe **3586–3594**, se un Alleato è nell'area quel colpo **è annullato** (l'uso Disposable
+>   si consuma comunque, e i reattivi nell'area possono ancora dichiarare ARO). Quindi il −6
+>   vale per le armi a tiro singolo, non per Sagome e Lanciafiamme.
 
 ### E. Reazioni del bersaglio voce per voce
 > **Come si sommano gli stati (vale per ogni tiro di questa scheda).**
@@ -557,10 +650,23 @@ Burst **sempre 1**.
   Marker CAMO **in LoF**, applicando il Mimetismo — e lo Speculativo è una Skill diversa
   dal BS Attack, righe 11399–11401). Contro un Marker si usa l'Intuitivo (§1.3).
 - ✅ **Resta ammesso**: piazzare il **punto d'impatto** dove si vuole (righe 3916–3919) con
-  un Principale lecito altrove, e prendere il Marker come **bersaglio secondario** sotto la
-  sagoma; oppure un'arma **Targetless** (Fumo), che non richiede alcun Principale (righe
-  3763–3766). Se il Marker CAMO è costretto a un Tiro Salvezza, il CAMO cade (riga 13638);
-  l'Impersonation **no**, non ha quella clausola (righe 14236–14242).
+  un Principale lecito altrove; oppure un'arma **Targetless** (Fumo), che non richiede alcun
+  Principale (righe 3763–3766). Se il Marker CAMO è costretto a un Tiro Salvezza, il CAMO
+  cade (riga 13638); l'Impersonation **no**, non ha quella clausola (righe 14236–14242).
+- 🔴 **Il Marker come bersaglio secondario sotto la sagoma: dipende da quale Marker.**
+  ⚠️ *Correzione del 7 ottobre: il 6 ottobre avevo scritto che era ammesso in generale. È
+  vero solo per il CAMO.*
+  - **Marker CAMO**: ammesso. È un nemico, e la cancellazione della sagoma delle righe
+    3586–3594 riguarda solo Alleati e Neutrali.
+  - **Marker IMPERSONATION: il colpo è annullato.** Righe **14283–14289**: «Impersonation
+    Markers are considered **Allied** Troopers, so Attacks cannot be declared against them.
+    **Any shot with a Template Weapon that affects an Impersonation Marker is canceled, even
+    if another Enemy Trooper was designated as the Main Target**». Il Marker IMP non è un
+    bersaglio secondario: è un alleato finto, e la sua presenza nell'area annulla il colpo.
+  - Regola generale della cancellazione, righe **3586–3594**: se un Alleato o un Neutrale
+    sarebbe colpito, **quel colpo** è annullato — non gli altri colpi dello stesso Burst che
+    non hanno alleati nella loro area; i reattivi nell'area del colpo annullato **possono
+    comunque dichiarare ARO**; e un uso **Disposable già dichiarato si consuma** comunque.
 **L'attivo può dichiararlo?** IMM-A ❌ · IMM-B ❌ · Stordito ❌ (vietati gli Attacchi) ·
 Retreat! ❌ · Engaged ❌ (in Engaged solo Berserk/CC/Schivata/Idle/Reset) ·
 Isolato ✅ ma non riceve ordini dal Pool (usa il proprio Irregolare) ·
@@ -989,10 +1095,67 @@ Short Skill: il classico *Discover + Attack*) · attributo **WIP** · **serve Lo
 | Marksmanship | — | ❌ vale solo su BS Attack |
 
 ### E. Reazioni
-Nessun Faccia a Faccia: il Discover non è un attacco. Il Marker può **rivelarsi dichiarando un
-ARO** (per esempio sparando): allora il Discover **non serve più** e si risolve l'attacco
-normalmente. Se non dichiara nulla, il Discover va passato **prima** di risolvere un attacco
-contro di lui. Sesto Senso: non c'entra (non è un attacco).
+Nessun Faccia a Faccia: il Discover non è un attacco. Sesto Senso: non c'entra.
+
+### F. 🔴 LA MANOVRA *DISCOVER + ATTACK*, passo per passo
+È la manovra citata come eccezione dalle righe 13609–13610 (CAMO) e 14291–14293 (IMP-2), e il
+regolamento la descrive per esteso in un IMPORTANT, **righe 6817–6829**:
+
+> «A common combination in an Order is Discover + Attack. This tactical maneuver allows you to
+> declare an Attack against a Camouflaged enemy, which cannot normally be done.
+> • If the Camouflaged target declares an ARO, revealing themselves, **there is no need to
+> perform the Discover Roll** before resolving the Attack.
+> • If the Camouflaged target does not declare an ARO, the Trooper will need to **pass the
+> Discover Roll before resolving any Attack** against that target.
+> • Remember that the Active Trooper **may Discover one target and Attack a different target**
+> if they choose to do so.»
+
+**Struttura dell'Ordine.** Lo Scoprire è Basic Short, l'Attacco è Short: è la combinazione
+`Basic Short + Short` delle righe 1047–1054, e le due metà vanno **nell'ordine mostrato**
+(riga 1049, «always declared in the order shown»). Quindi lo Scoprire è **sempre la prima
+metà**, l'Attacco la seconda. Non esiste Attacco + Scoprire.
+
+**La sequenza.**
+1. **Dichiarazione.** Si dichiara lo Scoprire, e l'Attacco **si dichiara contro il Marker**,
+   con tutte le scelte già fissate — arma, modo, Burst, punto di tiro (righe 1226–1233: «All
+   details and choices… must be specified when it is declared»). È proprio questo che la
+   manovra autorizza: senza di essa l'Attacco contro un Marker è vietato (13609–13610).
+   L'esito dello Scoprire **non si conosce ancora**.
+2. **ARO.** Il reattivo dichiara. Un Marker ha solo quattro ARO possibili (riga 13621:
+   Discover, Schivata, Look Out!, Reset) **più** l'Attacco, che però gli cancella il CAMO
+   (riga 13634). Nota: *qualunque* ARO rivela un Marker CAMO, perché tutti e quattro
+   richiedono un tiro e la riga 13634 cancella lo stato per «any Skill that requires a Roll».
+3. **Risoluzione, due rami:**
+
+| | Il Marker **reagisce** | Il Marker **non reagisce** |
+|---|---|---|
+| Scoprire | **non si tira** (6822–6823) | si tira **per primo** (6824–6826) |
+| Attacco | si risolve contro il Modello rivelato | si risolve **solo se lo Scoprire riesce** |
+| Tipo di tiro | **Faccia a Faccia** se l'ARO influenza l'attacco (Attacco o Schivata); **Normale** se non lo influenza (Reset, Look Out!) — riga 2068–2070. L'esempio del regolamento lo dice: «…no longer necessary and the corresponding **Face to Face Rolls** are performed» (riga 6949) | Tiro **Normale** |
+| Scoprire fallito | — | l'Attacco **è perso**, l'Ordine è speso, un uso Disposable dichiarato **si consuma** (righe 1244–1247). E non si può ritentare lo Scoprire su quel Marker fino al Turno di Giocatore successivo (6845–6846) |
+
+**Scoprire un bersaglio e attaccarne un altro** (righe 6828–6829): ammesso, e in quel caso
+l'Attacco **si risolve comunque**, indipendentemente dall'esito dello Scoprire — perché il
+secondo bersaglio è un bersaglio lecito di suo, non ha bisogno di essere scoperto. Lo Scoprire
+riuscito o fallito sul primo non tocca il secondo.
+
+**Quali Attacchi come seconda metà.** Solo quelli che sono **Short Skill** (§7.1):
+
+| Ammessi | Esclusi, e perché |
+|---|---|
+| **BS Attack** — il caso normale, e il solo nominato per l'IMP-2 (riga 14291) | **Attacco Intuitivo** e **Fuoco Speculativo**: sono **Long Skill** (chart 16630 e 16634), occupano l'Ordine intero. L'Intuitivo è la manovra *alternativa* contro un Marker, mai combinabile con lo Scoprire |
+| **CC Attack** — in teoria, ma contro un Marker **mai**: non si può entrare in contatto di Silhouette con un Marker CAMO (riga 13608) né IMP (riga 14206), quindi il bersaglio non è raggiungibile | **Soppressione**, **Triangulated Fire**, **Berserk**: Long Skill |
+| **Programmi di Hacking** (Carbonite, Oblivion, Spotlight, Total Control, Trinity, Zero Pain) — ⚠️ **LETTURA**: sono Short Skill, ma la riga **4785** chiede il bersaglio «in Model form». Dopo uno Scoprire riuscito lo è; al momento della dichiarazione no. Il regolamento non tratta il caso: per l'IMP-2 nomina **solo** il BS Attack (riga 14291) | **White Noise**, **Deactivator**, **Sensor**: Short Skill ma non Attacchi, e il Deactivator non colpisce Marker (§1.16) |
+| **Place Deployable** — ha l'etichetta *Attack* (riga 7551). Ma la riga 7572 vieta già di piazzare un Deployable con un Marker CAMO nella Trigger Area, salvo Attacco Intuitivo | |
+
+**Contro quali Marker funziona:**
+- **CAMO**: sì, è il caso per cui la manovra esiste (13609–13610).
+- **IMP-2**: sì, e **solo con BS Attack** — righe 14291–14293, «The only exception is declaring
+  Discover + BS Attack against a Marker (IMP-2) and passing a Discover Roll if the Marker does
+  not reveal itself with an ARO».
+- **IMP-1**: **no**. Riga 14207 vieta gli Attacchi contro IMP-1 senza alcuna eccezione, e uno
+  Scoprire riuscito su IMP-1 non rivela il Modello: lo porta a **IMP-2** (righe 14227–14229).
+  Servono due Ordini.
 
 ### H. Trappole
 - Fallito: niente nuovo tentativo **di quella truppa su quel Marker** fino al prossimo Turno di
@@ -1310,9 +1473,20 @@ FO: voci come un BS Attack sul WIP. Sensor: solo `+6`. Triangulated: **zero** vo
 ---
 
 ## 1.14 PIAZZARE EQUIPAGGIAMENTO (Place Deployable)
-`ordine_piazzamento.js` · azione `'PIAZZARE EQUIPAGGIAMENTO'` · Common Skill con etichetta *Attack* ·
-**nessun tiro**, nessun bersaglio.
+`ordine_piazzamento.js` · azione `'PIAZZARE EQUIPAGGIAMENTO'` · **SHORT SKILL / ARO**
+(riga 7550) con etichetta *Attack* (riga 7551) · **nessun tiro**, nessun bersaglio.
 
+- 🔴 **È una Short Skill, quindi è sempre la SECONDA metà dell'Ordine**, mai la prima. Le sole
+  combinazioni esistenti sono `Basic Short + Basic Short`, `Basic Short + Short` e `Long`, e
+  vanno dichiarate **nell'ordine mostrato** (righe **1047–1054**, «always declared in the order
+  shown»). Le tre combinazioni possibili sono quindi:
+  **Movimento + Piazzare**, **Scoprire + Piazzare**, **Idle + Piazzare**.
+  Una truppa che "piazza e basta" sta dichiarando *Idle + Piazzare*: chi non agisce con una
+  delle due metà «is considered to declare Idle» (righe 7454–7456). Non esiste `Piazzare +
+  qualcosa`, perché `Short + Basic Short` non è fra le combinazioni.
+- L'etichetta *Attack* ha due conseguenze che non riguardano il piazzamento in sé: lo
+  **Stordito** non può dichiararlo (riga 14614, vietati gli Attacchi), e un **Marker CAMO** che
+  lo dichiara **si rivela** (riga 13634, «declares an Attack»).
 - Attivo: il token si piazza a contatto di Silhouette, o in qualunque punto del percorso se si è mosso.
   Reattivo: **serve LoF verso l'attivo** e si piazza a contatto.
 - Il token compare nella **Conclusione** dell'ordine: il nemico reagisce **a chi piazza**, mai al deployable.
@@ -2057,3 +2231,41 @@ due chiarisce il doppio Mimetism.
 | CLASSI_AZIONE, tutte le voci dichiarate da MOTORE | ✅ **tutte corrette**, nessuna da cambiare. Movimento non è ARO, Scoprire sì (16624 e 16643) |
 | CLASSI_AZIONE: manca la classe **AUTOMATIC** | ⚠️ `Alert!` è una Automatic Skill (6774–6776) e per questo non è nella chart. Non consuma Ordine né ARO |
 | Silhouette del Foxhole | ℹ️ S3, **ma il profilo vince se è più alto** (13864): è "il più alto", non "il migliore" |
+
+---
+
+**Sparare nel CC, piazzamento, Idle dopo gli ARO e la manovra Discover + Attack —
+verifica del 7 ottobre 2026.** Metrica `5ea7581f.904498` (il caricamento
+`REGOLE_N5_v5_1_1.txt` del 6 ottobre è **identico** byte per byte a quello su cui citiamo da
+sempre: verificato con `cmp`).
+
+| Caso | Esito |
+|---|---|
+| **BS Attack nel CC**: "Allied" = alleato di **chi spara** | ✅ righe 3393–3396: il tiro fallito «will hit the **Allied** Trooper» e «the **Trooper's player** chooses which one». È fuoco amico |
+| −6 **per ogni alleato**, e si somma a gittata/copertura/mimetismo, poi −12 | ✅ riga 3391, «in addition to any MODs for Range, Cover, Mimetism…» |
+| Con **zero** alleati nel CC: **nessun MOD** | ⚠️ il default 1 va bene nel caso normale, ma il conteggio è sugli alleati: se non ce n'è, il −6 non si applica |
+| Copertura del bersaglio ingaggiato: vale su tiro **e** salvezza | ✅ 3391 e 3453–3455 |
+| Armi a **Sagoma** nel CC: il colpo si **annulla**, non si penalizza | ⚠️ non era in elenco: 3622–3626 + 3586–3594 |
+| **Place Deployable è SHORT, quindi sempre la SECONDA metà** | ⛔ **lettura MOTORE sbagliata e invertita**: riga 7550 (SHORT SKILL / ARO) + righe 1047–1054 (solo `BasicShort+BasicShort`, `BasicShort+Short`, `Long`, «in the order shown»). Combinazioni: Movimento/Scoprire/Idle **+** Piazzare |
+| Token alla **Conclusione**, nemico reagisce solo a chi piazza | ✅ righe 7563–7565 |
+| Etichetta *Attack* del Place Deployable | ⚠️ conseguenze: lo Stordito non può dichiararlo (14614) e un Marker CAMO si rivela (13634) |
+| **Idle da requisito fallito non riapre gli ARO** | ✅ **confermato**: passo 4 contro passo 5 (1196–1217) e un solo ARO per Ordine (1097–1101) |
+| …ma l'ARO già dichiarato diventa un **Tiro Normale** | ⚠️ non era in elenco: righe 2068–2070, senza azione dell'attivo non c'è Faccia a Faccia |
+| **Discover + Attack**: sequenza completa | ✅ tutto scritto nell'IMPORTANT delle righe **6817–6829**, più l'esempio alle righe 6860–6949. Nuova §1.7 lettera F |
+| Discover + **Intuitivo** o + **Speculativo**: impossibile | ⚠️ sono Long Skill (chart 16630, 16634). L'Intuitivo è la manovra alternativa, non combinabile |
+| Discover + Attack contro **IMP-1**: vietato | ⚠️ 14207 senza eccezioni; e scoprire IMP-1 porta a IMP-2 (14227–14229), non al Modello. Servono due Ordini |
+| Discover + Attack contro **IMP-2**: solo **BS Attack** | ⚠️ righe 14291–14293, «The only exception is declaring Discover + **BS Attack**» |
+| Marker **IMP** sotto una sagoma: il colpo è **annullato** | ⛔ **correzione mia del 6 ottobre**: avevo scritto che un Marker poteva essere bersaglio secondario. Vale per il CAMO, **non** per l'IMP: righe 14283–14289, «Any shot with a Template Weapon that affects an Impersonation Marker is **canceled**, even if another Enemy Trooper was designated as the Main Target» |
+
+---
+
+**Burst diviso e requisito mancante — verifica del 7 ottobre 2026.** Metrica `5ea7581f.904498`.
+
+| Caso | Esito |
+|---|---|
+| Si perdono **solo i dadi** del bersaglio senza requisito | ✅ **REGOLA SCRITTA**, righe **3111–3114**. Non è una lettura: è l'eccezione espressa alla regola generale delle righe 1244–1247 |
+| Se **tutti** i dadi perdono il requisito | ⚠️ non resta niente da tirare: si ricade sulla 1244–1247, **Idle**. È il caso del bersaglio unico senza LoF |
+| ARO di quel bersaglio → **Tiro Normale** | ✅ righe 2068–2070. L'ARO non si riapre e non si annulla: cambia solo tipo di tiro. Schivata Normale riuscita = movimento comunque (7271–7273) |
+| Uso **Disposable**: si consuma | ✅ in entrambi i rami: righe 1246–1247 e, per la gittata, riga 3513 |
+| **Gittata** e **LoF** non sono la stessa cosa | ⚠️ i Requisiti dell'Attacco BS sono due (righe 3320–3323) e **la gittata non c'è**. Fuori gittata l'attacco «automatically fails» (3512–3514): il dado si tira-e-fallisce invece di perdersi. Esito identico, base diversa |
+| La regola vale oltre l'Attacco BS | ⚠️ la riga 3112 dice «dice of the Burst (B) assigned to a target»: vale per ogni attacco col Burst diviso, CC e programmi di Hacking compresi |

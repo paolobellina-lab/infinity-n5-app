@@ -1,5 +1,7 @@
-// @versione 2026-09-23.1 | test_modulo_osservazione.js | proprieta`: chat TEST
+// @versione 2026-10-07.2 | test_modulo_osservazione.js | proprieta`: chat TEST
 // Le tre skill di osservazione — node test_modulo_osservazione.js
+// .2 (7 ott): il colore del tasto si prova contro M.COLORE_TASTO E si pretende
+//    non vuoto e diverso dal giallo dell IDLE — alla .1 era una tautologia.
 global.window = global;
 global.document = { title: 'NOMADS TACTICAL TERMINAL' };
 let passati = 0, falliti = 0;
@@ -134,6 +136,95 @@ ok(/avviaFaseOsservazione/.test(core), 'il router instrada le tre azioni');
 const O = window.CATALOGO_N5.OSSERVAZIONE;
 ok(O['FORWARD OBSERVER'].riga === 6190 && O['SENSOR'].riga === 7432 && O['TRIANGULATED FIRE'].riga === 7854,
    'tutte e tre con fonte e riga del regolamento');
+
+// ==================================================================
+// REQUISITI DICHIARATI AL TAVOLO — Forward Observer (lof + gittata)
+//   Nuovo il 7 ottobre. MOTORE ha misurato dalla pagina BS, CC, Hacking e
+//   Scoprire; il Forward Observer NO. Il tasto vive su btn-esegui-calcolo
+//   e la schermata lo CLONA: nel finto DOM il clone e`
+//   'btn-esegui-calcolo_c', e una prova che guarda l'originale e` verde per
+//   sbaglio.
+//   🔴 'gittata' legge `fuoriGittata` a polarita` INVERTITA: si gira dal
+//   motore (M.invertiRequisito), non scrivendo i campi a mano.
+// ==================================================================
+console.log('\n=== REQUISITI AL TAVOLO: Forward Observer (lof + gittata) ===');
+const tastoO = () => el['btn-esegui-calcolo_c'] || {};
+function prontoFO() {
+    nuovo(fo, 'FORWARD OBSERVER');
+    window.scegliBersaglioOsservazione('p2');
+    return window.combatTargets[0];
+}
+const t0 = prontoFO();
+ok(t0 !== undefined, 'il bersaglio scelto entra in combatTargets');
+ok(tastoO().innerText === 'ESEGUI TIRO',
+   `requisiti a posto: il tasto porta l etichetta dell azione (${tastoO().innerText})`);
+// GIRATA sul motore 2026-10-07.11: il tasto valido non ha piu` lo sfondo
+// vuoto. Scrivendo '' il motore toglieva al tasto l'arancione della pagina,
+// e Paolo al tavolo lo vedeva cambiare colore. Ora i due colori stanno nel
+// motore, M.COLORE_TASTO: valido 'var(--nomad-orange)', idle '#ffcc00'.
+// Si legge dal motore invece di scrivere la stringa a mano, cosi` se Paolo
+// cambia l'arancione della pagina questa prova non diventa rossa per un
+// motivo che non c'entra col requisito.
+// 🔴 Non basta confrontare col valore che il motore dichiara: sarebbe una
+// TAUTOLOGIA — i due lati si muovono insieme e la prova non puo` fallire.
+// Visto il 7 ottobre rompendo COLORE_TASTO.valido a '' e vedendo il banco
+// restare verde. Quindi si pretendono tre cose: che il tasto porti quel
+// colore, che quel colore NON sia vuoto (era il difetto di prima) e che sia
+// DIVERSO dal giallo dell'IDLE (altrimenti i due stati non si distinguono a
+// vista). Cosi` la prova resiste a un cambio di arancione ma non al difetto.
+ok(!!M.COLORE_TASTO.valido && M.COLORE_TASTO.valido !== M.COLORE_TASTO.idle,
+   `il colore valido c è e non è il giallo dell IDLE (${JSON.stringify(M.COLORE_TASTO)})`);
+ok(tastoO().style && tastoO().style.background === M.COLORE_TASTO.valido,
+   `e il tasto lo porta (${tastoO().style && tastoO().style.background})`);
+for (const chiave of ['lof', 'gittata']) {
+    prontoFO();
+    window.toggleRequisitoOsservazione(0, chiave);
+    ok(tastoO().innerText === 'IDLE',
+       `requisito "${chiave}" dichiarato mancante: il tasto diventa IDLE (${tastoO().innerText})`);
+    ok(tastoO().style && tastoO().style.background === '#ffcc00',
+       `ed è giallo (${tastoO().style && tastoO().style.background})`);
+}
+// L interruttore gira il campo del CATALOGO, non il nome della chiave.
+prontoFO();
+window.toggleRequisitoOsservazione(0, 'gittata');
+ok(window.combatTargets[0].fuoriGittata === true,
+   `e gira fuoriGittata, non un campo chiamato "gittata" (${window.combatTargets[0].fuoriGittata})`);
+// Il tasto IDLE porta all Idle vero, col motivo del motore.
+prontoFO();
+window.toggleRequisitoOsservazione(0, 'lof');
+let motivoO = null;
+const salvaO = window.dichiaraRequisitoFallito;
+window.dichiaraRequisitoFallito = (m) => { motivoO = m; return true; };
+tastoO().onclick();
+ok(motivoO !== null && /Linea di Tiro/.test(String(motivoO)),
+   `cliccandolo chiama l Idle col motivo del motore (${String(motivoO).slice(0, 50)}…)`);
+// CONTROPROVA: coi requisiti a posto NON chiama l Idle.
+prontoFO();
+motivoO = null;
+tastoO().onclick();
+ok(motivoO === null, 'CONTROPROVA: coi requisiti a posto il tasto NON chiama l Idle');
+window.dichiaraRequisitoFallito = salvaO;
+
+// 🔴 IL SENSOR NON DESIGNA BERSAGLI, quindi non ha requisiti da dichiarare:
+// requisitiOsservazione gli passa una lista VUOTA. Il suo tasto non deve
+// mai diventare IDLE — e quello che glielo impedisce e` che zero bersagli
+// NON contano come "tutti mancano" (M.requisitiDichiarati([]) -> idle
+// false). Due zeri non fanno una regola, e qui si vede perche` la
+// distinzione serviva.
+nuovo(sen, 'SENSOR');
+const reqSensor = window.requisitiOsservazione();
+ok(reqSensor && reqSensor.mancanti.length === 0 && reqSensor.idle === false,
+   `il Sensor non ha requisiti: zero mancanti, nessun Idle (${JSON.stringify({ m: (reqSensor || {}).mancanti && reqSensor.mancanti.length, i: (reqSensor || {}).idle })})`);
+ok(tastoO().innerText === 'ESEGUI TIRO',
+   `e il suo tasto resta quello dell azione (${tastoO().innerText})`);
+// CONTROPROVA: il Forward Observer, che i bersagli li designa, ne ha uno.
+prontoFO();
+const reqFO = window.requisitiOsservazione();
+ok(reqFO && reqFO.mancanti.length === 0,
+   'CONTROPROVA: il Forward Observer guarda il suo bersaglio — la lista non è vuota per tutti');
+window.toggleRequisitoOsservazione(0, 'lof');
+ok(window.requisitiOsservazione().idle === true,
+   'e infatti togliendogli la LoF diventa un Idle: la differenza è il bersaglio, non l azione');
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

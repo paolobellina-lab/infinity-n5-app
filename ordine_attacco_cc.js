@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | ordine_attacco_cc.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.1 | ordine_attacco_cc.js | proprieta`: chat MOTORE
 // ==========================================
 // ⚔️ CORPO A CORPO (N5) - ordine_attacco_cc.js
 // ------------------------------------------
@@ -281,6 +281,7 @@
                 <select class="huge-btn" style="width:100%; margin:0; min-height:55px; font-size:16px; background:#000; color:#fff; border-color:${COL.bordo}; text-align:center; padding:0 10px;" onchange="window.setTargetAmmoCC(${index}, this.value)">
                     ${ammoHtml}
                 </select>
+                ${M.rigaRequisiti(['contatto'], tgt, index, 'window.toggleRequisitoCC')}
 
                 ${mods.note.length ? `<div style="margin-top:10px; color:#888; font-size:12px; line-height:1.6;">` + mods.note.map(n => `• ${n}`).join('<br>') + `</div>` : ''}
             </div>`;
@@ -297,8 +298,8 @@
             // nascosto il clone nasceva invisibile. Etichetta giusta,
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
-            nuovo.onclick = function () { window.eseguiCalcoloCC(); };
-            nuovo.innerText = 'ESEGUI ATTACCO IN CORPO A CORPO';
+            // Il tasto diventa IDLE se il requisito manca (M.tastoConRequisiti).
+            M.tastoConRequisiti(nuovo, M.requisitiDichiarati(window.combatTargets, ['contatto']), 'ESEGUI ATTACCO IN CORPO A CORPO', function () { window.eseguiCalcoloCC(); });
         }
     };
 
@@ -318,8 +319,19 @@
     // ==============================================================
     // 4. INVIO
     // ==============================================================
+    // Gli interruttori dei requisiti (Linea di Tiro, gittata, contatto...):
+    // la regola e i testi stanno nel motore, M.REQUISITI_TAVOLO.
+    window.toggleRequisitoCC = function (i, chiave) {
+        const M = motore(); if (!M) return;
+        if (M.invertiRequisito(window.combatTargets[i], chiave)) window.renderTargetsAllocationCC();
+    };
+
     window.eseguiCalcoloCC = function () {
         const M = motore(); if (!M) return;
+        // Chi non e` a contatto: i suoi dadi si perdono (righe 3111-3114); se
+        // non resta nessuno, Idle.
+        const req = M.requisitiDichiarati(window.combatTargets, ['contatto']);
+        if (req.idle) return M.idleDaRequisito(req);
         const unita = window.coordUnits[window.coordIndex];
         const arma = M.profiloArma(window.currentOrder.weapon);
 
@@ -343,7 +355,7 @@
             attaccante: unita,
             azione: azione,
             arma: arma,
-            bersagli: window.combatTargets,
+            bersagli: M.bersagliConRequisiti(window.combatTargets, req),
             burstDisponibile: window.totalBurst,
             regole: {
                 attributo: 'CC',
@@ -393,7 +405,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_cc.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_cc.js', versione: '2026-10-07.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

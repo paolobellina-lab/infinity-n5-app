@@ -1,5 +1,7 @@
-// @versione 2026-09-23.1 | test_modulo_guidato.js | proprieta`: chat TEST
+// @versione 2026-10-07.2 | test_modulo_guidato.js | proprieta`: chat TEST
 // Test end-to-end del modulo Guidato — node test_modulo_guidato.js
+// .2 (7 ott): il colore del tasto si prova contro M.COLORE_TASTO E si pretende
+//    non vuoto e diverso dal giallo dell IDLE — alla .1 era una tautologia.
 global.window = global;
 let passati = 0, falliti = 0;
 function ok(c, n, e) { if (c) { passati++; console.log(`  ✅ ${n}`); } else { falliti++; console.log(`  ❌ ${n}${e ? '\n       ' + e : ''}`); } }
@@ -120,6 +122,92 @@ window.currentOrder.weapon = 'Missile Launcher (Blast Mode)';
 window.combatTargets = [{ id: 'p2', name: 'Vicino', burst: 1, rangeIndex: 0, rangeMod: -3 }];
 window.eseguiCalcoloGuidato();
 ok(inviato === null, 'Primario non Bersagliato: invio bloccato');
+
+// ==================================================================
+// REQUISITI DICHIARATI AL TAVOLO — Attacco Guidato (gittata, sul Principale)
+//   Nuovo il 7 ottobre. MOTORE ha misurato dalla pagina BS, CC, Hacking e
+//   Scoprire; il Guidato NO. Il tasto vive su btn-esegui-calcolo e la
+//   schermata lo CLONA: nel finto DOM il clone e` 'btn-esegui-calcolo_c'.
+//   🔴 La chiave 'gittata' legge il campo `fuoriGittata` a POLARITA`
+//   INVERTITA (manca se true). Si gira dal motore, M.invertiRequisito, cosi`
+//   il banco non puo` sbagliare il nome del campo.
+//   E il requisito si guarda sul SOLO Bersaglio Principale: la Sagoma e` una.
+// ==================================================================
+console.log('\n=== REQUISITI AL TAVOLO: gittata sul Principale ===');
+const tastoG = () => el['btn-esegui-calcolo_c'] || {};
+function prontoG() {
+    nuovo(rem);
+    window.combatTargets = [
+        { id: 'p1', name: 'Designato', burst: 0, fuoriGittata: false },
+        { id: 'p2', name: 'Vicino', burst: 0, fuoriGittata: false }
+    ];
+    window.preparaModificatoriGuidati();
+}
+prontoG();
+ok(tastoG().innerText === 'LANCIA MISSILI',
+   `gittata dichiarata: il tasto porta l etichetta dell azione (${tastoG().innerText})`);
+// GIRATA sul motore 2026-10-07.11: il tasto valido non ha piu` lo sfondo
+// vuoto. Scrivendo '' il motore toglieva al tasto l'arancione della pagina,
+// e Paolo al tavolo lo vedeva cambiare colore. Ora i due colori stanno nel
+// motore, M.COLORE_TASTO: valido 'var(--nomad-orange)', idle '#ffcc00'.
+// Si legge dal motore invece di scrivere la stringa a mano, cosi` se Paolo
+// cambia l'arancione della pagina questa prova non diventa rossa per un
+// motivo che non c'entra col requisito.
+// 🔴 Non basta confrontare col valore che il motore dichiara: sarebbe una
+// TAUTOLOGIA — i due lati si muovono insieme e la prova non puo` fallire.
+// Visto il 7 ottobre rompendo COLORE_TASTO.valido a '' e vedendo il banco
+// restare verde. Quindi si pretendono tre cose: che il tasto porti quel
+// colore, che quel colore NON sia vuoto (era il difetto di prima) e che sia
+// DIVERSO dal giallo dell'IDLE (altrimenti i due stati non si distinguono a
+// vista). Cosi` la prova resiste a un cambio di arancione ma non al difetto.
+ok(!!M.COLORE_TASTO.valido && M.COLORE_TASTO.valido !== M.COLORE_TASTO.idle,
+   `il colore valido c è e non è il giallo dell IDLE (${JSON.stringify(M.COLORE_TASTO)})`);
+ok(tastoG().style && tastoG().style.background === M.COLORE_TASTO.valido,
+   `e il tasto lo porta (${tastoG().style && tastoG().style.background})`);
+prontoG();
+M.invertiRequisito(window.combatTargets[0], 'gittata');
+window.preparaModificatoriGuidati();
+ok(tastoG().innerText === 'IDLE',
+   `Principale fuori gittata: il tasto diventa IDLE (${tastoG().innerText})`);
+ok(tastoG().style && tastoG().style.background === '#ffcc00',
+   `ed è giallo (${tastoG().style && tastoG().style.background})`);
+// 🔴 LA PROVA CHE CONTA: il requisito si guarda sul PRINCIPALE, non sui
+// secondari. Un secondario fuori gittata non blocca il lancio — e se il
+// motore guardasse tutta la lista, due bersagli di cui uno fuori gittata
+// NON sarebbero "tutti", quindi niente Idle: la prova sembrerebbe giusta
+// per il motivo sbagliato. Per questo si gira il SECONDARIO da solo.
+prontoG();
+M.invertiRequisito(window.combatTargets[1], 'gittata');
+window.preparaModificatoriGuidati();
+ok(window.combatTargets[1].fuoriGittata === true, 'premessa: il secondario è fuori gittata');
+ok(window.combatTargets[0].fuoriGittata === false, 'e il Principale no');
+ok(tastoG().innerText === 'LANCIA MISSILI',
+   `solo il secondario fuori gittata: si lancia comunque (${tastoG().innerText})`);
+// E il tasto IDLE porta all Idle vero, col motivo del motore.
+prontoG();
+M.invertiRequisito(window.combatTargets[0], 'gittata');
+window.preparaModificatoriGuidati();
+let motivoG = null;
+const salvaG = window.dichiaraRequisitoFallito;
+window.dichiaraRequisitoFallito = (m) => { motivoG = m; return true; };
+tastoG().onclick();
+ok(motivoG !== null && /fuori gittata/.test(String(motivoG)),
+   `cliccandolo chiama l Idle col motivo del motore (${String(motivoG).slice(0, 50)}…)`);
+// CONTROPROVA: a gittata dichiarata il tasto NON chiama l Idle.
+prontoG();
+motivoG = null;
+tastoG().onclick();
+ok(motivoG === null,
+   'CONTROPROVA: col requisito a posto il tasto NON chiama l Idle');
+window.dichiaraRequisitoFallito = salvaG;
+// E l interruttore della schermata gira il campo giusto.
+ok(typeof window.toggleRequisitoGuidato === 'function',
+   'la schermata ha l interruttore toggleRequisitoGuidato');
+prontoG();
+window.toggleRequisitoGuidato(0, 'gittata');
+ok(window.combatTargets[0].fuoriGittata === true,
+   `e gira fuoriGittata, non un campo chiamato "gittata" (${JSON.stringify(window.combatTargets[0].gittata)} / ${window.combatTargets[0].fuoriGittata})`);
+ok(tastoG().innerText === 'IDLE', 'e il tasto si aggiorna da solo');
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

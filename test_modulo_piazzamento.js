@@ -1,5 +1,7 @@
-// @versione 2026-10-06.1 | test_modulo_piazzamento.js | proprieta`: chat TEST
+// @versione 2026-10-07.2 | test_modulo_piazzamento.js | proprieta`: chat TEST
 // Passata 3: piazzamento e innesco da ZdC — node test_modulo_piazzamento.js
+// .2 (7 ott): il colore del tasto si prova contro M.COLORE_TASTO E si pretende
+//    non vuoto e diverso dal giallo dell IDLE — alla .1 era una tautologia.
 global.window = global;
 const DIR = (process.env.CARTELLA || __dirname).replace(/\/?$/, '/');
 let passati = 0, falliti = 0;
@@ -97,8 +99,22 @@ ok(a && a.regole.senzaTiro === true, 'senza tiro');
 ok(a && a.bersagli.length === 0, 'nessun bersaglio');
 ok(a && a.regole.token && a.regole.token.id, 'col token nel payload');
 ok(a && a.regole.portatoreAggiornato, 'e il portatore con l uso scalato');
-ok(/NON è stato spedito/.test(nodo('calc-result').innerHTML),
-   'e la schermata dichiara che il canale verso l avversario non esiste ancora');
+// 🔴 GIRATA IL 7 OTTOBRE. L'avviso "il token NON è stato spedito
+// all'avversario" è stato TOLTO dalla schermata: il token ora parte col
+// roster, nel giro di AGGIORNAMENTO. L'avviso descriveva un buco che non
+// c'è più, e un avviso che mente è peggio di nessun avviso.
+const esito = nodo('calc-result').innerHTML;
+ok(!/NON è stato spedito/.test(esito),
+   'l avviso sul canale inesistente è sparito: il token viaggia col roster');
+// Ma la schermata deve ancora dire le due cose che al tavolo contano: che il
+// gettone è visibile e bersagliabile dal PROSSIMO Ordine, e che in QUESTO
+// il nemico può reagire solo contro chi lo ha piazzato. Senza queste due,
+// "l avviso è sparito" si confonderebbe con "la schermata non dice niente".
+ok(/bersagliabile dal prossimo Ordine/.test(esito),
+   'la schermata dice che il gettone è bersagliabile dal prossimo Ordine');
+ok(/reagire solo contro chi lo ha piazzato/.test(esito),
+   'e che in questo Ordine il nemico reagisce solo contro chi lo ha piazzato');
+ok(/PIAZZATO/.test(esito), 'e nomina il gettone piazzato');
 
 console.log('\n=== 8. Il Disco Ball NON passa da qui ===');
 ok(M.deployableDaEsito(M.profiloArma('CrazyKoalas')) === null,
@@ -153,26 +169,164 @@ ok(/ordineDiPiazzamento/.test(src), 'e legge l Ordine di piazzamento (riga 5532)
 // che con "|| true" era verde sempre. Una prova che non può fallire non è
 // una prova: è una riga che fa salire il totale. Sostituita da quella sopra.
 
-console.log('\n=== 12. D-03: PIAZZARE EQUIPAGGIAMENTO alza l allarme ===');
-// Il piano di collaudo lo dava per difetto: l'ordine passava al calcolatore
-// senza generare ARO. Dal 5 ottobre ordine_piazzamento.js chiama
-// M.allarmeOrdine e manda aroAtteso. Qui si misura, invece di leggere il
-// codice: un allarme che nessuno riceve è la stessa cosa di nessun allarme.
+console.log('\n=== 11-bis. I TRE STATI DEL TASTO, e il colore della risposta ===');
+// Nuovo il 7 ottobre (richiesta di Paolo, A-07). Prima il terzo stato
+// diceva "PIAZZAMENTO NON CONSENTITO" e non portava da nessuna parte: per
+// fare l'Idle serviva un secondo tasto giallo fisso sotto, che adesso non
+// c'è più. Un tasto che nomina un divieto senza offrire la via d'uscita è
+// la stessa famiglia di difetti: dice e non fa.
+// Il tasto vive su btn-esegui-calcolo, che il modulo CLONA per ripulire
+// l'onclick; nel finto DOM di questo banco il clone si chiama
+// 'btn-esegui-calcolo_c', e va letto lì — sull'originale resta l'etichetta
+// vecchia, e una prova che guarda l'originale è verde per sbaglio.
+function tastoPiazza() { const n = el['btn-esegui-calcolo_c'] || {};
+    return { testo: n.innerText, sfondo: (n.style || {}).background, onclick: n.onclick }; }
+function pronta(u, risposteBloccanti) {
+    window.currentOrder = { unit: u }; window.coordUnits = [u]; window.coordIndex = 0;
+    window.coordPayloads = []; window.tokenPiazzati = []; window.roster = [u];
+    window.deployableRisposte = {}; window.deployableScelta = null;
+    inviato = null; alertUltimo = null;
+    Object.keys(el).forEach(k => { el[k].innerHTML = ''; });
+    window.avviaFaseDeployable('PIAZZARE EQUIPAGGIAMENTO', false);
+    window.scegliArmaDaPiazzare('CrazyKoalas');
+    if (risposteBloccanti !== undefined) {
+        window.deployableDomande.forEach(d => window.rispondiDeployable(d.id, d.rispostaBloccante === risposteBloccanti));
+    }
+    return window.deployableDomande;
+}
+
+// STATO 1: manca una risposta.
+const dom = pronta(moran());
+window.aggiornaPulsantePiazza();
+ok(tastoPiazza().testo === 'RISPONDI ALLE DOMANDE',
+   `nessuna risposta: il tasto dice RISPONDI ALLE DOMANDE (${tastoPiazza().testo})`);
+window.rispondiDeployable(dom[0].id, dom[0].rispostaBloccante === false);
+ok(tastoPiazza().testo === 'RISPONDI ALLE DOMANDE',
+   `e con UNA risposta su due lo dice ancora (${tastoPiazza().testo})`);
+// STATO 2: tutte libere.
+window.rispondiDeployable(dom[1].id, dom[1].rispostaBloccante === false);
+ok(tastoPiazza().testo === 'PIAZZA',
+   `tutte le risposte libere: il tasto dice PIAZZA (${tastoPiazza().testo})`);
+// GIRATA sul motore 2026-10-07.11: lo sfondo del tasto valido non e` piu`
+// vuoto. I due colori stanno nel motore (M.COLORE_TASTO): valido
+// 'var(--nomad-orange)', idle '#ffcc00'. Scrivendo '' il tasto perdeva
+// l'arancione della pagina e Paolo al tavolo lo vedeva cambiare colore.
+// Si legge dal motore, non a mano: se Paolo cambia l'arancione, questa prova
+// non diventa rossa per un motivo che non c'entra col requisito.
+// 🔴 Non basta confrontare col valore che il motore dichiara: sarebbe una
+// TAUTOLOGIA — i due lati si muovono insieme e la prova non puo` fallire.
+// Visto il 7 ottobre rompendo COLORE_TASTO.valido a '' e vedendo il banco
+// restare verde. Quindi si pretendono tre cose: che il tasto porti quel
+// colore, che quel colore NON sia vuoto (era il difetto di prima) e che sia
+// DIVERSO dal giallo dell'IDLE (altrimenti i due stati non si distinguono a
+// vista). Cosi` la prova resiste a un cambio di arancione ma non al difetto.
+ok(!!M.COLORE_TASTO.valido && M.COLORE_TASTO.valido !== M.COLORE_TASTO.idle,
+   `il colore valido c è e non è il giallo dell IDLE (${JSON.stringify(M.COLORE_TASTO)})`);
+ok(tastoPiazza().sfondo === M.COLORE_TASTO.valido,
+   `e il tasto lo porta (${tastoPiazza().sfondo})`);
+// STATO 3: una risposta blocca -> IDLE, giallo, e porta all Idle vero.
+pronta(moran(), true);
+ok(tastoPiazza().testo === 'IDLE',
+   `una risposta che blocca: il tasto diventa IDLE, non un divieto muto (${tastoPiazza().testo})`);
+ok(tastoPiazza().sfondo === '#ffcc00',
+   `ed è giallo (${tastoPiazza().sfondo})`);
+// Chi decide che una risposta blocca è il MOTORE, non il modulo.
+const giudizio = M.valutaDomanda(window.deployableDomande[0], true);
+ok(giudizio.esito === 'BLOCCATA' && giudizio.puoProcedere === false,
+   `e lo decide M.valutaDomanda, non la schermata (${giudizio.esito})`);
+// E il tasto PORTA all Idle vero: non ne fa una copia sua, chiama
+// l unico window.dichiaraRequisitoFallito della pagina, col motivo che il
+// motore ha già scritto. Senza questa prova "il tasto dice IDLE" non si
+// distingue da "il tasto dice IDLE e non fa niente" — che è il difetto di
+// prima con un'etichetta nuova.
+let motivoIdle = null;
+const salvaDRF = window.dichiaraRequisitoFallito;
+window.dichiaraRequisitoFallito = (m) => { motivoIdle = m; return true; };
+tastoPiazza().onclick();
+ok(motivoIdle !== null, 'cliccandolo chiama window.dichiaraRequisitoFallito');
+ok(/percorso/.test(String(motivoIdle)) || /NEGATO/.test(String(motivoIdle)),
+   `col motivo scritto dal motore, non inventato dal modulo (${String(motivoIdle).slice(0, 60)}…)`);
+ok(inviato === null, 'e NON spedisce la busta del piazzamento: il gettone non si piazza');
+window.dichiaraRequisitoFallito = salvaDRF;
+
+console.log('\n=== 12. D-03: l allarme parte ALL INGRESSO, non al PIAZZA ===');
+// GIRATA IL 7 OTTOBRE, e il cambio è di sostanza, non di dettaglio.
+// Place Deployable è una SHORT SKILL: è SEMPRE la seconda metà dell'Ordine
+// (riga 7550; combinazioni alle righe 1047-1054). Le tre forme ammesse sono
+// MOVIMENTO + PIAZZARE, SCOPRIRE + PIAZZARE, IDLE + PIAZZARE.
+// Quindi chi "piazza e basta" ha dichiarato IDLE + PIAZZARE, e l'ARO si
+// dichiara subito dopo la PRIMA Abilità (righe 1088-1090): l'allarme parte
+// all'INGRESSO nella schermata, con azione IDLE, PRIMA delle domande —
+// così l'avversario sceglie l'ARO mentre il giocatore risponde.
+// Fino al 6 ottobre questo banco pretendeva il contrario: un allarme col
+// nome 'PIAZZARE EQUIPAGGIAMENTO' spedito AL PIAZZA, insieme alla busta.
+// Era sbagliato due volte — nel momento e nel nome — e al tavolo l'Hub
+// chiudeva il calcolo mentre il reattivo scegliendo ancora l'ARO
+// (segnalato da Paolo il 6 ottobre).
 let allarmi = [];
 global.inviaAllarmeAro = (p) => { allarmi.push(p); };
-nuovo(moran());
+
+// L'unità va messa in currentOrder.unit come fa l'app: M.allarmeOrdine
+// legge ctx.unita da lì, e senza quella il nome dell'attaccante esce
+// stringa vuota — un allarme anonimo che a leggerlo sembra sano.
+function nuovoConUnita(u, secondaMeta) {
+    window.currentOrder = {}; window.coordUnits = [u]; window.coordIndex = 0;
+    window.coordPayloads = []; window.tokenPiazzati = []; window.roster = [u];
+    window.deployableRisposte = {}; window.deployableScelta = null;
+    inviato = null; alertUltimo = null; allarmi = [];
+    Object.keys(el).forEach(k => { el[k].innerHTML = ''; });
+    window.currentOrder.unit = u;
+    window.avviaFaseDeployable('PIAZZARE EQUIPAGGIAMENTO', !!secondaMeta);
+}
+
+nuovoConUnita(moran(), false);
+ok(allarmi.length === 1,
+   `dichiarato per primo: l allarme parte ALL INGRESSO, una volta sola (${allarmi.length})`);
+const al = allarmi[0] || {};
+ok(al.azione === 'IDLE',
+   `e l azione dichiarata è IDLE, non PIAZZARE: è la prima metà (${al.azione})`);
+ok(al.azionePrimaMeta === 'IDLE',
+   `con azionePrimaMeta coerente (${al.azionePrimaMeta})`);
+ok(al.attaccante === 'Moran' && Array.isArray(al.bersagli) && al.bersagli.length === 0,
+   `col nome di chi la dichiara e nessun bersaglio (${al.attaccante}, ${(al.bersagli || []).length} bersagli)`);
+ok(window.currentOrder.aroDaIdleImplicito === true,
+   'e il modulo si ricorda che l ARO è atteso (aroDaIdleImplicito)');
+// E la schermata lo DICE al giocatore, perché "l Ordine finisce qui" è la
+// cosa che al tavolo si sbaglia.
+ok(/IDLE \+ PIAZZARE/.test(nodo('weapon-buttons-container').innerHTML),
+   'la schermata avvisa che dichiarata per prima vale IDLE + PIAZZARE');
+
+// AL PIAZZA: solo la busta, MAI un secondo allarme. Prima partivano
+// insieme, ed è il difetto che Paolo ha visto al tavolo.
 window.scegliArmaDaPiazzare('CrazyKoalas');
 window.deployableDomande.forEach(d => window.rispondiDeployable(d.id, d.rispostaBloccante === false));
-allarmi = [];
+ok(allarmi.length === 1,
+   `rispondere alle domande NON manda altri allarmi (${allarmi.length})`);
 window.eseguiPiazzamento();
-ok(allarmi.length === 1, `l allarme parte, una volta sola (${allarmi.length})`);
-const al = allarmi[0] || {};
-ok(al.azione === 'PIAZZARE EQUIPAGGIAMENTO',
-   `e dice quale azione è stata dichiarata (${al.azione})`);
-ok(al.attaccante === 'Moran' && Array.isArray(al.bersagli) && al.bersagli.length === 0,
-   `col nome di chi la dichiara e nessun bersaglio (${al.attaccante})`);
+ok(allarmi.length === 1,
+   `e al PIAZZA non parte nessun allarme: resta quello dell ingresso (${allarmi.length})`);
+ok(inviato !== null, 'al PIAZZA parte la busta');
 ok(inviato && inviato.aroAtteso === true,
-   `e la busta del calcolo dice all Hub di aspettare l ARO (aroAtteso ${inviato && inviato.aroAtteso})`);
+   `che dice all Hub di aspettare l ARO (aroAtteso ${inviato && inviato.aroAtteso})`);
+
+// CONTROPROVA DEL MOMENTO: in SECONDA metà l'allarme l'ha già mandato la
+// prima Abilità (il Movimento, lo Scoprire), quindi qui NON parte nulla —
+// solo la busta, e senza aroAtteso. Senza questa prova, "un allarme
+// all ingresso" non si distingue da "un allarme sempre".
+nuovoConUnita(moran(), true);
+ok(allarmi.length === 0,
+   `in seconda metà NESSUN allarme all ingresso: l ha mandato la prima Abilità (${allarmi.length})`);
+ok(window.currentOrder.aroDaIdleImplicito === false,
+   'e nessun ARO da Idle implicito');
+ok(!/IDLE \+ PIAZZARE/.test(nodo('weapon-buttons-container').innerHTML),
+   'e la schermata non parla di IDLE + PIAZZARE: non è quel caso');
+window.scegliArmaDaPiazzare('CrazyKoalas');
+window.deployableDomande.forEach(d => window.rispondiDeployable(d.id, d.rispostaBloccante === false));
+window.eseguiPiazzamento();
+ok(allarmi.length === 0,
+   `in seconda metà non parte nessun allarme, in nessun momento (${allarmi.length})`);
+ok(inviato !== null && inviato.aroAtteso === false,
+   `ma la busta parte, con aroAtteso false (${inviato && inviato.aroAtteso})`);
 
 // CONTROPROVA 1 — aroAtteso non è inchiodato a true: un'azione che NON
 // genera ARO non lo alza. Senza, "true" non distingue "letto" da "scritto".

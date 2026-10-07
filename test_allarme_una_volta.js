@@ -1,4 +1,4 @@
-// @versione 2026-10-06.2 | test_allarme_una_volta.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.1 | test_allarme_una_volta.js | proprieta`: chat MOTORE
 // ============================================================================
 //  UN ALLARME PER ORDINE, ALLA PRIMA ABILITA`.
 //
@@ -343,6 +343,49 @@ nuovoOrdine();
 ok(allarmi().length === 3, `tre allarmi consumati, tre partiti (${allarmi().length})`, azioni());
 ok(J(azioni()) === J(['UNO', 'DUE', 'TRE']), `in ordine (${J(azioni())})`);
 ok(inCoda() === 0, `e niente resta appeso in coda (${inCoda()})`);
+
+console.log('\n=== 10. LA GUARDIA DENTRO inviaAllarmeAro: vale per OGNI chiamante ===');
+// Fino alla 2026-10-06.7 "un allarme per Ordine" lo garantiva solo il router
+// (selectAction non rialza l'allarme in seconda meta`). Chi chiamava da fuori
+// lo saltava: al tavolo di Paolo, il 6 ottobre, l'Idle da requisito fallito
+// premuto dopo un Attacco BS gia` dichiarato mandava un SECONDO allarme e il
+// reattivo si vedeva chiedere un nuovo ARO. Dalla 2026-10-07.1 la guardia sta
+// in inviaAllarmeAro. Qui la si chiama DIRETTAMENTE, senza passare dal
+// router: e` il percorso che le sezioni sopra non toccano. (Richiesta della
+// chat TEST, 7 ottobre.)
+nuovoOrdine();
+g.currentOrder.id = 'ordine_guardia_A';
+const esitoPrimo = g.inviaAllarmeAro({ attaccante: 'Zero', azione: 'ATTACCO BS', bersagli: [] });
+consuma();
+const esitoSecondo = g.inviaAllarmeAro({ attaccante: 'Zero', azione: 'IDLE', bersagli: [] });
+consuma();
+ok(allarmi().length === 1, `stesso Ordine, due chiamate: UN allarme solo (${allarmi().length})`, azioni());
+ok(J(azioni()) === J(['ATTACCO BS']), `ed è quello della prima Abilità (${J(azioni())})`);
+ok(esitoSecondo && esitoSecondo.inviato === false && esitoSecondo.ripetuto === true,
+   `la seconda chiamata risponde { inviato:false, ripetuto:true } (${J(esitoSecondo)})`);
+ok(!(esitoPrimo && esitoPrimo.ripetuto), `la prima no (${J(esitoPrimo)})`);
+ok(allarmi()[0] && allarmi()[0].dato && allarmi()[0].dato.ordineId === 'ordine_guardia_A',
+   `l allarme porta l id dell Ordine, messo da inviaAllarmeAro (${allarmi()[0] && allarmi()[0].dato && allarmi()[0].dato.ordineId})`);
+ok(inCoda() === 0, `e la chiamata ripetuta non resta in coda (${inCoda()})`);
+// CONTROPROVA: un Ordine diverso avvisa di nuovo. Senza, "non ripete" non si
+// distingue da "non manda piu` niente".
+g.currentOrder.id = 'ordine_guardia_B';
+const esitoAltro = g.inviaAllarmeAro({ attaccante: 'Zero', azione: 'MOVIMENTO', bersagli: [] });
+consuma();
+ok(allarmi().length === 2 && !(esitoAltro && esitoAltro.ripetuto),
+   `un Ordine diverso avvisa di nuovo (${allarmi().length})`, azioni());
+// ...e lo stesso id scritto NEL payload, non letto da currentOrder, e` fermato.
+const esitoEsplicito = g.inviaAllarmeAro({ attaccante: 'Zero', azione: 'IDLE', bersagli: [], ordineId: 'ordine_guardia_B' });
+consuma();
+ok(allarmi().length === 2 && esitoEsplicito && esitoEsplicito.ripetuto === true,
+   `l id scritto nel payload vale come quello di currentOrder (${allarmi().length}, ${J(esitoEsplicito)})`);
+// SENZA identificativo la guardia NON puo` sapere, e l'allarme parte sempre.
+// E` la via che la aggira: va fissata, cosi` chi la apre lo sa.
+nuovoOrdine();                         // currentOrder senza id
+g.inviaAllarmeAro({ attaccante: 'Zero', azione: 'SENZA ID 1', bersagli: [] }); consuma();
+g.inviaAllarmeAro({ attaccante: 'Zero', azione: 'SENZA ID 2', bersagli: [] }); consuma();
+ok(allarmi().length === 2, `senza id d Ordine partono tutti e due: la guardia non può sapere (${allarmi().length})`, azioni());
+ok(allarmi().every(a => a.dato && a.dato.ordineId == null), 'e nessuno dei due porta un id inventato');
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-06.4 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-07.4 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -121,6 +121,21 @@
     <script src="database_panoceania.js?v=1"></script>
     <script src="motore_regole_n5.js"></script>
     <script src="motore_core.js"></script>
+    <!-- L'elenco delle foto delle miniature (window.FOTO_MINIATURE) sta in
+         img/elenco_foto.js, generato da avvia_elenco_foto.html. Si carica
+         da qui e non con un tag fisso perche` e` un file della cartella
+         img, che cambia ogni volta che si aggiungono foto: se manca la
+         pagina deve partire lo stesso, e la galleria dice che manca. -->
+    <script>
+        (function () {
+            try {
+                var s = document.createElement('script');
+                s.src = 'img/elenco_foto.js?t=' + Date.now();
+                s.onerror = function () { console.error('\u26d4 img/elenco_foto.js non trovato: le foto delle miniature non si possono assegnare.'); };
+                if (document.head && document.head.appendChild) document.head.appendChild(s);
+            } catch (e) { window.ultimaEccezione = e; }
+        })();
+    </script>
     <script src="roster_manager.js"></script>
     <script src="fase_schieramento.js"></script>
     <script src="fireteam.js"></script>
@@ -207,6 +222,7 @@
         .roster-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 8px; margin-bottom: 5px; border-left: 2px solid var(--nomad-orange); font-size: 12px; }
         .del-btn { color: var(--nomad-red); font-weight: bold; cursor: pointer; padding: 5px 10px; background: #222; border-radius: 3px; }
         
+        #calc-result:empty { display:none !important; }
         #calc-result { margin-top:15px; font-size:16px; border:2px solid #00ff00; background:#001a00; padding:15px; display:none; box-shadow: 0 0 15px rgba(0,255,0,0.2); }
 
         .range-bar { display: flex; width: 100%; height: 40px; border: 2px solid #fff; border-radius: 5px; overflow: hidden; margin-top: 5px; }
@@ -469,7 +485,17 @@
         <button id="btn-esegui-calcolo" class="huge-btn" style="background:var(--nomad-orange); color:#000; margin-top:15px; min-height:60px;" onclick="executeCalculation()">ESEGUI CALCOLO FINALE</button>
         <!-- L'uscita per il Passo di Risoluzione: l'ordine e` dichiarato ma
              sul tavolo il requisito non c'e`. Non annulla niente. -->
-        <button class="btn-status" style="margin-top:10px; border-color:#ffaa00; color:#ffaa00;" onclick="window.dichiaraRequisitoFallito()">REQUISITO NON SODDISFATTO → IDLE</button>
+        <!-- 7 ottobre (Paolo, dal tavolo). Qui c'era il tasto giallo fisso
+             "REQUISITO NON SODDISFATTO -> IDLE": l'Idle da requisito fallito
+             ora si dichiara dal tasto principale, che i moduli portano a
+             "IDLE" quando il requisito manca, e due tasti per la stessa cosa
+             erano uno di troppo.
+             calc-result RESTA: i moduli ci scrivono l'esito dell'Ordine. La
+             "barra verde" sotto il tasto era questo riquadro VUOTO: i
+             moduli lo accendono (display:block) e nessuno lo spegneva, cosi`
+             all'Ordine dopo restavano a schermo bordo e fondo verdi senza
+             niente dentro. Ora vuoto non si vede (regola :empty nello stile)
+             e l'azzeramento dell'Ordine lo spegne. -->
         <div id="calc-result"></div>
         <button class="btn-status" style="margin-top:20px;" onclick="window.tornaAlRadar()">FINE ORDINE (TORNA AL RADAR)</button>
     </div>
@@ -489,7 +515,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-06.4', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-10-07.4', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -918,12 +944,18 @@
             // Impersonation (6 ottobre): lo stato non sta in u.states ma in
             // deployState ('IMP_1'/'IMP_2'), quindi questa funzione non lo
             // vedeva e un Hacker in Cybermask appariva identico a prima. Il
-            // livello lo legge il motore; qui solo l'etichetta, senza immagine
-            // (non esiste un file icona per l'IMP).
+            // livello lo legge il motore.
+            // 7 ottobre (Paolo): gli stati si mostrano con l'ICONA, non con
+            // la scritta. Qui c'era solo l'etichetta "IMP-1" perche` il file
+            // non esisteva: ora si chiede img/icon_imp1.png o icon_imp2.png
+            // (li mette Paolo), e finche` manca torna l'etichetta di prima.
             {
                 const Mi = window.MotoreN5;
                 const liv = (Mi && typeof Mi.livelloImpersonation === 'function') ? Mi.livelloImpersonation(u) : null;
-                if (liv) icone += `<span style="font-size:14px; font-weight:bold; color:#cc99ff; border:1px solid #cc99ff; border-radius:4px; padding:3px 5px; margin-left:5px;">IMP-${liv}</span>`;
+                if (liv) {
+                    const scritta = `<span style=&quot;font-size:14px; font-weight:bold; color:#cc99ff; border:1px solid #cc99ff; border-radius:4px; padding:3px 5px; margin-left:5px;&quot;>IMP-${liv}</span>`;
+                    icone += `<img src="img/icon_imp${liv}.png" alt="IMP-${liv}" ${iconStyle} onerror="this.outerHTML='${scritta}'">`;
+                }
             }
             if(s.disconnected) icone += `<img src="img/icon_disconnected.png" ${iconStyle} ${getOnErr('🔌')}>`;
             if(s.possessed) icone += `<img src="img/icon_possessed.png" ${iconStyle} ${getOnErr('👾')}>`;
@@ -939,17 +971,162 @@
             return icone;
         };
 
+        // ==========================================
+        // 🧍 LA RIGA DI UN'UNITA`, CON LA SUA FOTO
+        // ==========================================
+        // CONTRATTO — chi disegna un elenco di unita` (anche i moduli della
+        // chat MOTORE: Scoprire, Piazzamento, Fuoco Speculativo) chiami
+        // questa e non si scriva la riga in proprio:
+        //   window.rigaUnitaConFoto(unita, opzioni) -> HTML di UN <button>
+        //   opzioni (tutte facoltative):
+        //     attributi  stringa messa nel tag: i gestori, es.
+        //                'onclick="window.scegli(\'p1\')"'
+        //     id         id del <button>
+        //     sfondo, bordo, opacita   per dire "selezionata", "non valida"
+        //     nome       HTML al posto del nome letto dall'unita`
+        //     dopoNome   HTML in coda al nome (un'etichetta, un avviso)
+        //     sotto      HTML sotto nome e alias (una riga di spiegazione)
+        //     destra     HTML a destra; se manca, le icone degli stati
+        //     fazione    'NEMICA' | 'PROPRIA' | 'NOMADI' | 'PANOCEANIA': bordo
+        //                e fondo del colore di quella fazione (Nomads rossi,
+        //                PanOceania blu), se non li passi tu
+        //     scelta     true: la riga e` selezionata (colore piu` acceso)
+        //   window.fotoUnita(unita) -> il percorso dell'immagine
+        //
+        // 7 ottobre (Paolo, dal tavolo): foto e carattere UGUALI in tutti gli
+        // elenchi. Prima la riga era scritta tre volte: l'elenco delle truppe
+        // da attivare e quello del turno reattivo avevano la foto e il nome a
+        // 22 punti; l'elenco di chi risponde in ARO (logica_aro.js) e quello
+        // dei bersagli avevano un'altra riga, senza foto e senza alias.
+        // Tre copie vuol dire tre aspetti: ora ce n'e` una.
+        //
+        // QUALE FOTO lo decide SOLO window.fotoUnita: quella assegnata
+        // all'unita` nello schieramento (vedi roster_manager.js).
+        window.voceDeployableDi = (u) => {
+            if (!u || !u.deployable) return null;
+            const elenco = window.DB_DEPLOYABLES || [];
+            return elenco.find(d => u.modelId && d.id === u.modelId) ||
+                   elenco.find(d => u.chiaveArma && d.chiaveArma === u.chiaveArma) ||
+                   // l'id del gettone nasce come dep_<id del database>_<n>_<ora>
+                   elenco.find(d => String(u.id || '').indexOf('dep_' + d.id + '_') === 0) || null;
+        };
+
+        window.nomeInElenco = (u) => String((u && (u.nome || u.name)) || '').split('(')[0].trim();
+
+        window.fotoUnita = (u) => {
+            if (!u) return '';
+            // Un segnalino piazzato (FastPanda, CrazyKoala, mine) ha la SUA
+            // immagine, col nome stabile del database: img/<id>.png. Prima
+            // cadeva nella regola del nome ("Mina_Shock_#1.png"), un file
+            // diverso per ogni segnalino, che non poteva esistere.
+            if (u.deployable) {
+                const voce = window.voceDeployableDi(u);
+                if (voce) return 'img/' + voce.id + '.png';
+            }
+            // 🔴 7 ottobre, il modello delle foto di Paolo: la foto e` quella
+            // ASSEGNATA nello schieramento (roster_manager.js), cioe` il file
+            // scritto in imgVariant. Prima il file si RICAVAVA dal nome
+            // dell'unita` piu` un numero da 0 a 3: un proxy non si poteva
+            // mostrare, e due unita` uguali avevano la stessa foto.
+            // Senza foto assegnata non si indovina un file dal nome: torna
+            // stringa vuota e la riga resta senza immagine.
+            const v = u.imgVariant;
+            if (typeof v === 'string' && /\.(png|jpe?g|webp)$/i.test(v)) return 'img/' + v;
+            // Di un Marker il motore non manda la foto: si vede il segnalino.
+            if (String(u.nome || u.name || '') === 'MARKER') return 'img/MARKER.png';
+            return '';
+        };
+
+        // Il Gruppo di Combattimento di un'unita`. Un segnalino piazzato dal
+        // motore non porta combatGroup: sta nel Gruppo di chi l'ha piazzato.
+        // Senza questo non compariva in NESSUN Gruppo dell'elenco attivo.
+        window.gruppoDi = (u) => {
+            const g = parseInt(u && u.combatGroup, 10);
+            if (g) return g;
+            if (u && u.proprietario != null) {
+                const p = (window.roster || []).find(x => x && x !== u && (x.id === u.proprietario || x.alias === u.proprietario));
+                const gp = parseInt(p && p.combatGroup, 10);
+                if (gp) return gp;
+            }
+            return 1;
+        };
+
+        // I COLORI DELLE DUE FAZIONI, fissi: Nomads rossi, PanOceania blu.
+        // Le variabili della pagina (--nomad-red) dicono il colore di CHI USA
+        // l'app; queste dicono il colore di una fazione qualunque sia la
+        // pagina, e servono per le unita` dell'ALTRO.
+        window.COLORI_FAZIONE = {
+            NOMADI:     { bordo: '#cc0000', sfondo: '#1a0000', scelto: '#8b0000', bordoScelto: '#ff3333' },
+            PANOCEANIA: { bordo: '#00ccff', sfondo: '#001a33', scelto: '#004477', bordoScelto: '#66ddff' }
+        };
+        window.fazionePropria = () => document.title.toUpperCase().includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA';
+        window.fazioneNemica = () => (window.fazionePropria() === 'NOMADI') ? 'PANOCEANIA' : 'NOMADI';
+
+        window.rigaUnitaConFoto = (u, opz) => {
+            opz = opz || {};
+            // opz.fazione: 'NEMICA', 'PROPRIA', 'NOMADI' o 'PANOCEANIA'. Da`
+            // alla riga bordo e fondo di quella fazione; opz.scelta la
+            // accende. Bordo e sfondo passati a mano vincono comunque.
+            {
+                const f = (opz.fazione === 'NEMICA') ? window.fazioneNemica()
+                        : (opz.fazione === 'PROPRIA') ? window.fazionePropria() : opz.fazione;
+                const c = window.COLORI_FAZIONE[f];
+                if (c) {
+                    opz = Object.assign({
+                        bordo: '2px solid ' + (opz.scelta ? c.bordoScelto : c.bordo),
+                        sfondo: opz.scelta ? c.scelto : c.sfondo
+                    }, opz);
+                }
+            }
+            const s = (u && u.states) || {};
+            const morto = !!u && u.state === 'DEAD';
+            const sfondo = opz.sfondo || (morto ? '#000000' : (s.unconscious ? '#220000' : '#110000'));
+            const bordo = opz.bordo || '2px solid var(--nomad-red)';
+            const opacita = opz.opacita || (morto ? '0.3' : (s.unconscious ? '0.6' : '1'));
+
+            const nomePuro = window.nomeInElenco(u);
+            let nome = (opz.nome !== undefined) ? opz.nome : (morto ? `<s>${nomePuro}</s>` : nomePuro);
+            if (opz.dopoNome) nome += opz.dopoNome;
+            if (s.fireteam) nome += ` <br><span style="color:#00ffff; font-size:14px; font-weight:bold;">[ TEAM ${s.fireteam} ]</span>`;
+            const alias = (u && u.alias && u.alias !== nomePuro) ? `<div style="color:var(--nomad-orange); font-size:15px; font-style:italic;">"${u.alias}"</div>` : '';
+            const destra = (opz.destra !== undefined) ? opz.destra : window.generaIconeStati(u);
+
+            return `
+                    <button ${opz.id ? `id="${opz.id}" ` : ''}class="huge-btn riga-unita" style="background:${sfondo}; border:${bordo}; opacity:${opacita}; padding:10px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; text-align:left; width:100%; min-height:95px;"
+                        ${opz.attributi || ''}
+                        oncontextmenu="return false;">
+                        <img src="${window.fotoUnita(u)}" alt="" style="width:70px; height:70px; flex-shrink:0; object-fit:contain; margin-right:15px; background: rgba(0,0,0,0.5); border-radius:5px; border: 1px solid #444;" onerror="this.style.display='none';">
+                        <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
+                            <div style="font-size:22px; line-height:1; color:#fff; font-weight:bold;">${nome}</div>
+                            ${alias}
+                            ${opz.sotto || ''}
+                        </div>
+                        <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; max-width:45%;">
+                            ${destra}
+                        </div>
+                    </button>
+                `;
+        };
+
+        // L'intestazione di un Gruppo di Combattimento dentro un elenco.
+        // 7 ottobre (Paolo): l'elenco delle truppe segue la divisione in
+        // Gruppi. L'aspetto e` provvisorio: l'estetica la dara` lui.
+        window.intestazioneGruppo = (g, quante) =>
+            `<div class="intestazione-gruppo" style="margin:14px 0 8px; padding:4px 8px; border-left:4px solid var(--nomad-red); color:#fff; font-family:'Teko', sans-serif; font-size:22px; letter-spacing:1px;">GRUPPO ${g} <span style="color:#888; font-size:15px;">(${quante})</span></div>`;
+
         // 2. MENU GRUPPI (TURNO ATTIVO - SCHERMATA PRINCIPALE)
         window.aggiornaMenuGruppi = () => {
             const container = document.querySelector('#battle .grid-buttons');
             if(!container || !window.roster) return;
 
-            let gruppiAttivi = [...new Set(window.roster.map(u => parseInt(u.combatGroup) || 1))].sort();
+            let gruppiAttivi = [...new Set(window.roster.map(u => window.gruppoDi(u)))].sort();
             if(gruppiAttivi.length === 0) gruppiAttivi = [1];
 
             let bottoniHtml = "";
             gruppiAttivi.forEach(g => {
-                let truppeNelGruppo = window.roster.filter(u => parseInt(u.combatGroup) === g && u.state !== 'DEAD').length;
+                // I segnalini piazzati non sono "Unita` Operative": non
+                // danno Ordini e non ne ricevono.
+                let truppeNelGruppo = window.roster.filter(u => window.gruppoDi(u) === g && u.state !== 'DEAD' && !u.deployable).length;
                 bottoniHtml += `<button class="huge-btn" style="min-height:80px; margin-bottom:15px; width:100%; border-color:var(--nomad-red); background:#1a0000;" 
                     onpointerdown="if(window.startGroupPress) window.startGroupPress(${g})" 
                     onpointerup="if(window.endGroupPress) window.endGroupPress(${g})" 
@@ -976,44 +1153,22 @@
             
             let truppeVisibili = window.roster.filter(u => u.deployState !== "HIDDEN" && u.deployState !== "RESERVE" && u.tipo !== "MARKER");
 
-            truppeVisibili.forEach(u => {
-                let originalIndex = window.roster.indexOf(u); 
-                let s = u.states || {};
-                let isDead = u.state === 'DEAD';
-                let isUnconscious = s.unconscious;
-                
-                let bg = isDead ? '#000000' : (isUnconscious ? '#220000' : '#110000');
-                let border = isDead ? '2px dashed #550000' : (isUnconscious ? '2px solid #880000' : '2px solid var(--nomad-red)');
-                let opacity = isDead ? '0.3' : (isUnconscious ? '0.6' : '1');
-                
-                let nomePuro = (u.nome || u.name || "").split('(')[0].trim(); 
-                let testoNome = isDead ? `<s>${nomePuro}</s>` : nomePuro;
-                
-                if (s.fireteam) testoNome += ` <br><span style="color:#00ffff; font-size:14px; font-weight:bold;">[ TEAM ${s.fireteam} ]</span>`;
-
-                let variant = u.imgVariant && u.imgVariant !== "0" ? `_${u.imgVariant}` : "";
-                let imgSrc = `img/${nomePuro.replace(/\s+/g, '_')}${variant}.png`;
-                
-                let iconeVisuali = window.generaIconeStati(u);
-                
-                container.innerHTML += `
-                    <button class="huge-btn" style="background:${bg}; border:${border}; opacity:${opacity}; padding:10px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; text-align:left; width:100%; min-height:95px;"
-                        onclick="if(window.apriPaginaStati) window.apriPaginaStati(${originalIndex})"
-                        oncontextmenu="return false;">
-                        
-                        <img src="${imgSrc}" style="width:70px; height:70px; flex-shrink:0; object-fit:contain; margin-right:15px; background: rgba(0,0,0,0.5); border-radius:5px; border: 1px solid #444;" onerror="this.style.display='none';">
-                        
-                        <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
-                            <div style="font-size:22px; line-height:1; color:#fff; font-weight:bold;">${testoNome}</div>
-                            ${u.alias ? `<div style="color:var(--nomad-orange); font-size:15px; font-style:italic;">"${u.alias}"</div>` : ''}
-                        </div>
-                        
-                        <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; max-width:45%;">
-                            ${iconeVisuali}
-                        </div>
-                    </button>
-                `;
-
+            // Per Gruppi di Combattimento, nell'ordine dei Gruppi (7 ottobre).
+            // Prima l'elenco era uno solo, nell'ordine del roster: con due
+            // Gruppi le truppe erano mescolate, e a chi contava gli Ordini
+            // del Gruppo toccava cercarle una per una.
+            const gruppi = [...new Set(truppeVisibili.map(u => window.gruppoDi(u)))].sort((a, b) => a - b);
+            gruppi.forEach(g => {
+                const delGruppo = truppeVisibili.filter(u => window.gruppoDi(u) === g);
+                if (gruppi.length > 1) container.innerHTML += window.intestazioneGruppo(g, delGruppo.length);
+                delGruppo.forEach(u => {
+                    const originalIndex = window.roster.indexOf(u);
+                    const isDead = u.state === 'DEAD';
+                    container.innerHTML += window.rigaUnitaConFoto(u, {
+                        bordo: isDead ? '2px dashed #550000' : (((u.states || {}).unconscious) ? '2px solid #880000' : '2px solid var(--nomad-red)'),
+                        attributi: `onclick="if(window.apriPaginaStati) window.apriPaginaStati(${originalIndex})"`
+                    });
+                });
             });
         };
 
@@ -1023,7 +1178,7 @@
             if(!container) return;
             container.innerHTML = "";
             
-            let truppeDelGruppo = window.roster.filter(u => parseInt(u.combatGroup) === parseInt(window.currentGroup));
+            let truppeDelGruppo = window.roster.filter(u => window.gruppoDi(u) === parseInt(window.currentGroup));
 
             truppeDelGruppo.forEach(u => {
                 let originalIndex = window.roster.indexOf(u); 
@@ -1032,51 +1187,42 @@
                 
                 let s = u.states || {};
                 let isDead = u.state === 'DEAD';
-                let isUnconscious = s.unconscious;
-                
-                let bg = isSelected ? '#440000' : (isDead ? '#000000' : (isUnconscious ? '#220000' : '#110000'));
-                let border = isSpearhead ? '2px solid #00ffff' : (isSelected ? '2px solid #ff9900' : '2px solid var(--nomad-red)');
-                let opacity = isDead ? '0.3' : (isUnconscious ? '0.6' : '1');
 
                 // Un'unita` che non puo` ricevere ordini non si seleziona:
                 // resta visibile (sapere chi hai perso conta) ma senza gestori.
                 const ordinabile = window.puoRicevereOrdine(u);
-                if (!ordinabile.ok) { opacity = '0.45'; border = '2px dashed #777'; }
-                
-                let nomePuro = (u.nome || u.name || "").split('(')[0].trim(); 
-                let testoNome = isDead ? `<s>${nomePuro}</s>` : nomePuro;
-                if (!ordinabile.ok) testoNome += ` <span style="color:#ff6666; font-size:13px; font-weight:bold;" title="${ordinabile.motivo || ''}">[${ordinabile.nome || ordinabile.stato} \u2014 NON ATTIVABILE]</span>`;
-                // Attivare una truppa in Fuoco di Soppressione annulla lo stato:
-                // va detto PRIMA che spenda l'Ordine, non dopo.
-                if (ordinabile.ok && ordinabile.annullaSoppressione) testoNome += ` <br><span style="color:#ff9900; font-size:13px; font-weight:bold;" title="${ordinabile.nota || ''}">\u26a0\ufe0f ATTIVARLA ANNULLA LA SOPPRESSIONE</span>`;
-                
-                if (s.fireteam) testoNome += ` <br><span style="color:#00ffff; font-size:14px; font-weight:bold;">[ TEAM ${s.fireteam} ]</span>`;
-                
-                let variant = u.imgVariant && u.imgVariant !== "0" ? `_${u.imgVariant}` : "";
-                let imgSrc = `img/${nomePuro.replace(/\s+/g, '_')}${variant}.png`;
-                
-                let iconeVisuali = window.generaIconeStati(u);
-                
-                container.innerHTML += `
-                    <button class="huge-btn" style="background:${bg}; border:${border}; opacity:${opacity}; padding:10px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; text-align:left; width:100%; min-height:95px;"
-                        onpointerdown="window.avvioPressioneUnita(${originalIndex}, event)"
+                // 🔴 7 ottobre (Paolo): UN SEGNALINO PIAZZATO E` UNA PEDINA
+                // COME LE ALTRE. Non riceve Ordini (lo dice il motore:
+                // CrazyKoala e mine si attivano solo in ARO, nessuno si
+                // muove), ma prima finiva nel ramo dei "non attivabili" delle
+                // truppe: bordo tratteggiato, mezza trasparenza e la scritta
+                // rossa NON ATTIVABILE, come un Incosciente. Non e` una
+                // truppa menomata: e` un pezzo che funziona cosi`.
+                const pedina = !!u.deployable;
+
+                let opzioni = {
+                    sfondo: isSelected ? '#440000' : undefined,
+                    bordo: isSpearhead ? '2px solid #00ffff' : (isSelected ? '2px solid #ff9900' : '2px solid var(--nomad-red)'),
+                    attributi: `onpointerdown="window.avvioPressioneUnita(${originalIndex}, event)"
                         onpointerup="window.finePressioneUnita(${originalIndex}, ${ordinabile.ok})"
                         onpointermove="window.movimentoPressioneUnita(event)"
-                        onpointercancel="if(window.cancelUnitPress) window.cancelUnitPress()"
-                        oncontextmenu="return false;">
-                        
-                        <img src="${imgSrc}" style="width:70px; height:70px; flex-shrink:0; object-fit:contain; margin-right:15px; background: rgba(0,0,0,0.5); border-radius:5px; border: 1px solid #444;" onerror="this.style.display='none';">
-                        
-                        <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
-                            <div style="font-size:22px; line-height:1; color:#fff; font-weight:bold;">${testoNome}</div>
-                            ${u.alias ? `<div style="color:var(--nomad-orange); font-size:15px; font-style:italic;">"${u.alias}"</div>` : ''}
-                        </div>
-                        
-                        <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; max-width:45%;">
-                            ${iconeVisuali}
-                        </div>
-                    </button>
-                `;
+                        onpointercancel="if(window.cancelUnitPress) window.cancelUnitPress()"`
+                };
+                let dopoNome = '';
+                if (!ordinabile.ok && !pedina) {
+                    if (!isDead) opzioni.opacita = '0.45';
+                    opzioni.bordo = '2px dashed #777';
+                    dopoNome += ` <span style="color:#ff6666; font-size:13px; font-weight:bold;" title="${ordinabile.motivo || ''}">[${ordinabile.nome || ordinabile.stato} \u2014 NON ATTIVABILE]</span>`;
+                }
+                if (pedina && !isDead) {
+                    opzioni.sotto = `<div style="color:#999; font-size:13px; margin-top:3px;">${ordinabile.motivo || 'Non riceve Ordini.'}</div>`;
+                }
+                // Attivare una truppa in Fuoco di Soppressione annulla lo stato:
+                // va detto PRIMA che spenda l'Ordine, non dopo.
+                if (ordinabile.ok && ordinabile.annullaSoppressione) dopoNome += ` <br><span style="color:#ff9900; font-size:13px; font-weight:bold;" title="${ordinabile.nota || ''}">\u26a0\ufe0f ATTIVARLA ANNULLA LA SOPPRESSIONE</span>`;
+                opzioni.dopoNome = dopoNome;
+
+                container.innerHTML += window.rigaUnitaConFoto(u, opzioni);
                 // Un'unita` non attivabile non riceve Ordini, ma i suoi stati
                 // restano modificabili col tocco lungo, come per tutte le
                 // altre: e` proprio su un'Incosciente che serve, per togliere
@@ -1088,7 +1234,7 @@
                 // gesto e` uno solo e vale sempre: il breve lo blocca
                 // finePressioneUnita, il lungo apre gli stati.
                 if (!ordinabile.ok) {
-                    container.innerHTML += `<div style="color:#888; font-size:13px; margin:-6px 0 12px 4px;">Tieni premuto per modificarne gli stati.</div>`;
+                    container.innerHTML += `<div style="color:#888; font-size:13px; margin:-6px 0 12px 4px;">Tieni premuto per modificarne gli stati${pedina ? ': esce dal tavolo passando a Morto' : ''}.</div>`;
                 }
 
                 // Un token sul tavolo si toglie quando esplode o viene
@@ -1100,13 +1246,13 @@
                     container.innerHTML += `<div style="color:#8888aa; font-size:13px; margin:-6px 0 6px 4px;">\u{1F6AB} Disattivata: resta sul tavolo fino al prossimo Ordine.</div>`;
                 }
 
-                if (u.deployable) {
-                    container.innerHTML += `
-                        <button class="btn-status" style="margin:-6px 0 12px 0; border-color:#aa6644; color:#cc9955;"
-                            onclick="if(confirm('Togliere ${(u.alias || u.nome || 'questo token').replace(/'/g, '')} dal tavolo?')) window.togliTokenDalTavolo('${u.id}', 'MANUALE')">
-                            \u{1F4E6} TOGLI DAL TAVOLO
-                        </button>`;
-                }
+                // 🔴 7 ottobre (Paolo): qui c'era il tasto "TOGLI DAL TAVOLO",
+                // solo per i segnalini. Un segnalino esce come ogni altra
+                // unita`, passando allo stato Morto dalla pagina degli stati
+                // (tocco lungo): due strade per uscire dal tavolo, una sola
+                // delle quali lasciava traccia sul tabellone, erano una di
+                // troppo. window.togliTokenDalTavolo resta: la usa il motore
+                // quando un segnalino esplode.
             });
 
             if (window.isCoordinated) {
@@ -1183,20 +1329,21 @@
                 window.pendingTargets = window.pendingTargets || [];
                 let isSelected = window.pendingTargets.some(pt => pt.id === t.id);
                 
-                // Cambia colore se selezionato
-                let bg = isSelected ? '#8b0000' : '#111';
-                let border = isSelected ? '2px solid #ff0000' : '2px solid var(--nomad-orange)';
-                
-                // Trova il nome corretto
-                let nomeBersaglio = t.alias || t.name || t.nome || "Sconosciuto";
-                
-                container.innerHTML += `
-                    <button class="huge-btn" style="min-height:70px; font-size:22px; background:${bg}; border:${border}; margin-bottom:10px; display:flex; justify-content:flex-start; align-items:center; padding:0 15px;" 
-                        onclick="window.toggleTargetSelection('${t.id}')">
-                        <span style="color:#aaa; font-size:16px; margin-right:10px;">[${t.tipo || 'LI'}]</span> 
-                        <span style="color:#fff;">${nomeBersaglio}</span>
-                    </button>
-                `; 
+                // 7 ottobre: stessa riga degli altri elenchi, con la foto che
+                // l'AVVERSARIO ha dato alla sua unita` e lo stesso carattere.
+                // Prima era una riga a parte: tipo fra parentesi e alias,
+                // senza foto, e il nome dell'unita` non si leggeva affatto se
+                // c'era un alias.
+                // 🔴 7 ottobre (Paolo, dal tavolo): la riga ha il COLORE DELLA
+                // FAZIONE del bersaglio. Prima era grigia col bordo arancio
+                // per tutti, e una volta scelta diventava ROSSA anche se il
+                // bersaglio era di PanOceania: il rosso e` dei Nomads.
+                container.innerHTML += window.rigaUnitaConFoto(t, {
+                    fazione: 'NEMICA', scelta: isSelected,
+                    opacita: '1',
+                    dopoNome: ` <span style="color:#aaa; font-size:14px; font-weight:normal;">[${t.tipo || 'LI'}]</span>`,
+                    attributi: `onclick="window.toggleTargetSelection('${String(t.id).replace(/'/g, "\\'")}')"`
+                });
             });
         };
 
@@ -1220,6 +1367,15 @@
         // ==========================================
         // 🚨 PONTE ALLARME ARO (ui_partita.js)
         // ==========================================
+        // Quali Abilita` Brevi si offrono come seconda meta` dopo una prima
+        // meta` che non e` il Movimento. La regola ne ammetterebbe di piu`
+        // (dopo una Basic Short Skill va qualunque Short Skill): qui stanno
+        // SOLO le combinazioni che i moduli degli Ordini sanno portare in una
+        // busta sola. Oggi e` una: Scoprire + Attacco BS (ordine_scoprire.js e
+        // ordine_attacco_bs.js, chat MOTORE, 7 ottobre). Offrirne una che il
+        // modulo non compone vorrebbe dire perdere lo Scoprire per strada.
+        window.SECONDA_META_DOPO = { 'SCOPRIRE': ['ATTACCO BS'] };
+
         window.confirmMultiAro = (isMovementOnly = false) => {
             if(!isMovementOnly && window.pendingTargets.length === 0) return alert("Seleziona almeno un bersaglio per continuare!");
             
@@ -1261,6 +1417,21 @@
                     // Se ha mosso per primo, ora può sparare, hackerare, ecc.
                     window.dbAzioniN5.movimento.filter(a => window.puoFareAzione(window.currentOrder.unit, a.id)).forEach(a => container.innerHTML += window.creaBottoneAzione(a, true, '#002244', '#00ccff'));
                     window.dbAzioniN5.brevi.filter(a => window.puoFareAzione(window.currentOrder.unit, a.id)).forEach(a => container.innerHTML += window.creaBottoneAzione(a, true, '#003300', '#00ff00'));
+                } else if ((window.SECONDA_META_DOPO[window.currentOrder.action1] || []).length) {
+                    // 🔴 7 ottobre (misura di MOTORE, regola alle righe
+                    // 1047-1054 e 6817-6829). Qui ogni prima meta` che non
+                    // fosse un MOVIMENTO finiva nel ramo sotto, "ha sparato
+                    // per primo, ora puo` solo muovere". Ma lo Scoprire non
+                    // e` uno sparo: e` una Basic Short Skill come il
+                    // Movimento, e "Scoprire + Attacco" e` la manovra con cui
+                    // si attacca un Marker. Dopo lo Scoprire l'app offriva il
+                    // solo Movimento, e quella manovra non si poteva
+                    // dichiarare.
+                    window.dbAzioniN5.movimento.filter(a => window.puoFareAzione(window.currentOrder.unit, a.id)).forEach(a => container.innerHTML += window.creaBottoneAzione(a, true, '#002244', '#00ccff'));
+                    window.dbAzioniN5.brevi
+                        .filter(a => window.SECONDA_META_DOPO[window.currentOrder.action1].indexOf(a.id) >= 0)
+                        .filter(a => window.puoFareAzione(window.currentOrder.unit, a.id))
+                        .forEach(a => container.innerHTML += window.creaBottoneAzione(a, true, '#003300', '#00ff00'));
                 } else {
                     // Se ha sparato per primo, ora può solo muovere
                     window.dbAzioniN5.movimento.filter(a => window.puoFareAzione(window.currentOrder.unit, a.id)).forEach(a => container.innerHTML += window.creaBottoneAzione(a, true, '#002244', '#00ccff'));
@@ -1296,6 +1467,8 @@
 
             const svuota = (id) => { const el = document.getElementById(id); if (el) el.innerHTML = ""; };
             svuota('calc-result');
+            // Spento, non solo vuoto: vedi la nota in step-modifiers.
+            { const esito = document.getElementById('calc-result'); if (esito && esito.style) esito.style.display = 'none'; }
             svuota('targets-allocation-container');
             svuota('second-half-buttons-container');
             svuota('enemy-target-buttons');
@@ -1558,7 +1731,10 @@
         // CONTRATTO — chi la usa, la chiami e non si scriva la tendina in
         // proprio (vale anche per i moduli della chat MOTORE):
         //   window.sceltaTerreno(terrenoAttuale, zonaAttuale, comando, argomento)
-        //   -> l'HTML di UNA tendina; il comando riceve un valore composto
+        //   -> l'HTML di UNA tendina (il solo <select>, senza scritta ne`
+        //      margini: dal 7 ottobre); il comando riceve un valore composto
+        //   window.ETICHETTA_TERRENO, window.notaZona(zona)
+        //   -> la scritta e la nota del Fumo, per chi le vuole accanto
         //   window.separaTerrenoEZona(valore)
         //   -> { terrain: 'TER_10' | 'NESSUNO', zona: 'FUMO' | 'ECLIPSE' | null }
         // Nella busta i campi restano DUE, `terrain` e `zona`, come prima:
@@ -1605,14 +1781,25 @@
                 opzioni += `<optgroup label="${t.nome}${tratti}">${terna(t.id, t.nome)}</optgroup>`;
             });
 
-            const scelta = window.ZONE_VISIBILITA.find(z => z.id === zona);
+            // 🔴 7 ottobre: SOLO LA TENDINA, senza scritta sopra e senza margini.
+            // Fino a ieri il blocco portava una riga di testo sopra, un margine
+            // di 20px sopra e 5px sotto, e la nota del Fumo sotto. Messo in
+            // una riga accanto a un'altra tendina (munizioni e terreno sulla
+            // scheda del bersaglio, ordine_attacco_bs.js 2026-10-07.3) i due
+            // selettori finivano a due altezze diverse. Chi la impagina la
+            // conosce meglio di questa funzione: scritta e nota ora si
+            // chiedono a parte (window.ETICHETTA_TERRENO, window.notaZona) e
+            // le mette chi vuole, dove vuole. La scritta resta comunque nel
+            // suggerimento della tendina.
+            return `<select class="huge-btn scelta-terreno" title="${window.ETICHETTA_TERRENO}" aria-label="${window.ETICHETTA_TERRENO}" style="width:100%; margin:0; min-height:55px; font-size:16px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;"
+                        onchange="${window.chiamataConValore(comando, argomento)}">${opzioni}</select>`;
+        };
 
-            return `<div style="margin-top:20px; margin-bottom:5px;">
-                    <div style="color:#aaa; font-size:13px; margin-bottom:4px;">Terreno, Fumo o Eclipse sulla linea di tiro:</div>
-                    <select class="huge-btn" style="width:100%; margin:0; min-height:55px; font-size:16px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;"
-                        onchange="${window.chiamataConValore(comando, argomento)}">${opzioni}</select>
-                    ${scelta ? `<div style="color:#aa8866; font-size:13px; margin-top:4px;">${scelta.nota}</div>` : ''}
-                </div>`;
+        window.ETICHETTA_TERRENO = 'Terreno, Fumo o Eclipse sulla linea di tiro';
+        // La nota della zona scelta ('FUMO' | 'ECLIPSE'), o stringa vuota.
+        window.notaZona = (zona) => {
+            const scelta = window.ZONE_VISIBILITA.find(z => z.id === zona);
+            return scelta ? `<div style="color:#aa8866; font-size:13px; margin-top:4px;">${scelta.nota}</div>` : '';
         };
 
         // ==========================================
@@ -1790,7 +1977,17 @@
         // rivelare un Marker tocca tre campi, e scriverne uno solo
         // lascerebbe la truppa per meta` Marker senza che nessuno se ne
         // accorga finche` qualcuno non prova a bersagliarla.
-        window.dichiaraRequisitoFallito = () => {
+        //
+        // 🔴 7 ottobre: IL MOTIVO ARRIVA DA CHI CHIAMA. Dal 7 ottobre l'Idle
+        // si dichiara dal tasto principale, e i moduli chiamano
+        //   window.dichiaraRequisitoFallito(motivo)
+        // col motivo gia` scritto (la risposta gialla, l'interruttore sulla
+        // scheda del bersaglio). Questa funzione non leggeva argomenti e
+        // apriva comunque la finestra "Quale requisito non e` soddisfatto?":
+        // al giocatore veniva chiesto un motivo che la schermata aveva gia`,
+        // e quello che scriveva sostituiva quello del motore.
+        // La domanda resta SOLO per chi chiama senza motivo.
+        window.dichiaraRequisitoFallito = (motivoDato) => {
             const M = window.MotoreN5;
             if (!M || typeof M.convertiInIdle !== 'function') {
                 console.error('\u26d4 M.convertiInIdle assente: serve motore_regole_n5.js dalla 2026-09-20.1 in su.');
@@ -1812,8 +2009,12 @@
             const azione = (window.currentOrder && (window.currentOrder.action || window.currentOrder.action1)) || null;
             if (!unita || !azione) return;
 
-            const motivo = prompt('Quale requisito non e` soddisfatto?\n(resta scritto nel calcolo)', '');
-            if (motivo === null) return;
+            let motivo;
+            if (typeof motivoDato === 'string' && motivoDato.trim()) motivo = motivoDato;
+            else {
+                motivo = prompt('Quale requisito non e` soddisfatto?\n(resta scritto nel calcolo)', '');
+                if (motivo === null) return;
+            }
 
             let convertito;
             try {

@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-07.2 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -155,7 +155,19 @@
         const bordo = isNomads() ? '#550000' : '#003366';
 
         const escluse = [];
-        (window.roster || []).forEach(function (u) {
+        // 7 ottobre (Paolo): l'elenco segue i Gruppi di Combattimento, e ogni
+        // riga e` QUELLA degli altri elenchi, con la foto dell'unita` e lo
+        // stesso carattere (window.rigaUnitaConFoto, app.html). Prima qui
+        // c'era una riga propria: solo il nome, senza foto ne` alias.
+        // L'ordine: prima per Gruppo, poi come nel roster.
+        const gruppoDi = (u) => (typeof window.gruppoDi === 'function') ? window.gruppoDi(u) : (parseInt(u && u.combatGroup, 10) || 1);
+        const inOrdine = (window.roster || []).slice().sort((a, b) => gruppoDi(a) - gruppoDi(b));
+        const piuGruppi = new Set(inOrdine.filter(u => u && !u.deployable).map(gruppoDi)).size > 1;
+        let gruppoScritto = null;
+        if (typeof window.rigaUnitaConFoto !== 'function') {
+            console.error('\u26d4 window.rigaUnitaConFoto manca (app.html non caricato?): elenco ARO con la riga semplice, senza foto.');
+        }
+        inOrdine.forEach(function (u) {
             const st = M.statoBersaglio(u);
             if (st.hidden) return;   // non è sul tavolo: nemmeno da mostrare
 
@@ -188,13 +200,26 @@
 
             const sopp = st.suppressive ? ` <span style="color:#ff6600; font-size:14px;">🔥 SF MODE</span>` : '';
             const rit = haRitardato ? ` <span style="color:#ffcc66; font-size:13px;">⏳ aveva ritardato</span>` : '';
-            container.innerHTML += `
+            if (piuGruppi && gruppoScritto !== gruppoDi(u) && typeof window.intestazioneGruppo === 'function') {
+                gruppoScritto = gruppoDi(u);
+                container.innerHTML += window.intestazioneGruppo(gruppoScritto,
+                    inOrdine.filter(x => x && !x.deployable && gruppoDi(x) === gruppoScritto).length);
+            }
+            const tocco = `onclick="window.toggleAroUnit('${String(u.id).replace(/'/g, "\\'")}')"`;
+            if (typeof window.rigaUnitaConFoto === 'function') {
+                container.innerHTML += window.rigaUnitaConFoto(u, {
+                    id: 'aro-btn-' + u.id, sfondo: bg, bordo: '2px solid ' + bordo, opacita: '1',
+                    dopoNome: sopp + rit, attributi: tocco
+                });
+            } else {
+                container.innerHTML += `
                 <button id="aro-btn-${u.id}" class="huge-btn" style="background:${bg}; border-color:${bordo}; min-height:70px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; text-align:left; width:100%;"
-                    onclick="window.toggleAroUnit('${String(u.id).replace(/'/g, "\\'")}')">
+                    ${tocco}>
                     <div style="font-size:22px; line-height:1; color:#fff; font-weight:bold; margin-left:10px;">
                         🛡️ ${M.nomeUnita(u)}${sopp}${rit}
                     </div>
                 </button>`;
+            }
         });
 
         // ==============================================================
@@ -216,6 +241,11 @@
 
         (window.roster || []).forEach(function (u) {
             if (!u || !u.deployable) return;
+            // 7 ottobre: un segnalino esce dal tavolo passando a Morto, come
+            // ogni altra unita` (prima si toglieva dal roster con un tasto).
+            // Morto resta nel roster: qui va saltato, o un koala gia`
+            // esploso verrebbe offerto di nuovo per detonare.
+            if (u.state === 'DEAD') return;
 
             // Riga 5532: nell'Ordine in cui e` stato piazzato non reagisce.
             if (u.ordineDiPiazzamento != null && ordineCorrente != null &&
@@ -942,7 +972,15 @@
     // Eclipse spariti dall'ARO senza che nessuno se ne accorga.
     window.tendinaTerrenoAro = function (cfg) {
         if (typeof window.sceltaTerreno === 'function') {
-            return window.sceltaTerreno(cfg.terrain, cfg.zona, 'window.setAroTerreno');
+            // Dal 7 ottobre sceltaTerreno consegna la sola tendina (serviva
+            // a chi la mette in riga con un'altra): la scritta sopra, il
+            // margine e la nota del Fumo, che in questa schermata servono
+            // ancora, li mette chi la impagina, cioe` qui.
+            return `<div style="margin-top:20px; margin-bottom:5px;">
+                    <div style="color:#aaa; font-size:13px; margin-bottom:4px;">${window.ETICHETTA_TERRENO || 'Terreno, Fumo o Eclipse sulla linea di tiro'}:</div>
+                    ${window.sceltaTerreno(cfg.terrain, cfg.zona, 'window.setAroTerreno')}
+                    ${(typeof window.notaZona === 'function') ? window.notaZona(cfg.zona) : ''}
+                </div>`;
         }
         console.error('\u26d4 window.sceltaTerreno manca (app.html non caricato?): tendina del solo terreno, senza Fumo ne` Eclipse.');
         return `<div style="display:flex; margin-top:20px; margin-bottom:5px;">
@@ -997,6 +1035,38 @@
             motoreVersione: window.MotoreN5 ? window.MotoreN5.VERSIONE : null,
             timestamp: Date.now()
         };
+        // 🔴 7 ottobre, difetto di questa chat, misurato con SCOPRIRE +
+        // ATTACCO BS: UN MARKER CHE DICHIARA UN ARO SI RIVELA (righe
+        // 13634-13637), e qui non succedeva niente. Il Marker reagiva con
+        // un Attacco BS e restava Marker nel proprio roster, sul tabellone
+        // e per l'avversario: l'Hub, che di un Marker non ha le
+        // statistiche, calcolava il suo ARO su un'unita` vuota ("Valore di
+        // Successo 0: fallimento automatico"), e chi attaccava continuava
+        // a vedersi offrire un segnalino.
+        // Lo stato dopo la dichiarazione lo calcola il motore
+        // (M.statoDopoAbilita con inAro): qui si sostituisce l'unita` e
+        // l'AGGIORNAMENTO parte PRIMA della risposta ARO, cosi` quando
+        // l'Hub calcola conosce gia` il Modello.
+        const Mr = window.MotoreN5;
+        if (Mr && typeof Mr.statoDopoAbilita === 'function') {
+            (reazioni || []).forEach(function (r) {
+                if (!r || r.deployable || !r.azione || r.azione === (Mr.AZIONI_ARO || {}).NESSUNO) return;
+                const u = (window.roster || []).find(x => x && String(x.id) === String(r.id));
+                if (!u) return;
+                let esito;
+                try { esito = Mr.statoDopoAbilita(u, r.azioneAttiva || Mr.aroAdAzione(r.azione), { inAro: true }); }
+                catch (errore) { console.error('\u26d4 statoDopoAbilita in ARO ha sollevato:', errore); window.ultimaEccezione = errore; return; }
+                const cambi = ((esito && esito.mutazioni) || []).filter(m => JSON.stringify(m.da) !== JSON.stringify(m.a));
+                if (!cambi.length || !esito.unitaAggiornata) return;
+                if (typeof window.sostituisciUnita === 'function') {
+                    window.sostituisciUnita(u, esito.unitaAggiornata, 'ARO dichiarato: ' + (r.azioneAttiva || r.azione));
+                } else {
+                    const i = window.roster.indexOf(u);
+                    if (i >= 0) window.roster[i] = Object.assign({}, u, esito.unitaAggiornata);
+                    console.error('\u26d4 window.sostituisciUnita manca (motore_core.js non caricato?): truppa aggiornata nel roster, Hub NON avvisato.');
+                }
+            });
+        }
         if (window.inviaRispostaAro) window.inviaRispostaAro(payload, fazione);
 
         const banner = document.getElementById('aro-alert-banner');
@@ -1026,7 +1096,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-10-06.4', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-10-07.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

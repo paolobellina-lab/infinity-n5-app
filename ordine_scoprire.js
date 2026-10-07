@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | ordine_scoprire.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.5 | ordine_scoprire.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔍 SCOPRIRE (N5) - ordine_scoprire.js
 // ------------------------------------------
@@ -94,8 +94,14 @@
                 const nome = M.nomeUnita(u);
                 const st = M.statoBersaglio(u);
                 const tipo = st.camo ? 'Marker Mimetico' : st.imp ? 'Marker Impersonation' : 'Marker';
-                container.innerHTML += `<button class="huge-btn" style="width:100%; min-height:60px; font-size:19px; margin-bottom:6px; background:#111; border-color:${COL.bordo};"
-                    onclick="window.scegliBersaglioScoprire('${String(u.id).replace(/'/g, "\\'")}')">
+                // La riga con la FOTO della pedina la disegna la pagina
+                // (window.rigaUnitaConFoto, chat INTERFACCIA, 7 ottobre): stessa
+                // foto e stesso font degli altri elenchi. Dove la pagina non
+                // c'e` (i banchi) resta il bottone semplice.
+                const clic = `onclick="window.scegliBersaglioScoprire('${String(u.id).replace(/'/g, "\\'")}')"`;
+                container.innerHTML += (typeof window.rigaUnitaConFoto === 'function')
+                    ? window.rigaUnitaConFoto(u, { attributi: clic, fazione: 'NEMICA', sotto: `<span style="font-size:13px; color:${COL.bordo};">${tipo}</span>` })
+                    : `<button class="huge-btn" style="width:100%; min-height:60px; font-size:19px; margin-bottom:6px; background:#111; border-color:${COL.bordo};" ${clic}>
                     🔍 ${nome}<br><span style="font-size:13px; color:${COL.bordo};">${tipo}</span></button>`;
             });
         }
@@ -119,6 +125,12 @@
             rangeIndex: 0, rangeMod: 0, terrain: 'NESSUNO'
         }];
         window.pendingTargets = [u];
+        // SCOPRIRE + ATTACCO (righe 6817-6829): il Marker scelto qui resta
+        // scritto nell'Ordine, perche` l'Attacco BS della seconda meta` puo`
+        // prenderlo a bersaglio e la busta porta tutte e due le Abilita`.
+        // Lo Scoprire e` sempre la PRIMA meta` (Basic Short + Short).
+        window.currentOrder.scoprire = window.currentOrder.isSecondHalf ? null
+            : { bersaglio: Object.assign({}, window.combatTargets[0]), busta: null, poiAttacco: false };
         if (window.confirmMultiAro) window.confirmMultiAro(false);
         else window.preparaModificatoriScoprire();
     };
@@ -209,6 +221,7 @@
             <div class="target-card" style="border-left:4px solid ${COL.bordo}; background:rgba(0,255,0,0.04); padding:15px; border-radius:5px;">
                 <b style="color:#fff; font-size:22px; display:block; margin-bottom:12px;">🔍 ${t.name}</b>
                 ${corpo}
+                ${M.rigaRequisiti(['lof', 'gittata'], t, 0, 'window.toggleRequisitoScoprire')}
                 ${e.note.length ? `<div style="margin-top:12px; color:#888; font-size:12px; line-height:1.6;">` +
                     e.note.map(n => `• ${n}`).join('<br>') + `</div>` : ''}
             </div>`;
@@ -222,8 +235,17 @@
             // nascosto il clone nasceva invisibile. Etichetta giusta,
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
-            nuovo.onclick = function () { window.eseguiCalcoloScoprire(); };
-            nuovo.innerText = e.automatico ? 'SCOPRI (AUTOMATICO)' : 'ESEGUI TIRO DI SCOPERTA';
+            // Il tasto diventa IDLE se il requisito manca (M.tastoConRequisiti).
+            // In SCOPRIRE + ATTACCO questa schermata e` un PASSO: il tasto
+            // porta ai modificatori dell'Attacco, e non spedisce niente.
+            const sc = window.currentOrder.scoprire;
+            if (sc && sc.poiAttacco) {
+                nuovo.onclick = function () { window.confermaScoprirePoiAttacco(); };
+                nuovo.innerText = 'AVANTI: ATTACCO BS';
+                nuovo.style.background = M.COLORE_TASTO.valido;
+            } else {
+                M.tastoConRequisiti(nuovo, M.requisitiDichiarati([t], ['lof', 'gittata']), e.automatico ? 'SCOPRI (AUTOMATICO)' : 'ESEGUI TIRO DI SCOPERTA', function () { window.eseguiCalcoloScoprire(); });
+            }
         }
     };
 
@@ -242,18 +264,25 @@
     // ==============================================================
     // 3. INVIO
     // ==============================================================
-    window.eseguiCalcoloScoprire = function () {
+    // Gli interruttori dei requisiti (Linea di Tiro, gittata, contatto...):
+    // la regola e i testi stanno nel motore, M.REQUISITI_TAVOLO.
+    window.toggleRequisitoScoprire = function (i, chiave) {
         const M = motore(); if (!M) return;
-        const unita = window.coordUnits[window.coordIndex];
-        const e = window.scoprireEsito || {};
+        if (M.invertiRequisito(window.combatTargets[i], chiave)) window.renderScoprire();
+    };
 
-        window.coordPayloads.push({
-            attaccante: unita,
+    // La voce di busta dello Scoprire: una sola forma, per lo Scoprire da
+    // solo e per SCOPRIRE + ATTACCO.
+    window.bustaScoprire = function (extra) {
+        const M = motore(); if (!M) return null;
+        const e = window.scoprireEsito || {};
+        return {
+            attaccante: window.coordUnits[window.coordIndex],
             azione: M.AZIONI.SCOPRIRE,
             arma: M.armaScoprire(),
-            bersagli: window.combatTargets,
+            bersagli: window.combatTargets.slice(0, 1),
             burstDisponibile: 1,
-            regole: {
+            regole: Object.assign({
                 attributo: 'WIP',
                 automatico: !!e.automatico,
                 valoreSuccesso: e.valore,
@@ -261,8 +290,38 @@
                 voci: e.voci,
                 nonOffensivo: true,
                 successo: e.successo
-            }
+            }, extra || {})
+        };
+    };
+
+    // SCOPRIRE + ATTACCO: lo Scoprire e` fissato (gittata, copertura, e se
+    // la Linea di Tiro c'e`), e si passa ai modificatori dell'Attacco BS.
+    // Se allo Scoprire manca il requisito non si tira: il Marker resta
+    // Marker, e i dadi dell'Attacco assegnati a LUI si perdono (righe
+    // 3111-3114); quelli su altri bersagli no.
+    window.confermaScoprirePoiAttacco = function () {
+        const M = motore(); if (!M) return;
+        const sc = window.currentOrder.scoprire; if (!sc) return;
+        const req = M.requisitiDichiarati([window.combatTargets[0]], ['lof', 'gittata']);
+        sc.bersaglio = Object.assign({}, window.combatTargets[0]);
+        sc.requisitoMancante = req.idle ? req.motivo : null;
+        sc.busta = req.idle ? null : window.bustaScoprire({ poiAttacco: true });
+        sc.fatto = true;
+        window.combatTargets = sc.bersagliAttacco || [];
+        window.combatTargets.forEach(function (t) {
+            if (String(t.id) === String(sc.bersaglio.id)) t.nonScoperto = !!req.idle;
         });
+        window.goToModifiersBS(window.currentOrder.action);
+    };
+
+    window.eseguiCalcoloScoprire = function () {
+        const M = motore(); if (!M) return;
+        const req = M.requisitiDichiarati([window.combatTargets[0]], ['lof', 'gittata']);
+        if (req.idle) return M.idleDaRequisito(req);
+        const unita = window.coordUnits[window.coordIndex];
+        const e = window.scoprireEsito || {};
+
+        window.coordPayloads.push(window.bustaScoprire());
 
         window.coordIndex++;
         if (window.coordIndex < window.coordUnits.length) {
@@ -294,7 +353,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_scoprire.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_scoprire.js', versione: '2026-10-07.5', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

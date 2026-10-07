@@ -1,4 +1,4 @@
-// @versione 2026-10-06.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-07.1 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -16,6 +16,50 @@ window.updateLog = (msg) => {
     log.scrollTop = log.scrollHeight;
 };
 
+// ==========================================================================
+//  I LATI DEL TABELLONE: DOVE SIEDONO I GIOCATORI
+// ==========================================================================
+// 7 ottobre, Paolo dal tavolo. Nomads rossi e PanOceania blu, SEMPRE; a
+// sinistra o a destra secondo come i due giocatori sono seduti davanti al
+// tabellone, e NON secondo chi e` attivo. Prima i pannelli avevano un posto
+// fisso (Nomads a sinistra) e la risoluzione metteva a sinistra l'attivo:
+// due criteri diversi sullo stesso schermo, e nessuno dei due era la sedia.
+// La scelta sta su QUESTO dispositivo e non viaggia: e` di chi guarda
+// questo schermo, non della partita. La chiave non e` un canale.
+window.CHIAVE_LATI = 'hub_lati_invertiti';
+window.latiInvertiti = (function () {
+    try { return localStorage.getItem(window.CHIAVE_LATI) === '1'; } catch (e) { return false; }
+})();
+// 'SX' o 'DX'. Senza inversione i Nomads stanno a sinistra, come prima.
+window.latoDi = (fazione) => ((fazione === 'NOMADI') !== window.latiInvertiti) ? 'SX' : 'DX';
+window.COLORE_FAZIONE = { NOMADI: '#ff0000', PANOCEANIA: '#00ccff' };
+
+window.applicaLati = () => {
+    const nom = document.getElementById('pannello-nomads'), pan = document.getElementById('pannello-pano');
+    if (nom) nom.style.order = (window.latoDi('NOMADI') === 'SX') ? '1' : '2';
+    if (pan) pan.style.order = (window.latoDi('PANOCEANIA') === 'SX') ? '1' : '2';
+};
+
+window.invertiLati = () => {
+    window.latiInvertiti = !window.latiInvertiti;
+    try { localStorage.setItem(window.CHIAVE_LATI, window.latiInvertiti ? '1' : '0'); } catch (e) { window.ultimaEccezione = e; }
+    window.applicaLati();
+    // Una risoluzione a schermo si ridisegna subito: se restasse coi lati
+    // di prima, pannelli e scontri direbbero due cose diverse.
+    const ris = document.getElementById('step-resolution');
+    if (ris && ris.style.display === 'block' && window.ultimiScontri) window.mostraSchermataRisoluzione(window.ultimiScontri);
+    window.updateLog('\u21c4 Lati invertiti: a sinistra ' + (window.latoDi('NOMADI') === 'SX' ? 'NOMADS' : 'PANOCEANIA') + '.');
+};
+
+// La scritta del turno: sta in un punto solo, cosi` cambio turno e ripresa
+// della partita non possono scriverla in due modi.
+window.scriviTurno = () => {
+    const textElem = document.getElementById('current-active-text');
+    if (!textElem) return;
+    textElem.innerText = window.gameState.activeFaction;
+    textElem.style.color = window.COLORE_FAZIONE[window.gameState.activeFaction] || '#ffffff';
+};
+
 window.toggleTurn = () => {
     window.gameState.activeFaction = (window.gameState.activeFaction === 'NOMADI') ? 'PANOCEANIA' : 'NOMADI';
     
@@ -26,15 +70,18 @@ window.toggleTurn = () => {
     localStorage.removeItem(window.MotoreN5.CANALI.ARO_PANOCEANIA);
 
     // Aggiorna l'interfaccia dell'HUB
-    const textElem = document.getElementById('current-active-text');
-    if(textElem) {
-        textElem.innerText = window.gameState.activeFaction;
-        textElem.style.color = (window.gameState.activeFaction === 'NOMADI') ? '#ff0000' : '#00ccff';
-    }
+    window.scriviTurno();
 
     // SPEDISCE IL SEGNALE DI CAMBIO TURNO VIA CLOUD
     localStorage.setItem(window.MotoreN5.CANALI.HUB_TURNO, JSON.stringify({ attivo: window.gameState.activeFaction }));
     
+    // 🔴 7 ottobre, difetto di questa chat: il turno nuovo andava alle app
+    // (canale HUB_TURNO) ma NON nello stato salvato della partita, che si
+    // riscriveva solo al primo cambio di stato successivo. Un Hub riaperto
+    // subito dopo il cambio turno riprendeva la partita nel turno di
+    // prima. Misurato: Hub su PANOCEANIA, stato sul server ancora NOMADI.
+    window.broadcastState();
+
     window.updateLog(`🔄 CAMBIO TURNO: Ora è il turno di ${window.gameState.activeFaction}`);
 };
 
@@ -103,6 +150,11 @@ window.riprendiPartitaHub = () => {
         activeFaction: stato.activeFaction || 'NOMADI',
         scenario: stato.scenario || { nomads: { strutture: [], terreni: [] }, panoceania: { strutture: [], terreni: [] } }
     };
+    // 🔴 7 ottobre, difetto di questa chat trovato rifacendo la riga in
+    // alto: qui il turno si rileggeva dal server ma la SCRITTA non si
+    // aggiornava. Riaprendo l'Hub durante il turno di PanOceania il
+    // tabellone continuava a dire "NOMADI" fino al cambio turno dopo.
+    window.scriviTurno();
     window.updateLog('\u21a9\ufe0f Partita ripresa: ' + unita + ' unit\u00e0 sul tavolo, turno ' + window.gameState.activeFaction + '.');
     if (window.refreshUI) window.refreshUI();
     if (window.aggiornaScenario) window.aggiornaScenario();
@@ -157,6 +209,9 @@ window.reazioniPronte = () => {
     return !!(localStorage.getItem(C.ARO_NOMADI) || localStorage.getItem(C.ARO_PANOCEANIA));
 };
 window.attesaAroDetta = false;
+// L'Ordine a cui appartengono le reazioni in memoria: vedi il ramo
+// dell'allarme nel ciclo di ascolto.
+window.ordineDelleReazioni = null;
 
 // Un setup che arriva mentre quella fazione ha gia` unita` in gioco NON si
 // applica in silenzio: sarebbe un tocco sul pulsante "invia all'Hub" a
@@ -230,6 +285,27 @@ setInterval(() => {
     if(attacco) {
         window.updateLog("⚠️ ATTACCO! Allarme ARO inviato.");
         let datiAttacco = JSON.parse(attacco);
+        // 🔴 7 ottobre. LE REAZIONI SONO DI UN ORDINE, e qui restavano in
+        // memoria finche` chi arbitra non premeva "APPLICA RISULTATI". Un
+        // ARO a cui non seguiva un calcolo (o un tabellone non chiuso)
+        // lasciava latestAroData pieno: la busta dell'Ordine DOPO, con
+        // aroAtteso, trovava "reazioni pronte", veniva calcolata subito
+        // con le reazioni VECCHIE, e l'ARO nuovo arrivava a calcolo gia`
+        // a schermo senza piu` comparire. Misurato coi tre dispositivi:
+        // Idle + ARO, poi Piazzare Equipaggiamento.
+        // Dal motore_core 2026-10-07.1 un Ordine manda UN allarme, e
+        // l'allarme porta ordineId: un identificativo nuovo vuol dire
+        // Ordine nuovo, e le reazioni di prima non sono sue. Senza
+        // identificativo non si puo` sapere, e non si tocca niente.
+        const ordineAllarme = (datiAttacco && datiAttacco.ordineId != null) ? String(datiAttacco.ordineId) : null;
+        if (ordineAllarme !== null && ordineAllarme !== window.ordineDelleReazioni) {
+            if (window.latestAroData !== null && window.latestAroData !== undefined) {
+                window.updateLog('\ud83e\uddf9 Ordine nuovo: le reazioni dell\'Ordine precedente non valgono piu`.');
+            }
+            window.latestAroData = null;
+            window.attesaAroDetta = false;
+            window.ordineDelleReazioni = ordineAllarme;
+        }
         datiAttacco.timestamp_allarme = Date.now(); 
         localStorage.setItem(window.MotoreN5.CANALI.ALLARME_ATTACCO, JSON.stringify(datiAttacco));
         localStorage.removeItem(window.MotoreN5.CANALI.COMUNICAZIONE);
@@ -289,7 +365,7 @@ setInterval(() => {
         // giro dopo, insieme alle reazioni.
         if (datiReali.aroAtteso && !window.reazioniPronte()) {
             if (!window.attesaAroDetta) {
-                window.updateLog('\u23f3 Movimento ricevuto: si aspettano le reazioni dichiarate.');
+                window.updateLog('\u23f3 Ordine ricevuto: si aspettano le reazioni dichiarate.');
                 window.attesaAroDetta = true;
             }
             return;
@@ -305,7 +381,7 @@ setInterval(() => {
         try {
             if(window.generaRisoluzioneDaDati) {
                 let scontriCalcolati = window.generaRisoluzioneDaDati(datiReali);
-                window.mostraSchermataRisoluzione(scontriCalcolati);
+                window.mostraSchermataRisoluzione(scontriCalcolati, datiReali);
             } else {
                 console.error("Errore: Motore Matematico non trovato!");
                 window.updateLog("<span style='color:red;'>❌ ERRORE: File calcolatore_math.js non collegato!</span>");
@@ -359,6 +435,21 @@ window.STATI_TABELLONE = {
 // `nullo` aggiunge un segno UGUALE per tutti gli stati Null, oltre a icona
 // e colore propri: bordo rosso e la parola NULL, perche` il colore da solo
 // non basta a chi non lo distingue e con poca luce al tavolo.
+// 7 ottobre, Paolo: gli stati si mostrano con l'ICONA dello stato, non con
+// la scritta. I file li mette lui in img/, coi nomi qui sotto (gli stessi
+// che l'app dei giocatori usa gia` in generaIconeStati, piu` i cinque che
+// l'app non aveva). Finche` un file manca NON sparisce lo stato: al posto
+// dell'immagine torna l'etichetta di prima, simbolo e scritta. Il nome
+// resta sempre nel suggerimento e nel riquadro che si apre toccando.
+window.ICONE_STATI = {
+    morto: 'icon_dead', incosciente: 'icon_unc', retreat: 'icon_retreat',
+    engaged: 'icon_engaged', suppressive: 'icon_suppressive', targeted: 'icon_targeted', foxhole: 'icon_foxhole',
+    stordito: 'icon_stunned', immA: 'icon_imma', immB: 'icon_immb', isolato: 'icon_isolated',
+    disconnesso: 'icon_disconnected', posseduto: 'icon_possessed', sepsitorizzato: 'icon_sepsitorized',
+    camo: 'icon_camo', imp: 'icon_imp', hidden: 'icon_hidden', decoy: 'icon_decoy',
+    holoecho: 'icon_holoecho', holomask: 'icon_holomask'
+};
+
 window.etichettaStato = (icona, testo, sfondo, colore, titolo, nullo, idStato) => {
     const bordo = nullo ? ' box-shadow: inset 0 0 0 2px #ff2020;' : '';
     const segno = nullo ? ` <b style="color:#ff5050; font-size:9px; letter-spacing:1px;">NULL</b>` : '';
@@ -371,6 +462,15 @@ window.etichettaStato = (icona, testo, sfondo, colore, titolo, nullo, idStato) =
     const tocco = idStato
         ? ` onclick="window.mostraDettaglioStato('${String(idStato).replace(/'/g, "\\'")}', '${String(testo).replace(/'/g, "\\'")}')" style="cursor:pointer;"`
         : '';
+    const file = idStato ? window.ICONE_STATI[idStato] : null;
+    if (file) {
+        // Se il file manca, l'immagine si toglie e ricompare la scritta
+        // (che e` gia` nel nodo, nascosta): niente stato invisibile.
+        return `<span class="state-tag state-icona"${tocco.replace(' style="cursor:pointer;"', '')} style="background:transparent; color:${colore};${bordo} cursor:pointer; padding:0;" title="${suggerimento}">` +
+            `<img src="img/${file}.png" alt="${String(testo).replace(/"/g, '&quot;')}" style="width:38px; height:38px; object-fit:contain; vertical-align:middle;" ` +
+            `onerror="this.style.display='none'; this.parentNode.style.background='${sfondo}'; this.parentNode.style.padding='2px 6px'; this.nextSibling.style.display='inline';">` +
+            `<span style="display:none;">${icona} ${testo}</span>${segno}</span>`;
+    }
     return `<span class="state-tag"${tocco ? tocco.replace(' style="cursor:pointer;"', '') : ''} style="background:${sfondo}; color:${colore};${bordo}${idStato ? ' cursor:pointer;' : ''}" title="${suggerimento}">${icona} ${testo}${segno}</span>`;
 };
 
@@ -581,7 +681,37 @@ window.toggleDettagli = (id) => {
     if(el) el.style.display = (el.style.display === 'none') ? 'block' : 'none';
 };
 
-window.mostraSchermataRisoluzione = (scontri) => {
+// I DADI PERSI. Con il Burst diviso, i dadi dati a un bersaglio senza
+// requisito (niente Linea di Tiro, fuori gittata) non si tirano: gli altri
+// si`. Dal motore 2026-10-07.3 quel bersaglio resta nella BUSTA a Burst 0,
+// con dadiPersi e requisitoMancante; ma fra gli SCONTRI non c'e`, perche`
+// non c'e` nessun tiro da mostrare. Misurato il 7 ottobre coi tre
+// dispositivi (HMG, 2 dadi su un bersaglio e 2 su uno senza Linea di Tiro):
+// il tabellone mostrava un solo scontro da 2 dadi e degli altri 2 non
+// diceva niente. Qui si leggono dalla busta e si scrivono sopra gli
+// scontri. Nessuna regola: numero e motivo sono quelli che ha scritto il
+// motore.
+window.dadiPersiHtml = (busta) => {
+    const righe = [];
+    ((busta && busta.attacchi) || []).forEach(a => {
+        ((a && a.bersagli) || []).forEach(b => {
+            if (!b || !(b.dadiPersi > 0)) return;
+            righe.push(`<b>${a.attaccante || '?'}</b> \u2192 <b>${b.name || b.nome || b.alias || '?'}</b>: ` +
+                `${b.dadiPersi} ${b.dadiPersi === 1 ? 'dado NON si tira' : 'dadi NON si tirano'}` +
+                (b.requisitoMancante ? ` <span style="color:#cc9966;">(${b.requisitoMancante})</span>` : ''));
+        });
+    });
+    if (!righe.length) return '';
+    return `<div id="dadi-persi" style="margin-bottom:20px; padding:12px; background:#221500; border:2px solid #ff9900; border-radius:8px; color:#ffbb55; font-size:16px;">` +
+        `<b style="color:#ff9900;">\ud83c\udfb2 DADI PERSI</b><br>` + righe.join('<br>') + `</div>`;
+};
+
+// `busta` e` facoltativa: chi la passa vede anche i dadi persi.
+window.mostraSchermataRisoluzione = (scontri, busta) => {
+    // Tenuti da parte per ridisegnare quando si invertono i lati.
+    if (busta !== undefined) window.ultimaBusta = busta;
+    else if (scontri !== window.ultimiScontri) window.ultimaBusta = null;
+    window.ultimiScontri = scontri;
     document.querySelector('.turn-controller').style.display = 'none';
     document.querySelector('.status-grid').style.display = 'none';
     document.querySelector('.log-container').style.display = 'none';
@@ -589,10 +719,10 @@ window.mostraSchermataRisoluzione = (scontri) => {
     document.getElementById('step-resolution').style.display = 'block';
 
     let container = document.getElementById('clash-container');
-    container.innerHTML = "";
+    container.innerHTML = window.dadiPersiHtml(window.ultimaBusta);
 
     if (!scontri || scontri.length === 0) {
-        container.innerHTML = `<h2 style="color:red; text-align:center;">NESSUN TIRO DI DADO DA EFFETTUARE.</h2>`;
+        container.innerHTML += `<h2 style="color:red; text-align:center;">NESSUN TIRO DI DADO DA EFFETTUARE.</h2>`;
         return;
     }
 
@@ -628,6 +758,15 @@ window.mostraSchermataRisoluzione = (scontri) => {
                 return `<span style="color:#00ff00; font-weight:bold; font-size:22px;">SUCCESSO AUTOMATICO</span><br>` +
                        `<span style="color:#888; font-size:12px;">Nessun tiro</span><br>`;
             }
+            // 7 ottobre (motore .07.3): colpoAnnullato azzera il Burst. Senza
+            // questa riga il tabellone diceva "Nessun dado" e basta, come
+            // per un'Abilita` che non tira: il perche` va scritto.
+            if (lato && lato.dati && lato.dati.colpoAnnullato) {
+                return `<span style="color:#ff5555; font-weight:bold; font-size:22px;">COLPO ANNULLATO</span><br>` +
+                       // Il motivo e` del motore (dati.note). Stava solo nei
+                       // dettagli, che sono chiusi: qui si legge subito.
+                       `<span style="color:#cc8888; font-size:12px;">${(Array.isArray(lato.dati.note) && lato.dati.note.length) ? lato.dati.note.join('<br>') : 'Il tiro non si esegue.'}</span><br>`;
+            }
             if (!(lato && lato.burst > 0)) return `<br>`;
             // Misurato il 6 ottobre con INGRESSO IN CAMPO e TRINCERARSI: il
             // calcolo manda burst 1 e mod null, e qui usciva in verde
@@ -646,13 +785,45 @@ window.mostraSchermataRisoluzione = (scontri) => {
         let modAttaccanteHtml = valoreSuccesso(scontro.attivo);
         let modDifensoreHtml = valoreSuccesso(scontro.reattivo);
 
-        let isNomadsAttivo = scontro.attivo.fazione === 'NOMADI';
-        let colAttivo = isNomadsAttivo ? '#ff3333' : '#00ccff';
-        let bgAttivo = isNomadsAttivo ? 'linear-gradient(90deg, #330000, #000)' : 'linear-gradient(90deg, #001a33, #000)';
-        
-        let isNomadsReattivo = scontro.reattivo.fazione === 'NOMADI';
-        let colReattivo = isNomadsReattivo ? '#ff3333' : '#00ccff';
-        let bgReattivo = isNomadsReattivo ? 'linear-gradient(-90deg, #330000, #000)' : 'linear-gradient(-90deg, #001a33, #000)';
+        // 🔴 7 ottobre (Paolo, dal tavolo): IL LATO E` QUELLO DOVE SIEDE IL
+        // GIOCATORE, non quello di chi e` attivo. Prima l'attivo stava sempre
+        // a sinistra: a ogni cambio di turno le due fazioni si scambiavano di
+        // posto sul tabellone, e chi guardava dalla sua sedia doveva
+        // ricercarsi ogni volta. Ora la colonna la decide window.latoDi
+        // (tasto INVERTI LATI), il colore resta della fazione (Nomads rossi,
+        // PanOceania blu) e chi e` attivo lo dice una scritta in ogni cella,
+        // perche` la posizione non lo dice piu`.
+        const colore = (fazione) => (fazione === 'NOMADI') ? '#ff3333' : '#00ccff';
+        const attivoADestra = window.latoDi(scontro.attivo.fazione) === 'DX';
+        const sfondo = (fazione, aDestra) => 'linear-gradient(' + (aDestra ? '-90deg' : '90deg') + ', ' +
+            ((fazione === 'NOMADI') ? '#330000' : '#001a33') + ', #000)';
+        const SPENTO = 'rgba(255,255,255,0.02)';
+        const ruolo = (attivo) => `<span style="color:#888; font-size:11px; letter-spacing:1px;">${attivo ? '▶ ATTIVO' : '🛡️ REATTIVO'}</span><br>`;
+        // Una riga a due colonne. Si passano SEMPRE la cella dell'attivo e
+        // quella del reattivo, in quest'ordine: dove finiscono lo decide il
+        // posto a sedere. `acceso` false = la cella grigia di chi in quel
+        // blocco non tira.
+        const riga = (cellaAttivo, cellaReattivo, stileRiga, opz) => {
+            opz = opz || {};
+            const celle = attivoADestra ? [cellaReattivo, cellaAttivo] : [cellaAttivo, cellaReattivo];
+            const fondo = (c, aDestra) => (c.fazione === undefined) ? ''
+                : 'background:' + (c.acceso === false ? SPENTO : sfondo(c.fazione, aDestra)) + ';';
+            return `<div style="display:flex; justify-content:space-between; ${stileRiga || ''}">
+                    <div style="flex:1; ${opz.sx || ''} ${fondo(celle[0], false)}">${celle[0].html}</div>
+                    <div style="flex:1; text-align:right; ${opz.dx || ''} ${fondo(celle[1], true)}">${celle[1].html}</div>
+                </div>`;
+        };
+        const allineaDalLatoDi = (fazione) => (window.latoDi(fazione) === 'DX') ? 'right' : 'left';
+        const testa = (lato, attivo) => ruolo(attivo) +
+            `<b style="color:${colore(lato.fazione)}; font-size:22px;">${lato.fazione} ${lato.nome}</b><br>`;
+        const cellaPiena = (lato, attivo, modHtml, dadiHtml) => ({ fazione: lato.fazione, html: testa(lato, attivo) +
+            `<span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${lato.azione}</span><br>
+                        ${modHtml}
+                        ${dadiHtml}` });
+        const cellaSpenta = (lato, attivo) => ({ fazione: lato.fazione, acceso: false, html: testa(lato, attivo) +
+            `<span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#888;">Nessuna reazione incrociata</span><br>
+                            <br><div style="margin-top:15px; font-size:18px; color:#555;">Nessun dado</div>` });
+        const DUE = { sx: 'border-right:2px solid #333; padding:15px;', dx: 'padding:15px;' };
 
         let isF2F = scontro.titolo === "TIRO FACCIA A FACCIA";
         let bothActing = scontro.attivo.burst > 0 && scontro.reattivo.burst > 0;
@@ -660,76 +831,27 @@ window.mostraSchermataRisoluzione = (scontri) => {
         let htmlScontro = "";
 
         if (isF2F || !bothActing) {
-            htmlScontro = `
-                <div style="display:flex; justify-content:space-between; background:#000; border-radius:8px; overflow:hidden;">
-                    <div style="flex:1; border-right:2px solid #333; padding:15px; background:${bgAttivo};">
-                        <b style="color:${colAttivo}; font-size:22px;">${scontro.attivo.fazione} ${scontro.attivo.nome}</b><br>
-                        <span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${scontro.attivo.azione}</span><br>
-                        ${modAttaccanteHtml}
-                        ${dadiAttaccanteHtml}
-                    </div>
-                    <div style="flex:1; padding:15px; text-align:right; background:${bgReattivo};">
-                        <b style="color:${colReattivo}; font-size:22px;">${scontro.reattivo.fazione} ${scontro.reattivo.nome}</b><br>
-                        <span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${scontro.reattivo.azione}</span><br>
-                        ${modDifensoreHtml}
-                        ${dadiDifensoreHtml}
-                    </div>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-top:10px; background:#0a0a0a; border-radius:5px; padding:10px; font-size:14px; border: 1px solid #333;">
-                    <div style="flex:1; border-right:1px dashed #333; padding-right:10px;">
-                        <b style="color:#aaa;">🛡️ SE COLPITO DAL NEMICO:</b><br>
-                        ${scontro.attivo.salvezza}
-                    </div>
-                    <div style="flex:1; padding-left:10px; text-align:right;">
-                        <b style="color:#aaa;">🛡️ SE COLPITO DALL'ATTACCANTE:</b><br>
-                        ${scontro.reattivo.salvezza}
-                    </div>
-                </div>
-            `;
+            htmlScontro =
+                riga(cellaPiena(scontro.attivo, true, modAttaccanteHtml, dadiAttaccanteHtml),
+                     cellaPiena(scontro.reattivo, false, modDifensoreHtml, dadiDifensoreHtml),
+                     'background:#000; border-radius:8px; overflow:hidden;', DUE) +
+                riga({ html: `<b style="color:#aaa;">🛡️ SE COLPITO DAL NEMICO:</b><br>${scontro.attivo.salvezza}` },
+                     { html: `<b style="color:#aaa;">🛡️ SE COLPITO DALL'ATTACCANTE:</b><br>${scontro.reattivo.salvezza}` },
+                     'margin-top:10px; background:#0a0a0a; border-radius:5px; padding:10px; font-size:14px; border: 1px solid #333;',
+                     { sx: 'border-right:1px dashed #333; padding-right:10px;', dx: 'padding-left:10px;' });
         } else {
-            htmlScontro = `
+            const blocco = (chiTira, celle, colpito) => `
                 <div style="background:#1a1a1a; border: 1px dashed #555; border-radius: 8px; padding: 10px; margin-bottom: 15px;">
-                    <h4 style="color:#888; margin-top:0; text-align:center;">▶ RISOLUZIONE ${scontro.attivo.fazione}</h4>
-                    <div style="display:flex; justify-content:space-between; background:#000; border-radius:8px; overflow:hidden; border:1px solid #333;">
-                        <div style="flex:1; border-right:2px solid #333; padding:15px; background:${bgAttivo};">
-                            <b style="color:${colAttivo}; font-size:22px;">${scontro.attivo.fazione} ${scontro.attivo.nome}</b><br>
-                            <span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${scontro.attivo.azione}</span><br>
-                            ${modAttaccanteHtml}
-                            ${dadiAttaccanteHtml}
-                        </div>
-                        <div style="flex:1; padding:15px; text-align:right; background:rgba(255,255,255,0.02);">
-                            <b style="color:${colReattivo}; font-size:22px;">${scontro.reattivo.fazione} ${scontro.reattivo.nome}</b><br>
-                            <span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#888;">Nessuna reazione incrociata</span><br>
-                            <br><div style="margin-top:15px; font-size:18px; color:#555;">Nessun dado</div>
-                        </div>
+                    <h4 style="color:#888; margin-top:0; text-align:center;">▶ RISOLUZIONE ${chiTira.fazione}</h4>
+                    ${riga(celle[0], celle[1], 'background:#000; border-radius:8px; overflow:hidden; border:1px solid #333;', DUE)}
+                    <div style="margin-top:10px; background:#0a0a0a; border-radius:5px; padding:10px; font-size:14px; border: 1px solid #333; text-align:${allineaDalLatoDi(colpito.fazione)};">
+                        <b style="color:#aaa;">🛡️ SE COLPITO DA ${chiTira.fazione}:</b><br>
+                        ${colpito.salvezza}
                     </div>
-                    <div style="margin-top:10px; background:#0a0a0a; border-radius:5px; padding:10px; font-size:14px; border: 1px solid #333; text-align:right;">
-                        <b style="color:#aaa;">🛡️ SE COLPITO DA ${scontro.attivo.fazione}:</b><br>
-                        ${scontro.reattivo.salvezza}
-                    </div>
-                </div>
-
-                <div style="background:#1a1a1a; border: 1px dashed #555; border-radius: 8px; padding: 10px;">
-                    <h4 style="color:#888; margin-top:0; text-align:center;">▶ RISOLUZIONE ${scontro.reattivo.fazione}</h4>
-                    <div style="display:flex; justify-content:space-between; background:#000; border-radius:8px; overflow:hidden; border:1px solid #333;">
-                        <div style="flex:1; border-right:2px solid #333; padding:15px; background:rgba(255,255,255,0.02);">
-                            <b style="color:${colAttivo}; font-size:22px;">${scontro.attivo.fazione} ${scontro.attivo.nome}</b><br>
-                            <span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#888;">Nessuna reazione incrociata</span><br>
-                            <br><div style="margin-top:15px; font-size:18px; color:#555;">Nessun dado</div>
-                        </div>
-                        <div style="flex:1; padding:15px; text-align:right; background:${bgReattivo};">
-                            <b style="color:${colReattivo}; font-size:22px;">${scontro.reattivo.fazione} ${scontro.reattivo.nome}</b><br>
-                            <span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${scontro.reattivo.azione}</span><br>
-                            ${modDifensoreHtml}
-                            ${dadiDifensoreHtml}
-                        </div>
-                    </div>
-                    <div style="margin-top:10px; background:#0a0a0a; border-radius:5px; padding:10px; font-size:14px; border: 1px solid #333; text-align:left;">
-                        <b style="color:#aaa;">🛡️ SE COLPITO DA ${scontro.reattivo.fazione}:</b><br>
-                        ${scontro.attivo.salvezza}
-                    </div>
-                </div>
-            `;
+                </div>`;
+            htmlScontro =
+                blocco(scontro.attivo, [cellaPiena(scontro.attivo, true, modAttaccanteHtml, dadiAttaccanteHtml), cellaSpenta(scontro.reattivo, false)], scontro.reattivo) +
+                blocco(scontro.reattivo, [cellaSpenta(scontro.attivo, true), cellaPiena(scontro.reattivo, false, modDifensoreHtml, dadiDifensoreHtml)], scontro.attivo);
         }
 
         // Le note DELLO SCONTRO (6 ottobre): dal calcolatore_math 2026-10-06.1
@@ -741,6 +863,13 @@ window.mostraSchermataRisoluzione = (scontri) => {
         const noteScontro = Array.isArray(scontro.note) ? scontro.note.filter(Boolean) : [];
         const noteScontroHtml = noteScontro.length
             ? `<div style="margin-top:10px; padding:10px; background:#221500; border:1px solid #ff9900; border-radius:5px; color:#ffbb55; font-size:14px;">` +
+              // Un'unita` non trovata non e` una nota fra le altre: il
+              // calcolo sotto NON e` affidabile, e va detto in rosso, prima.
+              ((scontro.attaccanteNonRisolto || scontro.bersaglioNonRisolto)
+                  ? '<b style="color:#ff5555;">\ud83d\udea8 CALCOLO NON AFFIDABILE: ' +
+                    (scontro.attaccanteNonRisolto ? 'ATTACCANTE' : 'BERSAGLIO') +
+                    ((scontro.attaccanteNonRisolto && scontro.bersaglioNonRisolto) ? ' E BERSAGLIO' : '') + ' NON TROVATO</b><br>'
+                  : '') +
               (scontro.coperturaNegata ? '<b>⛔ COPERTURA PARZIALE NEGATA</b><br>' : '') + noteScontro.join('<br>') + `</div>`
             : '';
 
@@ -756,14 +885,8 @@ window.mostraSchermataRisoluzione = (scontri) => {
                 </div>
 
                 <div id="dettagli-${index}" style="display:none; margin-top:10px; padding:10px; background:#0a0a0a; border:1px solid #333; border-radius:5px; font-size:14px;">
-                    <div style="display:flex; justify-content:space-between;">
-                        <div style="flex:1; border-right:1px solid #333; padding-right:10px; color:#ddd;">
-                            ${scontro.attivo.dettagliMod || "-"}
-                        </div>
-                        <div style="flex:1; padding-left:10px; text-align:right; color:#ddd;">
-                            ${scontro.reattivo.dettagliMod || "-"}
-                        </div>
-                    </div>
+                    ${riga({ html: scontro.attivo.dettagliMod || "-" }, { html: scontro.reattivo.dettagliMod || "-" }, '',
+                           { sx: 'border-right:1px solid #333; padding-right:10px; color:#ddd;', dx: 'padding-left:10px; color:#ddd;' })}
                 </div>
             </div>
         `;
@@ -773,7 +896,9 @@ window.mostraSchermataRisoluzione = (scontri) => {
 window.chiudiRisoluzione = () => {
     // 1. Torna alla vista radar dell'Hub
     document.getElementById('step-resolution').style.display = 'none';
-    document.querySelector('.turn-controller').style.display = 'block';
+    // '' e non 'block': la riga in alto e` un flex (7 ottobre), e 'block'
+    // scritto qui la rimetteva in colonna dopo la prima risoluzione.
+    document.querySelector('.turn-controller').style.display = '';
     document.querySelector('.status-grid').style.display = 'grid'; 
     document.querySelector('.log-container').style.display = 'block';
 
@@ -802,7 +927,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-10-06.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-10-07.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-06.7 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-10-07.3 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -903,6 +903,10 @@ window.CATALOGO_N5.SCHIERAMENTO = {
     noteMarker: 'Di un Marker Mimetico o Impersonation l\'avversario vede solo il segnalino: niente statistiche, armi, Abilita` o Equipaggiamento. Nemmeno il nome dell\'Unita`.',
 
     // Di una truppa visibile si vede tutto: e` sul tavolo a faccia in su.
+    // `imgVariant` porta il NOME DEL FILE della foto assegnata alla pedina
+    // ("alguaciles_2.png"; chat INTERFACCIA, 7 ottobre: una foto per
+    // miniatura fisica, proxy compresi). Per un Marker il motore lo riporta a
+    // '0' (M.filtraPerAvversario): la foto direbbe chi sta sotto il segnalino.
     campiVisibili: ['id', 'nome', 'alias', 'name', 'tipo', 'deployState', 'imgVariant',
                     'states', 'combatGroup', 'cc', 'bs', 'ph', 'wip', 'arm', 'bts', 'w', 's',
                     'mov', 'weapon', 'equip', 'skills', 'x', 'y'],
@@ -2674,7 +2678,7 @@ window.CATALOGO_N5.STATI = {
     // dichiarare Hacking in ARO.
     isolato:     { vecchiaChiave: 'ISOLATO', chiave: 'isolated', nome: 'Isolato', categoria: 'INFOGUERRA', nonAttivabile: true, vietaAzioni: ['HACKING', 'CYBERMASK'], mod: { RESET: -9, attributo:'WIP' }, cancella: ['RESET','ENGINEER'], note:'Disabilita skill/equip Comms; no Fireteam/Coordinato.', cancellazione: ['Reset riuscito, applicando il -9 WIP.', 'Ingegnere.'] },
     targeted: { vecchiaChiave: 'BERSAGLIATO', chiave: 'targeted', nome: 'Bersagliato', categoria: 'INFOGUERRA', vietaAzioni: ['CAUTO','STEALTH'], modAttaccante: 3, mod: { RESET: -3, attributo:'WIP' }, cancella: ['RESET','ENGINEER'], note:'+3 a chi attacca l\'utente (BS/Comms/Discover).', cancellazione: ['Reset riuscito, applicando il -3 WIP.', 'Ingegnere.'] },
-    stordito:    { vecchiaChiave: 'STORDITO', chiave: 'stunned', nome: 'Stordito', categoria: 'ALTERAZIONE', vietaAzioni: ['ATTACCO BS','ATTACCO CC','BERSERK','PROTHEION','HACKING'], note:'Fallisce automaticamente il Guts Roll successivo. Le Abilita` Speciali e gli Equipaggiamenti Automatici (Mimetismo, ECM, Firewall...) continuano a funzionare, rispettando le restrizioni di dichiarazione.',
+    stordito:    { vecchiaChiave: 'STORDITO', chiave: 'stunned', nome: 'Stordito', categoria: 'ALTERAZIONE', vietaAzioni: ['ATTACCO BS','ATTACCO CC','BERSERK','PROTHEION','HACKING','PIAZZARE EQUIPAGGIAMENTO'], note:'Fallisce automaticamente il Guts Roll successivo. Le Abilita` Speciali e gli Equipaggiamenti Automatici (Mimetismo, ECM, Firewall...) continuano a funzionare, rispettando le restrizioni di dichiarazione.',
                    // Come si esce dallo Stordito (wiki "Stunned State", N5.2/5.3 — chat
                    // REGOLE, 28 settembre). La terza e` automatica: l'app non tiene il
                    // turno in cui lo stato e` nato, quindi lo dice e non lo toglie da sola.
@@ -2772,7 +2776,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-10-06.7', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-10-07.3', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

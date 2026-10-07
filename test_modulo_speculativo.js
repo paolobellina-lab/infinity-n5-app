@@ -1,5 +1,7 @@
-// @versione 2026-10-06.2 | test_modulo_speculativo.js | proprieta`: chat TEST
+// @versione 2026-10-07.2 | test_modulo_speculativo.js | proprieta`: chat TEST
 // Test end-to-end del modulo Speculativo — node test_modulo_speculativo.js
+// .2 (7 ott): il colore del tasto si prova contro M.COLORE_TASTO E si pretende
+//    non vuoto e diverso dal giallo dell IDLE — alla .1 era una tautologia.
 global.window = global;
 let passati = 0, falliti = 0;
 function ok(c, n, e) { if (c) { passati++; console.log(`  ✅ ${n}`); } else { falliti++; console.log(`  ❌ ${n}${e ? '\n       ' + e : ''}`); } }
@@ -122,8 +124,31 @@ ok(comeSecondario(croc).ammesso,
    'lo stesso Marker CAMO è ammesso con ruolo secondario: è preso dalla Sagoma');
 ok(!comePrincipale(speculo).ammesso && /1420[78]/.test(perche(comePrincipale(speculo))),
    `anche il Marker Impersonation è fuori come principale (${perche(comePrincipale(speculo)).slice(0, 55)}…)`);
-ok(comeSecondario(speculo).ammesso,
-   'e anche lui rientra come secondario: l esclusione è sul ruolo, non sul bersaglio');
+// 🔴 GIRATA IL 7 OTTOBRE (chat REGOLE, righe 14283-14289). Fino al motore
+// 2026-10-06.16 questa prova pretendeva che il Marker Impersonation
+// rientrasse come secondario, "perche` l esclusione e` sul ruolo, non sul
+// bersaglio". NON e` vero: un Marker Impersonation sotto la Sagoma conta
+// come ALLEATO, e un alleato nell area ANNULLA il colpo — anche se il
+// Bersaglio Principale e` un altro. Quindi non e` "ammesso come
+// secondario": e` un motivo per non tirare affatto.
+// Il CAMO resta ammesso (prova sopra): i due Marker si comportano in modo
+// opposto sotto la Sagoma, ed e` esattamente la differenza che va fissata.
+const secSpeculo = comeSecondario(speculo);
+ok(secSpeculo.ammesso === false,
+   'il Marker Impersonation NON è ammesso nemmeno come secondario (conta come alleato)');
+ok(secSpeculo.annullaIlColpo === true,
+   'e porta annullaIlColpo: true — non è un bersaglio in meno, è il colpo che si annulla');
+ok(/ANNULLA il colpo/.test(perche(secSpeculo)) && /alleato/.test(perche(secSpeculo)),
+   `col motivo che lo spiega al giocatore (${perche(secSpeculo).slice(0, 65)}…)`);
+ok(/1428[3-9]/.test(perche(secSpeculo)),
+   `e la riga del regolamento citata (${(/1428[3-9]/.exec(perche(secSpeculo)) || ['nessuna'])[0]})`);
+// CONTROPROVA, due volte: annullaIlColpo NON è un campo sempre acceso, e
+// il CAMO non lo porta. Senza queste, "true" non si distingue da "sempre".
+ok(comeSecondario(croc).annullaIlColpo === undefined,
+   'CONTROPROVA: il Marker CAMO come secondario NON annulla il colpo');
+ok(comeSecondario(M.rosterNemico().find(u => u.id === 'p1') || { id: 'p1', alias: 'Fusilier', tipo: 'LI', states: {} })
+       .annullaIlColpo === undefined,
+   'e nemmeno un Modello scoperto: il campo compare solo dove serve');
 
 console.log('\n=== 7. Invio ===');
 nuovo(granatiere);
@@ -356,6 +381,97 @@ ok(rovesci.map(s => s.bersaglioDiSagoma).join(',') === 'SECONDARIO,PRINCIPALE,SE
    `il motore legge bersaglio.ruolo, non l indice: il Principale è il SECONDO (${rovesci.map(s => s.bersaglioDiSagoma).join(',')})`);
 ok(rovesci[1].reattivo.nome === 'Fusilier' && rovesci[0].reattivo.nome === 'Croc Man',
    'e i bersagli seguono l ordine della busta: il Fusilier resta il Principale pur essendo secondo');
+
+// ==================================================================
+// REQUISITI DICHIARATI AL TAVOLO — Fuoco Speculativo (gittata, sul Principale)
+//   Nuovo il 7 ottobre. MOTORE ha misurato dalla pagina BS, CC, Hacking e
+//   Scoprire; lo Speculativo NO. Il tasto vive su btn-esegui-calcolo e la
+//   schermata lo CLONA: nel finto DOM il clone e` 'btn-esegui-calcolo_c'.
+//   🔴 'gittata' legge `fuoriGittata` a polarita` INVERTITA (manca se true):
+//   si gira dal motore, M.invertiRequisito, non scrivendo il campo a mano.
+// ==================================================================
+console.log('\n=== 9. REQUISITI AL TAVOLO: gittata sul Principale ===');
+const tastoS = () => el['btn-esegui-calcolo_c'] || {};
+function prontoS() {
+    nuovo(granatiere);
+    window.currentOrder.weapon = 'Grenades';
+    window.combatTargets = [{ id: 'p1', name: 'Fusilier', burst: 3, cover: true, fuoriGittata: false }];
+    window.preparaModificatoriSpeculativo();
+}
+prontoS();
+ok(/^(LANCIA|ESEGUI|TIRA)/.test(String(tastoS().innerText)),
+   `gittata dichiarata: il tasto porta l etichetta dell azione (${tastoS().innerText})`);
+const etichettaSana = String(tastoS().innerText);
+// GIRATA sul motore 2026-10-07.11: il tasto valido non ha piu` lo sfondo
+// vuoto. Scrivendo '' il motore toglieva al tasto l'arancione della pagina,
+// e Paolo al tavolo lo vedeva cambiare colore. Ora i due colori stanno nel
+// motore, M.COLORE_TASTO: valido 'var(--nomad-orange)', idle '#ffcc00'.
+// Si legge dal motore invece di scrivere la stringa a mano, cosi` se Paolo
+// cambia l'arancione della pagina questa prova non diventa rossa per un
+// motivo che non c'entra col requisito.
+// 🔴 Non basta confrontare col valore che il motore dichiara: sarebbe una
+// TAUTOLOGIA — i due lati si muovono insieme e la prova non puo` fallire.
+// Visto il 7 ottobre rompendo COLORE_TASTO.valido a '' e vedendo il banco
+// restare verde. Quindi si pretendono tre cose: che il tasto porti quel
+// colore, che quel colore NON sia vuoto (era il difetto di prima) e che sia
+// DIVERSO dal giallo dell'IDLE (altrimenti i due stati non si distinguono a
+// vista). Cosi` la prova resiste a un cambio di arancione ma non al difetto.
+ok(!!M.COLORE_TASTO.valido && M.COLORE_TASTO.valido !== M.COLORE_TASTO.idle,
+   `il colore valido c è e non è il giallo dell IDLE (${JSON.stringify(M.COLORE_TASTO)})`);
+ok(tastoS().style && tastoS().style.background === M.COLORE_TASTO.valido,
+   `e il tasto lo porta (${tastoS().style && tastoS().style.background})`);
+prontoS();
+M.invertiRequisito(window.combatTargets[0], 'gittata');
+window.preparaModificatoriSpeculativo();
+ok(tastoS().innerText === 'IDLE',
+   `Principale fuori gittata: il tasto diventa IDLE (${tastoS().innerText})`);
+ok(tastoS().style && tastoS().style.background === '#ffcc00',
+   `ed è giallo (${tastoS().style && tastoS().style.background})`);
+ok(etichettaSana !== 'IDLE',
+   `e i due stati si distinguono (${etichettaSana} / IDLE)`);
+// 🔴 I SECONDARI NON CONTANO: il requisito si guarda sul solo Principale,
+// perche` la Sagoma e` una e la gittata si misura al centro. Si gira il
+// SECONDARIO da solo: se il motore guardasse tutta la lista, due bersagli
+// di cui uno fuori gittata non sarebbero "tutti" e l Idle non partirebbe
+// comunque — la prova sarebbe verde per il motivo sbagliato.
+prontoS();
+window.toggleSecondarioSpeculativo('p2');
+// Si legge con un lettore che non cade: se il secondario non entrasse, un
+// accesso diretto a combatTargets[1] ucciderebbe il banco invece di farlo
+// diventare rosso — e porterebbe via le prove che restano. Visto il 7
+// ottobre scrivendo proprio questa sezione.
+const secReq = () => window.combatTargets[1] || {};
+const priReq = () => window.combatTargets[0] || {};
+ok(window.combatTargets.length === 2,
+   `premessa: due bersagli, Principale e secondario (${window.combatTargets.length}: ${window.combatTargets.map(x => x.id).join(',')})`);
+M.invertiRequisito(secReq(), 'gittata');
+// Si ridisegna con renderSpeculativo, NON con preparaModificatoriSpeculativo:
+// `prepara` e` l'INGRESSO nella schermata e rifa` la lista dei bersagli da
+// zero, buttando via i secondari. Il tasto lo scrive `render`, che e` anche
+// quello che chiama il toggle — quindi e` il percorso vero dell'app.
+// Chiamando `prepara` due volte il secondario spariva e il banco CADEVA
+// invece di diventare rosso. Visto il 7 ottobre.
+window.renderSpeculativo();
+ok(secReq().fuoriGittata === true && priReq().fuoriGittata === false,
+   `il secondario è fuori gittata, il Principale no (${JSON.stringify([priReq().fuoriGittata, secReq().fuoriGittata])})`);
+ok(tastoS().innerText !== 'IDLE',
+   `solo il secondario fuori gittata: si tira comunque (${tastoS().innerText})`);
+// E il tasto IDLE porta all Idle vero, col motivo del motore.
+prontoS();
+M.invertiRequisito(window.combatTargets[0], 'gittata');
+window.preparaModificatoriSpeculativo();
+let motivoS = null;
+const salvaS = window.dichiaraRequisitoFallito;
+window.dichiaraRequisitoFallito = (m) => { motivoS = m; return true; };
+tastoS().onclick();
+ok(motivoS !== null && /fuori gittata/.test(String(motivoS)),
+   `cliccandolo chiama l Idle col motivo del motore (${String(motivoS).slice(0, 50)}…)`);
+// CONTROPROVA: a gittata dichiarata NON chiama l Idle.
+prontoS();
+motivoS = null;
+tastoS().onclick();
+ok(motivoS === null, 'CONTROPROVA: col requisito a posto il tasto NON chiama l Idle');
+window.dichiaraRequisitoFallito = salvaS;
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

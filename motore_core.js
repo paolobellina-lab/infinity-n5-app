@@ -1,4 +1,4 @@
-// @versione 2026-10-06.7 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.1 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -53,6 +53,20 @@ window.inviaAllarmeAro = (payload) => {
     // valeva sempre null. Il controller inoltra l'oggetto intero.
     if (payload && payload.ordineId == null && window.currentOrder && window.currentOrder.id) {
         payload.ordineId = window.currentOrder.id;
+    }
+    // 🔴 UN ALLARME PER ORDINE, CHIUNQUE LO CHIEDA. La regola c'era gia` nel
+    // router (la seconda meta` non rialza l'allarme), ma chi chiamava da
+    // fuori la saltava: l'Idle da requisito fallito, premuto dopo un Attacco
+    // BS gia` dichiarato, mandava un SECONDO allarme e il reattivo si vedeva
+    // chiedere un nuovo ARO (Paolo al tavolo, 6 ottobre). Ora sta qui, dove
+    // passano tutti. Senza identificativo d'Ordine non si puo` sapere, e
+    // l'allarme parte.
+    if (payload && payload.ordineId != null) {
+        if (window._ordineAllarmato === payload.ordineId) {
+            console.log('🚨 Allarme ARO non ripetuto: questo Ordine ha gia` avvisato l\'avversario.');
+            return { inviato: false, ripetuto: true };
+        }
+        window._ordineAllarmato = payload.ordineId;
     }
     window._codaAllarmi.push(payload);
     spedisciAllarmiInCoda();
@@ -708,7 +722,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-06.7', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-07.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

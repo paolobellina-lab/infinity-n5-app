@@ -1,4 +1,4 @@
-// @versione 2026-10-05.1 | ordine_piazzamento.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.5 | ordine_piazzamento.js | proprieta`: chat MOTORE
 // ==========================================
 // 📦 PIAZZARE EQUIPAGGIAMENTO (N5) - ordine_piazzamento.js
 // ------------------------------------------
@@ -56,6 +56,19 @@
         window.coordPayloads = window.coordPayloads || [];
         window.deployableRisposte = {};
         window.deployableScelta = null;
+        // Dichiarato come PRIMA cosa dell'Ordine: e` IDLE + PIAZZARE. L'ARO
+        // si dichiara subito dopo la prima Abilita` (righe 1088-1090), quindi
+        // l'allarme parte ORA, con l'Idle, prima delle domande: l'avversario
+        // sceglie l'ARO mentre qui si risponde.
+        window.currentOrder.aroDaIdleImplicito = false;
+        if (!isSecondHalf && !(window.coordMode && window.coordIndex > 0)) {
+            const al = M.allarmeOrdine('IDLE', {
+                unita: window.currentOrder.unit, coordUnits: window.coordUnits, coordMode: window.coordMode,
+                azioneSeconda: actionId
+            });
+            if (al.payload && typeof window.inviaAllarmeAro === 'function') window.inviaAllarmeAro(al.payload);
+            window.currentOrder.aroDaIdleImplicito = !!(al.aro && al.aro.genera);
+        }
         window.mostraArmiPiazzabili();
     };
 
@@ -75,7 +88,8 @@
 
         container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:12px; border-radius:5px; margin-bottom:15px; text-align:center;">
             <b style="color:${COL.bordo}; font-size:19px;">📦 PIAZZA EQUIPAGGIAMENTO</b><br>
-            <span style="color:#aaa; font-size:13px;">Abilità Breve, nessun tiro.<br>
+            <span style="color:#aaa; font-size:13px;">Abilità Breve, nessun tiro: è sempre la SECONDA metà dell'Ordine
+            (dopo Movimento, Scoprire o Idle).${window.currentOrder && !window.currentOrder.isSecondHalf ? ' Dichiarata per prima vale <b>IDLE + PIAZZARE</b>: l\'Ordine finisce qui.' : ''}<br>
             Il nemico può reagire contro di te, mai contro ciò che piazzi.</span>
         </div>`;
 
@@ -129,8 +143,14 @@
         container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:12px; border-radius:5px; margin-bottom:15px; text-align:center;">
             <b style="color:${COL.bordo}; font-size:18px;">📦 ${arma.nome}</b><br>
             <span style="color:#aaa; font-size:13px;">Si piazza a contatto del bersaglio. Scegli su cosa.</span></div>` +
-            (ammessi.length ? ammessi.map(g => `<button class="huge-btn" style="width:100%; min-height:56px; margin-bottom:6px; background:#111; border-color:${COL.bordo};"
-                onclick="window.scegliBersaglioPiazzamento('${String(g.unita.id).replace(/'/g, "\\'")}')">🎯 ${g.nome}</button>`).join('')
+            // La riga con la foto la disegna la pagina (window.rigaUnitaConFoto);
+            // dove non c'e` resta il bottone semplice.
+            (ammessi.length ? ammessi.map(function (g) {
+                const clic = `onclick="window.scegliBersaglioPiazzamento('${String(g.unita.id).replace(/'/g, "\\'")}')"`;
+                return (typeof window.rigaUnitaConFoto === 'function')
+                    ? window.rigaUnitaConFoto(g.unita, { attributi: clic, fazione: 'NEMICA' })
+                    : `<button class="huge-btn" style="width:100%; min-height:56px; margin-bottom:6px; background:#111; border-color:${COL.bordo};" ${clic}>🎯 ${g.nome}</button>`;
+            }).join('')
              : `<p style="color:#ff3333; text-align:center; font-weight:bold;">Nessun bersaglio ammesso da quest'arma.</p>`) +
             (scartati.length ? `<div style="margin-top:12px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
                 <b style="color:#aaa;">Non ammessi:</b><br>` + scartati.map(g => `• <b>${g.nome}</b> — ${g.motivo}`).join('<br>') + `</div>` : '');
@@ -167,12 +187,25 @@
                 Il calcolatore non ha la mappa: queste cose le sai solo tu.</div>` +
             domande.map(function (d, i) {
                 const r = window.deployableRisposte[d.id];
+                // 🔴 IL COLORE LO DA` LA RISPOSTA, NON LA PAROLA. Verde la
+                // risposta che lascia piazzare, giallo quella che porta
+                // all'Idle. Prima il SI` era sempre arancio e il NO sempre
+                // verde: giusto per "c'e` un Marker nell'area?", rovesciato
+                // per "il percorso e` libero?", dove la risposta buona e` SI`.
+                // Chi blocca lo decide il motore (M.valutaDomanda), domanda
+                // per domanda. (A-07 al tavolo di Paolo, 6 ottobre.)
+                const colore = function (valore) {
+                    if (r !== valore) return 'background:#111;';
+                    return M.valutaDomanda(d, valore).esito === 'BLOCCATA'
+                        ? 'background:#554400; border-color:#ffcc00; color:#ffcc00;'
+                        : 'background:#004400; border-color:#00ff00; color:#00ff00;';
+                };
                 return `<div style="background:#1a1020; border:1px solid #442255; padding:14px; border-radius:5px; margin-bottom:12px;">
                     <div style="color:#fff; font-size:16px; margin-bottom:10px;">${d.testo}</div>
                     <div style="display:flex; gap:8px;">
-                        <button class="huge-btn" style="flex:1; min-height:48px; ${r === true ? 'background:#553300; border-color:#ffaa33;' : 'background:#111;'}"
+                        <button class="huge-btn" style="flex:1; min-height:48px; ${colore(true)}"
                             onclick="window.rispondiDeployable('${d.id}', true)">SÌ</button>
-                        <button class="huge-btn" style="flex:1; min-height:48px; ${r === false ? 'background:#004400; border-color:#00ff00;' : 'background:#111;'}"
+                        <button class="huge-btn" style="flex:1; min-height:48px; ${colore(false)}"
                             onclick="window.rispondiDeployable('${d.id}', false)">NO</button>
                     </div>
                     ${window.avvisoDomanda(d, r)}
@@ -222,10 +255,27 @@
             // nascosto il clone nasceva invisibile. Etichetta giusta,
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
-        nuovo.onclick = function () { window.eseguiPiazzamento(); };
-        nuovo.innerText = stato.bloccato
-            ? (stato.incompleto ? 'RISPONDI ALLE DOMANDE' : 'PIAZZAMENTO NON CONSENTITO')
-            : 'PIAZZA';
+        // 🔴 TRE STATI, UN TASTO SOLO: RISPONDI ALLE DOMANDE finche` manca una
+        // risposta, PIAZZA se sono tutte verdi, IDLE se una e` gialla. Prima
+        // il terzo stato diceva "PIAZZAMENTO NON CONSENTITO" e non portava da
+        // nessuna parte: per l'Idle serviva il tasto giallo fisso sotto.
+        // (Richiesta di Paolo, A-07, 6 ottobre.)
+        const idle = stato.bloccato && !stato.incompleto;
+        nuovo.onclick = function () { return idle ? window.idleDaPiazzamento() : window.eseguiPiazzamento(); };
+        nuovo.innerText = stato.bloccato ? (stato.incompleto ? 'RISPONDI ALLE DOMANDE' : 'IDLE') : 'PIAZZA';
+        const Mc = motore();
+        nuovo.style.background = idle ? ((Mc && Mc.COLORE_TASTO) ? Mc.COLORE_TASTO.idle : '#ffcc00') : ((Mc && Mc.COLORE_TASTO) ? Mc.COLORE_TASTO.valido : '');
+    };
+
+    // Una risposta gialla: l'Abilita` e` dichiarata ma il requisito non c'e`.
+    // L'Idle da requisito fallito e` UNO per tutta l'app e sta nella pagina
+    // (window.dichiaraRequisitoFallito, chat INTERFACCIA): qui lo si chiama,
+    // col motivo che il motore ha gia` scritto. Non se ne fa una copia.
+    window.idleDaPiazzamento = function () {
+        const stato = window.piazzamentoBloccato();
+        if (!stato.bloccato || stato.incompleto) return;
+        if (typeof window.dichiaraRequisitoFallito === 'function') return window.dichiaraRequisitoFallito(stato.motivo);
+        alert(`⛔ ${stato.motivo}\n\nL'Idle da requisito fallito non è disponibile (pagina non caricata).`);
     };
 
     // ==============================================================
@@ -300,15 +350,20 @@
             return window.mostraArmiPiazzabili();
         }
 
-        // L'avversario deve sapere dell'Ordine: Piazzare genera ARO (M.generaAro),
-        // e prima l'allarme non partiva. La busta lo dice, cosi` l'Hub aspetta.
-        const al = M.allarmeOrdine('PIAZZARE EQUIPAGGIAMENTO', {
-            unita: unita, coordUnits: window.coordUnits, coordMode: window.coordMode,
-            azioneSeconda: window.currentOrder && window.currentOrder.action
-        });
-        if (al.payload && typeof window.inviaAllarmeAro === 'function') window.inviaAllarmeAro(al.payload);
-        const aro = al.aro;
-        const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode, aroAtteso: !!(aro && aro.genera) });
+        // 🔴 PLACE DEPLOYABLE E` UNA SHORT SKILL: E` SEMPRE LA SECONDA META`
+        // (riga 7550; combinazioni alle righe 1047-1054: Basic Short + Short,
+        // "always declared in the order shown"). Le tre forme ammesse sono
+        // MOVIMENTO + PIAZZARE, SCOPRIRE + PIAZZARE, IDLE + PIAZZARE.
+        // Chi "piazza e basta" ha dichiarato IDLE + PIAZZARE: l'Ordine e`
+        // intero, e l'allarme e` partito ALL'INGRESSO (avviaFaseDeployable),
+        // cioe` alla prima Abilita`, non qui.
+        // La 2026-10-07.1 faceva il contrario — Piazzare come prima meta` e un
+        // Movimento dopo — ed era una lettura MIA sbagliata, corretta dalla
+        // chat REGOLE il 7 ottobre. Qui parte SOLO la busta, mai l'allarme:
+        // prima partivano insieme, e l'Hub chiudeva il calcolo mentre il
+        // reattivo sceglieva ancora l'ARO (Paolo al tavolo, 6 ottobre).
+        const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode,
+                                                               aroAtteso: !!window.currentOrder.aroDaIdleImplicito });
         if (!spedito) { window.coordIndex--; window.coordPayloads.pop(); return; }
 
         window.mostraEsitoPiazzamento(e.token, e.avvisi);
@@ -327,10 +382,6 @@
                 <p style="font-size:12px; color:#999;">
                     In questo Ordine il nemico può reagire solo contro chi lo ha piazzato.
                 </p>
-                <div style="margin-top:12px; padding:10px; background:#221100; border:1px solid #664400; border-radius:4px; color:#cc9955; font-size:12px;">
-                    ⚠️ Il token NON è stato spedito all'avversario: il canale per aggiungere
-                    un'unità a partita iniziata non esiste ancora. Comunicaglielo a voce.
-                </div>
                 ${(avvisi || []).length ? `<div style="margin-top:10px; color:#cc9955; font-size:12px;">` +
                     avvisi.map(a => `⚠️ ${a.messaggio}`).join('<br>') + `</div>` : ''}
             </div>`;
@@ -343,7 +394,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-05.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-07.5', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

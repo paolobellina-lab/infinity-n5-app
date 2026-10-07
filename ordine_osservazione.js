@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | ordine_osservazione.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.1 | ordine_osservazione.js | proprieta`: chat MOTORE
 // ==========================================
 // 👁️ OSSERVAZIONE (N5) - ordine_osservazione.js
 // ------------------------------------------
@@ -247,9 +247,11 @@
             seg += `<div class="range-seg ${cls} ${t.rangeIndex === i ? 'active' : ''}" onclick="${callback}(${i})">${b.mod > 0 ? '+' + b.mod : b.mod}</div>`;
             lab += `<span>${b.label}</span>`;
         });
+        const M = motore();
         return `<div style="text-align:center; color:#aaa; font-size:12px; margin:12px 0 5px;">Gittata:</div>
             <div class="range-bar">${seg}</div>
-            <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${lab}</div>`;
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${lab}</div>
+            ${M ? M.rigaRequisiti(['lof', 'gittata'], t, 0, 'window.toggleRequisitoOsservazione') : ''}`;
     };
 
     window.setRangeOsservazione = function (i) {
@@ -274,15 +276,33 @@
             // nascosto il clone nasceva invisibile. Etichetta giusta,
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
-        nuovo.onclick = function () { if (!disabilitato) window.eseguiOsservazione(); };
-        nuovo.innerText = disabilitato ? 'NON DISPONIBILE' : 'ESEGUI TIRO';
+        // Il tasto diventa IDLE se manca la Linea di Tiro o la gittata.
+        const M = motore();
+        const req = (M && !disabilitato) ? window.requisitiOsservazione() : null;
+        if (M && req) M.tastoConRequisiti(nuovo, req, 'ESEGUI TIRO', function () { window.eseguiOsservazione(); });
+        else { nuovo.onclick = function () {}; nuovo.innerText = 'NON DISPONIBILE'; }
     };
 
     // ==============================================================
     // 3. INVIO
     // ==============================================================
+    // Il Sensor non designa bersagli: nessun requisito da dichiarare.
+    window.requisitiOsservazione = function () {
+        const M = motore(); if (!M) return null;
+        const t = (window.currentOrder.action === M.AZIONI.SENSOR) ? [] : (window.combatTargets || []).slice(0, 1);
+        return M.requisitiDichiarati(t, ['lof', 'gittata']);
+    };
+    // Gli interruttori dei requisiti (Linea di Tiro, gittata, contatto...):
+    // la regola e i testi stanno nel motore, M.REQUISITI_TAVOLO.
+    window.toggleRequisitoOsservazione = function (i, chiave) {
+        const M = motore(); if (!M) return;
+        if (M.invertiRequisito(window.combatTargets[i], chiave)) window.renderOsservazione();
+    };
+
     window.eseguiOsservazione = function () {
         const M = motore(); if (!M) return;
+        const req = window.requisitiOsservazione();
+        if (req && req.idle) return M.idleDaRequisito(req);
         const unita = window.coordUnits[window.coordIndex];
         const azione = window.currentOrder.action;
         const e = window.osservazioneEsito;
@@ -328,7 +348,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_osservazione.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_osservazione.js', versione: '2026-10-07.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

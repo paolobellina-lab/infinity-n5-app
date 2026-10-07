@@ -1,4 +1,4 @@
-// @versione 2026-10-06.5 | calcolatore_math.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.2 | calcolatore_math.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧮 CALCOLATORE N5 — adattatore sopra MotoreN5
 // ------------------------------------------
@@ -125,7 +125,14 @@
             const dadi = s.combinato ? 1 : s.tiri;
             html += `Tira <b style="color:#ff3333;">${dadi} ${dadi === 1 ? 'Dado' : 'Dadi'}</b> su <b style="color:#00ffff;">${r.attributo}</b>.<br>`;
             html += `<span style="color:#00ff00; font-size:22px; font-weight:bold;">${r.valoreSuccesso} o MENO</span>`;
-            if (r.ps != null) html += ` <span style="font-size:12px; color:#888;">(${r.attributo} ${r.valoreAttributo} + PS ${r.ps})</span>`;
+            // Il dettaglio dice DA DOVE viene il numero: "ARM 3 + 3 Copertura
+            // + PS 7", non "ARM 6 + PS 7" (BS-23 al tavolo di Paolo, 7 ottobre).
+            // Le voci le consegna il motore; qui si scrivono e basta. Si
+            // staccano i MOD (Copertura, Firewall, tetto del Vitroferro);
+            // quello che l'ARMA fa all'attributo (dimezza, azzera) resta nel
+            // numero: "ARM 0" per un K1 e` gia` la cosa da leggere.
+            const ETI = { copertura: 'Copertura', firewall: 'Firewall', limite: 'tetto 12' }, extra = (r.voci || []).filter(v => ETI[v.fonte] && v.valore);
+            if (r.ps != null) html += ` <span style="font-size:12px; color:#888;">(${r.attributo} ${r.valoreAttributo - extra.reduce((s, v) => s + v.valore, 0)}${extra.map(v => ` ${v.valore > 0 ? '+' : '−'} ${Math.abs(v.valore)} ${ETI[v.fonte]}`).join('')} + PS ${r.ps})</span>`;
             html += '<br>';
             if (r.critici && !r.critici.nessunTiro) {
                 html += `<span style="color:#ffcc00; font-size:11px;">${r.critici.testo}</span><br>`;
@@ -296,7 +303,7 @@
             // (Chat INTERFACCIA, 6 ottobre: non poteva mostrarli.)
             // bersaglioDiSagoma mancava dall'elenco (chat INTERFACCIA, 6 ottobre):
             // un campo nuovo dello scontro va aggiunto QUI, o non arriva.
-            ['coperturaNegata', 'reattivoNonBersagliato', 'bersaglioDiSagoma', 'attaccanteNonRisolto'].forEach(k => { if (s[k]) out[k] = s[k]; });
+            ['coperturaNegata', 'reattivoNonBersagliato', 'bersaglioDiSagoma', 'attaccanteNonRisolto', 'bersaglioNonRisolto', 'scoprirePoiAttacco', 'scoprireSuperato', 'dopoScoprire'].forEach(k => { if (s[k]) out[k] = s[k]; });
             if (s.note && s.note.length) out.note = s.note;
             return out;
         });
@@ -311,7 +318,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_math.js', versione: '2026-10-06.5', proprieta: 'MOTORE' };
+    var v = { file: 'calcolatore_math.js', versione: '2026-10-07.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

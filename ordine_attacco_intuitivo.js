@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.3 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
 // ==========================================
 // 👻 ATTACCO INTUITIVO (N5) - ordine_attacco_intuitivo.js
 // ------------------------------------------
@@ -162,8 +162,14 @@
                 const nome = M.nomeUnita(u);
                 const scelto = window.combatTargets && window.combatTargets[0] && window.combatTargets[0].id === u.id;
                 const sfondo = scelto ? '#663300' : '#111';
-                lista.innerHTML += `<button class="huge-btn" style="width:100%; min-height:60px; font-size:19px; margin-bottom:6px; background:${sfondo}; border-color:${COL.bordo};"
-                    onclick="window.scegliPrincipaleIntuitivo('${String(u.id).replace(/'/g, "\\'")}')">[${u.tipo || 'LI'}] ${nome}</button>`;
+                // La riga con la foto, il carattere e il colore di fazione la
+                // disegna la pagina (window.rigaUnitaConFoto, chat INTERFACCIA):
+                // questo elenco era rimasto l'unico senza. Dove la pagina non
+                // c'e` (i banchi) resta il bottone semplice.
+                const clic = `onclick="window.scegliPrincipaleIntuitivo('${String(u.id).replace(/'/g, "\\'")}')"`;
+                lista.innerHTML += (typeof window.rigaUnitaConFoto === 'function')
+                    ? window.rigaUnitaConFoto(u, { attributi: clic, fazione: 'NEMICA', scelta: !!scelto })
+                    : `<button class="huge-btn" style="width:100%; min-height:60px; font-size:19px; margin-bottom:6px; background:${sfondo}; border-color:${COL.bordo};" ${clic}>[${u.tipo || 'LI'}] ${nome}</button>`;
             });
         }
 
@@ -192,8 +198,15 @@
             cover: false, rangeIndex: 0, rangeMod: 0, terrain: 'NESSUNO',
             ruolo: 'principale'
         }];
-        window.pendingTargets = [u];
+        // 🔴 PRIMA il ridisegno, POI la selezione. setupTargetSelectionIntuitivo
+        // azzera pendingTargets (riparte dalla scelta): chiamata dopo aver
+        // scritto la selezione la svuotava, e confirmMultiAro rispondeva
+        // "Seleziona almeno un bersaglio". L'Attacco Intuitivo non andava
+        // avanti con nessun bersaglio. (Paolo al tavolo, 7 ottobre.)
+        const scelti = window.combatTargets;
         window.setupTargetSelectionIntuitivo();
+        window.combatTargets = scelti;
+        window.pendingTargets = [u];
         if (window.confirmMultiAro) window.confirmMultiAro(false);
     };
 
@@ -237,6 +250,7 @@
                     ${regole.coperturaAnnullaSalvezza ? 'Chi è colpito NON ha il +3 al Tiro Salvezza per Copertura Parziale.<br>' : ''}
                     La reazione del bersaglio è un Faccia a Faccia contro questo tiro WIP.
                 </div>
+                ${M.rigaRequisiti(['lof', 'sagoma'], tgt, 0, 'window.toggleRequisitoIntuitivo')}
             </div>
 
             <div style="padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:12px;">
@@ -252,8 +266,8 @@
             // nascosto il clone nasceva invisibile. Etichetta giusta,
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
-            nuovo.onclick = function () { window.eseguiCalcoloIntuitivo(); };
-            nuovo.innerText = 'LANCIA ATTACCO INTUITIVO';
+            // Il tasto diventa IDLE se il requisito manca (M.tastoConRequisiti).
+            M.tastoConRequisiti(nuovo, M.requisitiDichiarati([tgt], ['lof', 'sagoma']), 'LANCIA ATTACCO INTUITIVO', function () { window.eseguiCalcoloIntuitivo(); });
         }
 
         window.goToStep('step-modifiers');
@@ -262,8 +276,17 @@
     // ==============================================================
     // 4. INVIO
     // ==============================================================
+    // Gli interruttori dei requisiti (Linea di Tiro, gittata, contatto...):
+    // la regola e i testi stanno nel motore, M.REQUISITI_TAVOLO.
+    window.toggleRequisitoIntuitivo = function (i, chiave) {
+        const M = motore(); if (!M) return;
+        if (M.invertiRequisito(window.combatTargets[i], chiave)) window.preparaModificatoriIntuitivo();
+    };
+
     window.eseguiCalcoloIntuitivo = function () {
         const M = motore(); if (!M) return;
+        const req = M.requisitiDichiarati([window.combatTargets[0]], ['lof', 'sagoma']);
+        if (req.idle) return M.idleDaRequisito(req);
         const unita = window.coordUnits[window.coordIndex];
 
         // Burst sempre 1, qualunque sia il B dell'arma.
@@ -313,7 +336,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-10-07.3', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

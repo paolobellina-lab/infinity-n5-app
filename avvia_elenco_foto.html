@@ -1,0 +1,72 @@
+<!-- @versione 2026-10-07.1 | avvia_elenco_foto.html | proprieta`: chat INTERFACCIA -->
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elenco delle foto - Infinity N5</title>
+<style>
+  body { background:#111; color:#ddd; font-family:sans-serif; padding:20px; max-width:760px; margin:auto; }
+  h1 { font-size:22px; color:#fff; }
+  button, label.tasto { display:inline-block; background:#222; color:#fff; border:2px solid #888; border-radius:6px; padding:10px 16px; font-size:16px; cursor:pointer; margin:6px 6px 6px 0; }
+  textarea { width:100%; height:280px; background:#000; color:#9f9; border:1px solid #444; font-family:monospace; font-size:13px; box-sizing:border-box; }
+  .nota { color:#999; font-size:14px; line-height:1.5; }
+  #esito { color:#ffcc66; margin:10px 0; }
+</style>
+</head>
+<body>
+<!-- A COSA SERVE. L'app deve sapere quali foto di miniature esistono nella
+     cartella img, e un browser non puo` leggere il contenuto di una
+     cartella del sito. Questa pagina lo fa dal computer: si sceglie la
+     cartella img, e lei scrive img/elenco_foto.js con i nomi dei file.
+     Va rifatto ogni volta che si aggiungono o tolgono foto.
+     Niente viene spedito: i file si leggono solo per nome, sul computer. -->
+<h1>📷 Elenco delle foto delle miniature</h1>
+<p class="nota">1. Scegli la cartella <b>img</b> del sito sul computer.<br>
+2. Controlla l'elenco: una riga per foto. Togli le righe che non sono miniature.<br>
+3. Scarica <b>elenco_foto.js</b> e mettilo dentro la cartella <b>img</b>, insieme alle foto.<br>
+Da rifare ogni volta che aggiungi o togli foto.</p>
+
+<label class="tasto">📁 SCEGLI LA CARTELLA img
+  <input id="cartella" type="file" webkitdirectory multiple style="display:none;">
+</label>
+<label class="tasto">🖼️ oppure scegli i file
+  <input id="file" type="file" accept="image/*" multiple style="display:none;">
+</label>
+<div id="esito"></div>
+<textarea id="elenco" placeholder="alguaciles.png&#10;alguaciles_1.png&#10;..."></textarea>
+<button onclick="scarica()">⬇️ SCARICA elenco_foto.js</button>
+
+<script>
+// Non sono foto di miniature: le icone degli stati e dell'app, il
+// segnalino, e le immagini dei segnalini piazzati (hanno il nome dell'id
+// del database: fastpanda.png, mina_shock.png...). Si riconoscono dal nome.
+var NON_MINIATURE = /^(icon_|icona_|marker\.|deployable_cover|armed_turret|mina_|cybermine|crazykoala|fastpanda|dropbear|wildparrot|deployable_repeater|dazer|disco_ball|madtraps)/i;
+function leggi(lista) {
+  var nomi = [], scartati = 0;
+  Array.prototype.forEach.call(lista, function (f) {
+    if (!/\.(png|jpe?g|webp)$/i.test(f.name)) return;
+    if (NON_MINIATURE.test(f.name)) { scartati++; return; }
+    if (nomi.indexOf(f.name) < 0) nomi.push(f.name);
+  });
+  nomi.sort(function (a, b) { return a.localeCompare(b, 'it', { numeric: true }); });
+  document.getElementById('elenco').value = nomi.join('\n');
+  document.getElementById('esito').textContent = nomi.length + ' foto trovate' + (scartati ? ', ' + scartati + ' immagini lasciate fuori (icone e segnalini)' : '') + '.';
+}
+document.getElementById('cartella').onchange = function () { leggi(this.files); };
+document.getElementById('file').onchange = function () { leggi(this.files); };
+function contenuto() {
+  var nomi = document.getElementById('elenco').value.split('\n').map(function (r) { return r.trim(); }).filter(Boolean);
+  return '// Generato da avvia_elenco_foto.html il ' + new Date().toISOString().slice(0, 10) + '. Non modificare a mano: rigeneralo.\n' +
+         '// Le foto delle miniature presenti in questa cartella, una per file.\n' +
+         'window.FOTO_MINIATURE = ' + JSON.stringify(nomi, null, 2) + ';\n';
+}
+function scarica() {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([contenuto()], { type: 'text/javascript' }));
+  a.download = 'elenco_foto.js';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-// @versione 2026-10-06.5 | test_giro_aggiornamento.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-07.1 | test_giro_aggiornamento.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  IL GIRO DELL'AGGIORNAMENTO: app attiva -> Hub -> app avversaria.
 //
@@ -237,16 +237,23 @@ nomadi.g.coordUnits = [nomadi.g.roster[0]]; nomadi.g.coordIndex = 0;
 nomadi.g.coordPayloads = []; nomadi.g.combatTargets = []; nomadi.g.pendingTargets = [];
 if (typeof nomadi.g.procediAlleAzioni === 'function') nomadi.g.procediAlleAzioni();
 nomadi.g.selectAction('MOVIMENTO', false);
-// 6 ottobre, chat INTERFACCIA: un giro del tavolo FRA le due dichiarazioni.
-// Senza, l'Hub non gira fra il MOVIMENTO e l'IDLE: sul canale
-// app -> Hub il secondo copre il primo e l'Hub inoltra solo l'IDLE. Il
-// registro diceva ["MOVIMENTO","IDLE","IDLE"] e sembrava un doppio invio
-// dell'Idle: erano l'IDLE dell'app e lo STESSO IDLE inoltrato dall'Hub,
-// mentre il MOVIMENTO al reattivo non arrivava affatto. Al tavolo l'Hub
-// gira di continuo, quindi il reattivo li vede tutti e due: e` questo il
-// giro che si misura.
+// Un giro del tavolo fra la dichiarazione e l'Idle, come al tavolo, dove
+// l'Hub gira di continuo.
 giroTavolo();
-nomadi.g.dichiaraRequisitoFallito();
+// 7 ottobre: l'Idle si dichiara dal tasto principale, e il modulo passa il
+// MOTIVO gia` scritto. La finestra "Quale requisito non e` soddisfatto?"
+// non deve aprirsi: si conta quante volte la pagina la chiede.
+let domandeFatte = 0;
+const promptVero = nomadi.g.prompt;
+nomadi.g.prompt = function () { domandeFatte++; return 'scritto a mano'; };
+let busteCalcolo = [];
+const inviaVero = nomadi.g.inviaCalcoloAllHub;
+nomadi.g.inviaCalcoloAllHub = function (b) { busteCalcolo.push(JSON.parse(J(b))); return inviaVero.apply(this, arguments); };
+nomadi.g.dichiaraRequisitoFallito('Nessuna Linea di Tiro (motivo del modulo)');
+nomadi.g.prompt = promptVero; nomadi.g.inviaCalcoloAllHub = inviaVero;
+ok(domandeFatte === 0, `col motivo gia scritto la pagina NON chiede "quale requisito?" (domande: ${domandeFatte})`);
+ok(busteCalcolo.length === 1 && /motivo del modulo/.test(J(busteCalcolo[0])) && !/scritto a mano/.test(J(busteCalcolo[0])),
+   `e nella busta resta il motivo del modulo, non uno scritto a mano (${(J(busteCalcolo[0] || {}).match(/"motivo":"[^"]*"/) || ['nessun motivo'])[0]})`);
 ok(scrittoDa(C.SETUP_NOMADI, 'app NOMADI', dalQui),
    'l app attiva rimanda il proprio roster: parte l AGGIORNAMENTO');
 giroTavolo();
@@ -260,33 +267,23 @@ ok(hubDopo && hubDopo.camo === false, `e camo false (${hubDopo && hubDopo.camo})
 ok(nemicoDopo && /Intruder/i.test(nemicoDopo.nome) &&
    nemicoDopo.deployState.toUpperCase() === 'NORMAL' && nemicoDopo.camo === false,
    `e l avversario vede la stessa cosa (${J(nemicoDopo)})`);
-// L'allarme con azione IDLE arriva al reattivo: l'Ordine e` stato speso e
-// l'avversario ha diritto al suo ARO.
-ok(scrittoDa(C.COMUNICAZIONE, 'app NOMADI', dalQui) || scrittoDa(C.ALLARME_ATTACCO, 'HUB', dalQui),
-   'e parte anche l allarme dell Ordine');
-const allarmiPassati = transito.filter(t => t.quando >= dalQui && !t.vuoto &&
-        (t.chiave === C.COMUNICAZIONE || t.chiave === C.ALLARME_ATTACCO))
-    .map(t => { try { return JSON.parse(t.valore); } catch (e) { return null; } })
-    .filter(Boolean);
-const azioniPassate = allarmiPassati.map(a => String(a.azione || '').toUpperCase());
-ok(allarmiPassati.length >= 1,
-   `l allarme arriva dall altra parte (${allarmiPassati.length} passati: ${J(azioniPassate)})`);
-// In questo Ordine ne passano DUE: il MOVIMENTO della prima meta` e l IDLE
-// del requisito fallito. Si cerca l IDLE fra quelli passati, non "l ultimo":
-// sullo stesso canale il secondo copre il primo.
-ok(azioniPassate.indexOf('IDLE') >= 0,
-   `e fra gli allarmi c e quello con azione IDLE (${J(azioniPassate)})`);
-
-// CHI ha scritto COSA, canale per canale: e` la risposta alla domanda "il
-// secondo IDLE e` un doppio invio?". L'app attiva scrive sul canale verso
-// l'Hub; l'Hub inoltra sul canale dell'allarme. Ogni allarme passa quindi
-// DUE volte nel registro, una per tratto. Un doppio invio vero sarebbe due
-// IDLE dello stesso mittente sullo stesso canale.
+// 🔴 UN ALLARME PER ORDINE (motore_core.js 2026-10-07.1, regola alle righe
+// 1097-1101 e 1196-1217). Fino al 6 ottobre qui si aspettavano DUE allarmi,
+// il MOVIMENTO della prima meta` e l'IDLE del requisito fallito: era il
+// difetto visto da Paolo al tavolo, il reattivo si vedeva chiedere un
+// secondo ARO per lo stesso Ordine. L'Ordine ha gia` avvisato l'avversario
+// col MOVIMENTO: l'Idle da requisito fallito non rialza l'allarme.
+// CHI ha scritto COSA, tratto per tratto: l'app attiva scrive sul canale
+// verso l'Hub, l'Hub inoltra sul canale dell'allarme.
 const tratto = (da, chiave) => transito.filter(t => t.quando >= dalQui && !t.vuoto && t.da === da && t.chiave === chiave)
     .map(t => { try { return String(JSON.parse(t.valore).azione || '').toUpperCase(); } catch (e) { return '?'; } });
 const dallApp = tratto('app NOMADI', C.COMUNICAZIONE), dallHub = tratto('HUB', C.ALLARME_ATTACCO);
-ok(J(dallApp) === J(['MOVIMENTO', 'IDLE']), `l app attiva spedisce all Hub un MOVIMENTO e UN SOLO IDLE (${J(dallApp)})`);
-ok(J(dallHub) === J(['MOVIMENTO', 'IDLE']), `e l Hub inoltra al reattivo un MOVIMENTO e UN SOLO IDLE (${J(dallHub)})`);
+ok(J(dallApp) === J(['MOVIMENTO']), `l app attiva spedisce all Hub UN allarme solo, il MOVIMENTO (${J(dallApp)})`);
+ok(J(dallHub) === J(['MOVIMENTO']), `e l Hub ne inoltra al reattivo UNO solo (${J(dallHub)})`);
+ok(dallApp.indexOf('IDLE') < 0 && dallHub.indexOf('IDLE') < 0,
+   `l Idle da requisito fallito NON manda un secondo allarme (${J(dallApp)} / ${J(dallHub)})`);
+// L'Ordine pero` si chiude: la busta dell'Idle parte lo stesso.
+ok(scrittoDa(C.HUB_CALCOLO, 'app NOMADI', dalQui), 'e la busta dell Idle parte comunque verso l Hub');
 
 console.log('\n=== 3. CONTROPROVA: senza invio il cambio NON arriva ===');
 // senzaInvio true aggiorna il roster di chi agisce e NON spedisce. Senza
@@ -405,6 +402,8 @@ ok(typeof nomadi.g.spedisciAllarmiInCoda === 'function' && Array.isArray(nomadi.
    'premessa: l app ha la coda degli allarmi (motore_core.js dalla 2026-10-06.7)');
 
 // --- un allarme solo: parte subito, come sempre ---
+// (7 ottobre: i due casi sotto ora usano due ORDINI diversi, perche` lo
+// stesso Ordine non manda piu` due allarmi.)
 nomadi.g.currentOrder = { unit: nomadi.g.roster[0], id: 'ordine_prova_tratti_0' };
 let dal6 = transito.length; mostrati.length = 0;
 spedisci('MOVIMENTO');
@@ -413,10 +412,28 @@ ok(J(azioniDi('app NOMADI', C.COMUNICAZIONE, dal6)) === J(['MOVIMENTO']) && inCo
 hub.giro(); pano.giro(); nomadi.g.spedisciAllarmiInCoda();
 ok(J(mostrati) === J(['MOVIMENTO']), `e il reattivo lo mostra (${J(mostrati)})`);
 
-// --- caso (a): due dichiarazioni di fila, l'Hub non ha ancora girato ---
-nomadi.g.currentOrder = { unit: nomadi.g.roster[0], id: 'ordine_prova_tratti_a' };
+// --- lo STESSO Ordine non avvisa due volte ---
+// Dal 7 ottobre il secondo allarme dello stesso Ordine non entra nemmeno in
+// coda: inviaAllarmeAro risponde { inviato:false, ripetuto:true }.
+nomadi.g.currentOrder = { unit: nomadi.g.roster[0], id: 'ordine_prova_tratti_ripetuto' };
 dal6 = transito.length; mostrati.length = 0;
 spedisci('MOVIMENTO'); spedisci('IDLE');
+ok(J(azioniDi('app NOMADI', C.COMUNICAZIONE, dal6)) === J(['MOVIMENTO']) && inCoda() === 0,
+   `stesso Ordine: il secondo allarme non parte e non resta in coda (${J(azioniDi('app NOMADI', C.COMUNICAZIONE, dal6))}, coda ${inCoda()})`);
+const ripetuto = nomadi.g.inviaAllarmeAro({ azione: 'IDLE', attaccante: 'x', ordineId: 'ordine_prova_tratti_ripetuto' });
+ok(ripetuto && ripetuto.inviato === false && ripetuto.ripetuto === true, `e chi lo chiede lo viene a sapere (${J(ripetuto)})`);
+hub.giro(); pano.giro(); nomadi.g.spedisciAllarmiInCoda(); hub.giro(); pano.giro();
+ok(J(mostrati) === J(['MOVIMENTO']), `il reattivo vede UN allarme (${J(mostrati)})`);
+
+// La coda serve ancora per due Ordini DIVERSI dichiarati uno dopo l'altro
+// (la fine di un Ordine e l'inizio del successivo dentro lo stesso giro di
+// lettura): il secondo non deve coprire il primo. Stesse prove del 6
+// ottobre, con due Ordini al posto di due allarmi dello stesso Ordine.
+const spedisciOrdine = (id, azione) => { nomadi.g.currentOrder = { unit: nomadi.g.roster[0], id: id }; spedisci(azione); };
+
+// --- caso (a): due Ordini di fila, l'Hub non ha ancora girato ---
+dal6 = transito.length; mostrati.length = 0;
+spedisciOrdine('ordine_prova_tratti_a1', 'MOVIMENTO'); spedisciOrdine('ordine_prova_tratti_a2', 'IDLE');
 ok(J(azioniDi('app NOMADI', C.COMUNICAZIONE, dal6)) === J(['MOVIMENTO']),
    `(a) sul canale verso l Hub c e solo il primo: il secondo NON lo copre (${J(azioniDi('app NOMADI', C.COMUNICAZIONE, dal6))})`);
 ok(inCoda() === 1, `(a) e il secondo aspetta in coda (${inCoda()})`);

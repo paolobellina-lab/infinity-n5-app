@@ -1,4 +1,4 @@
-// @versione 2026-10-06.2 | test_ordini_senza_tiro.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.1 | test_ordini_senza_tiro.js | proprieta`: chat MOTORE
 // ============================================================================
 //  ORDINI SENZA BERSAGLIO IN M.risolviPayload, E L'ADATTATORE.
 //
@@ -220,8 +220,14 @@ const scopritore = Object.assign(JSON.parse(J(intrHMG)), { id: 'sc1', states: {}
 // cosi`, non serve states.camo (dichiarato da MOTORE, verificato qui).
 const markerCamo = Object.assign(JSON.parse(J(crocMan)), { id: 'sc2' });
 const trovaScoprire = (n, id) => [scopritore, markerCamo].find(u => u.id === id || M.nomeUnita(u) === n);
-const scoprire = (attaccante, voceBersaglio, ctx) => M.risolviPayload({ attacchi: [{
-        attaccante: attaccante, azione: M.AZIONI.SCOPRIRE, arma: null,
+// `attaccanteId` NON e` facoltativo, misurato il 6 ottobre: senza, anche un
+// attaccante passato come OGGETTO risulta non risolto, e il calcolo perde
+// statistiche, abilita` ed equipaggiamento (qui: il visore, e il successo
+// automatico diventa un tiro a -6). La forma completa e` quella che usa
+// MOTORE: attaccante + attaccanteId + ctx.trovaUnita.
+const scoprire = (attaccante, voceBersaglio, ctx, id) => M.risolviPayload({ attacchi: [{
+        attaccante: attaccante, attaccanteId: (id === undefined ? 'sc1' : id),
+        azione: M.AZIONI.SCOPRIRE, arma: null,
         bersagli: [voceBersaglio], regole: { nonOffensivo: true } }] }, [], ctx || {})[0] || {};
 const voceMarker = { id: 'sc2', name: M.nomeUnita(markerCamo), burst: 1 };
 const voceMarkerIntera = Object.assign({}, markerCamo, { burst: 1, name: M.nomeUnita(markerCamo) });
@@ -256,18 +262,51 @@ console.log('\n=== 8. L attaccante non risolto ora LO DICE (motore .14) ===');
 // nome e non risolvibile dava un numero plausibile senza un fiato. E` la
 // famiglia che inseguiamo — un dato mancante travestito da dato valido.
 // Il calcolo NON cambia: cambia che adesso si sa.
-const nonRisolto = scoprire('Nome Inventato', voceMarkerIntera, {});
+const nonRisolto = scoprire('Nome Inventato', voceMarkerIntera, {}, null);
 ok(nonRisolto.attaccanteNonRisolto === true,
    `attaccante per nome e senza trovaUnita: attaccanteNonRisolto true (${nonRisolto.attaccanteNonRisolto})`);
 ok((nonRisolto.avvisi || []).length === 1, `e un avviso, uno solo (${(nonRisolto.avvisi || []).length})`);
-const testoAvviso = (nonRisolto.avvisi || []).map(a => String(a.messaggio || a)).join(' | ');
-ok(/non trovato/.test(testoAvviso) && /non e` affidabile|non è affidabile/.test(testoAvviso),
+// ATTENZIONE AGLI ACCENTI, trovato il 6 ottobre cercando perche` questa
+// prova cadeva su un testo che a leggerlo conteneva la frase: i testi del
+// motore usano la forma SCOMPOSTA — "e" (U+0065) piu` accento combinante
+// (U+0300) — non il carattere precomposto "è" (U+00E8). Una regex scritta
+// con il precomposto non trova niente, e il testo sembra identico. Si
+// normalizza prima di confrontare, sempre.
+const normale = (s) => String(s).normalize('NFC');
+const testoAvviso = normale((nonRisolto.avvisi || []).map(a => String(a.messaggio || a)).join(' | '));
+ok(/non trovato/.test(testoAvviso) && /non \u00e8 affidabile/.test(testoAvviso),
    `col testo che dice che il risultato non è affidabile (${testoAvviso.slice(0, 80)}…)`);
 ok((nonRisolto.note || []).some(n => /non trovato/.test(String(n))),
    'e lo stesso testo arriva anche nelle note, dove il tabellone lo legge');
 // E il calcolo resta quello: il campo avvisa, non corregge.
 ok(nonRisolto.titolo === 'TIRO NORMALE' && nonRisolto.attivo.burst === 1,
    `il calcolo non cambia: TIRO NORMALE, burst 1, mod ${J(nonRisolto.attivo.mod)}`);
+// GIRATA IL 7 OTTOBRE (motore 2026-10-07.5, punto B6 della consegna).
+// Il 6 ottobre questa prova fissava il contrario: senza `attaccanteId` non
+// bastava passare l'unita` come oggetto, il motore la segnava non risolta e
+// il calcolo perdeva il visore ('TIRO NORMALE' a -6 invece del successo
+// automatico). Era un difetto, e questa prova lo fissava come fatto.
+// Ora il motore, se `attaccante` e` un OGGETTO e ctx.trovaUnita non lo
+// ritrova, USA l'oggetto della busta e NON alza attaccanteNonRisolto: una
+// busta che si porta dentro l'unita` e` completa anche senza l'id.
+// La differenza che resta: una busta che porta il NOME e non lo trova e`
+// un'altra cosa, e quella bandiera la alza ancora (prove sopra).
+const oggettoSenzaId = scoprire(scopritore, voceMarker, { trovaUnita: trovaScoprire }, null);
+ok(oggettoSenzaId.attaccanteNonRisolto === undefined,
+   `attaccante OGGETTO senza attaccanteId: il motore USA l oggetto della busta, nessuna bandiera (${J(oggettoSenzaId.attaccanteNonRisolto)})`);
+ok(oggettoSenzaId.titolo === 'SUCCESSO AUTOMATICO',
+   `e il successo automatico NON si perde piu` + `: il visore arriva al calcolo (${oggettoSenzaId.titolo})`);
+ok(oggettoSenzaId.attivo.mod === 'Auto',
+   `col mod "Auto" invece di un numero (${J(oggettoSenzaId.attivo.mod)})`);
+ok((oggettoSenzaId.avvisi || []).length === 0,
+   `e nessun avviso: non c e` + ` niente da segnalare (${(oggettoSenzaId.avvisi || []).length})`);
+// CONTROPROVA, perche` "nessuna bandiera" non deve voler dire "la bandiera
+// non si alza mai": la stessa chiamata col NOME di una truppa che non c e`
+// la alza eccome. Le due strade restano distinte.
+const nomeIntrovabile = scoprire('Truppa Che Non Esiste', voceMarker, { trovaUnita: trovaScoprire }, null);
+ok(nomeIntrovabile.attaccanteNonRisolto === true,
+   `CONTROPROVA: col NOME di una truppa assente la bandiera si alza ancora (${J(nomeIntrovabile.attaccanteNonRisolto)})`);
+
 // CONTROPROVA: con l attaccante risolto il campo è ASSENTE e gli avvisi 0.
 // Senza, "true" non distingue "lo ha capito" da "lo scrive sempre".
 ok(autoOgg.attaccanteNonRisolto === undefined,

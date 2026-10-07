@@ -1,4 +1,4 @@
-// @versione 2026-10-06.2 | test_adattatore.js | proprieta`: chat TEST
+// @versione 2026-10-07.1 | test_adattatore.js | proprieta`: chat TEST
 // Test dell'adattatore calcolatore_math.js — node test_adattatore.js
 global.window = global;
 require('./catalogo_n5.js'); require('./database_comune.js');
@@ -52,7 +52,25 @@ ok(d.includes('Copertura'), 'la copertura compare');
 // e prima l'interfaccia mostrava sotto ciascuno il numero dell'altro.
 const sv = testo(s.attivo.salvezzaInflitta);
 ok(sv.includes('11 o MENO'), 'il Tiro Salvezza mostra il valore');
-ok(sv.includes('ARM 4 + PS 7'), 'e la scomposizione: ARM 1 +3 copertura, PS 7');
+// 🔴 GIRATA IL 7 OTTOBRE. Il dettaglio ora STACCA i MOD dall'attributo:
+// prima leggeva "ARM 4 + PS 7" e il giocatore non vedeva da dove veniva il
+// 4. Ora "(ARM 1 + 3 Copertura + PS 7)": l'ARM del profilo, il MOD con il
+// suo nome, il PS dell'arma. Senza MOD resta "(ARM 3 + PS 7)", e un ARM
+// azzerato o dimezzato dall'arma resta DENTRO il numero ("ARM 0") perche`
+// non e` un modificatore della salvezza, e` l'attributo.
+ok(sv.includes('ARM 1 + 3 Copertura + PS 7'),
+   `la scomposizione stacca il MOD dall attributo: ARM 1, +3 Copertura, PS 7 (${(/\([^)]*ARM[^)]*\)/.exec(sv) || ['nessuna parentesi'])[0]})`);
+ok(sv.includes('11 o MENO'),
+   'e il totale resta 11: la scomposizione non cambia il numero, lo spiega');
+// CONTROPROVA: senza copertura la voce del MOD NON c e, e la parentesi
+// torna a due pezzi. Senza questa, "+ 3 Copertura" non distingue "staccato
+// quando serve" da "scritto sempre".
+const svScoperto = testo(risolvi([{ name: 'Fusilier', burst: 3, rangeIndex: 2, rangeMod: -3,
+    cover: false, ammo: 'N', terrain: 'NESSUNO' }])[0].attivo.salvezzaInflitta);
+ok(/\(ARM 1 \+ PS 7\)/.test(svScoperto),
+   `senza copertura la parentesi ha due pezzi soli (${(/\([^)]*ARM[^)]*\)/.exec(svScoperto) || ['nessuna'])[0]})`);
+ok(!/Copertura/.test(svScoperto.replace(/IN COPERTURA/g, '')),
+   'e la parola Copertura non compare nella salvezza di un bersaglio scoperto');
 
 console.log('\n=== 4. I dati grezzi restano disponibili ===');
 ok(Array.isArray(s.attivo.dati.voci), 'attivo.dati.voci è l elenco delle voci');
@@ -307,29 +325,56 @@ const avvFantasma = ((bf.avvisi || []).map(a => String(a.testo || a.messaggio ||
 ok(/non trovato/.test(avvFantasma),
    `e l avviso del motore viaggia in out.avvisi (${avvFantasma.slice(0, 50)}…)`);
 
-// IL CONFINE DEL CONTROLLO, dichiarato da MOTORE: il segnaposto col
-// nonRisolto vale per OGNI ricerca dell'adattatore, ma il motore lo
-// controlla SOLO su chi attacca. Un bersaglio fantasma non alza nessuna
-// bandiera, e la sua salvezza viene calcolata su un unita` vuota (ARM 0).
-// Si fissa il confine: il giorno che il motore estende il controllo questa
-// prova diventa rossa e si viene a sapere, invece di scoprirlo per caso.
+// IL BERSAGLIO FANTASMA — GIRATA IL 7 OTTOBRE, E IL BUCO E` CHIUSO.
+// Il 6 ottobre qui stava il CONFINE del controllo: il motore guardava solo
+// chi attacca, un bersaglio fantasma passava senza bandiera e senza nota, e
+// la sua salvezza veniva calcolata su un'unita` vuota. Lo avevo fissato
+// come confine proprio perche` diventasse rosso il giorno che il motore si
+// estendeva. E` diventato rosso oggi: la prova ha fatto il suo mestiere.
+// Ora lo scontro porta bersaglioNonRisolto, una nota e un avviso.
 const bersFantasma = window.generaRisoluzioneDaDati({
     attacchi: [{ attaccante: 'Alguacil', azione: M.AZIONI.BS_ATTACK, arma: combi,
                  bersagli: [{ name: 'Bersaglio Inesistente', burst: 3, rangeIndex: 1, rangeMod: 0, cover: false, ammo: 'N', terrain: 'NESSUNO' }] }]
 }) || [];
 const bfz = bersFantasma[0] || {};
+ok(bfz.bersaglioNonRisolto === true,
+   `un BERSAGLIO fantasma ora alza la sua bandiera (${JSON.stringify(bfz.bersaglioNonRisolto)})`);
 ok(bfz.attaccanteNonRisolto === undefined,
-   'un BERSAGLIO fantasma non alza la bandiera: il controllo del motore e` su chi attacca');
-ok((bfz.note || []).length === 0,
-   `e nessuna nota lo segnala (${(bfz.note || []).length} note)`);
+   'e NON quella dell attaccante: i due campi sono distinti, e l attaccante qui c era');
+const noteBfz = String((bfz.note || []).join(' | ')).normalize('NFC');
+ok(/Bersaglio/.test(noteBfz) && /non trovato/.test(noteBfz),
+   `con la nota che nomina il bersaglio (${noteBfz.slice(0, 60)}…)`);
+ok(/statistiche/.test(noteBfz),
+   'e dice che il calcolo non ha le sue statistiche: il campo e` un avvertimento, non una riparazione');
+const avvBfz = ((bfz.avvisi || []).map(a => String(a.testo || a.messaggio || a)).join(' | ')).normalize('NFC');
+ok(/non trovato/.test(avvBfz),
+   'e l avviso viaggia anche nel canale a parte');
+// CONTROPROVA: con un bersaglio che l Hub HA nei roster nessuna delle tre
+// cose compare. Senza, "true" non si distingue da "sempre acceso".
+const bersBuono = risolvi([{ name: 'Fusilier', burst: 3, rangeIndex: 1, rangeMod: 0, cover: false, ammo: 'N', terrain: 'NESSUNO' }])[0] || {};
+ok(bersBuono.bersaglioNonRisolto === undefined && (bersBuono.note || []).length === 0,
+   'CONTROPROVA: col bersaglio nei roster ne` il campo ne` la nota compaiono');
+// E la salvezza viene calcolata comunque, anche sul fantasma: il campo
+// avverte, non blocca. Questa resta, perche` e` la differenza fra
+// "segnalato" e "corretto".
 ok(/Munizione/.test(String((bfz.reattivo || {}).salvezza || '')),
-   'ma la salvezza viene calcolata comunque, su un unita` vuota: e` il buco che resta');
+   'la salvezza del fantasma viene calcolata comunque, su un unita` vuota: il campo avverte, non blocca');
 
-// L elenco dei quattro campi copiati, provato per intero: i tre di prima
-// sono gia` in alto, qui si pretende che l aggiunta non ne abbia perso uno.
-ok(/attaccanteNonRisolto/.test(srcMath) && /bersaglioDiSagoma/.test(srcMath) &&
-   /coperturaNegata/.test(srcMath) && /reattivoNonBersagliato/.test(srcMath),
-   'e l adattatore nomina tutti e quattro i campi dello scontro');
+// L ELENCO DEI CAMPI COPIATI. Erano quattro il 6 ottobre, oggi sono OTTO:
+// l adattatore .2 ne ha aggiunti quattro (bersaglioNonRisolto piu` tre che
+// la consegna di MOTORE non nomina: scoprirePoiAttacco, scoprireSuperato,
+// dopoScoprire). Un campo nuovo dello scontro va aggiunto QUI o non arriva
+// al tabellone: e` la famiglia di difetti che inseguiamo, e questa prova e`
+// la rete. Se MOTORE ne aggiunge un nono senza dirlo, qui non si vede —
+// quindi si fissa anche il NUMERO.
+const campiCopiati = ['coperturaNegata', 'reattivoNonBersagliato', 'bersaglioDiSagoma',
+                      'attaccanteNonRisolto', 'bersaglioNonRisolto',
+                      'scoprirePoiAttacco', 'scoprireSuperato', 'dopoScoprire'];
+campiCopiati.forEach(k => ok(new RegExp("'" + k + "'").test(srcMath),
+    `l adattatore nomina il campo ${k}`));
+const elenco = (/\[([^\]]*)\]\.forEach\(k => \{ if \(s\[k\]\)/.exec(srcMath) || [])[1] || '';
+ok((elenco.match(/'/g) || []).length / 2 === campiCopiati.length,
+   `e l elenco ne ha esattamente ${campiCopiati.length}: se ne compare un nono, questa prova lo dice (${(elenco.match(/'/g) || []).length / 2})`);
 // E il ripiego del trovaUnita, letto nel sorgente: e` il punto esatto che
 // era rotto nella .4. Una prova sul testo, perche` il comportamento sopra
 // non dice QUALE riga lo produce.

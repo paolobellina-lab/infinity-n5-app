@@ -1,4 +1,4 @@
-// @versione 2026-10-06.1 | test_piano_schieramento.js | proprieta`: chat TEST
+// @versione 2026-10-07.2 | test_piano_schieramento.js | proprieta`: chat TEST
 // ============================================================================
 //  LE UNITA` CHE IL PIANO CHIEDE DI SCHIERARE ESISTONO DAVVERO?
 //
@@ -84,7 +84,29 @@ const voci = leggiTabelle(fs.readFileSync(PIANO, 'utf8'));
 console.log('\n=== 0. Le due tabelle si leggono ===');
 ok(DB.NOMADI.length === 385 && DB.PANOCEANIA.length === 380,
    `database: ${DB.NOMADI.length} profili nomadi e ${DB.PANOCEANIA.length} panoceani`);
-ok(voci.length >= 30, `righe di schieramento lette dal piano: ${voci.length}`);
+// 🔴 IL NUMERO ESATTO, non un ">= 30". Il 6 ottobre il parser leggeva 14
+// righe su 35 (pretendeva ^\*\*Nomadi\*\*$ e il piano ha del testo in coda)
+// e un controllo lasco non se ne accorgeva: 14 >= 30 era falso per caso, ma
+// con una tabella piu` lunga sarebbe stato vero e il buco invisibile.
+// Se il piano cresce, questa prova diventa rossa e il numero va aggiornato:
+// e` il comportamento che voglio — un rosso che dice "aggiorna", non un
+// verde che nasconde righe non lette.
+const perFazione = voci.reduce(function (m, v) { m[v.fazione] = (m[v.fazione] || 0) + 1; return m; }, {});
+// 🔴 QUESTI NUMERI VALGONO DALLA REVISIONE 12 DEL PIANO. Prima erano 24
+// Nomadi e 39 righe: la 25esima e` l'Intruder (Hacker, Killer Hacking
+// Device), aggiunto perche` il blocco F chiede le Grenades e nessun altro
+// del roster le porta. Se questa prova e` rossa con 24/39, il piano che hai
+// e` di una revisione precedente: NON e` un difetto, e` un disallineamento.
+// (Il 7 ottobre ho cambiato questi numeri senza alzare la versione del
+// banco, e due chat hanno letto due contenuti diversi sotto la stessa
+// 2026-10-07.1. Da qui la .2.)
+const REV_MINIMA = 12;
+const revisione = (/revisione\s+(\d+)/.exec(fs.readFileSync(PIANO, 'utf8')) || [])[1];
+ok(revisione !== undefined && parseInt(revisione, 10) >= REV_MINIMA,
+   `il piano e` + ` alla revisione ${revisione} e questo banco pretende almeno la ${REV_MINIMA}`);
+ok(perFazione.NOMADI === 25 && perFazione.PANOCEANIA === 15,
+   `righe lette per fazione: 25 Nomadi e 15 PanOceania (${JSON.stringify(perFazione)})`);
+ok(voci.length === 40, `righe di schieramento lette dal piano: 40 (${voci.length})`);
 ok(voci.some(v => v.fazione === 'NOMADI') && voci.some(v => v.fazione === 'PANOCEANIA'),
    'e vengono da entrambe le tabelle');
 // CONTROPROVA della lettura: se il formato della tabella cambiasse, qui si

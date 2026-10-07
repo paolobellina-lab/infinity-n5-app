@@ -1,4 +1,4 @@
-// @versione 2026-09-14.2 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.1 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
 // ==========================================
 // 🚀 ATTACCO GUIDATO (N5) - ordine_attacco_guidato.js
 // ------------------------------------------
@@ -306,6 +306,7 @@
                 html += `<div style="text-align:center; color:#aaa; font-size:12px; margin-bottom:5px;">${regole.noteGittata || 'Seleziona la gittata.'}</div>
                     <div class="range-bar">${segmenti}</div>
                     <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${etichette}</div>
+                    ${M.rigaRequisiti(['gittata'], tgt, 0, 'window.toggleRequisitoGuidato')}
                     <div style="margin-top:10px; padding:8px; background:#001a33; border:1px solid ${COL.accent}; border-radius:5px; color:${COL.accent}; font-size:12px; text-align:center;">
                         Reazione del bersaglio: ${regole.reazioneBersaglio}
                     </div>`;
@@ -335,8 +336,8 @@
             // nascosto il clone nasceva invisibile. Etichetta giusta,
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
-            nuovo.onclick = function () { window.eseguiCalcoloGuidato(); };
-            nuovo.innerText = 'LANCIA MISSILI';
+            // Il tasto diventa IDLE se il requisito manca (M.tastoConRequisiti).
+            M.tastoConRequisiti(nuovo, M.requisitiDichiarati([window.combatTargets[0]], ['gittata']), 'LANCIA MISSILI', function () { window.eseguiCalcoloGuidato(); });
         }
     };
 
@@ -352,8 +353,17 @@
     // ==============================================================
     // 4. INVIO
     // ==============================================================
+    // Gli interruttori dei requisiti (Linea di Tiro, gittata, contatto...):
+    // la regola e i testi stanno nel motore, M.REQUISITI_TAVOLO.
+    window.toggleRequisitoGuidato = function (i, chiave) {
+        const M = motore(); if (!M) return;
+        if (M.invertiRequisito(window.combatTargets[i], chiave)) window.renderGuidato();
+    };
+
     window.eseguiCalcoloGuidato = function () {
         const M = motore(); if (!M) return;
+        const req = M.requisitiDichiarati([window.combatTargets[0]], ['gittata']);
+        if (req.idle) return M.idleDaRequisito(req);
         const unita = window.coordUnits[window.coordIndex];
         const arma = M.profiloArma(window.currentOrder.weapon);
         const regole = M.regoleGuidato(arma, { rangeIndex: window.combatTargets[0].rangeIndex });
@@ -414,7 +424,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-09-14.2', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-10-07.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

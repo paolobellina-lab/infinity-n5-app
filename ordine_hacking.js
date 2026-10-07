@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | ordine_hacking.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.1 | ordine_hacking.js | proprieta`: chat MOTORE
 // ==========================================
 // 💻 INFOGUERRA (HACKING) N5 - ordine_hacking.js
 // ------------------------------------------
@@ -238,6 +238,7 @@
                     📡 ${REP.pulsante || 'VIA REPEATER NEMICO'}: ${rep ? 'SÌ (Firewall ' + (REP.firewall || -3) + ')' : 'NO'}
                 </button>
                 ${rep ? `<div style="color:#aaa; font-size:12px; margin:-4px 0 10px; text-align:center;">${REP.spiegazione || ''}</div>` : ''}
+                <div style="margin-bottom:10px;">${M.rigaRequisiti(['area'], tgt, index, 'window.toggleRequisitoHacking')}</div>
                 ${mods.requisitoFallito ? `<div style="padding:10px; margin-bottom:10px; background:#330000; border:2px solid #ff3333; border-radius:5px; color:#ff9999; font-size:13px;">
                     <b>⚠️ REQUISITO NON SODDISFATTO → IDLE</b><br>${mods.avvisi.join('<br>')}</div>` : ''}
 
@@ -263,8 +264,8 @@
             // nascosto il clone nasceva invisibile. Etichetta giusta,
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
-            nuovo.onclick = function () { window.eseguiCalcoloHacking(); };
-            nuovo.innerText = 'ESEGUI ATTACCO CYBER';
+            // Il tasto diventa IDLE se il requisito manca (M.tastoConRequisiti).
+            M.tastoConRequisiti(nuovo, M.requisitiDichiarati(window.combatTargets, ['area']), 'ESEGUI ATTACCO CYBER', function () { window.eseguiCalcoloHacking(); });
         }
     };
 
@@ -288,8 +289,19 @@
     // ==============================================================
     // 4. INVIO
     // ==============================================================
+    // Gli interruttori dei requisiti (Linea di Tiro, gittata, contatto...):
+    // la regola e i testi stanno nel motore, M.REQUISITI_TAVOLO.
+    window.toggleRequisitoHacking = function (i, chiave) {
+        const M = motore(); if (!M) return;
+        if (M.invertiRequisito(window.combatTargets[i], chiave)) window.renderTargetsAllocationHacking();
+    };
+
     window.eseguiCalcoloHacking = function () {
         const M = motore(); if (!M) return;
+        // Chi e` fuori dall'Area di Hacking: i suoi dadi si perdono (righe
+        // 3111-3114, valgono per ogni Burst diviso); se non resta nessuno, Idle.
+        const req = M.requisitiDichiarati(window.combatTargets, ['area']);
+        if (req.idle) return M.idleDaRequisito(req);
         const unita = window.coordUnits[window.coordIndex];
         const programma = M.armaDaProgrammaDi(window.currentOrder.unit, window.currentOrder.weapon);
 
@@ -309,7 +321,7 @@
             azione: M.AZIONI.HACKING,
             arma: programma,
             programma: programma.nome,
-            bersagli: window.combatTargets,
+            bersagli: M.bersagliConRequisiti(window.combatTargets, req),
             burstDisponibile: window.totalBurst,
             regole: {
                 attributo: 'WIP',
@@ -359,7 +371,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_hacking.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_hacking.js', versione: '2026-10-07.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

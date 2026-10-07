@@ -1,5 +1,7 @@
-// @versione 2026-10-06.1 | test_modulo_intuitivo.js | proprieta`: chat TEST
+// @versione 2026-10-07.2 | test_modulo_intuitivo.js | proprieta`: chat TEST
 // Test end-to-end del modulo Intuitivo — node test_modulo_intuitivo.js
+// .2 (7 ott): il colore del tasto si prova contro M.COLORE_TASTO E si pretende
+//    non vuoto e diverso dal giallo dell IDLE — alla .1 era una tautologia.
 //
 // AGGIORNATO IL 6 OTTOBRE, regola dalla chat REGOLE: l'Attacco Intuitivo
 // contro un Marker Impersonation e` VIETATO, ne` IMP-1 ne` IMP-2 (riga
@@ -176,6 +178,98 @@ ok(inviato === null, 'Intuitivo su bersaglio in piena vista: BLOCCATO all invio'
 ok(!String(alertUltimo).includes('Impersonation'),
    'col motivo della LoF, non quello dell Impersonation');
 console.log('   ' + String(alertUltimo).split('\n').filter(Boolean)[2]);
+
+// ==================================================================
+// REQUISITI DICHIARATI AL TAVOLO — Attacco Intuitivo (lof + sagoma)
+//   Nuovo il 7 ottobre. MOTORE ha misurato dalla pagina BS, CC, Hacking e
+//   Scoprire; Intuitivo, Speculativo, Guidato e Forward Observer NO.
+//   Questi quattro li misuro io, perche` un requisito che il tasto non
+//   legge e` un Idle che il giocatore non puo` dichiarare.
+//   Il tasto vive su btn-esegui-calcolo e la schermata lo CLONA: nel finto
+//   DOM il clone e` 'btn-esegui-calcolo_c', e una prova che guarda
+//   l'originale e` verde per sbaglio.
+//   🔴 Le chiavi NON sono i nomi dei campi: 'sagoma' legge `fuoriSagoma` a
+//   polarita` invertita. Si passa dal motore (M.invertiRequisito) invece di
+//   scrivere i campi a mano, cosi` il banco non puo` sbagliare la chiave.
+// ==================================================================
+console.log('\n=== REQUISITI AL TAVOLO: lof + sagoma ===');
+const tastoI = () => el['btn-esegui-calcolo_c'] || {};
+function pronto() {
+    nuovo(lanciafiamme);
+    window.currentOrder.weapon = 'Light Flamethrower';
+    window.combatTargets = [{ id: 'p3', name: 'Fusilier', burst: 1, rangeIndex: 0,
+                              lof: true, fuoriSagoma: false }];
+    window.preparaModificatoriIntuitivo();
+}
+pronto();
+ok(tastoI().innerText === 'LANCIA ATTACCO INTUITIVO',
+   `requisiti a posto: il tasto porta l etichetta dell azione (${tastoI().innerText})`);
+// GIRATA sul motore 2026-10-07.11: il tasto valido non ha piu` lo sfondo
+// vuoto. Scrivendo '' il motore toglieva al tasto l'arancione della pagina,
+// e Paolo al tavolo lo vedeva cambiare colore. Ora i due colori stanno nel
+// motore, M.COLORE_TASTO: valido 'var(--nomad-orange)', idle '#ffcc00'.
+// Si legge dal motore invece di scrivere la stringa a mano, cosi` se Paolo
+// cambia l'arancione della pagina questa prova non diventa rossa per un
+// motivo che non c'entra col requisito.
+// 🔴 Non basta confrontare col valore che il motore dichiara: sarebbe una
+// TAUTOLOGIA — i due lati si muovono insieme e la prova non puo` fallire.
+// Visto il 7 ottobre rompendo COLORE_TASTO.valido a '' e vedendo il banco
+// restare verde. Quindi si pretendono tre cose: che il tasto porti quel
+// colore, che quel colore NON sia vuoto (era il difetto di prima) e che sia
+// DIVERSO dal giallo dell'IDLE (altrimenti i due stati non si distinguono a
+// vista). Cosi` la prova resiste a un cambio di arancione ma non al difetto.
+ok(!!M.COLORE_TASTO.valido && M.COLORE_TASTO.valido !== M.COLORE_TASTO.idle,
+   `il colore valido c è e non è il giallo dell IDLE (${JSON.stringify(M.COLORE_TASTO)})`);
+ok(tastoI().style && tastoI().style.background === M.COLORE_TASTO.valido,
+   `e il tasto lo porta (${tastoI().style && tastoI().style.background})`);
+// Una chiave alla volta, girata dal motore.
+for (const chiave of ['lof', 'sagoma']) {
+    pronto();
+    M.invertiRequisito(window.combatTargets[0], chiave);
+    window.preparaModificatoriIntuitivo();
+    ok(tastoI().innerText === 'IDLE',
+       `requisito "${chiave}" dichiarato mancante: il tasto diventa IDLE (${tastoI().innerText})`);
+    ok(tastoI().style && tastoI().style.background === '#ffcc00',
+       `ed è giallo (${tastoI().style && tastoI().style.background})`);
+}
+// L Intuitivo ha UN bersaglio solo, quindi "uno manca" e "tutti mancano"
+// coincidono: va detto, perche` sulle schermate a piu` bersagli non e` cosi`.
+ok(window.combatTargets.length === 1,
+   'l Intuitivo ha un bersaglio solo: qui "uno manca" è "tutti mancano"');
+// E il tasto PORTA all Idle vero, col motivo del motore, e NON esegue.
+pronto();
+M.invertiRequisito(window.combatTargets[0], 'lof');
+window.preparaModificatoriIntuitivo();
+let motivoI = null; inviato = null;
+const salvaI = window.dichiaraRequisitoFallito;
+window.dichiaraRequisitoFallito = (m) => { motivoI = m; return true; };
+tastoI().onclick();
+ok(motivoI !== null, 'cliccandolo chiama window.dichiaraRequisitoFallito');
+ok(/Linea di Tiro/.test(String(motivoI)),
+   `col motivo scritto dal motore (${String(motivoI).slice(0, 55)}…)`);
+ok(inviato === null, 'e NON spedisce la busta: l Idle sostituisce l attacco');
+window.dichiaraRequisitoFallito = salvaI;
+// CONTROPROVA: col requisito a posto il tasto prende l altra strada — NON
+// chiama l Idle. Si guarda questo e non "la busta parte", perche` l invio
+// puo` essere bloccato da altro (un bersaglio non valido per l Intuitivo,
+// che e` un controllo diverso): una prova sull invio sarebbe rossa per un
+// motivo che non c entra coi requisiti. Visto il 7 ottobre.
+pronto();
+motivoI = null;
+window.dichiaraRequisitoFallito = (m) => { motivoI = m; return true; };
+tastoI().onclick();
+ok(motivoI === null,
+   'CONTROPROVA: col requisito a posto il tasto NON chiama l Idle — prende l altra strada');
+window.dichiaraRequisitoFallito = salvaI;
+// E l interruttore della schermata passa dal motore, non riscrive il campo.
+ok(typeof window.toggleRequisitoIntuitivo === 'function',
+   'la schermata ha l interruttore toggleRequisitoIntuitivo');
+pronto();
+window.toggleRequisitoIntuitivo(0, 'sagoma');
+ok(window.combatTargets[0].fuoriSagoma === true,
+   `e girandolo il campo giusto cambia: fuoriSagoma (${window.combatTargets[0].fuoriSagoma})`);
+ok(tastoI().innerText === 'IDLE',
+   'e il tasto si aggiorna da solo, senza rifare la schermata a mano');
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

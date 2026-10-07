@@ -1,4 +1,4 @@
-// @versione 2026-10-06.1 | test_modulo_bs.js | proprieta`: chat TEST
+// @versione 2026-10-07.1 | test_modulo_bs.js | proprieta`: chat TEST
 // Test end-to-end del modulo BS riscritto — node test_modulo_bs.js
 // Simula il minimo DOM che il modulo tocca, così si può collaudare senza browser.
 global.window = global;
@@ -218,6 +218,115 @@ const sc06 = M.risolviScontro(
     { difensore: crocRivelato, azione: 'NESSUNA' }, {});
 ok(sc06.attivo.salvezzaInflitta && sc06.attivo.salvezzaInflitta.valoreSuccesso === 11,
    `e la salvezza è ARM VS 11 (ottenuto ${sc06.attivo.salvezzaInflitta && sc06.attivo.salvezzaInflitta.valoreSuccesso})`);
+
+
+// ==================================================================
+// PUNTO D — ALLEATI NELLA MISCHIA, dalla scheda dell'Attacco BS
+//   Nuovo il 7 ottobre (TPL-01 al tavolo). Chi tira contro un bersaglio
+//   INGAGGIATO prende -6 per OGNI suo alleato in quel Corpo a Corpo, e
+//   l'app non ha la mappa: lo chiede. La domanda compare SOLO se il
+//   bersaglio e` Ingaggiato, parte da 1 (il caso normale), e lo zero
+//   esiste — il bersaglio e` in mischia con qualcuno che non e` mio.
+//   Senza la domanda, un Fusilier rimasto Ingaggiato annullava la Sagoma
+//   e non c'era modo di dire "nessun alleato".
+// ==================================================================
+console.log('\n=== D. Alleati nella mischia, dalla scheda BS ===');
+
+// Un nemico Ingaggiato nel roster, accanto a quelli che c erano.
+const ingaggiato = { id: 'p5', alias: 'Fusilier in mischia', tipo: 'LI', arm: 1, states: { engaged: true } };
+M._rosterNemico = M._rosterNemico.concat([ingaggiato]);
+const libero = M._rosterNemico.find(u => u.id === 'p1');
+
+function schedaBS(idBersaglio, arma) {
+    nuovoOrdine(alguacil);
+    window.currentOrder.weapon = arma || 'Combi Rifle';
+    window.combatTargets = [{ id: idBersaglio, name: 'bersaglio', burst: 3, rangeIndex: 0, cover: false }];
+    return window.htmlAlleatiInMischiaBS(window.combatTargets[0], 0);
+}
+
+console.log('\n--- la domanda compare solo se serve ---');
+const domanda = schedaBS('p5');
+ok(/quanti/i.test(domanda) && /alleati/i.test(domanda),
+   'bersaglio Ingaggiato: la scheda chiede quanti tuoi alleati sono in quella mischia');
+ok(/setAlleatiInMischiaBS\(0, ?0\)/.test(domanda) && /setAlleatiInMischiaBS\(0, ?3\)/.test(domanda),
+   'con i quattro tasti 0-3, che chiamano window.setAlleatiInMischiaBS');
+ok(window.combatTargets[0].alleatiInMischia === 1,
+   `e il valore parte da 1, il caso normale (${window.combatTargets[0].alleatiInMischia})`);
+// CONTROPROVA: bersaglio NON ingaggiato, nessuna domanda. Senza questa,
+// "la domanda c e`" non si distingue da "la domanda c e` sempre" — e una
+// domanda che non c entra, al tavolo, si risponde a caso.
+ok(schedaBS('p1') === '',
+   'CONTROPROVA: bersaglio NON Ingaggiato, nessuna domanda');
+ok(window.combatTargets[0].alleatiInMischia === undefined,
+   'e nessun valore iniziale scritto sul bersaglio: il campo non esiste');
+
+console.log('\n--- il tasto scrive il valore, e arriva alla busta ---');
+schedaBS('p5');
+window.setAlleatiInMischiaBS(0, 0);
+ok(window.combatTargets[0].alleatiInMischia === 0,
+   `toccando 0 il campo diventa 0, non torna a 1 (${window.combatTargets[0].alleatiInMischia})`);
+window.setAlleatiInMischiaBS(0, 2);
+ok(window.combatTargets[0].alleatiInMischia === 2, 'e toccando 2 diventa 2');
+// E il tasto scelto si vede: senza, il giocatore non sa cosa ha risposto.
+ok(/ffaa33[^<]*>2</.test(window.htmlAlleatiInMischiaBS(window.combatTargets[0], 0).replace(/\n/g, '')) ||
+   /background:#553300[\s\S]{0,200}>2</.test(window.htmlAlleatiInMischiaBS(window.combatTargets[0], 0)),
+   'e il tasto scelto è acceso nella scheda');
+
+console.log('\n--- e il numero arriva al calcolo ---');
+// I tre casi del contratto, letti dal motore sul bersaglio vero.
+const combiD = M.profiloArma('Combi Rifle');
+const fonti = (r) => ((r || {}).voci || []).map(v => v.fonte + ':' + v.valore).join(' ');
+for (const [n, atteso] of [[0, 3], [1, -3], [2, -9]]) {
+    const r = M.modAttacco(alguacil, ingaggiato, combiD, M.AZIONI.BS_ATTACK,
+        { rangeIndex: 0, alleatiInMischia: n });
+    ok(r.mod === atteso, `alleatiInMischia ${n} -> MOD ${atteso} (${r.mod}) [${fonti(r)}]`);
+}
+ok(!/mischia/.test(fonti(M.modAttacco(alguacil, ingaggiato, combiD, M.AZIONI.BS_ATTACK,
+    { rangeIndex: 0, alleatiInMischia: 0 }))),
+   'con zero alleati NESSUNA voce mischia: "zero" non è "non risposto"');
+
+console.log('\n--- la Sagoma Diretta: zero vale, uno annulla ---');
+const lf = M.profiloArma('Light Flamethrower');
+ok(M.modAttacco(alguacil, ingaggiato, lf, M.AZIONI.BS_ATTACK,
+    { rangeIndex: 0, alleatiInMischia: 0 }).colpoAnnullato === undefined,
+   'Sagoma con zero alleati: il colpo è valido');
+ok(M.modAttacco(alguacil, ingaggiato, lf, M.AZIONI.BS_ATTACK,
+    { rangeIndex: 0, alleatiInMischia: 1 }).colpoAnnullato === true,
+   'con un alleato: colpoAnnullato');
+ok(M.modAttacco(alguacil, ingaggiato, lf, M.AZIONI.BS_ATTACK,
+    { rangeIndex: 0, alleatiInMischia: 2 }).colpoAnnullato === true,
+   'e con due pure');
+// CONTROPROVA: bersaglio libero, la Sagoma non si annulla mai.
+ok(M.modAttacco(alguacil, libero, lf, M.AZIONI.BS_ATTACK,
+    { rangeIndex: 0, alleatiInMischia: 2 }).colpoAnnullato === undefined,
+   'CONTROPROVA: bersaglio NON Ingaggiato, la Sagoma non si annulla nemmeno con due alleati dichiarati');
+
+console.log('\n--- e le note della mischia arrivano allo SCONTRO (punto F) ---');
+// Non bastano le note dell attivo: il tabellone legge anche scontro.note, e
+// una nota che resta dentro l attivo non si vede senza aprire i dettagli.
+// 🔴 CHI LE COPIA E` risolviPayload, NON risolviScontro. Chiamando
+// risolviScontro direttamente le note di mischia NON arrivano, e la prova
+// diventa rossa per il livello sbagliato invece che per il comportamento.
+// Visto il 7 ottobre: tre prove rosse e il motore che faceva il suo lavoro.
+const trovaBS = (n, id) => [alguacil, ingaggiato, libero].find(u =>
+    (id && String(u.id) === String(id)) ||
+    M.nomeUnita(u).toUpperCase() === String(M.nomeUnita(n) || n).toUpperCase()) || null;
+const scontroDiMischia = (arma, n, idBersaglio) => (M.risolviPayload({ attacchi: [{
+        attaccante: 'Alguacil', attaccanteId: 'n1', azione: M.AZIONI.BS_ATTACK, arma: arma,
+        bersagli: [{ id: idBersaglio || 'p5', name: 'bersaglio', burst: 3, rangeIndex: 0,
+                     alleatiInMischia: n }] }] }, [], { trovaUnita: trovaBS }) || [])[0] || {};
+const noteDello = (s) => ((s.note || []).join(' | ')).normalize('NFC');
+ok(/^Mischia:/.test(noteDello(scontroDiMischia(combiD, 2))) ||
+   /Mischia:/.test(noteDello(scontroDiMischia(combiD, 2))),
+   `le note che cominciano per "Mischia:" arrivano in scontro.note (${noteDello(scontroDiMischia(combiD, 2)).slice(0, 55)}…)`);
+ok(/SAGOMA SU UNA MISCHIA/.test(noteDello(scontroDiMischia(lf, 1))),
+   'e così "SAGOMA SU UNA MISCHIA"');
+ok(/Bersaglio Ingaggiato/.test(noteDello(scontroDiMischia(combiD, 0))),
+   'e "Bersaglio Ingaggiato", quella del caso con zero alleati');
+// CONTROPROVA: bersaglio libero, nessuna di quelle note sullo scontro.
+// Senza, "le note arrivano" non si distingue da "arriva tutto sempre".
+ok(noteDello(scontroDiMischia(combiD, 2, 'p1')) === '',
+   `CONTROPROVA: bersaglio libero, nessuna nota di mischia sullo scontro (${JSON.stringify(noteDello(scontroDiMischia(combiD, 2, 'p1')))})`);
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

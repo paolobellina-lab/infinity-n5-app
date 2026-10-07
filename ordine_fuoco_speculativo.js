@@ -1,4 +1,4 @@
-// @versione 2026-10-06.5 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.3 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
 // ==========================================
 // ☄️ FUOCO SPECULATIVO (N5) - ordine_fuoco_speculativo.js
 // ------------------------------------------
@@ -225,6 +225,7 @@
                 <div style="text-align:center; color:#aaa; font-size:12px; margin-bottom:5px;">Seleziona la gittata (in linea retta fino al punto d'impatto):</div>
                 <div class="range-bar">${segmenti}</div>
                 <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${etichette}</div>
+                ${M.rigaRequisiti(['gittata'], tgt, 0, 'window.toggleRequisitoSpeculativo')}
             </div>
 
             ${window.htmlSecondariSpeculativo()}
@@ -263,10 +264,12 @@
             // nascosto il clone nasceva invisibile. Etichetta giusta,
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
-            nuovo.onclick = function () { window.eseguiCalcoloSpeculativo(); };
-            nuovo.innerText = (domDB && domDB.esito === 'NON_RISPOSTO') ? 'RISPONDI ALLE DOMANDE'
-                            : (domDB && domDB.esito === 'BLOCCATA') ? 'PUNTO NON AMMESSO'
-                            : 'LANCIA ATTACCO SPECULATIVO';
+            // Il tasto diventa IDLE se il Principale e` fuori gittata.
+            M.tastoConRequisiti(nuovo, M.requisitiDichiarati([tgt], ['gittata']),
+                (domDB && domDB.esito === 'NON_RISPOSTO') ? 'RISPONDI ALLE DOMANDE'
+                    : (domDB && domDB.esito === 'BLOCCATA') ? 'PUNTO NON AMMESSO'
+                    : 'LANCIA ATTACCO SPECULATIVO',
+                function () { window.eseguiCalcoloSpeculativo(); });
         }
     };
 
@@ -335,6 +338,12 @@
                 Il calcolatore non ha la mappa: tocca chi sta dentro l'area. Un Marker qui è ammesso.</div>` +
             cand.map(function (g) {
                 const si = scelti.indexOf(String(g.unita.id)) >= 0;
+                // La riga con la foto la disegna la pagina (window.rigaUnitaConFoto);
+                // dove non c'e` resta il bottone semplice.
+                if (typeof window.rigaUnitaConFoto === 'function') {
+                    return window.rigaUnitaConFoto(g.unita, { attributi: `onclick="window.toggleSecondarioSpeculativo('${g.unita.id}')"`,
+                        fazione: 'NEMICA', scelta: si, dopoNome: si ? ' ☑' : ' ☐' });
+                }
                 return `<button type="button" onclick="window.toggleSecondarioSpeculativo('${g.unita.id}')"
                     style="width:100%; padding:10px; margin-bottom:6px; font-size:14px; font-weight:bold; border-radius:5px; cursor:pointer; text-align:left;
                            background:${si ? '#553300' : '#111'}; color:${si ? '#ffaa33' : '#888'}; border:2px solid ${si ? '#ffaa33' : '#444'};">
@@ -364,8 +373,17 @@
     // ==============================================================
     // 4. INVIO
     // ==============================================================
+    // Gli interruttori dei requisiti (Linea di Tiro, gittata, contatto...):
+    // la regola e i testi stanno nel motore, M.REQUISITI_TAVOLO.
+    window.toggleRequisitoSpeculativo = function (i, chiave) {
+        const M = motore(); if (!M) return;
+        if (M.invertiRequisito(window.combatTargets[i], chiave)) window.renderSpeculativo();
+    };
+
     window.eseguiCalcoloSpeculativo = function () {
         const M = motore(); if (!M) return;
+        const req = M.requisitiDichiarati([window.combatTargets[0]], ['gittata']);
+        if (req.idle) return M.idleDaRequisito(req);
         const unita = window.coordUnits[window.coordIndex];
         const arma = Object.assign({}, M.profiloArma(window.currentOrder.weapon), { burst: 1 });
 
@@ -484,7 +502,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-06.5', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-07.3', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

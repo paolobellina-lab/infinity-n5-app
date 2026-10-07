@@ -1,4 +1,4 @@
-// @versione 2026-10-06.16 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.11 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-06.16';
+    M.VERSIONE = '2026-10-07.11';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -482,6 +482,10 @@
                         programma: input.programma || (arma && arma.nome),
                         fuoriLoF: input.fuoriLoF,
                         consentiFeriti: input.consentiFeriti,
+                        // SCOPRIRE + ATTACCO: il Marker dichiarato nello Scoprire
+                        // della prima meta` (lo scrive ordine_attacco_bs.js).
+                        scoprendo: input.scoprendo,
+                        scoprireGiaDichiarato: !!(input.regole && input.regole.poiAttacco),
                         ruolo: (i === 0) ? 'primario' : 'secondario'
                     })[0];
                     if (giudizio && !giudizio.ammesso) {
@@ -918,6 +922,24 @@
                 if (perBase && !perBase.ambigue) {
                     esito = perBase;
                     notazioni = gruppi;
+                    // 🔴 MODALITA` + NOTAZIONE INSIEME. "MULTI Sniper Rifle
+                    // (AP Mode) (+1SD)": la base e` una voce-contenitore, e
+                    // uno dei gruppi e` la modalita`. Fino alla 2026-10-06.16
+                    // ci si fermava al contenitore (Burst null, nessuna banda,
+                    // A51b) e la modalita` scelta dal giocatore andava persa:
+                    // l'Intruder col MULTI Sniper (+1SD) non arrivava mai al
+                    // tiro. (Collaudo al tavolo di Paolo, 6-7 ottobre.)
+                    const voceBase = db[perBase.chiave];
+                    if (voceBase && Array.isArray(voceBase.modalita) && voceBase.modalita.length > 0) {
+                        for (let i = 0; i < gruppi.length; i++) {
+                            const m = cercaChiave(db, `${perBase.chiave} (${gruppi[i]})`);
+                            if (m && !m.ambigue && !Array.isArray(db[m.chiave].modalita)) {
+                                esito = m;
+                                notazioni = gruppi.filter((_, j) => j !== i);
+                                break;
+                            }
+                        }
+                    }
                 } else {
                     // 3. base + un singolo gruppo: "MULTI Rifle" + "AP" -> "MULTI Rifle (AP)"
                     for (let i = 0; i < gruppi.length && (!esito || esito.ambigue); i++) {
@@ -1553,6 +1575,17 @@
 
                 case M.AZIONI.SCOPRIRE:
                     // Scoprire fa l'esatto contrario: SOLO i Marker sono bersagli validi.
+                    // 🔴 ...salvo lo Scoprire GIA` DICHIARATO di uno SCOPRIRE +
+                    // ATTACCO: alla dichiarazione il bersaglio era un Marker, poi
+                    // ha dichiarato un ARO e si e` rivelato. E` proprio il caso in
+                    // cui lo Scoprire "non serve piu`" (righe 6817-6829): la voce
+                    // resta valida, e lo scontro dira` che non si tira. Senza,
+                    // la busta veniva rifiutata e il giocatore restava fermo
+                    // (misurato dalla chat INTERFACCIA, 7 ottobre).
+                    if (!marker && opzioni.scoprireGiaDichiarato) {
+                        esito.note.push('Scoprire già dichiarato: il Marker si è rivelato nel frattempo, lo Scoprire non si tira.');
+                        break;
+                    }
                     if (!marker) nega('Non è in forma di Marker: non c\'è niente da Scoprire.');
                     break;
 
@@ -1579,7 +1612,17 @@
                     // Fino alla 2026-10-06.2 il Marker CAMO passava.
                     // RESTA AMMESSO come bersaglio SECONDARIO sotto la sagoma
                     // (righe 3914-3919): opzioni.ruolo === 'secondario'.
-                    if (opzioni.ruolo === 'secondario') break;
+                    // 🔴 ...MA SOLO IL CAMO. Un Marker IMPERSONATION conta come
+                    // ALLEATO (righe 14283-14289): "Any shot with a Template
+                    // Weapon that affects an Impersonation Marker is canceled,
+                    // even if another Enemy Trooper was designated as the Main
+                    // Target". Non e` un secondario: la sua presenza sotto la
+                    // Sagoma ANNULLA il colpo. (Correzione della chat REGOLE,
+                    // 7 ottobre: fino alla 2026-10-07.1 passava come il CAMO.)
+                    if (opzioni.ruolo === 'secondario') {
+                        if (s.imp) { nega('Marker Impersonation sotto la Sagoma: conta come alleato e ANNULLA il colpo, anche con un altro Bersaglio Principale (righe 14283-14289). Sposta la Sagoma.'); esito.annullaIlColpo = true; }
+                        break;
+                    }
                     if (s.imp) nega((catalogo('IMPERSONATION') || {}).speculativo || 'Marker Impersonation: non puo` essere il Bersaglio Principale (righe 14207-14208).');
                     else if (marker) nega((catalogo('FUOCO_SPECULATIVO_MARKER') || {}).camo || 'Marker CAMO: non puo` essere il Bersaglio Principale (righe 13609-13610).');
                     break;
@@ -1648,6 +1691,20 @@
 
                 default:
                     // BS Attack, Attacco a Sorpresa e ogni futura azione a distanza
+                    // 🔴 SCOPRIRE + ATTACCO (righe 6817-6829). Il Marker che si sta
+                    // Scoprendo nella PRIMA meta` dello stesso Ordine si puo`
+                    // dichiarare bersaglio dell'Attacco BS della seconda: e`
+                    // l'unico caso in cui un Marker si attacca. Chi chiama passa
+                    // opzioni.scoprendo = id del Marker. Vale per il CAMO
+                    // (13609-13610) e per l'Impersonation-2 (14291-14293); non
+                    // per l'IMP-1, che uno Scoprire riuscito porta a IMP-2 e non
+                    // a Modello (14207, 14227-14229).
+                    if (azione === M.AZIONI.BS_ATTACK && opzioni.scoprendo != null && String(opzioni.scoprendo) === String(u.id) &&
+                        (s.camo || (s.imp && String(s.impLivello) === '2'))) {
+                        esito.dopoScoprire = true;
+                        esito.note.push('Scoprire + Attacco: l\'Attacco contro questo Marker si risolve SOLO se lo Scoprire riesce, oppure se il Marker si rivela dichiarando un ARO.');
+                        break;
+                    }
                     if (s.camo) {
                         if (attaccante && M.haMSV3(attaccante)) {
                             esito.note.push('Marker attaccabile senza Scoprire grazie al Multispectral Visor L3: applica comunque il Mimetismo.');
@@ -1749,6 +1806,15 @@
         // Il nome e` l'identita` dell'arma: se lo si spoglia, il giro di
         // ritorno non e` piu` reversibile.
         p.nomeRichiesto = nomeRichiesto;
+        // 🔴 ...ma il nome grezzo deve anche ritrovare QUESTO profilo. Per una
+        // modalita` non lo fa: "MULTI Sniper Rifle (+1SD)" e` il contenitore,
+        // e i tre bottoni delle modalita` dichiaravano tutti la stessa arma
+        // senza modalita`. Se il giro di ritorno non torna qui, il nome
+        // diventa quello del profilo piu` le notazioni:
+        // "MULTI Sniper Rifle (AP Mode) (+1SD)".
+        if (M.profiloArma(nomeRichiesto).nome !== profilo.nome) {
+            p.nomeRichiesto = profilo.nome + ' ' + gruppi.map(function (g) { return '(' + g + ')'; }).join(' ');
+        }
 
         // Il PS dichiarato dal profilo sostituisce quello del database.
         gruppi.map(function (g) { return M.parseNotazione(g); }).forEach(function (n) {
@@ -4828,6 +4894,7 @@
         ctx = ctx || {};
         if (azione == null && ctx.azione != null) azione = ctx.azione;
         const voci = [], note = [], avvisi = [];
+        let colpoAnnullato = false;
         if (azione == null) avvisi.push('M.modAttacco chiamato SENZA azione: il calcolo usa il ramo generale e puo` applicare MOD che l\'Abilita` dichiarata non prevede. Il risultato non e` affidabile.');
         const spec = M.SPEC[azione] || {};
         const tA = M.trattiTiro(attaccante);
@@ -4942,9 +5009,17 @@
 
         // --- Sagoma Diretta: colpo automatico, nessun tiro ---
         if (tpl && tpl.tipo === 'DIRETTO' && azione !== M.AZIONI.GUIDATO) {
+            // Sagoma su un bersaglio Ingaggiato con un alleato di chi tira: il
+            // colpo e` ANNULLATO (righe 3622-3626 e 3586-3594). Stessa lettura
+            // di ctx.alleatiInMischia del ramo generale, piu` sotto: non
+            // passato vale 1, zero vale zero.
+            const nMis = (ctx.alleatiInMischia != null && isFinite(parseInt(ctx.alleatiInMischia, 10))) ? Math.max(0, parseInt(ctx.alleatiInMischia, 10)) : 1;
+            const annullato = !!statoD.engaged && nMis > 0;
             return { valore: null, automatico: true, base: base, mod: 0, attributo: nomeAttr,
-                     voci: [], burstMod: 0,
-                     note: ['Sagoma Diretta: colpo automatico, nessun tiro per colpire. Copertura e Mimetismo non entrano nel calcolo.'],
+                     voci: [], burstMod: 0, colpoAnnullato: annullato || undefined,
+                     note: annullato
+                        ? ['SAGOMA SU UNA MISCHIA CON UN TUO ALLEATO: il colpo è ANNULLATO (la Sagoma prende tutti i coinvolti e non si può attaccare un alleato). Gli ARO restano; un uso Disposable dichiarato si consuma lo stesso. Se in quel Corpo a Corpo non c\'è nessun tuo alleato, il colpo vale.']
+                        : ['Sagoma Diretta: colpo automatico, nessun tiro per colpire. Copertura e Mimetismo non entrano nel calcolo.'],
                      avvisi };
         }
 
@@ -5154,8 +5229,38 @@
             }
 
             // Sparare dentro una mischia
-            if (ctx.inMischia || (ctx.reazione && String(ctx.reazione.azione).toUpperCase() === 'CC_ATTACK')) {
-                aggiungi('mischia', -6, 'Tiro dentro una mischia: -6');
+            // 🔴 Il -6 lo decide lo STATO DEL BERSAGLIO (righe 3389-3391: "a BS
+            // Attack declared against an enemy Trooper that is engaged in CC
+            // Combat"). Fino alla 2026-10-06.16 serviva ctx.inMischia, che
+            // nessuna schermata passava: con Fusilier e Alguacil in Contatto
+            // di Base il -6 non compariva. (BS-20 al tavolo di Paolo, 7 ott.)
+            // La regola dice -6 PER OGNI alleato DI CHI SPARA nella mischia
+            // (chat REGOLE, 7 ottobre: il tiro fallito "will hit the Allied
+            // Trooper" e sceglie "the Trooper's player", quindi e` fuoco
+            // amico). Quanti sono lo dice ctx.alleatiInMischia:
+            //   - un numero, ZERO COMPRESO: si usa quello. Zero esiste (il
+            //     bersaglio e` Ingaggiato con un neutrale, o per scenario) e
+            //     vuol dire NESSUN -6: "non passato" non e` zero;
+            //   - non passato: se ne conta UNO, e lo si scrive.
+            // Con un'arma a SAGOMA il colpo non si penalizza: si ANNULLA
+            // (righe 3622-3626 e 3586-3594), perche` la Sagoma su una mischia
+            // prende tutti e non si puo` attaccare un alleato.
+            if (statoD.engaged || ctx.inMischia || (ctx.reazione && String(ctx.reazione.azione).toUpperCase() === 'CC_ATTACK')) {
+                const passato = ctx.alleatiInMischia != null && isFinite(parseInt(ctx.alleatiInMischia, 10));
+                const nAll = passato ? Math.max(0, parseInt(ctx.alleatiInMischia, 10)) : 1;
+                const pArma = (typeof arma === 'string') ? M.profiloArma(arma) : arma;
+                if (nAll === 0) {
+                    note.push('Bersaglio Ingaggiato, ma nessun TUO alleato in quel Corpo a Corpo: il -6 non si applica.');
+                } else if (pArma && pArma.isTemplate) {
+                    colpoAnnullato = true;
+                    note.push('SAGOMA SU UNA MISCHIA CON UN TUO ALLEATO: il colpo è ANNULLATO (la Sagoma prende tutti i coinvolti e non si può attaccare un alleato). Gli altri colpi del Burst senza alleati nell\'area restano; gli ARO restano; un uso Disposable dichiarato si consuma lo stesso.');
+                } else {
+                    aggiungi('mischia', -6 * nAll, nAll > 1
+                        ? `Tiro dentro una mischia: -6 per ognuno dei ${nAll} tuoi alleati ingaggiati`
+                        : 'Tiro dentro una mischia: -6');
+                    if (!passato) note.push('Mischia: contato 1 TUO alleato ingaggiato. La regola dà -6 per OGNI tuo alleato nello stesso Corpo a Corpo: se sono di più, togli altri 6 per ciascuno; se non ce n\'è nessuno, il -6 non vale.');
+                    note.push('Mischia: OGNI tiro BS fallito è un colpo su un tuo alleato ingaggiato, che fa un Tiro Salvezza per ciascuno (se sono più alleati scegli tu chi lo riceve).');
+                }
             }
         }
 
@@ -5207,7 +5312,8 @@
         if (impossibile) note.push(`Valore di Successo ${valore}: il tiro fallisce automaticamente, non c'è nulla da tirare.`);
 
         return { valore, base, mod, attributo: nomeAttr, impossibile,
-                 critici: M.critici(valore), voci, note, avvisi, burstMod };
+                 critici: M.critici(valore), voci, note, avvisi, burstMod,
+                 colpoAnnullato: colpoAnnullato || undefined };
     };
 
 
@@ -5275,6 +5381,117 @@
     //   rangeIndex | rangeMod, terrain, cover, hasLoF,
     //   membriFireteam, attaccoASorpresa
     // }
+    // ==================================================================
+    // I REQUISITI CHE SA SOLO CHI STA AL TAVOLO
+    // ------------------------------------------------------------------
+    // Linea di Tiro, gittata, contatto, Area di Hacking: l'app non ha la
+    // mappa, li dichiara il giocatore sulla scheda del bersaglio, e il tasto
+    // del calcolo diventa IDLE quando mancano. Sostituisce il tasto giallo
+    // fisso "Requisito non soddisfatto" della pagina (proposta di Paolo, 7
+    // ottobre). Le regole (chat REGOLE, 7 ottobre):
+    //   righe 3111-3114  Burst diviso: i dadi sul bersaglio senza requisito
+    //                    SI PERDONO, gli altri si tirano. Vale per ogni
+    //                    attacco col Burst diviso: BS, CC, Hacking.
+    //   righe 1244-1247  se non resta NESSUN dado: Idle, Ordine speso, uso
+    //                    Disposable consumato.
+    //   righe 3512-3514  fuori gittata non e` un Requisito (3320-3323 non la
+    //                    elenca): l'attacco "automatically fails". Esito
+    //                    uguale, motivo diverso.
+    //   righe 2068-2070  l'ARO di quel bersaglio diventa un Tiro Normale.
+    // Sta nel motore perche` la regola e` una e le schermate sono otto.
+    // ==================================================================
+    M.REQUISITI_TAVOLO = {
+        lof:      { campo: 'lof',          mancaSe: false, si: 'LINEA DI TIRO SÌ',          no: 'LINEA DI TIRO NO',
+                    motivo: 'dadi persi: nessuna Linea di Tiro' },
+        gittata:  { campo: 'fuoriGittata', mancaSe: true,  si: 'IN GITTATA SÌ',             no: 'FUORI GITTATA',
+                    motivo: 'fallimento automatico: fuori gittata' },
+        sagoma:   { campo: 'fuoriSagoma',  mancaSe: true,  si: 'BERSAGLIO SOTTO LA SAGOMA', no: 'BERSAGLIO NON SOTTO LA SAGOMA',
+                    motivo: 'dadi persi: bersaglio non sotto la Sagoma' },
+        contatto: { campo: 'contatto',     mancaSe: false, si: 'A CONTATTO SÌ',             no: 'A CONTATTO NO',
+                    motivo: 'dadi persi: non a contatto di Silhouette' },
+        scoperto: { campo: 'nonScoperto',  mancaSe: true,  si: '', no: '',
+                    motivo: 'dadi persi: lo Scoprire non si è potuto eseguire, il Marker resta Marker' },
+        area:     { campo: 'inArea',       mancaSe: false, si: 'NELL\'AREA DI HACKING SÌ',  no: 'FUORI DALL\'AREA DI HACKING',
+                    motivo: 'dadi persi: bersaglio fuori dall\'Area di Hacking' }
+    };
+    M.COLORE_TASTO = { valido: 'var(--nomad-orange)', idle: '#ffcc00' };
+    M.requisitoManca = function (bersaglio, chiave) {
+        const R = M.REQUISITI_TAVOLO[chiave];
+        return !!(R && bersaglio && bersaglio[R.campo] === R.mancaSe);
+    };
+    M.invertiRequisito = function (bersaglio, chiave) {
+        const R = M.REQUISITI_TAVOLO[chiave];
+        if (!R || !bersaglio) return false;
+        bersaglio[R.campo] = M.requisitoManca(bersaglio, chiave) ? !R.mancaSe : R.mancaSe;
+        return true;
+    };
+    //   mancanti  [{ bersaglio, nome, motivi }]
+    //   idle      tutti i bersagli mancano: l'Abilita` diventa Idle
+    //   motivo    il testo per il giocatore e per la busta
+    M.requisitiDichiarati = function (bersagli, chiavi) {
+        bersagli = Array.isArray(bersagli) ? bersagli : [];
+        const mancanti = bersagli.map(function (t) {
+            const m = (chiavi || []).filter(function (k) { return M.requisitoManca(t, k); })
+                                    .map(function (k) { return M.REQUISITI_TAVOLO[k].motivo; });
+            return m.length ? { bersaglio: t, nome: M.nomeUnita(t), motivi: m } : null;
+        }).filter(Boolean);
+        return { mancanti: mancanti, idle: bersagli.length > 0 && mancanti.length === bersagli.length,
+                 motivo: mancanti.map(function (x) { return x.nome + ': ' + x.motivi.join(', '); }).join('; ') };
+    };
+    // I bersagli come vanno nella busta: chi manca del requisito resta, a
+    // Burst 0, con i dadi persi e il motivo, cosi` il tabellone lo dice.
+    M.bersagliConRequisiti = function (bersagli, req) {
+        // `req` e` il RISULTATO di M.requisitiDichiarati, non l'elenco delle
+        // chiavi. Chi passa le chiavi (o altro) non fa cadere la schermata —
+        // al tavolo un'eccezione e` peggio di un avviso — ma lo si dice, e i
+        // bersagli tornano come sono. (Chat TEST, 7 ottobre.)
+        if (req && !Array.isArray(req.mancanti)) {
+            console.error('⛔ M.bersagliConRequisiti: il secondo argomento e` il risultato di M.requisitiDichiarati, non le chiavi. Nessun dado tolto.');
+            req = null;
+        }
+        return (bersagli || []).map(function (t) {
+            // Lo stesso oggetto, oppure lo stesso id: chi ricostruisce la
+            // lista fra le due chiamate (una copia coi medesimi campi) non
+            // deve ritrovarsi i dadi persi di nuovo pieni, in silenzio.
+            const m = req && req.mancanti.find(function (x) {
+                return x.bersaglio === t || (x.bersaglio && t && x.bersaglio.id != null && String(x.bersaglio.id) === String(t.id));
+            });
+            return m ? Object.assign({}, t, { burst: 0, dadiPersi: t.burst, requisitoMancante: m.motivi.join(', ') }) : t;
+        });
+    };
+    // La riga di interruttori per la scheda di un bersaglio. `comando` e` il
+    // NOME della funzione della schermata: riceve (indice, chiave).
+    M.rigaRequisiti = function (chiavi, bersaglio, indice, comando) {
+        return '<div style="display:flex; gap:10px; margin-top:10px;">' + (chiavi || []).map(function (k) {
+            const R = M.REQUISITI_TAVOLO[k]; if (!R) return '';
+            const manca = M.requisitoManca(bersaglio, k);
+            return '<button type="button" class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; ' +
+                (manca ? 'background:#554400; border-color:#ffcc00; color:#ffcc00;' : 'background:#004400; border-color:#00ff00; color:#00ff00;') +
+                '" onclick="' + comando + '(' + indice + ', \'' + k + '\')">' + (manca ? R.no : R.si) + '</button>';
+        }).join('') + '</div>';
+    };
+    // Il tasto del calcolo: IDLE se manca tutto, altrimenti l'etichetta sua.
+    M.tastoConRequisiti = function (tasto, req, etichetta, esegui) {
+        if (!tasto) return;
+        const idle = !!(req && req.idle);
+        tasto.onclick = function () { return idle ? M.idleDaRequisito(req) : esegui(); };
+        tasto.innerText = idle ? 'IDLE' : etichetta;
+        // Valido: il colore del tasto della pagina (arancione). Scrivere ''
+        // glielo toglieva, e il tasto valido cambiava colore (Paolo al
+        // tavolo, 7 ottobre). Il tasto e` un clone a ogni ridisegno, quindi
+        // il colore di prima non si puo` leggere: si scrive.
+        if (tasto.style) tasto.style.background = idle ? M.COLORE_TASTO.idle : M.COLORE_TASTO.valido;
+    };
+    // L'Idle da requisito fallito e` UNO per tutta l'app e sta nella pagina
+    // (window.dichiaraRequisitoFallito, chat INTERFACCIA): qui lo si chiama
+    // col motivo gia` scritto. Non se ne fa una copia.
+    M.idleDaRequisito = function (req) {
+        if (!req || !req.idle) return false;
+        if (typeof G.dichiaraRequisitoFallito === 'function') { G.dichiaraRequisitoFallito(req.motivo); return true; }
+        if (typeof G.alert === 'function') G.alert('⛔ ' + req.motivo + '\n\nL\'Idle da requisito fallito non è disponibile (pagina non caricata).');
+        return false;
+    };
+
     // 🔴 L'id di una REAZIONE in forma unica: quella di M.AZIONI_ARO. Il
     // motore smista le reazioni confrontando con 'DODGE' e 'CC_ATTACK', e
     // tutto il resto finiva nel ramo BS: "SCHIVATA" diventava un attacco BS,
@@ -5663,6 +5880,10 @@
             livelloFireteam: ctx.livelloFireteamAtt, membriFireteam: ctx.membriFireteamAtt,
             distanzaPollici: ctx.distanzaPollici,
             inMischia: ctx.inMischia,
+            // Quanti alleati di chi tira sono nel Corpo a Corpo del bersaglio:
+            // lo dichiara il giocatore sulla scheda (zero compreso). Non
+            // passato resta non passato: modAttacco ne conta uno e lo scrive.
+            alleatiInMischia: attacco.alleatiInMischia,
             reazione: reazione
         };
         // 🔴 LO SCOPRIRE HA LE SUE REGOLE (Sensor, Discover (+N), il +3 del
@@ -5691,6 +5912,9 @@
         let burstAtt = (attacco.burst != null) ? attacco.burst : ((arma && arma.burst) || 1);
         // Un Idle non tira: nessun dado, nessun Tiro Salvezza.
         if (att.requisitoFallito) burstAtt = 0;
+        // Sagoma su una mischia con un alleato: il colpo e` annullato, quindi
+        // niente dadi e niente Tiro Salvezza su QUESTO bersaglio.
+        if (att.colpoAnnullato) burstAtt = 0;
         // 🔴 La Saturazione "cannot be reduced below 1" (wiki "Saturation").
         // Il pavimento era 0: un'arma a B1 attraverso la zona faceva 0 colpi.
         // burstMod ha oggi un solo contributore, la Saturazione.
@@ -5860,6 +6084,7 @@
                 successoAutomatico: !!att.automatico && azione === M.AZIONI.SCOPRIRE,
                 impossibile: !!att.impossibile,
                 requisitoFallito: !!att.requisitoFallito,
+                colpoAnnullato: !!att.colpoAnnullato,
                 repeaterNemico: !!attacco.repeaterNemico,
                 lofBloccata: !!att.lofBloccata,
                 burst: (att.automatico && azione === M.AZIONI.SCOPRIRE) ? 0 : burstAtt,
@@ -6121,9 +6346,26 @@
         reazioni = reazioni || [];
         const usate = [];   // reazioni gia` opposte a un attacco
 
-        function trovaReazione(nomeDifensore) {
-            return reazioni.find(r => M.nomeUnita(r.nome || r.difensore).toUpperCase() ===
-                                      String(nomeDifensore).toUpperCase()) || null;
+        // 🔴 CHI REAGISCE E CHI E` BERSAGLIO SONO LA STESSA UNITA` ANCHE SE I
+        // NOMI NON COINCIDONO. La busta puo` chiamare il bersaglio "SEGNALINO
+        // MIMETICO" (cosi` lo vede l'avversario finche` e` Marker) e la
+        // reazione portare il suo nome vero ("Ombra"): cercando solo per
+        // nome non si accoppiavano, il Faccia a Faccia diventava due Tiri
+        // Normali e l'ARO usciva "reagisce senza essere bersaglio" (misurato
+        // dalla chat INTERFACCIA, 7 ottobre). Si confrontano gli id, e tutti
+        // i nomi con cui l'unita` e` conosciuta.
+        function trovaReazione(nomeDifensore, unitaVera, voceBusta) {
+            const su = x => String(x == null ? '' : x).toUpperCase();
+            const nomi = [nomeDifensore].concat([unitaVera, voceBusta].filter(Boolean).reduce(function (l, u) {
+                return l.concat([M.nomeUnita(u), u.alias, u.nome, u.name]); }, [])).map(su).filter(Boolean);
+            const ids = [unitaVera && unitaVera.id, voceBusta && voceBusta.id].filter(x => x != null).map(String);
+            return reazioni.find(function (r) {
+                const chi = r.nome || r.difensore;
+                const idR = [r.id, r.difensoreId, r.unitaId, chi && typeof chi === 'object' ? chi.id : null].filter(x => x != null).map(String);
+                if (ids.length && idR.some(x => ids.indexOf(x) >= 0)) return true;
+                const nomiR = [M.nomeUnita(chi)].concat(chi && typeof chi === 'object' ? [chi.alias, chi.nome, chi.name] : []).map(su).filter(Boolean);
+                return nomiR.some(n => nomi.indexOf(n) >= 0);
+            }) || null;
         }
 
         // LA COPERTURA PARZIALE DELL'ATTIVO IN QUEST'ORDINE: se ha dichiarato
@@ -6237,13 +6479,21 @@
             // in piu`. Con il Burst diviso fra piu` bersagli va a UNO solo (chat
             // REGOLE, wiki "Skills and Equipment Module"): quello marcato
             // `dadoSpeciale: true`, altrimenti il primo con dadi. (27 settembre.)
-            const attSd = ctx.trovaUnita ? ctx.trovaUnita(att.attaccante, att.attaccanteId) : att.attaccante;
+            const attSd = (ctx.trovaUnita ? ctx.trovaUnita(att.attaccante, att.attaccanteId) : null) || att.attaccante;
             const armaSd = (typeof att.arma === 'string') ? M.profiloArma(att.arma) : att.arma;
             const sdAttacco = (attSd && armaSd) ? M.dadiSpeciali(attSd, armaSd, { azione: att.azione }) : 0;
             const iMarcato = bersagli.findIndex(x => x && x.dadoSpeciale === true && x.burst);
             const iSd = sdAttacco > 0 ? (iMarcato >= 0 ? iMarcato : bersagli.findIndex(x => x && x.burst)) : -1;
             bersagli.forEach(function (b, iB) {
-                if (!b.burst) return;   // bersaglio senza dadi assegnati
+                // 🔴 ZERO DADI E "BURST NON SCRITTO" NON SONO LA STESSA COSA.
+                // Zero e` una scelta (nessun dado su questo bersaglio, o dadi
+                // persi): niente scontro. Un Burst ASSENTE e` una busta
+                // scritta male: fino alla 2026-10-07.9 lo scontro spariva,
+                // senza errore, e uno Scoprire non compariva sul tabellone
+                // (chat TEST, 7 ottobre). Ora lo scontro si calcola col Burst
+                // dell'arma, e lo dice.
+                const burstNonScritto = (b.burst == null);
+                if (!burstNonScritto && !b.burst) return;   // bersaglio senza dadi assegnati
                 // 🔴 Il nome del bersaglio si legge con M.nomeUnita, che accetta
                 // nome, alias e name. L'app scrive `name` (app.html ~1100), il
                 // motore e creaAttacco usano `nome`: leggendo solo b.name, un
@@ -6252,7 +6502,23 @@
                 // Quinto caso di "un fatto, due campi". (Chat TEST, 23 sett.)
                 const nomeB = M.nomeUnita(b);
                 const dif = ctx.trovaUnita ? ctx.trovaUnita(nomeB, b.id) : b;
-                const r = trovaReazione(nomeB || M.nomeUnita(dif));
+                const rTrovata = trovaReazione(nomeB || M.nomeUnita(dif), (dif && typeof dif === 'object') ? dif : null, b);
+                // 🔴 SCOPRIRE + ATTACCO (righe 6817-6829). Se il Marker ha
+                // dichiarato un ARO si e` RIVELATO da solo (riga 13634: ogni ARO
+                // possibile cancella il CAMO): "there is no need to perform the
+                // Discover Roll". Lo Scoprire non si tira, e la sua reazione
+                // NON si consuma qui: resta per l'Attacco della seconda meta`
+                // (Faccia a Faccia) o, se l'Attacco e` su un altro, esce da
+                // sola come Tiro Normale.
+                const scoprireCombinato = att.azione === M.AZIONI.SCOPRIRE && !!(att.regole && att.regole.poiAttacco);
+                // Rivelato: ha dichiarato un ARO, oppure NON e` piu` un Marker
+                // (la pagina lo rivela appena dichiara: quando la busta arriva
+                // e` gia` un Modello).
+                const stDif = (dif && typeof dif === 'object' && !dif.nonRisolto) ? M.statoBersaglio(dif) : null;
+                const nonPiuMarker = !!(stDif && !stDif.camo && !stDif.imp && !stDif.hidden);
+                const scoprireSuperato = scoprireCombinato &&
+                    (nonPiuMarker || !!(rTrovata && rTrovata.azione && rTrovata.azione !== M.AZIONI_ARO.NESSUNO));
+                const r = scoprireSuperato ? null : rTrovata;
                 if (r) usate.push(r);
                 // 🔴 CHI ATTACCA DEV'ESSERE UN'UNITA`, NON UN NOME. Con il solo
                 // nome e nessun ctx.trovaUnita il calcolo girava su un'unita`
@@ -6261,9 +6527,11 @@
                 // L2 contro un CAMO usciva "TIRO NORMALE, -6" invece di
                 // "SUCCESSO AUTOMATICO". Il calcolo resta quello, ma ora lo
                 // scontro lo DICE: attaccanteNonRisolto e un avviso.
-                const attObj = ctx.trovaUnita
-                    ? ctx.trovaUnita(att.attaccante, att.attaccanteId)
-                    : att.attaccante;
+                // Se la busta porta gia` l'UNITA` (un oggetto) e chi cerca non la
+                // ritrova — trovaUnita di solito cerca per nome o per id — vale
+                // l'oggetto della busta: e` un'unita`, non un nome.
+                const attTrovato = ctx.trovaUnita ? ctx.trovaUnita(att.attaccante, att.attaccanteId) : att.attaccante;
+                const attObj = attTrovato || ((att.attaccante && typeof att.attaccante === 'object') ? att.attaccante : attTrovato);
                 // `nonRisolto`: lo scrive chi cerca le unita` (l'adattatore)
                 // quando non trova niente e restituisce un segnaposto col solo
                 // nome. Senza, il segnaposto passava per un'unita` vera.
@@ -6278,6 +6546,7 @@
                     copertura: b.copertura,
                     repeaterNemico: b.repeaterNemico,
                     rangeIndex: b.rangeIndex, rangeMod: b.rangeMod, terrain: b.terrain, zona: b.zona,
+                    alleatiInMischia: b.alleatiInMischia,
                     // 🔴 `regole.nonOffensivo` lo scrivono cinque moduli (Scoprire,
                     // Osservazione, Scenografia, Supporto, Logistica) e fino al 5
                     // ottobre NESSUNO lo leggeva: MISURATO, uno Scoprire e un
@@ -6287,10 +6556,72 @@
                 }, r ? Object.assign({ difensore: dif }, senzaCoperturaSuAttivo(r)) : null, ctx));
                 if (attNonRisolto) {
                     const sNR = scontri[scontri.length - 1];
-                    const testoNR = `Attaccante "${M.nomeUnita(att.attaccante) || '?'}" non trovato: il calcolo NON ha le sue statistiche, abilita\u0300 ed equipaggiamento. Il risultato non e\u0300 affidabile.`;
+                    const testoNR = `Attaccante "${M.nomeUnita(att.attaccante) || '?'}" non trovato: il calcolo NON ha le sue statistiche, abilità ed equipaggiamento. Il risultato non è affidabile.`;
                     sNR.attaccanteNonRisolto = true;
                     sNR.avvisi = (sNR.avvisi || []).concat([testoNR]);
                     sNR.note = (sNR.note || []).concat([testoNR]);
+                }
+                // LE NOTE DELLA MISCHIA VANNO A VISTA. Stavano solo fra quelle
+                // del lato attivo, che sul tabellone sono dentro i dettagli
+                // chiusi: "ogni tiro fallito colpisce un tuo alleato" e "il
+                // colpo e` annullato" sono cose che cambiano cosa si fa al
+                // tavolo. (Misurato dalla chat INTERFACCIA, 7 ottobre.)
+                (function () {
+                    const sMi = scontri[scontri.length - 1];
+                    const daMostrare = ((sMi.attivo && sMi.attivo.note) || []).filter(function (n) {
+                        return /^(Mischia:|SAGOMA SU UNA MISCHIA|Bersaglio Ingaggiato)/.test(String(n));
+                    }).filter(function (n) { return (sMi.note || []).indexOf(n) < 0; });
+                    if (daMostrare.length) sMi.note = (sMi.note || []).concat(daMostrare);
+                })();
+                if (burstNonScritto) {
+                    const sBn = scontri[scontri.length - 1];
+                    const testoBn = `Bersaglio "${nomeB || '?'}": Burst non scritto nella busta. Calcolato col Burst dell'arma; controlla quanti dadi erano dichiarati.`;
+                    sBn.burstNonScritto = true;
+                    sBn.avvisi = (sBn.avvisi || []).concat([testoBn]);
+                    sBn.note = (sBn.note || []).concat([testoBn]);
+                }
+                (function () {
+                    const sSc = scontri[scontri.length - 1];
+                    if (scoprireCombinato) {
+                        sSc.scoprirePoiAttacco = true;
+                        if (scoprireSuperato) {
+                            sSc.titolo = 'SCOPRIRE: NON SI TIRA';
+                            sSc.scoprireSuperato = true;
+                            // Niente tiro: non resta nemmeno il numero. Il valore e
+                            // le voci del MOD restavano nei dettagli, a descrivere un
+                            // tiro che non c'e` (chat INTERFACCIA, 7 ottobre). `mod`
+                            // accetta gia` un testo: la Sagoma Diretta scrive 'Auto'.
+                            // Anche le note generiche dello Scoprire (come si tira,
+                            // chi fallisce non ritenta) parlano di un tiro assente.
+                            if (sSc.attivo) { sSc.attivo.burst = 0; sSc.attivo.nonSiTira = true; sSc.attivo.mod = 'Non si tira'; sSc.attivo.voci = []; sSc.attivo.note = []; }
+                            sSc.note = (sSc.note || []).concat([`${M.nomeUnita(dif) || nomeB} ha dichiarato un ARO: si è rivelato da solo. Lo Scoprire non si tira; risolvi direttamente l'Attacco.`]);
+                        } else if (sSc.attivo && sSc.attivo.successoAutomatico) {
+                            // Niente tiro: le istruzioni sul tiro non servono.
+                            sSc.note = (sSc.note || []).concat(['SCOPRIRE + ATTACCO: lo Scoprire riesce da solo, senza tiro. Risolvi direttamente l\'Attacco contro il Marker.']);
+                        } else {
+                            sSc.note = (sSc.note || []).concat([
+                                'SCOPRIRE + ATTACCO: tira PRIMA questo Scoprire. Se riesce, risolvi l\'Attacco contro il Marker. Se invece fallisce: quell\'Attacco è perso (Ordine speso, uso Disposable consumato) e su questo Marker non potrai ritentare lo Scoprire fino al prossimo Turno di Giocatore.']);
+                        }
+                    }
+                    if (b.dopoScoprire) {
+                        sSc.dopoScoprire = true;
+                        const scPrima = scontri.find(function (x) { return x.scoprirePoiAttacco; });
+                        const libero = !!r || nonPiuMarker || !!(scPrima && (scPrima.scoprireSuperato || (scPrima.attivo && scPrima.attivo.successoAutomatico)));
+                        sSc.note = (sSc.note || []).concat([libero
+                            ? `Scoprire + Attacco: ${M.nomeUnita(dif) || nomeB} è già rivelato (ARO dichiarato o Scoprire automatico): questo Attacco si risolve senza aspettare altro.`
+                            : `Scoprire + Attacco: questo Attacco si risolve SOLO SE lo Scoprire contro ${nomeB} è riuscito. Se è fallito, non tirare.`]);
+                    }
+                })();
+                // 🔴 LO STESSO PER IL BERSAGLIO. Il controllo c'era solo su chi
+                // attacca: un bersaglio fantasma riceveva un Tiro Salvezza
+                // calcolato su un'unita` vuota, senza un segno (chat TEST, 6
+                // ottobre). Il calcolo resta, ma lo scontro lo dice.
+                if (!dif || typeof dif !== 'object' || dif.nonRisolto === true) {
+                    const sBN = scontri[scontri.length - 1];
+                    const testoBN = `Bersaglio "${nomeB || '?'}" non trovato: il calcolo NON ha le sue statistiche, abilità ed equipaggiamento. MOD e Tiro Salvezza non sono affidabili.`;
+                    sBN.bersaglioNonRisolto = true;
+                    sBN.avvisi = (sBN.avvisi || []).concat([testoBN]);
+                    sBN.note = (sBN.note || []).concat([testoBN]);
                 }
                 // La reazione di chi e` bersaglio colpisce l'attivo.
                 if (r && r.azione && r.azione !== M.AZIONI_ARO.NESSUNO) notaCoperturaNegata(scontri[scontri.length - 1], r);
@@ -6917,6 +7248,11 @@
     M.filtraPerAvversario = function (unita) {
         const S = catalogo('SCHIERAMENTO');
         if (!unita) return null;
+        // UNA unita`, non il roster. Con un array rispondeva {}: un oggetto
+        // vuoto che a valle sembrava un'unita` senza campi, in silenzio (chat
+        // TEST, 7 ottobre). Ora un array si filtra voce per voce — chi non e`
+        // sul tavolo resta fuori — ed e` cio` che il nome fa pensare.
+        if (Array.isArray(unita)) return unita.map(function (u) { return M.filtraPerAvversario(u); }).filter(Boolean);
 
         const deploy = String(unita.deployState || 'NORMAL').toUpperCase();
         const st = M.statoBersaglio(unita);
@@ -6940,6 +7276,9 @@
             p.name = 'MARKER';
             p.nome = 'MARKER';
             p.tipo = 'MARKER';
+            // 🔴 NON TOGLIERE. imgVariant e` il file della FOTO della miniatura
+            // (chat INTERFACCIA, 7 ottobre): se arrivasse all'avversario, un
+            // Marker mostrerebbe la pedina che c'e` sotto.
             p.imgVariant = '0';
             p.states = { camo: eCamo, impersonation: !eCamo };
             return p;
@@ -9715,6 +10054,10 @@
             equip: voce.equip || '', armi: voce.armi || '',
             traits: voce.traits || '',
             proprietario: (portatore && (portatore.id || portatore.alias)) || null,
+            // Il gettone sta nel Gruppo di Combattimento di chi lo piazza:
+            // senza, non compariva in nessun Gruppo degli elenchi (misurato
+            // dalla chat INTERFACCIA, 7 ottobre).
+            combatGroup: (portatore && portatore.combatGroup != null) ? portatore.combatGroup : undefined,
             ordineDiPiazzamento: ctx.ordineId != null ? ctx.ordineId : null,
             states: {}                              // esplicito, non ereditato
         };
@@ -10699,6 +11042,11 @@
         const prima = { deployState: deploy, marker: deploy === 'HIDDEN' ? null : markerPrima };
 
         let deployDopo = deploy, markerDopo = prima.marker;
+        // PLACE DEPLOYABLE HA L'ETICHETTA ATTACK (riga 7551): non tira, ma e`
+        // un Attacco, e un Marker che dichiara un Attacco si rivela (righe
+        // 13634 e 14238). Senza tiro e Breve, passava per innocuo. (Chat
+        // REGOLE, 7 ottobre.)
+        const ePiazza = (az === 'PIAZZARE EQUIPAGGIAMENTO' || az === String(M.AZIONI.PIAZZA_DEPLOYABLE).toUpperCase());
 
         let daVerificare = false;
         // SOLO l'Hidden Deployment: Riserva e Airborne, che il flag `hidden`
@@ -10734,7 +11082,7 @@
             // e poi "rientrava".
             note.push(`${senza.nome || az}: non dichiarabile da un Marker. Lo stato non cambia.`);
         } else if (prima.marker === 'CAMO') {
-            const cade = conTiro || (eLunga && !eCauto);
+            const cade = conTiro || (eLunga && !eCauto) || ePiazza;
             if (cade) {
                 deployDopo = 'NORMAL'; markerDopo = null;
                 fonti.push('righe 13634-13635');
@@ -10753,7 +11101,7 @@
             // that requires a Roll", o una Long Skill diversa dal Movimento
             // Cauto. A differenza del CAMO la lista NON nomina il Look Out!.
             const conTiroImp = !!(spec && spec.attributo);
-            const cade = conTiroImp || (eLunga && !eCauto);
+            const cade = conTiroImp || (eLunga && !eCauto) || ePiazza;
             if (cade) {
                 deployDopo = 'NORMAL'; markerDopo = null;
                 fonti.push('righe 14238-14239');

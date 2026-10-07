@@ -1,4 +1,4 @@
-// @versione 2026-10-06.1 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-07.1 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -632,12 +632,108 @@ window.apriGruppoDeploy = (g) => {
     window.renderDeployUnits();
 };
 
-window.cambiaIconaDeploy = (event, index) => {
-    if(event) event.stopPropagation(); 
-    let u = window.roster[index];
-    let current = parseInt(u.imgVariant || "0");
-    u.imgVariant = ((current + 1) % 4).toString(); 
+// ==========================================================================
+//  📷 LE FOTO DELLE MINIATURE (modello deciso da Paolo, 7 ottobre)
+// ==========================================================================
+// Le foto sono le miniature FISICHE, una per file, nella cartella img.
+// - Ogni unita` schierata ha UNA foto; ogni foto sta su UNA sola unita`.
+// - Qualunque foto va su qualunque unita` (i proxy): serve a riconoscere
+//   sul tavolo la pedina vera. Profilo, armi e regole non c'entrano.
+// - Niente numero fisso di foto per unita`.
+//
+// PRIMA: toccando la foto si girava fra 4 varianti (imgVariant 0..3) del
+// file che porta il nome dell'unita`. Con sei Alguaciles le ultime due non
+// si vedevano mai, con una miniatura sola comparivano tre riquadri neri, e
+// un proxy non si poteva rappresentare. Due unita` potevano avere la stessa
+// foto.
+//
+// QUALI FILE ESISTONO lo dice img/elenco_foto.js (window.FOTO_MINIATURE):
+// un browser non puo` leggere una cartella. Lo rigenera la pagina
+// avvia_elenco_foto.html ogni volta che Paolo aggiunge foto.
+//
+// DOVE STA LA SCELTA: nel campo imgVariant dell'unita`, che ora porta il
+// NOME DEL FILE ("alguaciles_2.png") invece di un numero. Non e` un campo
+// nuovo perche` l'elenco dei campi che arrivano all'avversario
+// (catalogo_n5.js, campiVisibili) e` chiuso: un campo nuovo non passerebbe,
+// imgVariant passa gia`. E di un Marker il motore lo riporta a '0': la foto
+// della miniatura non rivela chi c'e` sotto il segnalino.
+window.elencoFoto = () => Array.isArray(window.FOTO_MINIATURE) ? window.FOTO_MINIATURE : null;
+
+// La foto assegnata a un'unita`, o null. Un valore vecchio ('0'..'3') non e`
+// una foto assegnata.
+window.fotoAssegnata = (u) => {
+    const v = u && u.imgVariant;
+    return (typeof v === 'string' && /\.(png|jpe?g|webp)$/i.test(v)) ? v : null;
+};
+
+// Le foto ancora libere per quest'unita`: tutte, meno quelle che stanno gia`
+// su un'ALTRA unita` del roster.
+window.fotoLibere = (u) => {
+    const prese = (window.roster || []).filter(x => x && x !== u).map(window.fotoAssegnata).filter(Boolean);
+    return (window.elencoFoto() || []).filter(f => prese.indexOf(f) < 0);
+};
+
+window.assegnaFoto = (index, file) => {
+    const u = window.roster[index];
+    if (!u) return false;
+    if (file) {
+        if ((window.elencoFoto() || []).indexOf(file) < 0) { alert('⛔ "' + file + '" non e` nell\'elenco delle foto.'); return false; }
+        const altra = (window.roster || []).find(x => x && x !== u && window.fotoAssegnata(x) === file);
+        if (altra) { alert('⛔ Questa foto e` gia` su ' + (altra.alias || altra.nome) + ': una miniatura sta su una sola unita`.'); return false; }
+    }
+    u.imgVariant = file || '0';
+    window.chiudiGalleriaFoto();
     window.renderDeployUnits();
+    return true;
+};
+
+window.chiudiGalleriaFoto = () => {
+    const g = document.getElementById('galleria-foto');
+    if (g) { g.style.display = 'none'; g.innerHTML = ''; }
+};
+
+window.apriGalleriaFoto = (index) => {
+    const u = window.roster[index];
+    if (!u) return;
+    let g = document.getElementById('galleria-foto');
+    if (!g || !g.style) {
+        g = document.createElement('div');
+        g.id = 'galleria-foto';
+        document.body.appendChild(g);
+    }
+    g.style.cssText = 'position:fixed; inset:0; z-index:9500; background:rgba(0,0,0,.95); overflow-y:auto; padding:14px; box-sizing:border-box;';
+    g.style.display = 'block';
+
+    const elenco = window.elencoFoto();
+    const chi = (u.alias || u.nome || '');
+    let corpo;
+    if (!elenco) {
+        // Niente ripiego muto: senza elenco le foto non si possono scegliere,
+        // e lo si dice con il rimedio.
+        corpo = `<div style="border:2px solid #ffaa00; color:#ffdd88; padding:14px; border-radius:6px; font-size:15px;">
+            ⚠️ L'elenco delle foto non è stato caricato (manca <b>img/elenco_foto.js</b>).<br>
+            Si genera con la pagina <b>avvia_elenco_foto.html</b> e va messo nella cartella img.</div>`;
+    } else {
+        const mia = window.fotoAssegnata(u);
+        const libere = window.fotoLibere(u);
+        const tessera = (f) => `<button onclick="window.assegnaFoto(${index}, '${f.replace(/'/g, "\\'")}')" style="width:104px; padding:4px; background:${f === mia ? '#553300' : '#111'}; border:2px solid ${f === mia ? '#ffaa00' : '#444'}; border-radius:6px; color:#aaa; font-size:11px; overflow:hidden;">
+                <img src="img/${f}" style="width:92px; height:92px; object-fit:contain; display:block;" alt="">
+                ${f.replace(/\.[a-z]+$/i, '')}</button>`;
+        corpo = `<div style="color:#888; font-size:13px; margin-bottom:10px;">${libere.length} foto libere su ${elenco.length}. Quelle già su un'altra unità non compaiono.</div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">${libere.map(tessera).join('')}</div>
+            <button class="btn-status" style="margin-top:14px;" onclick="window.assegnaFoto(${index}, null)">NESSUNA FOTO</button>`;
+    }
+    g.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <b style="color:#fff; font-size:20px;">📷 Foto per ${chi}</b>
+            <button class="btn-status" style="width:auto; margin:0;" onclick="window.chiudiGalleriaFoto()">CHIUDI</button>
+        </div>${corpo}`;
+};
+
+// Il tocco sulla foto, nella schermata di schieramento: apre la galleria.
+// Il nome resta quello di prima perche` lo chiama la riga dell'unita`.
+window.cambiaIconaDeploy = (event, index) => {
+    if(event) event.stopPropagation();
+    window.apriGalleriaFoto(index);
 };
 
 // PRESSIONE SULLA RIGA DELL'UNITA` (fase di schieramento)
@@ -759,8 +855,9 @@ window.renderDeployUnits = () => {
         let nomePuro = (u.nome || u.name || "").split('(')[0].trim();
         let aliasDisplay = u.alias ? `<div style="color:${aliasColor}; font-size:15px; font-style:italic; margin-top:2px; line-height:1;">"${u.alias}"</div>` : "";
         
-        let variant = u.imgVariant && u.imgVariant !== "0" ? `_${u.imgVariant}` : "";
-        let imgSrc = `img/${nomePuro.replace(/\s+/g, '_')}${variant}.png`;
+        // La foto e` quella ASSEGNATA (7 ottobre): la regola sta in un posto
+        // solo, window.fotoUnita (app.html).
+        let imgSrc = (typeof window.fotoUnita === 'function') ? window.fotoUnita(u) : '';
 
         let stateLabel = "";
         // In N5 il Marker Mimetico e` UNO SOLO (chat REGOLE, regolamento
@@ -800,7 +897,7 @@ window.renderDeployUnits = () => {
                 </div>
 
                 <img src="${imgSrc}" style="width:70px; height:70px; flex-shrink:0; object-fit:contain; margin-left:15px; background: rgba(0,0,0,0.5); border-radius:5px; border: 1px solid #444; position:relative; z-index:10; color:#555; text-align:center; font-size:10px;" 
-                    alt="NO IMG"
+                    alt="TOCCA PER LA FOTO"
                     onerror="this.onerror=null; this.src=''; this.style.backgroundColor='#222';" 
                     onpointerdown="event.stopPropagation()" 
                     onclick="window.cambiaIconaDeploy(event, ${originalIndex})">
@@ -1271,7 +1368,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-10-06.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-10-07.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
