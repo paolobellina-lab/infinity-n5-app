@@ -1,4 +1,4 @@
-<!-- @versione 2026-09-28.2 | FAQ_N5_INDICE.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-10-08.1 | FAQ_N5_INDICE.md | proprieta`: chat REGOLE -->
 
 # INDICE DELLE FAQ N5 (wiki ufficiale) — da affiancare a REGOLE_N5_v5_1_1.txt
 
@@ -29,17 +29,29 @@ coperte anche senza averle aperte.
 | Stato | Pagine |
 |---|---|
 | ✅ **Letta, con FAQ** (24) | **Skills and Equipment Module** · Firewall · Coordinated Orders · Camouflaged State · Disco Baller · **Drop Bears** · Engaged State · Fireteam Integrity · Fireteams: Basic Rules · Fireteams Chart · FT Master · Hacking Device · Immobilized-A State · **Immobilized-B State** · Isolated State · Peripheral · Mines · Multispectral Visor · Order Expenditure Sequence · **Pitcher** · Saturation · **Stunned State** · **Traits** · Transmutation |
-| ⚠️ **Letta ma in versione vecchia** (2) — il lettore ha restituito la copia N5.2, senza FAQ | Ballistic Skills · White Noise |
-| 🔗 **Non aperta, coperta dalle "Related Pages"** (1) | Mine Dispenser (→ F10, F11) |
-| ❌ **Non aperta** (1) | ITS FAQ (regolamento torneo; → F16) |
+| ✅ **Letta, con FAQ** — chiuse l'8 ottobre, prima mancanti (4) | Ballistic Skills · White Noise · Mine Dispenser · ITS FAQ |
 
 **Fuori da questa lista:** anche la pagina **BS Attack** (non nella categoria 0.1) porta una
 FAQ 0.0.0 che il motore usa → F05.
 
-> ⚠️ **Limiti da sapere.** (a) Le pagine "coperte" potrebbero avere **altre** FAQ proprie non
-> collegate altrove: vanno aperte prima di dire che non ne hanno. (b) Le **FAQ 0.0.0** qui
-> sono solo quelle incontrate su queste pagine: la categoria 0.0.0 completa non l'ho trovata,
-> e ce ne sono sicuramente su altre pagine (Surprise Attack, Stealth, Sixth Sense, Dodge…).
+> ✅ **Giro di chiusura, 8 ottobre 2026.** Le quattro pagine che mancavano sono state aperte, e
+> **non hanno prodotto nessuna FAQ nuova**: Ballistic Skills e White Noise portano solo **F18**
+> (che era già qui, ma non era mai entrata nel prontuario: ora sì); Mine Dispenser porta
+> **F10** e **F11**, che avevamo già preso di rimbalzo; ITS FAQ ha **dieci** FAQ, di cui nove
+> sono materia di torneo e scenario (HVT neutrali, Obiettivi Classificati, Akial Interference,
+> Area of Interest, Crossing Lines) e la decima è **F16**. Quindi il limite (a) qui sotto è
+> stato verificato e superato: le pagine "coperte" **non** avevano altre FAQ che ci servissero.
+> Letta anche la pagina di regole *Coordinated Order*, che conferma il PDF alla lettera e porta
+> le tre FAQ che già avevamo come **F02**, **F03** e **F04**.
+
+> ⚠️ **Limite che resta.** Le **FAQ 0.0.0** elencate qui sono solo quelle incontrate su queste
+> pagine: la categoria 0.0.0 completa non l'ho trovata, e ce ne sono sicuramente su altre pagine
+> (Surprise Attack, Stealth, Sixth Sense, Dodge…). Delle nove ITS non indicizzate, tre toccano
+> un tiro ma solo dentro uno scenario: Spotlight per gli obiettivi Telemetry e HVT (bastano i
+> tiri riusciti, **senza** che il bersaglio entri in Bersagliato), l'Akial Interference (un tiro
+> fallito non consuma la carta) e l'Area of Interest (solo Oppose Activation dà un F2F di WIP,
+> gli altri ARO tirano Normale). Le lascio fuori dall'indice perché l'app non gestisce scenari:
+> se un giorno li gestirà, è da qui che si riparte.
 
 ---
 

@@ -1,4 +1,4 @@
-// @versione 2026-10-07.6 | ordine_scoprire.js | proprieta`: chat MOTORE
+// @versione 2026-10-08.1 | ordine_scoprire.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔍 SCOPRIRE (N5) - ordine_scoprire.js
 // ------------------------------------------
@@ -163,8 +163,18 @@
         const M = motore(); if (!M) return;
         const unita = window.coordUnits[window.coordIndex];
         const t = window.combatTargets[0];
-        const dif = M.rosterNemico().find(u => u.id === t.id) || {};
+        const difTrovato = M.rosterNemico().find(u => String(u.id) === String(t.id)) || null;
+        const dif = difTrovato || {};
         const arma = M.armaScoprire();
+        // 🔴 8 ottobre. Il Marker che ha reagito con un ARO fra le due meta`
+        // e` gia` un Modello: lo Scoprire non si tira, e la schermata non
+        // deve mostrare WIP, gittata e copertura di un tiro che non c'e`.
+        // Vale solo per lo Scoprire della prima meta` ripreso in seconda
+        // (currentOrder.scoprire): li` l'ARO puo` essere gia` arrivato.
+        const scCombinato = window.currentOrder && window.currentOrder.scoprire;
+        const superato = (scCombinato && typeof M.scoprireSuperatoInPagina === 'function')
+            ? M.scoprireSuperatoInPagina(difTrovato, { poiAttacco: !!(scCombinato.extraBusta ? scCombinato.extraBusta.poiAttacco : true) })
+            : { superato: false };
         // 🔴 IL FIRETEAM VA DETTO ANCHE ALLA SCHERMATA. L'Hub lo conosce e
         // applica il +3 Discover del Livello 3; qui non lo si passava, e con
         // un Fireteam di Livello 3 o piu` la schermata restava 3 punti sotto
@@ -179,7 +189,11 @@
         window.scoprireEsito = e;
 
         let corpo;
-        if (e.automatico) {
+        if (superato.superato) {
+            corpo = `<div style="text-align:center; padding:20px; background:#1a1a00; border:2px solid #ffcc00; border-radius:5px;">
+                <b style="color:#ffcc00; font-size:22px;">SCOPRIRE: NON SI TIRA</b><br>
+                <span style="color:#ddddaa; font-size:13px;">${superato.testo}</span></div>`;
+        } else if (e.automatico) {
             corpo = `<div style="text-align:center; padding:20px; background:#003300; border:2px solid #00ff00; border-radius:5px;">
                 <b style="color:#00ff00; font-size:22px;">✅ SUCCESSO AUTOMATICO</b><br>
                 <span style="color:#aaccaa; font-size:13px;">${e.note[0]}</span></div>`;
@@ -219,10 +233,10 @@
         document.getElementById('targets-allocation-container').innerHTML = `
             <h2 style="color:${COL.bordo}; text-align:center; margin-bottom:20px;">SCOPRIRE</h2>
             <div class="target-card" style="border-left:4px solid ${COL.bordo}; background:rgba(0,255,0,0.04); padding:15px; border-radius:5px;">
-                <b style="color:#fff; font-size:22px; display:block; margin-bottom:12px;">🔍 ${t.name}</b>
+                <b style="color:#fff; font-size:22px; display:block; margin-bottom:12px;">🔍 ${superato.superato ? (M.nomeUnita(difTrovato) || t.name) : t.name}</b>
                 ${corpo}
-                ${M.rigaRequisiti(['lof', 'gittata'], t, 0, 'window.toggleRequisitoScoprire')}
-                ${e.note.length ? `<div style="margin-top:12px; color:#888; font-size:12px; line-height:1.6;">` +
+                ${superato.superato ? '' : M.rigaRequisiti(['lof', 'gittata'], t, 0, 'window.toggleRequisitoScoprire')}
+                ${(!superato.superato && e.note.length) ? `<div style="margin-top:12px; color:#888; font-size:12px; line-height:1.6;">` +
                     e.note.map(n => `• ${n}`).join('<br>') + `</div>` : ''}
             </div>`;
 
@@ -359,7 +373,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_scoprire.js', versione: '2026-10-07.6', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_scoprire.js', versione: '2026-10-08.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

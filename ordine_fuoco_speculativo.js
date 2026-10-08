@@ -1,4 +1,4 @@
-// @versione 2026-10-07.3 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
+// @versione 2026-10-08.1 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
 // ==========================================
 // ☄️ FUOCO SPECULATIVO (N5) - ordine_fuoco_speculativo.js
 // ------------------------------------------
@@ -226,6 +226,7 @@
                 <div class="range-bar">${segmenti}</div>
                 <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${etichette}</div>
                 ${M.rigaRequisiti(['gittata'], tgt, 0, 'window.toggleRequisitoSpeculativo')}
+                ${M.domandaAlleatiInMischia ? M.domandaAlleatiInMischia(tgt, 0, 'window.setAlleatiInMischiaSpeculativo') : ''}
             </div>
 
             ${window.htmlSecondariSpeculativo()}
@@ -340,15 +341,24 @@
                 const si = scelti.indexOf(String(g.unita.id)) >= 0;
                 // La riga con la foto la disegna la pagina (window.rigaUnitaConFoto);
                 // dove non c'e` resta il bottone semplice.
+                // Un secondario scelto e Ingaggiato ha la sua domanda sulla
+                // mischia: la Sagoma e` una, ma la mischia e` di ciascuno.
+                const k = window.combatTargets.findIndex(function (t, j) { return j > 0 && String(t.id) === String(g.unita.id); });
+                const mischia = (si && k > 0 && M.domandaAlleatiInMischia) ? M.domandaAlleatiInMischia(window.combatTargets[k], k, 'window.setAlleatiInMischiaSpeculativo') : '';
                 if (typeof window.rigaUnitaConFoto === 'function') {
                     return window.rigaUnitaConFoto(g.unita, { attributi: `onclick="window.toggleSecondarioSpeculativo('${g.unita.id}')"`,
-                        fazione: 'NEMICA', scelta: si, dopoNome: si ? ' ☑' : ' ☐' });
+                        fazione: 'NEMICA', scelta: si, dopoNome: si ? ' ☑' : ' ☐' }) + mischia;
                 }
                 return `<button type="button" onclick="window.toggleSecondarioSpeculativo('${g.unita.id}')"
                     style="width:100%; padding:10px; margin-bottom:6px; font-size:14px; font-weight:bold; border-radius:5px; cursor:pointer; text-align:left;
                            background:${si ? '#553300' : '#111'}; color:${si ? '#ffaa33' : '#888'}; border:2px solid ${si ? '#ffaa33' : '#444'};">
-                    ${si ? '☑' : '☐'} ${M.nomeUnita(g.unita)}</button>`;
+                    ${si ? '☑' : '☐'} ${M.nomeUnita(g.unita)}</button>` + mischia;
             }).join('') + `</div>`;
+    };
+
+    window.setAlleatiInMischiaSpeculativo = function (i, n) {
+        const M = motore(); if (!M) return;
+        if (M.impostaAlleatiInMischia(window.combatTargets && window.combatTargets[i], n)) window.renderSpeculativo();
     };
 
     window.toggleSecondarioSpeculativo = function (id) {
@@ -502,7 +512,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-07.3', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-08.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

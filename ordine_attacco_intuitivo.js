@@ -1,4 +1,4 @@
-// @versione 2026-10-07.3 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
+// @versione 2026-10-08.1 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
 // ==========================================
 // 👻 ATTACCO INTUITIVO (N5) - ordine_attacco_intuitivo.js
 // ------------------------------------------
@@ -251,6 +251,7 @@
                     La reazione del bersaglio è un Faccia a Faccia contro questo tiro WIP.
                 </div>
                 ${M.rigaRequisiti(['lof', 'sagoma'], tgt, 0, 'window.toggleRequisitoIntuitivo')}
+                ${(M.domandaAlleatiInMischia && arma && arma.isTemplate) ? M.domandaAlleatiInMischia(tgt, 0, 'window.setAlleatiInMischiaIntuitivo') : ''}
             </div>
 
             <div style="padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:12px;">
@@ -281,6 +282,11 @@
     window.toggleRequisitoIntuitivo = function (i, chiave) {
         const M = motore(); if (!M) return;
         if (M.invertiRequisito(window.combatTargets[i], chiave)) window.preparaModificatoriIntuitivo();
+    };
+    // Bersaglio in Corpo a Corpo: la domanda e la regola sono del motore.
+    window.setAlleatiInMischiaIntuitivo = function (i, n) {
+        const M = motore(); if (!M) return;
+        if (M.impostaAlleatiInMischia(window.combatTargets && window.combatTargets[i], n)) window.preparaModificatoriIntuitivo();
     };
 
     window.eseguiCalcoloIntuitivo = function () {
@@ -336,7 +342,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-10-07.3', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-10-08.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

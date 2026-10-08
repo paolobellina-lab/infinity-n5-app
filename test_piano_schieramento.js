@@ -1,4 +1,4 @@
-// @versione 2026-10-07.2 | test_piano_schieramento.js | proprieta`: chat TEST
+// @versione 2026-10-08.3 | test_piano_schieramento.js | proprieta`: chat TEST
 // ============================================================================
 //  LE UNITA` CHE IL PIANO CHIEDE DI SCHIERARE ESISTONO DAVVERO?
 //
@@ -100,10 +100,60 @@ const perFazione = voci.reduce(function (m, v) { m[v.fazione] = (m[v.fazione] ||
 // (Il 7 ottobre ho cambiato questi numeri senza alzare la versione del
 // banco, e due chat hanno letto due contenuti diversi sotto la stessa
 // 2026-10-07.1. Da qui la .2.)
-const REV_MINIMA = 12;
-const revisione = (/revisione\s+(\d+)/.exec(fs.readFileSync(PIANO, 'utf8')) || [])[1];
+const REV_MINIMA = 16;
+const testoPiano = fs.readFileSync(PIANO, 'utf8');
+const revisione = (/revisione\s+(\d+)/.exec(testoPiano) || [])[1];
 ok(revisione !== undefined && parseInt(revisione, 10) >= REV_MINIMA,
    `il piano e` + ` alla revisione ${revisione} e questo banco pretende almeno la ${REV_MINIMA}`);
+
+// IL PIANO DEVE DIRE IL VERO SU SE STESSO.
+// L 8 ottobre ho aggiunto nove prove e ho dovuto cambiare a mano il numero
+// in CINQUE punti del testo. Dimenticarne uno non rompe niente e non si
+// vede: il piano dichiara 275 prove e ne contiene 284, e chi lo esegue si
+// fida del numero sbagliato. E` la stessa famiglia dell impronta vecchia
+// citata dopo una modifica. Qui il numero dichiarato si confronta con
+// quello CONTATO, e ogni punto del testo che lo nomina deve concordare.
+const prove = (testoPiano.match(/^- \*\*Atteso:\*\*/gm) || []).length;
+// `— ` dopo il codice: una prova si apre con "**SCO-01 — titolo**". Senza
+// questo si prende anche "**SCO-01…SCO-05**" del changelog, che e` un
+// riferimento, non una prova, e il controllo dei doppioni va rosso a torto.
+const codici = (testoPiano.match(/^\*\*([A-Z]+-\d+) —/gm) || []).map(x => x.slice(2).replace(/ —$/, ''));
+ok(prove > 0, `le prove si contano nel testo del piano (${prove} righe "Atteso")`);
+ok(codici.length === prove,
+   `e ogni prova ha il suo codice in testa, uno per una (${codici.length} codici per ${prove} prove)`);
+const doppi = codici.filter((c, i) => codici.indexOf(c) !== i);
+ok(doppi.length === 0,
+   `nessun codice usato due volte${doppi.length ? ': ' + doppi.join(', ') : ''}`);
+// I punti in cui il piano dichiara il PROPRIO numero di prove. Si nominano
+// uno per uno: un "135 prove" che parla del blocco DC o un "3946 prove" che
+// parla della suite non sono questo numero, e una regex larga li prendeva
+// per sbaglio. Ogni voce e` [etichetta, regex con un gruppo].
+const PUNTI = [
+    ['intestazione',   /\*\*(\d{3,4}) prove, tutte nello stesso/],
+    ['sezione 0',      /tutte e (\d{3,4}), nelle stesse/],
+    ['convenzioni',    /stessa riga (\d{3,4}) volte/],
+    ['codici univoci', /alla revisione \d+ sono (\d{3,4})/],
+    ['blocco DC',      /prove su (\d{3,4})\n/]
+];
+const letti = PUNTI.map(([nome, re_]) => {
+    const m = re_.exec(testoPiano);
+    return { nome: nome, n: m ? parseInt(m[1], 10) : null };
+});
+ok(letti.every(x => x.n !== null),
+   `i ${PUNTI.length} punti che dichiarano il numero di prove si trovano tutti (${J(letti.filter(x => x.n === null).map(x => x.nome))} mancanti)`);
+const fuori = letti.filter(x => x.n !== null && x.n !== prove);
+ok(fuori.length === 0,
+   `e ognuno dichiara ${prove}, il numero contato${fuori.length ? ' — sbagliati: ' + fuori.map(x => x.nome + '=' + x.n).join(', ') : ''}`);
+// E il numero delle prove incomplete, che il blocco DC dichiara: contato
+// sulle prove vere, non ripreso dalla volta prima. Il 7 ottobre il piano
+// diceva "135 prove su 277" e nessuno dei due numeri era giusto.
+const blocchi = testoPiano.split(/(?=^\*\*[A-Z]+-\d+ —)/m).slice(1);
+const incompiute = blocchi.filter(b => /DA COMPLETARE/.test(b)).length;
+const dcDichiarate = (/(\d{2,4}) prove su \d{3,4}\n/.exec(testoPiano) || [])[1];
+ok(blocchi.length === prove,
+   `le prove si separano una per una (${blocchi.length} blocchi per ${prove} prove)`);
+ok(dcDichiarate !== undefined && parseInt(dcDichiarate, 10) === incompiute,
+   `il blocco DC dichiara ${dcDichiarate} prove con un campo da completare, contate ${incompiute}`);
 ok(perFazione.NOMADI === 25 && perFazione.PANOCEANIA === 15,
    `righe lette per fazione: 25 Nomadi e 15 PanOceania (${JSON.stringify(perFazione)})`);
 ok(voci.length === 40, `righe di schieramento lette dal piano: 40 (${voci.length})`);

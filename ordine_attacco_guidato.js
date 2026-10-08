@@ -1,4 +1,4 @@
-// @versione 2026-10-07.1 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
+// @versione 2026-10-08.2 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
 // ==========================================
 // 🚀 ATTACCO GUIDATO (N5) - ordine_attacco_guidato.js
 // ------------------------------------------
@@ -248,7 +248,15 @@
             t.rangeMod = arma.bands.length ? arma.bands[primo.rangeIndex].mod : 0;
             t.cover = false;
             t.ammo = arma.ammo;
-            t.burst = (i === 0) ? (arma.burst || 1) : 0;
+            // 🔴 8 ottobre (misura di INTERFACCIA). Ai secondari andava Burst 0,
+            // e il motore salta un bersaglio senza dadi (risolviPayload): il
+            // secondario non arrivava al tabellone, ne` col suo Tiro Salvezza
+            // ne` con la domanda sulla mischia. La Sagoma e` UN colpo per
+            // tutti: ogni bersaglio porta il Burst del colpo, come nello
+            // Speculativo, e creaAttacco per le Sagome conta il massimo, non
+            // la somma (un uso solo). Il Faccia a Faccia resta del solo
+            // Primario (regole.soloPrimarioInF2F), il Critico pure.
+            t.burst = arma.burst || 1;
             t.ruolo = (i === 0) ? 'principale' : 'secondario';
         });
 
@@ -307,12 +315,14 @@
                     <div class="range-bar">${segmenti}</div>
                     <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${etichette}</div>
                     ${M.rigaRequisiti(['gittata'], tgt, 0, 'window.toggleRequisitoGuidato')}
+                    ${M.domandaAlleatiInMischia ? M.domandaAlleatiInMischia(tgt, index, 'window.setAlleatiInMischiaGuidato') : ''}
                     <div style="margin-top:10px; padding:8px; background:#001a33; border:1px solid ${COL.accent}; border-radius:5px; color:${COL.accent}; font-size:12px; text-align:center;">
                         Reazione del bersaglio: ${regole.reazioneBersaglio}
                     </div>`;
             } else {
                 html += `<div style="text-align:center; padding:10px; background:#440000; border:1px solid ${COL.bordo}; color:#ff9900; font-weight:bold; border-radius:5px;">
                     💥 COINVOLTO NELLA SAGOMA<br><span style="font-size:12px; color:#fff;">Solo Tiro Salvezza. Nessun Faccia a Faccia, e il Critico qui vale come successo normale.</span></div>`;
+                html += (M.domandaAlleatiInMischia ? M.domandaAlleatiInMischia(tgt, index, 'window.setAlleatiInMischiaGuidato') : '');
             }
             html += `</div>`;
         });
@@ -355,6 +365,11 @@
     // ==============================================================
     // Gli interruttori dei requisiti (Linea di Tiro, gittata, contatto...):
     // la regola e i testi stanno nel motore, M.REQUISITI_TAVOLO.
+    // Bersaglio in Corpo a Corpo: la domanda e la regola sono del motore.
+    window.setAlleatiInMischiaGuidato = function (i, n) {
+        const M = motore(); if (!M) return;
+        if (M.impostaAlleatiInMischia(window.combatTargets && window.combatTargets[i], n)) window.renderGuidato();
+    };
     window.toggleRequisitoGuidato = function (i, chiave) {
         const M = motore(); if (!M) return;
         if (M.invertiRequisito(window.combatTargets[i], chiave)) window.renderGuidato();
@@ -424,7 +439,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-10-07.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-10-08.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-<!-- @versione 2026-09-28.1 | SCHEDE_SKILL_N5_gruppoC.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-10-08.1 | SCHEDE_SKILL_N5_gruppoC.md | proprieta`: chat REGOLE -->
 
 # SCHEDE SKILL — GRUPPO C: le 15 organizzative
 
@@ -29,7 +29,7 @@
 | TAGCom | 10177 | Automatic | MOD ai TAG |
 | Specialist Operative | 9926 | Automatic | scenari |
 | Frenzy | 8396 | Automatic, Fase Stati | Impetuous |
-| FT Master | ⚠️ | — | Fireteam |
+| FT Master | wiki | Automatic | Ordini (Regolari), Coerenza |
 
 ---
 
@@ -64,9 +64,13 @@ Null, l'utente **diventa Leader**. Resta Leader anche se il precedente si ripren
 del Fireteam e **come Leader**. Allora lui e poi il resto del Fireteam si schierano come se
 avessero il Forward Deployment (o la regola indicata nel profilo).
 
-**FT Master** — ⚠️ non è nel PDF 5.1.1 fra le Special Skill: sta nelle regole dei Fireteam, e
-sulla wiki ha pagina propria. Le sue regole di composizione prevalgono sui Fireteams Chart
-(FAQ **F13**). Da riaprire sulla wiki prima di implementarla.
+**FT Master** — ✅ **riletta sulla wiki l'8 ottobre** (oldid 4114). Non è nel PDF 5.1.1 fra le
+Special Skill perché sta nelle regole dei Fireteam. **Automatic Skill, Obligatory.** Effetti:
+nel **Conteggio Ordini** della Fase Tattica, se è in un Fireteam **tutti i membri sono
+Regolari**; se lo sono già di profilo, **+2"** alla Zona di Controllo del Leader per i controlli
+di **Coerenza**; e il Fireteam **si annulla** se il FT Master lo lascia. Le sue regole di
+composizione prevalgono sui Fireteams Chart (FAQ **F13**).
+→ **Non tocca nessun tiro, nessun MOD, nessun Burst: niente da implementare nel calcolatore.**
 
 ## Schieramento
 
@@ -101,8 +105,14 @@ si sommano: si applicano solo quelli diversi fra loro.
 **Specialist Operative** — riga 9926. L'utente conta come **Specialista** negli scenari, anche
 se il suo tipo non lo sarebbe.
 
-**Journalist** — ⚠️ non è nel PDF 5.1.1, ma è su 3 profili del database e sulla wiki. Da
-riaprire prima di scriverla.
+**Journalist** — ✅ **riletta sulla wiki l'8 ottobre** (oldid 4086). Non è nel PDF 5.1.1 perché
+è una **skill nuova di N5.2** («New rule added PDF 5.2, October 2025»). **Automatic Skill,
+Optional.** 🔴 **È l'unica di questo gruppo che tocca un tiro:**
+- truppe nella ZdC di un Journalist **alleato**: **+3 al Guts Roll**;
+- truppe nella ZdC di un Journalist **nemico**: **−3 al Guts Roll**;
+- in campagna, a fine scenario e solo se è sul tavolo in stato non Null: **+3 a CUBEVAC** e
+  **+3 al tiro di Promozione**, e i MOD **non si cumulano** fra più Journalist.
+→ Nessun effetto finché l'app non tira i Guts. 3 profili PanOceania.
 
 ---
 
@@ -114,4 +124,6 @@ riaprire prima di scriverla.
   può fare in un turno.
 - **MetaChemistry** e **Booty** meritano una nota nell'interfaccia più che nel motore: il loro
   esito va scritto a mano dal giocatore, perché nasce da un tiro fatto allo schieramento.
-- **FT Master** e **Journalist** restano aperte: le due voci che il PDF non copre.
+- **FT Master** e **Journalist** sono **chiuse** (wiki, 8 ottobre): il FT Master non tocca nessun
+calcolo, il Journalist tocca i **Guts Roll** — che l'app oggi non tira. Nessuna delle due e'
+urgente, ma il Journalist e' da tenere presente se un giorno i Guts entrano nell'app.

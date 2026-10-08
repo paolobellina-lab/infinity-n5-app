@@ -1,4 +1,4 @@
-// @versione 2026-10-07.7 | ordine_attacco_bs.js | proprieta`: chat MOTORE
+// @versione 2026-10-08.1 | ordine_attacco_bs.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎯 ATTACCO BS (TIRO A DISTANZA) - ordine_attacco_bs.js
 // ------------------------------------------
@@ -425,22 +425,15 @@
     // se il bersaglio e` in stato Ingaggiato. (TPL-01 al tavolo, 7 ottobre:
     // senza la domanda, un Fusilier rimasto Ingaggiato annullava la Sagoma e
     // non c'era modo di dire "nessun alleato".)
+    // 8 ottobre: la domanda la disegna il motore (M.domandaAlleatiInMischia),
+    // la stessa per BS, Speculativo, Guidato e Intuitivo.
     window.htmlAlleatiInMischiaBS = function (tgt, index) {
         const M = motore(); if (!M) return '';
-        const vero = M.rosterNemico().find(function (u) { return String(u.id) === String(tgt.id); });
-        if (!vero || !M.statoBersaglio(vero).engaged) return '';
-        if (typeof tgt.alleatiInMischia !== 'number') tgt.alleatiInMischia = 1;
-        return `<div style="margin-top:10px; padding:10px; background:#1a1000; border:1px solid #664400; border-radius:5px;">
-            <div style="color:#ffcc66; font-size:13px; margin-bottom:8px; text-align:center;">Bersaglio in Corpo a Corpo: quanti <b>TUOI</b> alleati sono in quella mischia?</div>
-            <div style="display:flex; gap:8px;">` + [0, 1, 2, 3].map(function (n) {
-                const si = tgt.alleatiInMischia === n;
-                return `<button type="button" class="huge-btn" style="flex:1; margin:0; min-height:48px; font-size:18px; ${si ? 'background:#553300; border-color:#ffaa33; color:#ffaa33;' : 'background:#111; color:#888;'}" onclick="window.setAlleatiInMischiaBS(${index}, ${n})">${n}</button>`;
-            }).join('') + `</div></div>`;
+        return M.domandaAlleatiInMischia(tgt, index, 'window.setAlleatiInMischiaBS');
     };
     window.setAlleatiInMischiaBS = function (i, n) {
-        const t = window.combatTargets && window.combatTargets[i]; if (!t) return;
-        t.alleatiInMischia = n;
-        window.renderTargetsAllocationBS();
+        const M = motore(); if (!M) return;
+        if (M.impostaAlleatiInMischia(window.combatTargets && window.combatTargets[i], n)) window.renderTargetsAllocationBS();
     };
 
     window.toggleRequisitoBS = function (i, chiave) {
@@ -603,7 +596,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-07.7', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-08.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-07.13 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-08.9 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-07.13';
+    M.VERSIONE = '2026-10-08.9';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -601,6 +601,16 @@
     // creaPayload() — la busta completa verso l'Hub
     // `attacchi` è un array di input per creaAttacco(), uno per unità.
     // ------------------------------------------------------------------
+    // Un allarme ARO e` gia` partito per l'Ordine in corso? Lo sa motore_core
+    // (window._ordineAllarmato, scritto da inviaAllarmeAro), legato
+    // all'identificativo dell'Ordine: un Ordine nuovo ha un id nuovo.
+    // Senza identificativo non si puo` sapere: false, come prima.
+    function allarmeGiaPartito() {
+        const o = G.currentOrder;
+        if (!o || o.id == null || G._ordineAllarmato == null) return false;
+        return String(G._ordineAllarmato) === String(o.id);
+    }
+
     M.creaPayload = function (attacchi, opzioni) {
         opzioni = opzioni || {};
         const errori = [];
@@ -628,8 +638,21 @@
         });
 
         // Ordine Coordinato: max 4 unità, e solo la Punta di Lancia spara a Burst pieno.
-        if (opzioni.isCoordinated && attacchi.length > 4) {
-            errori.push(err('E31', `Ordine Coordinato con ${attacchi.length} unità: il massimo è 4.`));
+        // 🔴 Si contano le TRUPPE, non le voci della busta. In SCOPRIRE +
+        // ATTACCO ogni partecipante porta due voci (lo Scoprire e l'Attacco):
+        // contando le voci, tre partecipanti "erano" sei e l'invio si
+        // bloccava (misurato dalla chat INTERFACCIA, 7 ottobre).
+        const truppeCoord = (function () {
+            const visti = [];
+            attacchi.forEach(function (a, i) {
+                const u = a && a.attaccante;
+                const k = (u && typeof u === 'object') ? String(u.id != null ? u.id : M.nomeUnita(u)) : String(u != null ? u : '#' + i);
+                if (visti.indexOf(k) < 0) visti.push(k);
+            });
+            return visti.length;
+        })();
+        if (opzioni.isCoordinated && truppeCoord > 4) {
+            errori.push(err('E31', `Ordine Coordinato con ${truppeCoord} unità: il massimo è 4.`));
         }
 
         const payload = {
@@ -639,7 +662,15 @@
             // Per gli ordini senza tiro (movimento) busta e allarme partono
             // insieme, e l'Hub calcolava "nessun tiro" e la cancellava prima
             // dell'ARO. (Collaudo al tavolo, 26 settembre — A-03.)
-            aroAtteso: !!opzioni.aroAtteso,
+            // 🔴 8 ottobre. Vale anche quando il modulo NON lo dice, se per
+            // QUESTO Ordine un allarme e` gia` partito: e` il caso della
+            // seconda meta` (Movimento o Scoprire, poi Attacco BS o
+            // Piazzare), dove i moduli non lo passavano e l'Hub calcolava
+            // subito; l'ARO dichiarato dopo restava in latestAroData e il
+            // tabellone non lo mostrava (misura di INTERFACCIA, 8 ottobre).
+            // Il fatto e` l'allarme spedito, non la meta`: un Movimento Cauto
+            // fuori da LoF e ZdC non allarma, e non aspetta niente.
+            aroAtteso: !!opzioni.aroAtteso || allarmeGiaPartito(),
             // Le Abilita` dichiarate nell'Ordine: servono, fra l'altro, a sapere
             // se l'attiva ha dichiarato una Schivata (mine). (28 settembre.)
             azioniDichiarate: Array.isArray(opzioni.azioniDichiarate) ? opzioni.azioniDichiarate.slice() : undefined,
@@ -972,6 +1003,11 @@
             // Le notazioni scritte sul nome base valgono per TUTTE le
             // modalità: "Heavy Rocket Launcher (PS=5)" significa PS 5 in
             // ogni modalità, quali che siano i valori del Weapon Chart.
+            // Regola scritta, righe 6659-6660, ed e` proprio l'esempio del
+            // regolamento ("PS 5 in all usage modes, regardless of the
+            // different PS values"). Sul Blink il Blast Mode passa da PS 6 a
+            // PS 5: e` un POTENZIAMENTO, non un malus, perche` il PS piu`
+            // basso e` piu` letale (chat REGOLE, 8 ottobre).
             const gruppi = [];
             String(nomeRichiesto || '').replace(/\(([^)]*)\)/g, (_, g) => { gruppi.push(g.trim()); return ' '; });
             return {
@@ -4948,6 +4984,19 @@
         // compresa. Si esce subito, prima di ogni altra considerazione.
         if (azione === M.AZIONI.INTUITIVO) {
             note.push('Attacco Intuitivo: tiro WIP non modificato. Nessun MOD si applica, da nessuna fonte.');
+            // 🔴 8 ottobre. La Sagoma su una mischia vale anche qui: la regola
+            // delle armi a Sagoma e` generale ("if when declaring an Attack
+            // with a Template Weapon, an Allied or Neutral Trooper would be
+            // affected by the Template, that shot is cancelled", righe
+            // 3584-3594; nel Corpo a Corpo la Sagoma prende tutti, righe
+            // 3622-3626). Prima questo ramo usciva senza guardarlo: un
+            // Intuitivo col Lanciafiamme su una mischia con un tuo alleato
+            // usciva come un tiro valido. Stessa lettura di
+            // ctx.alleatiInMischia del ramo della Sagoma Diretta: non
+            // passato vale 1, zero vale zero. Il -6 no: il tiro e` nudo.
+            const esI = M.esitoSagomaAlleati(arma, statoD, ctx);
+            if (esI.nota) note.push(esI.nota);
+            if (esI.annullato) return { valore: base, base: base, mod: 0, attributo: nomeAttr, voci, note, avvisi, burstMod: 0, colpoAnnullato: true };
             return { valore: base, base: base, mod: 0, attributo: nomeAttr, voci, note, avvisi, burstMod: 0 };
         }
 
@@ -5013,13 +5062,13 @@
             // colpo e` ANNULLATO (righe 3622-3626 e 3586-3594). Stessa lettura
             // di ctx.alleatiInMischia del ramo generale, piu` sotto: non
             // passato vale 1, zero vale zero.
-            const nMis = (ctx.alleatiInMischia != null && isFinite(parseInt(ctx.alleatiInMischia, 10))) ? Math.max(0, parseInt(ctx.alleatiInMischia, 10)) : 1;
-            const annullato = !!statoD.engaged && nMis > 0;
+            const esD = M.esitoSagomaAlleati(arma, statoD, ctx);
+            const annullato = esD.annullato;
             return { valore: null, automatico: true, base: base, mod: 0, attributo: nomeAttr,
                      voci: [], burstMod: 0, colpoAnnullato: annullato || undefined,
                      note: annullato
-                        ? ['SAGOMA SU UNA MISCHIA CON UN TUO ALLEATO: il colpo è ANNULLATO (la Sagoma prende tutti i coinvolti e non si può attaccare un alleato). Gli ARO restano; un uso Disposable dichiarato si consuma lo stesso. Se in quel Corpo a Corpo non c\'è nessun tuo alleato, il colpo vale.']
-                        : ['Sagoma Diretta: colpo automatico, nessun tiro per colpire. Copertura e Mimetismo non entrano nel calcolo.'],
+                        ? [esD.nota]
+                        : ['Sagoma Diretta: colpo automatico, nessun tiro per colpire. Copertura e Mimetismo non entrano nel calcolo.'].concat(esD.nota ? [esD.nota] : []),
                      avvisi };
         }
 
@@ -5245,15 +5294,17 @@
             // Con un'arma a SAGOMA il colpo non si penalizza: si ANNULLA
             // (righe 3622-3626 e 3586-3594), perche` la Sagoma su una mischia
             // prende tutti e non si puo` attaccare un alleato.
-            if (statoD.engaged || ctx.inMischia || (ctx.reazione && String(ctx.reazione.azione).toUpperCase() === 'CC_ATTACK')) {
+            // Le armi a Sagoma le decide M.esitoSagomaAlleati (il colpo, non
+            // la mischia del bersaglio); qui resta il -6 delle altre.
+            const esG = M.esitoSagomaAlleati(arma, statoD, ctx);
+            if (esG.applica) {
+                if (esG.annullato) colpoAnnullato = true;
+                if (esG.nota) note.push(esG.nota);
+            } else if (statoD.engaged || ctx.inMischia || (ctx.reazione && String(ctx.reazione.azione).toUpperCase() === 'CC_ATTACK')) {
                 const passato = ctx.alleatiInMischia != null && isFinite(parseInt(ctx.alleatiInMischia, 10));
                 const nAll = passato ? Math.max(0, parseInt(ctx.alleatiInMischia, 10)) : 1;
-                const pArma = (typeof arma === 'string') ? M.profiloArma(arma) : arma;
                 if (nAll === 0) {
                     note.push('Bersaglio Ingaggiato, ma nessun TUO alleato in quel Corpo a Corpo: il -6 non si applica.');
-                } else if (pArma && pArma.isTemplate) {
-                    colpoAnnullato = true;
-                    note.push('SAGOMA SU UNA MISCHIA CON UN TUO ALLEATO: il colpo è ANNULLATO (la Sagoma prende tutti i coinvolti e non si può attaccare un alleato). Gli altri colpi del Burst senza alleati nell\'area restano; gli ARO restano; un uso Disposable dichiarato si consuma lo stesso.');
                 } else {
                     aggiungi('mischia', -6 * nAll, nAll > 1
                         ? `Tiro dentro una mischia: -6 per ognuno dei ${nAll} tuoi alleati ingaggiati`
@@ -5459,6 +5510,125 @@
             return m ? Object.assign({}, t, { burst: 0, dadiPersi: t.burst, requisitoMancante: m.motivi.join(', ') }) : t;
         });
     };
+    // BERSAGLIO IN CORPO A CORPO: quanti alleati DI CHI SPARA sono in quella
+    // mischia. Il calcolo lo fa gia` il motore per ogni attacco a distanza
+    // (-6 per ognuno, righe 3389-3396; con una Sagoma il colpo e` annullato
+    // se ce n'e` almeno uno, righe 3622-3626), leggendo
+    // bersaglio.alleatiInMischia: non passato vale 1, con una nota.
+    // 🔴 8 ottobre. La domanda c'era solo nell'Attacco BS: in Speculativo,
+    // Guidato e Intuitivo valeva sempre 1, e "nessun alleato" non si poteva
+    // dire (con una Sagoma, il colpo restava annullato). Ora sta qui, una
+    // volta sola, e la usano tutte le schermate.
+    // `comando` e` il NOME della funzione della schermata: riceve (indice, n).
+    // Compare solo se il bersaglio vero (roster dell'avversario) e`
+    // Ingaggiato. Parte da 1, il caso normale, e lo scrive sul bersaglio:
+    // cosi` la busta porta il numero che si vede a schermo.
+    // I tasti: 0, 1, 2 e 3+. La regola ammette fino a 4 alleati su una base
+    // da 25 mm e 6 su una da 40 mm o piu` (righe 4422-4425), ma da 2 in su
+    // il MOD e` lo stesso (-12, il tetto): un tasto per numero non cambia
+    // niente. Si ACCETTANO pero` tutti, 0-6 (chat REGOLE, prova A8).
+    M.ALLEATI_IN_MISCHIA = [0, 1, 2, 3];
+    M.ALLEATI_IN_MISCHIA_AMMESSI = [0, 1, 2, 3, 4, 5, 6];
+    // 🔴 8 ottobre (chat REGOLE). Una Sagoma senza PS e che non infligge
+    // Stati (Fumo, Eclipse) PUO` coinvolgere gli alleati (righe 3586 e
+    // 3601-3602): non si annulla mai. Il controllo era legato al solo
+    // Tratto Sagoma, e il Fumo su una mischia usciva ANNULLATO. Il dato lo
+    // aveva gia` regoleTemplate (puoCoinvolgereAlleati): qui lo si legge in
+    // un posto solo per i tre rami dell'annullamento e per la domanda.
+    M.sagomaInnocua = function (arma) {
+        const a = (typeof arma === 'string') ? M.profiloArma(arma) : arma;
+        if (!a || !a.isTemplate) return false;
+        const t = M.regoleTemplate(a);
+        return !!(t && t.puoCoinvolgereAlleati);
+    };
+
+    // 🔴 L'UNITA` E` IL COLPO (8 ottobre, chat REGOLE; scelta di Paolo).
+    // Con un'arma a Sagoma la domanda del regolamento non e` "quanti tuoi
+    // alleati nella mischia di questo bersaglio", ma "un tuo alleato o un
+    // neutrale sarebbe colpito dalla Sagoma?" (riga 3587): conta anche chi
+    // sta vicino senza essere in mischia, o ci e` passato durante l'Ordine
+    // (righe 3603-3606). La risposta viaggia sul bersaglio come
+    // `alleatoNellaSagoma` (true/false). Assente = busta vecchia: resta la
+    // lettura di prima (mischia del bersaglio con almeno un alleato).
+    // Restituisce { applica, annullato, nota }: applica false per un'arma
+    // senza Sagoma (li` vale il -6 della mischia).
+    M.esitoSagomaAlleati = function (arma, statoD, ctx) {
+        ctx = ctx || {};
+        const a = (typeof arma === 'string') ? M.profiloArma(arma) : arma;
+        if (!a || !a.isTemplate) return { applica: false, annullato: false, nota: null };
+        const inMischia = !!((statoD && statoD.engaged) || ctx.inMischia ||
+            (ctx.reazione && String(ctx.reazione.azione).toUpperCase() === 'CC_ATTACK'));
+        if (M.sagomaInnocua(a)) {
+            return { applica: true, annullato: false,
+                     nota: inMischia ? 'Fumo/Eclipse su una mischia: una Sagoma senza PS e senza Stati può coinvolgere gli alleati (righe 3586 e 3601-3602), quindi il colpo NON si annulla. Niente -6: è Targetless, non è un Attacco contro una truppa Ingaggiata (riga 3389).' : null };
+        }
+        if (ctx.alleatoNellaSagoma === true) {
+            // In mischia resta la scritta di sempre: e` il caso che il
+            // giocatore riconosce (e che il tabellone mostra da giorni).
+            return { applica: true, annullato: true,
+                     nota: inMischia
+                        ? 'SAGOMA SU UNA MISCHIA CON UN TUO ALLEATO: il colpo è ANNULLATO (la Sagoma prende tutti i coinvolti e non si può attaccare un alleato, righe 3584-3594 e 3622-3626), per tutti i bersagli di quella Sagoma. Gli ARO restano; un uso Disposable dichiarato si consuma lo stesso.'
+                        : 'UN TUO ALLEATO, UN NEUTRALE O UN MARKER IMPERSONATION SOTTO LA SAGOMA: il colpo è ANNULLATO (righe 3584-3594; il Marker Impersonation conta come alleato, righe 14283-14289, anche con un altro Bersaglio Principale), per tutti i bersagli di quella Sagoma. Gli ARO restano; un uso Disposable dichiarato si consuma lo stesso.' };
+        }
+        if (ctx.alleatoNellaSagoma === false) {
+            return { applica: true, annullato: false,
+                     nota: inMischia ? 'Bersaglio Ingaggiato, ma nessun tuo alleato né neutrale sotto la Sagoma: il colpo vale.' : null };
+        }
+        if (!inMischia) return { applica: true, annullato: false, nota: null };
+        const nMis = (ctx.alleatiInMischia != null && isFinite(parseInt(ctx.alleatiInMischia, 10))) ? Math.max(0, parseInt(ctx.alleatiInMischia, 10)) : 1;
+        if (nMis > 0) return { applica: true, annullato: true, nota: 'SAGOMA SU UNA MISCHIA CON UN TUO ALLEATO: il colpo è ANNULLATO (la Sagoma prende tutti i coinvolti e non si può attaccare un alleato). Gli ARO restano; un uso Disposable dichiarato si consuma lo stesso. Se in quel Corpo a Corpo non c\'è nessun tuo alleato, il colpo vale.' };
+        return { applica: true, annullato: false, nota: 'Bersaglio Ingaggiato, ma nessun TUO alleato in quel Corpo a Corpo: la Sagoma vale.' };
+    };
+
+    M.domandaAlleatiInMischia = function (bersaglio, indice, comando, arma) {
+        if (!bersaglio || typeof bersaglio !== 'object') return '';
+        // Fumo ed Eclipse: la risposta non cambia niente, la domanda non si fa.
+        // L'arma, se il modulo non la passa, e` quella dell'Ordine in corso.
+        const armaD = arma || (G.currentOrder && G.currentOrder.weapon) || null;
+        if (armaD && M.sagomaInnocua(armaD)) return '';
+        const vero = (M.rosterNemico() || []).find(function (u) { return u && String(u.id) === String(bersaglio.id); });
+        const pArmaD = armaD ? ((typeof armaD === 'string') ? M.profiloArma(armaD) : armaD) : null;
+        // ARMA A SAGOMA: una domanda per COLPO, SI`/NO, anche fuori dalla
+        // mischia (M.esitoSagomaAlleati). Speculativo, Guidato e Intuitivo
+        // hanno sempre Burst 1 (righe 3909-3910, 3340-3341, 4027-4028): un
+        // colpo, una domanda, sulla scheda del Principale. Parte da SI` se il
+        // bersaglio e` Ingaggiato (la Sagoma su una mischia prende tutti,
+        // righe 3622-3626), da NO altrimenti; e lo scrive sul bersaglio.
+        if (pArmaD && pArmaD.isTemplate) {
+            const azD = M.azioneCanonica(G.currentOrder && G.currentOrder.action) || '';
+            const colpoUnico = [M.AZIONI.SPECULATIVO, M.AZIONI.GUIDATO, M.AZIONI.INTUITIVO].indexOf(azD) >= 0;
+            if (colpoUnico && indice > 0) return '';
+            if (typeof bersaglio.alleatoNellaSagoma !== 'boolean') bersaglio.alleatoNellaSagoma = !!(vero && M.statoBersaglio(vero).engaged);
+            const v = bersaglio.alleatoNellaSagoma;
+            const tasto = function (val, testo) {
+                const si = (v === val);
+                return `<button type="button" class="huge-btn" style="flex:1; margin:0; min-height:48px; font-size:16px; ${si ? 'background:#553300; border-color:#ffaa33; color:#ffaa33;' : 'background:#111; color:#888;'}" onclick="${comando}(${indice}, ${val})">${testo}</button>`;
+            };
+            return `<div style="margin-top:10px; padding:10px; background:#1a1000; border:1px solid #664400; border-radius:5px;">
+            <div style="color:#ffcc66; font-size:13px; margin-bottom:8px; text-align:center;">La Sagoma${colpoUnico ? '' : ' di questo colpo'} prende anche un <b>TUO</b> alleato, un neutrale o un Marker Impersonation nemico? (anche in mischia col bersaglio, o passato nell'area durante l'Ordine)</div>
+            <div style="display:flex; gap:8px;">${tasto(true, 'SÌ: colpo annullato')}${tasto(false, 'NO')}</div></div>`;
+        }
+        if (!vero || !M.statoBersaglio(vero).engaged) return '';
+        if (typeof bersaglio.alleatiInMischia !== 'number') bersaglio.alleatiInMischia = 1;
+        return `<div style="margin-top:10px; padding:10px; background:#1a1000; border:1px solid #664400; border-radius:5px;">
+            <div style="color:#ffcc66; font-size:13px; margin-bottom:8px; text-align:center;">Bersaglio in Corpo a Corpo: quanti <b>TUOI</b> alleati sono in quella mischia?</div>
+            <div style="display:flex; gap:8px;">` + M.ALLEATI_IN_MISCHIA.map(function (n) {
+                const si = bersaglio.alleatiInMischia === n;
+                const acceso = (n === 3) ? (bersaglio.alleatiInMischia >= 3) : si;
+                return `<button type="button" class="huge-btn" style="flex:1; margin:0; min-height:48px; font-size:18px; ${acceso ? 'background:#553300; border-color:#ffaa33; color:#ffaa33;' : 'background:#111; color:#888;'}" onclick="${comando}(${indice}, ${n})">${n === 3 ? '3+' : n}</button>`;
+            }).join('') + `</div></div>`;
+    };
+    // Scrive la risposta sul bersaglio. Solo i valori della domanda: un
+    // numero fuori elenco non si scrive (false), il bersaglio resta com'era.
+    M.impostaAlleatiInMischia = function (bersaglio, n) {
+        if (!bersaglio || typeof bersaglio !== 'object') return false;
+        // SI`/NO della Sagoma: un booleano va su alleatoNellaSagoma.
+        if (typeof n === 'boolean') { bersaglio.alleatoNellaSagoma = n; return true; }
+        if (M.ALLEATI_IN_MISCHIA_AMMESSI.indexOf(n) < 0) return false;
+        bersaglio.alleatiInMischia = n;
+        return true;
+    };
+
     // La riga di interruttori per la scheda di un bersaglio. `comando` e` il
     // NOME della funzione della schermata: riceve (indice, chiave).
     M.rigaRequisiti = function (chiavi, bersaglio, indice, comando) {
@@ -5884,6 +6054,8 @@
             // lo dichiara il giocatore sulla scheda (zero compreso). Non
             // passato resta non passato: modAttacco ne conta uno e lo scrive.
             alleatiInMischia: attacco.alleatiInMischia,
+            // Armi a Sagoma: un alleato o un neutrale sotto la Sagoma (true/false).
+            alleatoNellaSagoma: attacco.alleatoNellaSagoma,
             reazione: reazione
         };
         // 🔴 LO SCOPRIRE HA LE SUE REGOLE (Sensor, Discover (+N), il +3 del
@@ -5914,6 +6086,12 @@
         if (att.requisitoFallito) burstAtt = 0;
         // Sagoma su una mischia con un alleato: il colpo e` annullato, quindi
         // niente dadi e niente Tiro Salvezza su QUESTO bersaglio.
+        // Lo stesso colpo di Sagoma prende un altro bersaglio in mischia con
+        // un tuo alleato: annullato anche qui (lo decide risolviPayload).
+        if (attacco.sagomaAnnullataDa && !att.colpoAnnullato) {
+            att.colpoAnnullato = true;
+            (att.note = att.note || []).push(`SAGOMA ANNULLATA: è lo stesso colpo che prende anche ${attacco.sagomaAnnullataDa}, in un Corpo a Corpo con un tuo alleato. Il colpo è annullato per TUTTI i bersagli sotto la Sagoma (righe 3584-3594). Gli ARO restano; un uso Disposable dichiarato si consuma lo stesso.`);
+        }
         if (att.colpoAnnullato) burstAtt = 0;
         // 🔴 La Saturazione "cannot be reduced below 1" (wiki "Saturation").
         // Il pavimento era 0: un'arma a B1 attraverso la zona faceva 0 colpi.
@@ -6488,7 +6666,33 @@
             const sdAttacco = (attSd && armaSd) ? M.dadiSpeciali(attSd, armaSd, { azione: att.azione }) : 0;
             const iMarcato = bersagli.findIndex(x => x && x.dadoSpeciale === true && x.burst);
             const iSd = sdAttacco > 0 ? (iMarcato >= 0 ? iMarcato : bersagli.findIndex(x => x && x.burst)) : -1;
-            bersagli.forEach(function (b, iB) {
+            // 🔴 UNA SAGOMA E` UN COLPO SOLO (8 ottobre, domanda di INTERFACCIA).
+            // Se il colpo prende anche UN tuo alleato, "THAT SHOT IS CANCELLED
+            // (but not other shots of that same Burst...)" (righe 3584-3594):
+            // si annulla per TUTTI i bersagli sotto quella Sagoma, non solo per
+            // quello nella cui mischia sta l'alleato. Prima l'annullamento era
+            // per bersaglio: Principale annullato e secondario colpito, sotto la
+            // stessa Sagoma. Il giro dei bersagli diventa una funzione: se
+            // l'annullamento esce su uno solo, si rifa` il giro dicendo a
+            // risolviScontro qual e` il bersaglio che annulla il colpo.
+            let sagomaAnnullataDa = null;
+            const inizioScontri = scontri.length, inizioUsate = usate.length;
+            // Un colpo solo: Sagoma e Burst massimo 1 (Speculativo, Guidato,
+            // Intuitivo, e il BS con una Sagoma a B1).
+            const armaUno = (typeof att.arma === 'string') ? M.profiloArma(att.arma) : att.arma;
+            const unColpo = !!(armaUno && armaUno.isTemplate) &&
+                bersagli.reduce(function (m, x) { return Math.max(m, parseInt(x && x.burst, 10) || 0); }, 0) <= 1;
+            // 🔴 LA RISPOSTA E` DEL COLPO (misura di INTERFACCIA, 8 ottobre).
+            // La domanda "la Sagoma prende un tuo alleato?" in un colpo solo si
+            // fa UNA volta, sul Principale: i secondari arrivano senza il
+            // campo. Un secondario Ingaggiato senza campo seguiva la lettura
+            // delle buste vecchie (mischia = annullato) e annullava tutto,
+            // anche col NO. Qui la risposta data vale per ogni bersaglio del
+            // colpo che non ne ha una sua.
+            const rispostaColpo = unColpo
+                ? (bersagli.find(function (x) { return x && typeof x.alleatoNellaSagoma === 'boolean'; }) || {}).alleatoNellaSagoma
+                : undefined;
+            const perBersaglio = function (b, iB) {
                 // 🔴 ZERO DADI E "BURST NON SCRITTO" NON SONO LA STESSA COSA.
                 // Zero e` una scelta (nessun dado su questo bersaglio, o dadi
                 // persi): niente scontro. Un Burst ASSENTE e` una busta
@@ -6523,8 +6727,9 @@
                 // Rivelato: ha dichiarato un ARO, oppure NON e` piu` un Marker
                 // (la pagina lo rivela appena dichiara: quando la busta arriva
                 // e` gia` un Modello).
-                const stDif = (dif && typeof dif === 'object' && !dif.nonRisolto) ? M.statoBersaglio(dif) : null;
-                const nonPiuMarker = !!(stDif && !stDif.camo && !stDif.imp && !stDif.hidden);
+                // Un fatto, un campo: la stessa domanda la fa la schermata dello
+                // Scoprire (M.scoprireSuperatoInPagina), con la stessa funzione.
+                const nonPiuMarker = M.nonPiuMarker(dif);
                 const scoprireSuperato = scoprireCombinato &&
                     (nonPiuMarker || !!(rTrovata && rTrovata.azione && rTrovata.azione !== M.AZIONI_ARO.NESSUNO));
                 const r = scoprireSuperato ? null : rTrovata;
@@ -6549,6 +6754,7 @@
                     attaccante: attObj,
                     azione: att.azione, arma: att.arma, bersaglio: dif,
                     burst: b.burst, ammo: b.ammo, cover: b.cover,
+                    sagomaAnnullataDa: sagomaAnnullataDa,
                     // `copertura`: DA QUALE copertura ('VITROFERRO', 'CUTTING_FOAM').
                     // Viaggia col cover: senza questa riga l'interfaccia lo scriveva
                     // e nessuno lo leggeva — il caso "un fatto, un campo" al rovescio.
@@ -6556,6 +6762,7 @@
                     repeaterNemico: b.repeaterNemico,
                     rangeIndex: b.rangeIndex, rangeMod: b.rangeMod, terrain: b.terrain, zona: b.zona,
                     alleatiInMischia: b.alleatiInMischia,
+                    alleatoNellaSagoma: (typeof b.alleatoNellaSagoma === 'boolean') ? b.alleatoNellaSagoma : rispostaColpo,
                     // 🔴 `regole.nonOffensivo` lo scrivono cinque moduli (Scoprire,
                     // Osservazione, Scenografia, Supporto, Logistica) e fino al 5
                     // ottobre NESSUNO lo leggeva: MISURATO, uno Scoprire e un
@@ -6605,8 +6812,13 @@
                             if (sSc.attivo) { sSc.attivo.burst = 0; sSc.attivo.nonSiTira = true; sSc.attivo.mod = 'Non si tira'; sSc.attivo.voci = []; sSc.attivo.note = []; }
                             sSc.note = (sSc.note || []).concat([`${M.nomeUnita(dif) || nomeB} ha dichiarato un ARO: si è rivelato da solo. Lo Scoprire non si tira` + (scoprirePoiAttacco ? '; risolvi direttamente l\'Attacco.' : '.')]);
                         } else if (!scoprirePoiAttacco) {
-                            // Scoprire + un'Abilita` che non dipende dal suo esito
-                            // (Piazzare): nessuna istruzione in piu`.
+                            // Scoprire + Piazzare: se il piazzamento dipende dal suo
+                            // esito (il Marker nell'area d'innesco e` questo), va
+                            // detto QUI, sullo scontro che si tira per primo.
+                            if (attacchi.some(function (x) { return x.regole && x.regole.condizionatoDaScoprire; })) {
+                                sSc.scoprirePoiPiazzare = true;
+                                sSc.note = (sSc.note || []).concat(['SCOPRIRE + PIAZZARE: tira PRIMA questo Scoprire. Dal suo esito dipende il piazzamento qui sotto: se fallisce, il segnalino non si piazza.']);
+                            }
                         } else if (sSc.attivo && sSc.attivo.successoAutomatico) {
                             // Niente tiro: le istruzioni sul tiro non servono.
                             sSc.note = (sSc.note || []).concat(['SCOPRIRE + ATTACCO: lo Scoprire riesce da solo, senza tiro. Risolvi direttamente l\'Attacco contro il Marker.']);
@@ -6660,7 +6872,21 @@
                         `Sagoma: UN SOLO tiro vale per tutti i ${bersagli.length} bersagli sotto l'area. ` +
                         (principale ? 'Questo \u00e8 il Bersaglio Principale.' : 'Questo \u00e8 un bersaglio secondario.')]);
                 }
-            });
+            };
+            bersagli.forEach(perBersaglio);
+            // Un colpo solo: Sagoma e Burst massimo 1 (Speculativo, Guidato,
+            // Intuitivo, e il BS con una Sagoma a B1). Con Burst 2 o piu` le
+            // Sagome sono piu` d'una e l'app non sa quale prende chi: resta
+            // l'annullamento per bersaglio, come dice la stessa riga ("but not
+            // other shots of that same Burst").
+            const delAttacco = scontri.slice(inizioScontri);
+            const annullante = delAttacco.find(function (s) { return s && s.attivo && s.attivo.colpoAnnullato; });
+            if (unColpo && annullante && delAttacco.some(function (s) { return s && s.attivo && !s.attivo.colpoAnnullato; })) {
+                sagomaAnnullataDa = (annullante.reattivo && annullante.reattivo.nome) || 'un bersaglio';
+                scontri.splice(inizioScontri);
+                usate.length = inizioUsate;
+                bersagli.forEach(perBersaglio);
+            }
 
         });
 
@@ -8843,6 +9069,31 @@
         const o = G.currentOrder || {};
         if (!o.isSecondHalf || !o.scoprire || !o.scoprire.bersaglio) return null;
         return (String(o.action1 || '').toUpperCase() === 'SCOPRIRE') ? o.scoprire : null;
+    };
+
+    // Il bersaglio di uno Scoprire NON e` piu` un Marker (CAMO, IMP, Hidden)?
+    // Succede quando ha reagito con un ARO fra le due meta`: la pagina lo
+    // rivela appena dichiara. Un bersaglio assente o non risolto NON e` "non
+    // piu` Marker": e` un'altra cosa, e lo dicono altri campi.
+    M.nonPiuMarker = function (dif) {
+        if (!dif || typeof dif !== 'object' || dif.nonRisolto) return false;
+        const s = M.statoBersaglio(dif);
+        return !s.camo && !s.imp && !s.hidden;
+    };
+
+    // 🔴 8 ottobre (misura di INTERFACCIA sui tre dispositivi). In SCOPRIRE +
+    // PIAZZARE, e allo stesso modo in SCOPRIRE + ATTACCO, se il Marker
+    // reagisce con un ARO la schermata dello Scoprire della seconda meta`
+    // mostrava ancora "WIP 14 -> 17", gittata e copertura: i numeri di un
+    // tiro che il tabellone poi annulla ("SCOPRIRE: NON SI TIRA"). La
+    // schermata chiede qui, e il testo e` lo stesso dello scontro.
+    M.scoprireSuperatoInPagina = function (dif, opzioni) {
+        opzioni = opzioni || {};
+        if (!M.nonPiuMarker(dif)) return { superato: false, testo: null };
+        const nome = M.nomeUnita(dif) || 'Il bersaglio';
+        return { superato: true,
+                 testo: `${nome} non è più un Marker: si è rivelato da solo (ha dichiarato un ARO). Lo Scoprire non si tira` +
+                        (opzioni.poiAttacco ? '; si passa direttamente all\'Attacco.' : '; l\'Ordine prosegue.') };
     };
 
     M.riprendiOrdineDaFinestra = function (azione, isSecondHalf) {

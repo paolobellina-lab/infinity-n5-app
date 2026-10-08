@@ -1,4 +1,4 @@
-<!-- @versione 2026-09-28.1 | SCHEDE_SKILL_N5_gruppoB.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-10-08.1 | SCHEDE_SKILL_N5_gruppoB.md | proprieta`: chat REGOLE -->
 
 # SCHEDE SKILL — GRUPPO B: le 11 skill a catalogo, mai citate dal codice, che toccano il gioco
 
@@ -174,10 +174,17 @@ toccherebbe alleati l'attacco è annullato, ma l'utente entra in Morto lo stesso
   segnalino Incosciente si piazza il segnalino **Shasvastii-Embryo**.
 - Va dichiarata **nel momento** in cui entra in Incosciente, in Attivo o in Reattivo.
 - In quello stato la truppa conta comunque per i Punti Vittoria della Ritirata!
-- ⚠️ Il resto degli effetti dell'Embryo (cosa può fare, come si cancella) sta su una pagina
-  impaginata su due colonne: da rileggere sulla wiki prima di implementarlo.
+- ✅ **Riletto sulla wiki l'8 ottobre** (pagina *Shasvastii*, oldid 3976): **non c'è un "resto"
+  degli effetti, e l'Embryo non è uno stato a sé.** È l'**Incosciente** di una Shasvastii con il
+  token sostituito. Quindi: cosa può fare = quello che può fare un Incosciente, cioè niente;
+  come si cancella = come l'Incosciente (Dottore, MediKit, Ingegnere, GizmoKit).
+- ⚠️ L'unica regola propria oltre al token: **conta per i Punti Vittoria della Ritirata! durante
+  la partita**, e a fine partita **non** conta più.
+- ⚠️ E una che toglie valore alla skill: le **munizioni Shock** cancellano l'Incosciente di chi
+  ha questa skill e lo mandano **diritto a Morto** (REMEMBER della stessa pagina).
 
-**Nell'app:** uno stato nuovo. 1 profilo.
+**Nell'app:** ⚠️ **non** uno stato nuovo, come diceva la versione precedente di questa scheda:
+un token diverso sullo stesso Incosciente. 1 profilo. Niente da implementare nel calcolatore.
 
 ---
 

@@ -1,12 +1,19 @@
-<!-- @versione 2026-10-07.4 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-10-08.3 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 13)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 16)
 
-La **.4** non cambia nessuna prova: aggiorna solo la riga della misura e le
-versioni del motore e dei file di INTERFACCIA su cui i numeri sono calcolati
-(motore `.9` → `.11`, `app.html` `.2` → `.4`, suite 3830 → 3901 prove).
+La **revisione 16** aggiunge il **blocco SG** (dieci prove: la Sagoma e i
+tuoi alleati — la domanda nuova, il colpo annullato per tutti, il Fumo che non
+si annulla mai, il secondario che ora arriva sul tabellone).
 
-Sostituisce la revisione 12 del 7 ottobre. **275 prove, tutte nello stesso
+La **revisione 15** aveva aggiunto due prove al blocco SP — **SP-10** (Scoprire +
+Piazzare quando reagisce il Marker stesso) e **SP-11** (Coordinato con quattro
+partecipanti).
+
+La **revisione 14** aveva aggiunto il **blocco SP** e **corretto la
+convenzione 4**, che diceva una cosa sbagliata e bloccava il tavolo.
+
+Sostituisce la revisione 13 dell'8 ottobre. **296 prove, tutte nello stesso
 format**: si eseguono dall'app, una per una, senza dover andare a
 cercare un'altra prova per capire cosa fare.
 
@@ -16,7 +23,7 @@ campo da completare, non un difetto dell'app.
 
 # 0. Quello che è cambiato dalla revisione 12
 
-**Ogni prova è riscritta nel format dichiarato dal piano stesso**, tutte e 275, nelle stesse
+**Ogni prova è riscritta nel format dichiarato dal piano stesso**, tutte e 296, nelle stesse
 cinque righe: Attivo, Con, Bersaglio, ARO, Atteso. Prima erano scritte in modi
 diversi — alcune su quattro righe, altre tutto su una — e **42 ereditavano
 dalla precedente** ("Come BS-01 ma l'ARO bersaglia un'altra unità"): quelle
@@ -29,11 +36,11 @@ ER-01…22, MU-01…14 e TER-01…08 erano righe di tabella senza i campi: ora s
 76 prove intere come le altre.
 
 **Quattro convenzioni nuove** (pagina 3) evitano di ripetere la stessa riga
-275 volte: stato non scritto = Normale, metà dell'Ordine non scritta = una
+284 volte: stato non scritto = Normale, metà dell'Ordine non scritta = una
 dichiarazione sola, copertura non scritta = da decidere al tavolo,
 `ARO: nessuno` = il reattivo c'è ma non dichiara niente.
 
-**Quello che manca è dichiarato, non riempito a caso.** 135 prove hanno un
+**Quello che manca è dichiarato, non riempito a caso.** 118 prove hanno un
 campo che il piano non dice: sono marcate **DA COMPLETARE** dentro la prova,
 e l'elenco sta nel **blocco DC** in fondo. Lì ci sono anche le due prove non
 eseguibili così come sono (SW-03 senza Atteso, TPL-04 senza il valore del
@@ -53,7 +60,7 @@ stessa ricerca sul database.
 **Cinque codici erano doppi.** `DIS-01…DIS-05` identificava due gruppi di
 prove diversi, nel blocco J (Scoprire) e nel blocco 23-bis (Disposable):
 dieci prove, cinque codici. Le cinque dello Scoprire sono ora
-**SCO-01…SCO-05**. Adesso i 275 codici sono tutti univoci.
+**SCO-01…SCO-05**. Adesso i codici sono tutti univoci: alla revisione 16 sono 296.
 
 **Resta aperto un difetto solo**, il Burst della Soppressione in reazione
 (BS-12 / D-02).
@@ -73,7 +80,7 @@ Senza ARO il reattivo dichiara **Nessun ARO** e il confronto deve uscire
 **TIRO NORMALE**. Le bande si contano dal Weapon Chart, otto pollici l'una:
 banda 0 = 0-8", banda 1 = 8-16", banda 2 = 16-24", e così via.
 
-## Quattro convenzioni, per non ripetere la stessa riga 275 volte
+## Quattro convenzioni, per non ripetere la stessa riga 296 volte
 
 Valgono per **tutte** le prove, e sono la ragione per cui i cinque campi sono
 spesso più corti del format completo:
@@ -86,9 +93,19 @@ spesso più corti del format completo:
    per la situazione che la prova descrive. Dove la copertura cambia il
    numero, la prova la dice: se non la dice e il numero non torna, prova
    **senza** copertura prima di segnalare un difetto.
-4. **`ARO: nessuno`** vuol dire che il reattivo non dichiara niente, non che
-   non ci sia un reattivo: il bersaglio resta in campo e deve comparire sul
-   tabellone con "Nessun ARO".
+4. **`ARO: nessuno`** vuol dire che il reattivo dichiara **PASSA (NESSUN
+   ARO)**, non che resti zitto: il bersaglio resta in campo e deve comparire
+   sul tabellone con "Nessun ARO".
+
+   🔴 **CORRETTA L'8 OTTOBRE, e va letta prima di giocare.** Fino alla
+   revisione 13 questa convenzione diceva "il reattivo non dichiara niente".
+   È sbagliato e **blocca il tavolo**: dopo la prima metà di un Ordine
+   l'allarme è già partito, la busta porta `aroAtteso`, e l'Hub **aspetta una
+   risposta** prima di calcolare. Chi reagisce deve toccare **PASSA (NESSUN
+   ARO)** — che spedisce una lista di reazioni vuota — altrimenti lo scontro
+   non compare e sembra che l'app si sia piantata. Lo stesso valeva già per
+   l'attivo, che senza risposta resta fermo perché lo sblocco parte solo da
+   lì. Dato misurato dalla chat INTERFACCIA sui tre dispositivi.
 
 Dove invece manca un dato che nessuna convenzione può sostituire — quale
 unità usare, quale arma, quale banda — c'è scritto **DA COMPLETARE** o
@@ -102,16 +119,25 @@ prova dà un numero diverso da quello scritto qui, guarda prima la scheda
 ufficiale — il piano invecchia insieme ai dati.
 
 Le prove si eseguono **dall'app**. Tutto ciò che si poteva verificare col
-motore è **verde**: **92 file di test, 3901 prove, 0 falliti**, nessun banco
+motore è **verde**: **93 file di test, 4111 prove, 0 falliti**, nessun banco
 muto, banco di confronto a zero divergenze (354 scontri identici, 294 attese,
 uscita 0). La cartella è allineata su tutte e tre le chat.
 
-I valori attesi sono calcolati con `motore_regole_n5.js` **2026-10-07.11,
-impronta `cbc90237.667869`**, `catalogo_n5.js` **2026-10-07.3, impronta
+🔴 **Il numero delle prove di questo piano non si cambia più a mano.**
+`test_piano_schieramento.js` le conta nel testo e pretende che i cinque punti
+che lo dichiarano dicano tutti lo stesso numero, che i codici siano uno per
+prova e senza doppioni, e che il blocco DC dichiari quante prove hanno
+davvero un campo da completare. L'8 ottobre ha trovato quattro numeri
+sbagliati, fra cui un "135 prove su 277" che non era mai stato giusto.
+Il conto della **suite** qui sopra resta invece una misura del momento, come
+un'impronta: va riletto a ogni giro.
+
+I valori attesi sono calcolati con `motore_regole_n5.js` **2026-10-08.9,
+impronta `f55db800.690577`**, `catalogo_n5.js` **2026-10-07.3, impronta
 `40d0a9f7.195688`**, `motore_core.js` **2026-10-07.1, impronta
-`8e76e8a1.39346`** e `calcolatore_math.js` **2026-10-07.2, impronta
-`6e9ad1f3.18165`**, sui profili veri. Dei file di INTERFACCIA: `app.html`
-**2026-10-07.4**, `logica_aro.js` **2026-10-07.2**, `calcolatore_controller.js`
+`8e76e8a1.39346`** e `calcolatore_math.js` **2026-10-07.4, impronta
+`afb03fe9.18214`**, sui profili veri. Dei file di INTERFACCIA: `app.html`
+**2026-10-07.5**, `logica_aro.js` **2026-10-07.2**, `calcolatore_controller.js`
 e `calcolatore_hub.html` **2026-10-07.1**. Le regole citate rimandano a
 `REGOLE_N5_v5_1_1.txt` (impronta `5ea7581f.904498`, 17029 righe), con
 `grep -n`.
@@ -2091,7 +2117,7 @@ DB_DEPLOYABLES.forEach(d => {
 
 # 27. Blocco DC — Quello che resta da completare
 
-Non sono difetti dell'app: sono **buchi del piano**. Queste 135 prove su 277
+Non sono difetti dell'app: sono **buchi del piano**. Queste 118 prove su 296
 hanno un campo che il piano non dice e che nessuna convenzione può coprire —
 quale unità usare, quale arma, quale banda. Le ho lasciate marcate
 **DA COMPLETARE** dentro la prova, invece di riempirle con una supposizione:
@@ -2261,6 +2287,192 @@ bersaglio, il numero atteso **dipende** da quella scelta e va deciso prima.
 
 **Una prova aveva il valore atteso sbagliato, ed è corretta:** SPEC-02
 chiedeva 18 applicando la regola N4; il valore misurato è **12**.
+
+---
+
+# 28. Blocco SP — Scoprire + Piazzare, e il Coordinato con lo Scoprire
+
+Nuovo l'8 ottobre: `ordine_piazzamento.js` **2026-10-07.7** e
+`ordine_scoprire.js` **2026-10-07.6** compongono lo Scoprire con il
+Piazzamento, e il motore **2026-10-08.1** scrive i due campi che il tabellone
+legge. Prima della `.5` partiva solo il piazzamento e **lo Scoprire andava
+perso**: queste nove prove sono la rete su quel difetto.
+
+Serve una Puppet Masters (o altra truppa con un Deployable) e un Marker
+avversario. Tutte in **Ordine singolo**, dove non detto.
+
+**SP-01 — Dopo lo Scoprire il menu offre il Piazzare**
+- **Attivo:** Puppet Masters · SCOPRIRE → *(menu della 2ª metà)*
+- **Bersaglio:** Marker avversario @ banda 0
+- **ARO:** nessuno
+- **Atteso:** fra le seconde metà compaiono **PIAZZARE EQUIPAGGIAMENTO** e **ATTACCO BS**. Non un secondo Scoprire.
+
+**SP-02 — In Ordine Coordinato il Piazzare NON si offre**
+- **Attivo:** due Alguaciles in Ordine Coordinato · SCOPRIRE → *(menu della 2ª metà)*
+- **Bersaglio:** Marker avversario @ banda 0
+- **ARO:** nessuno
+- **Atteso:** si offre **ATTACCO BS**, **non** PIAZZARE EQUIPAGGIAMENTO: il Piazzare è costruito solo per l'Ordine singolo. E il menu della prima metà non offre né Fuoco Speculativo né Attacco Intuitivo.
+
+**SP-03 — Prima i modificatori dello Scoprire, poi il piazzamento**
+- **Attivo:** Puppet Masters · SCOPRIRE → PIAZZARE EQUIPAGGIAMENTO
+- **Con:** Mina Shock
+- **Bersaglio:** Marker avversario @ banda 0, copertura no
+- **ARO:** nessuno
+- **Atteso:** compare prima la schermata dei modificatori dello **Scoprire**, e il tasto in fondo dice **"AVANTI: PIAZZA EQUIPAGGIAMENTO"**. Solo dopo si scelgono l'arma e le domande del piazzamento, e il tasto diventa **"PIAZZA"**.
+
+**SP-04 — Sul tabellone lo Scoprire viene prima**
+- **Attivo:** Puppet Masters · SCOPRIRE → PIAZZARE EQUIPAGGIAMENTO
+- **Con:** Mina Shock
+- **Bersaglio:** Marker avversario @ banda 0
+- **ARO:** nessuno
+- **Atteso:** **un solo** scontro inviato, due righe sul tabellone: **Azione: SCOPRIRE** sopra, **Azione: PIAZZARE EQUIPAGGIAMENTO** (titolo "ABILITÀ SENZA TIRO") sotto. Nessun avviso d'errore. Il segnalino finisce nel roster di chi l'ha piazzato.
+
+**SP-05 — Marker nell'area d'innesco: il piazzamento è condizionato**
+- **Attivo:** Puppet Masters · SCOPRIRE → PIAZZARE EQUIPAGGIAMENTO
+- **Con:** Mina Shock, e alla domanda sul Marker **nell'area d'innesco** rispondi **SÌ**
+- **Bersaglio:** Marker avversario @ banda 0
+- **ARO:** nessuno
+- **Atteso:** compare una **seconda domanda** che non c'era, e sul tabellone si legge **a vista** (non dentro i dettagli chiusi) **"PIAZZAMENTO CONDIZIONATO"**, col nome del segnalino e del Marker, e **"tira PRIMA questo Scoprire"** sulla riga dello Scoprire. Se lo Scoprire fallisce il segnalino non si piazza: va messo in stato Morto, e l'uso dichiarato resta consumato.
+
+**SP-06 — Senza Marker nell'area la nota NON c'è**
+- **Attivo:** Puppet Masters · SCOPRIRE → PIAZZARE EQUIPAGGIAMENTO
+- **Con:** Mina Shock, e alla domanda sul Marker nell'area rispondi **NO**
+- **Bersaglio:** Marker avversario @ banda 0
+- **ARO:** nessuno
+- **Atteso:** **nessuna** nota "PIAZZAMENTO CONDIZIONATO" e **nessun** "tira PRIMA". È la controprova di SP-05: senza, "la nota compare" non si distingue da "la nota c'è sempre".
+
+**SP-07 — Coordinato con tre partecipanti: l'Ordine parte**
+- **Attivo:** **tre** Alguaciles in Ordine Coordinato · SCOPRIRE → ATTACCO BS
+- **Con:** Combi Rifle
+- **Bersaglio:** Marker avversario @ banda 1
+- **ARO:** nessuno
+- **Atteso:** l'Ordine **parte**. Sei voci (due per partecipante) ma **nessun errore sul numero di unità**: il limite di 4 conta le truppe, non le voci. Fino al 7 ottobre qui usciva un rifiuto che parlava di "6 unità".
+
+**SP-08 — Coordinato con cinque partecipanti: rifiutato**
+- **Attivo:** **cinque** Alguaciles in Ordine Coordinato · SCOPRIRE → ATTACCO BS
+- **Con:** Combi Rifle
+- **Bersaglio:** Marker avversario @ banda 1
+- **ARO:** nessuno
+- **Atteso:** rifiutato, e il messaggio dice **"Ordine Coordinato con 5 unità: il massimo è 4"** — cinque, non dieci. È la controprova di SP-07.
+
+**SP-09 — Dopo la prima metà il reattivo deve rispondere**
+- **Attivo:** Puppet Masters · SCOPRIRE → PIAZZARE EQUIPAGGIAMENTO
+- **Bersaglio:** Marker avversario @ banda 0
+- **ARO:** il reattivo **non tocca niente**, poi tocca **PASSA (NESSUN ARO)**
+- **Atteso:** finché il reattivo non risponde l'Hub **non calcola** e il tabellone resta vuoto — non è un blocco, è l'attesa. Appena arriva **PASSA (NESSUN ARO)** lo scontro compare. Vedi la **convenzione 4** in testa al piano: è il motivo per cui "ARO: nessuno" vuol dire *dichiarare* Nessun ARO.
+
+**Entrambi i casi che erano aperti ora hanno un banco** (`test_scoprire_attacco.js`
+sezione 11, misurato sul motore): il Coordinato con **quattro** partecipanti
+(otto voci, otto scontri, Burst 2 alla Punta e 1 ai gregari) e lo
+**Scoprire + Piazzare col Marker che reagisce** (tre scontri: "SCOPRIRE: NON
+SI TIRA", il piazzamento condizionato, e l'ARO del Marker come Tiro Normale a
+sé). Resta da guardare solo **l'aspetto nel browser vero**.
+
+**SP-10 — Scoprire + Piazzare quando reagisce il Marker stesso**
+- **Attivo:** Puppet Masters · SCOPRIRE → PIAZZARE EQUIPAGGIAMENTO
+- **Con:** Mina Shock, Marker **nell'area d'innesco** (rispondi SÌ)
+- **Bersaglio:** Marker avversario @ banda 0
+- **ARO:** il Marker stesso → ATTACCO BS, Combi Rifle, banda 0, contro la Puppet Masters
+- **Atteso:** sulla **schermata** dello Scoprire della seconda metà si legge l'intestazione col **nome vero** e il riquadro **"SCOPRIRE: NON SI TIRA"** — *"<nome> non è più un Marker: si è rivelato da solo (ha dichiarato un ARO). Lo Scoprire non si tira; l'Ordine prosegue."* — e **non** WIP, gittata, copertura o interruttori dei requisiti. Il tasto resta **"AVANTI: ..."**. Sul tabellone **tre** scontri: lo Scoprire che non si tira, il piazzamento **condizionato**, e l'ARO del Marker come **Tiro Normale a sé**. La nota *"tira PRIMA questo Scoprire"* **non** compare: non c'è più niente da tirare.
+
+**SP-11 — Coordinato con quattro partecipanti**
+- **Attivo:** **quattro** Alguaciles in Ordine Coordinato · SCOPRIRE → ATTACCO BS
+- **Con:** Combi Rifle
+- **Bersaglio:** Marker avversario @ banda 1
+- **ARO:** nessuno
+- **Atteso:** l'Ordine parte senza avvisi. **Otto** scontri sul tabellone, due per partecipante. **Burst 2** alla Punta di Lancia e **1** a ciascuno dei tre gregari.
+
+---
+
+# 29. Blocco SG — La Sagoma e i tuoi alleati
+
+Nuovo l'8 ottobre (motore **2026-10-08.9**). Il regolamento non chiede
+"quanti tuoi alleati nella mischia di questo bersaglio" ma **"un tuo alleato
+sarebbe colpito dalla Sagoma?"** — e quella domanda vale **anche fuori dalla
+mischia**. Sono due domande diverse, con due tasti diversi:
+
+| arma | domanda | tasti | quando compare |
+|---|---|---|---|
+| senza Sagoma | quanti tuoi alleati in quella mischia | 0, 1, 2, **3+** | solo se il bersaglio è Ingaggiato |
+| a Sagoma (non Fumo) | la Sagoma prende anche un tuo alleato? | **SÌ: colpo annullato** / NO | **sempre** |
+| Fumo, Eclipse | *nessuna domanda* | — | mai |
+
+Serve un'arma a Sagoma (Missile Launcher in Blast Mode, o un Lanciafiamme),
+un HMG, e Granate Fumogene.
+
+**SG-01 — Senza Sagoma: i tasti sono quattro, e solo in mischia**
+- **Attivo:** Intruder (HMG) · ATTACCO BS
+- **Con:** Heavy Machine Gun
+- **Bersaglio:** Fusilier **(Ingaggiato)** @ banda 1, copertura no
+- **ARO:** nessuno
+- **Atteso:** compare la domanda **"quanti TUOI alleati sono in quella mischia?"** con i tasti **0, 1, 2, 3+**. Parte da **1**, non da 0. Con un bersaglio **non** Ingaggiato la domanda **non compare**.
+
+**SG-02 — Senza Sagoma: il MOD si ferma a −12**
+- **Attivo:** Intruder (HMG) · ATTACCO BS
+- **Con:** Heavy Machine Gun
+- **Bersaglio:** Fusilier (Ingaggiato) @ banda 0, copertura no
+- **ARO:** nessuno
+- **Atteso:** con **1** alleato il MOD è **−6**; con **2** è **−12**; con **3+** resta **−12** e nei dettagli compare la voce **"MOD minimo −12"**. Il numero del tiro si ferma a 0, non va sotto.
+
+**SG-03 — A Sagoma: la domanda è SÌ/NO, e compare anche fuori dalla mischia**
+- **Attivo:** una truppa con Missile Launcher · ATTACCO BS
+- **Con:** Missile Launcher (Blast Mode)
+- **Bersaglio:** Fusilier **non Ingaggiato** @ banda 3, copertura no
+- **ARO:** nessuno
+- **Atteso:** la domanda **compare** anche se nessuno è in mischia, con i due tasti **"SÌ: colpo annullato"** e **"NO"**. Parte da **NO**. Nomina il **neutrale** e il **Marker Impersonation nemico**, e dice "anche passato nell'area durante l'Ordine". I tasti 0/1/2/3+ **non** ci sono.
+
+**SG-04 — A Sagoma su una mischia: parte da SÌ**
+- **Attivo:** una truppa con Missile Launcher · ATTACCO BS
+- **Con:** Missile Launcher (Blast Mode)
+- **Bersaglio:** Fusilier **(Ingaggiato)** @ banda 3
+- **ARO:** nessuno
+- **Atteso:** la stessa domanda, ma parte da **SÌ**: la Sagoma su una mischia prende tutti i coinvolti.
+
+**SG-05 — SÌ: il colpo è annullato per TUTTI i bersagli**
+- **Attivo:** una truppa con Missile Launcher · ATTACCO BS
+- **Con:** Missile Launcher (Blast Mode), e rispondi **SÌ**
+- **Bersaglio:** Fusilier (Ingaggiato) come Principale @ banda 3, **più** un secondo Fusilier **non** Ingaggiato sotto la Sagoma
+- **ARO:** nessuno
+- **Atteso:** **nessun dado** e **nessun Tiro Salvezza** per **entrambi**. Sul bersaglio in mischia si legge **"SAGOMA SU UNA MISCHIA CON UN TUO ALLEATO"**; sull'altro **"UN TUO ALLEATO, UN NEUTRALE O UN MARKER IMPERSONATION SOTTO LA SAGOMA"**. Le due scritte sono diverse. Entrambe dicono che **gli ARO restano** e che **l'uso Disposable si consuma lo stesso**.
+
+**SG-06 — NO: il colpo vale, anche col bersaglio Ingaggiato**
+- **Attivo:** una truppa con Missile Launcher · ATTACCO BS
+- **Con:** Missile Launcher (Blast Mode), e rispondi **NO**
+- **Bersaglio:** Fusilier (Ingaggiato) @ banda 3
+- **ARO:** nessuno
+- **Atteso:** il colpo **vale**, i dadi si tirano, e nei dettagli si legge *"Bersaglio Ingaggiato, ma nessun tuo alleato né neutrale sotto la Sagoma: il colpo vale."* È la controprova di SG-05: senza, "il SÌ annulla" non si distingue da "si annulla sempre".
+
+**SG-07 — Colpo unico: una domanda sola, sul Principale**
+- **Attivo:** una truppa con Missile Launcher · FUOCO SPECULATIVO *(ripeti con ATTACCO GUIDATO e ATTACCO INTUITIVO)*
+- **Con:** Missile Launcher (Blast Mode)
+- **Bersaglio:** Fusilier (Ingaggiato) come Principale, **più** un secondo Fusilier **(Ingaggiato)** come secondario
+- **ARO:** nessuno
+- **Atteso:** la domanda compare **una volta sola**, sulla scheda del **Principale**. Sul secondario **non** c'è. Rispondendo **NO** sul Principale il colpo **vale**, anche se il secondario è Ingaggiato — prima qui il colpo si annullava comunque.
+
+**SG-08 — Fumo ed Eclipse: nessuna domanda, e non si annullano mai**
+- **Attivo:** una truppa con Granate Fumogene · ATTACCO BS *(ripeti con Eclipse)*
+- **Con:** Smoke Grenades
+- **Bersaglio:** una zona che prende un Fusilier **(Ingaggiato)** col tuo alleato
+- **ARO:** nessuno
+- **Atteso:** **nessuna domanda**. Il colpo **non** si annulla, e **non** c'è il −6: nei dettagli si legge che è **Targetless** (riga 3389). È il caso in cui prima usciva **ANNULLATO**.
+
+**SG-09 — Burst 2: l'annullamento resta per bersaglio**
+- **Attivo:** una truppa con un'arma a Sagoma a **Burst 2** · ATTACCO BS
+- **Con:** l'arma a Sagoma, **2 dadi** divisi fra due bersagli
+- **Bersaglio:** un Fusilier (Ingaggiato) col **SÌ**, e un secondo Fusilier **non** Ingaggiato col **NO**
+- **ARO:** nessuno
+- **Atteso:** solo il **primo** è annullato; il secondo **tira i suoi dadi**. Con Burst 2 o più le Sagome sono più d'una, e l'app non sa quale prende chi. È la controprova di SG-05.
+
+**SG-10 — Il secondario della Sagoma arriva sul tabellone**
+- **Attivo:** una truppa con Missile Launcher · ATTACCO GUIDATO
+- **Con:** Missile Launcher (Blast Mode)
+- **Bersaglio:** un Bersagliato come Primario @ banda 3, **più** un secondario sotto la Sagoma
+- **ARO:** nessuno
+- **Atteso:** sul tabellone ci sono **due** scontri, non uno: il Primario **e** il secondario, ciascuno col suo nome. Il Faccia a Faccia e il Critico restano del **solo** Primario; sul secondario un Critico vale come successo normale. Fino all'8 ottobre il secondario non compariva.
+
+**Non misurato, resta per il tavolo:** l'aspetto dei tasti nel browser vero, e
+un **Marker Impersonation** davvero sotto la Sagoma (il motore non lo vede: lo
+dichiara il giocatore col SÌ).
 
 ---
 

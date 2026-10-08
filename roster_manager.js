@@ -1,4 +1,4 @@
-// @versione 2026-10-07.1 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-08.1 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -692,6 +692,12 @@ window.chiudiGalleriaFoto = () => {
     if (g) { g.style.display = 'none'; g.innerHTML = ''; }
 };
 
+// 8 ottobre (misura di TEST): due righe di questa funzione avevano le
+// lettere accentate SCOMPOSTE (lettera + accento a parte, U+0300). Il
+// browser le mostra uguali, ma copiando il file da una cartella all'altra
+// qualcuno le ricompone: stessa versione, due impronte diverse, e
+// l'impronta non identificava piu` il file. Ora quelle lettere sono entita`
+// HTML (&egrave;, &agrave;): solo caratteri ASCII, nessuna ricomposizione.
 window.apriGalleriaFoto = (index) => {
     const u = window.roster[index];
     if (!u) return;
@@ -711,7 +717,7 @@ window.apriGalleriaFoto = (index) => {
         // Niente ripiego muto: senza elenco le foto non si possono scegliere,
         // e lo si dice con il rimedio.
         corpo = `<div style="border:2px solid #ffaa00; color:#ffdd88; padding:14px; border-radius:6px; font-size:15px;">
-            ⚠️ L'elenco delle foto non è stato caricato (manca <b>img/elenco_foto.js</b>).<br>
+            ⚠️ L'elenco delle foto non &egrave; stato caricato (manca <b>img/elenco_foto.js</b>).<br>
             Si genera con la pagina <b>avvia_elenco_foto.html</b> e va messo nella cartella img.</div>`;
     } else {
         const mia = window.fotoAssegnata(u);
@@ -719,7 +725,7 @@ window.apriGalleriaFoto = (index) => {
         const tessera = (f) => `<button onclick="window.assegnaFoto(${index}, '${f.replace(/'/g, "\\'")}')" style="width:104px; padding:4px; background:${f === mia ? '#553300' : '#111'}; border:2px solid ${f === mia ? '#ffaa00' : '#444'}; border-radius:6px; color:#aaa; font-size:11px; overflow:hidden;">
                 <img src="img/${f}" style="width:92px; height:92px; object-fit:contain; display:block;" alt="">
                 ${f.replace(/\.[a-z]+$/i, '')}</button>`;
-        corpo = `<div style="color:#888; font-size:13px; margin-bottom:10px;">${libere.length} foto libere su ${elenco.length}. Quelle già su un'altra unità non compaiono.</div>
+        corpo = `<div style="color:#888; font-size:13px; margin-bottom:10px;">${libere.length} foto libere su ${elenco.length}. Quelle gi&agrave; su un'altra unit&agrave; non compaiono.</div>
             <div style="display:flex; flex-wrap:wrap; gap:8px;">${libere.map(tessera).join('')}</div>
             <button class="btn-status" style="margin-top:14px;" onclick="window.assegnaFoto(${index}, null)">NESSUNA FOTO</button>`;
     }
@@ -1368,7 +1374,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-10-07.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-10-08.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

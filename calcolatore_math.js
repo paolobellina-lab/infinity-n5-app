@@ -1,4 +1,4 @@
-// @versione 2026-10-07.3 | calcolatore_math.js | proprieta`: chat MOTORE
+// @versione 2026-10-07.4 | calcolatore_math.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧮 CALCOLATORE N5 — adattatore sopra MotoreN5
 // ------------------------------------------
@@ -303,7 +303,7 @@
             // (Chat INTERFACCIA, 6 ottobre: non poteva mostrarli.)
             // bersaglioDiSagoma mancava dall'elenco (chat INTERFACCIA, 6 ottobre):
             // un campo nuovo dello scontro va aggiunto QUI, o non arriva.
-            ['coperturaNegata', 'reattivoNonBersagliato', 'bersaglioDiSagoma', 'attaccanteNonRisolto', 'bersaglioNonRisolto', 'scoprirePoiAttacco', 'scoprireSuperato', 'dopoScoprire', 'condizionatoDaScoprire'].forEach(k => { if (s[k]) out[k] = s[k]; });
+            ['coperturaNegata', 'reattivoNonBersagliato', 'bersaglioDiSagoma', 'attaccanteNonRisolto', 'bersaglioNonRisolto', 'scoprirePoiAttacco', 'scoprireSuperato', 'dopoScoprire', 'condizionatoDaScoprire', 'scoprirePoiPiazzare'].forEach(k => { if (s[k]) out[k] = s[k]; });
             if (s.note && s.note.length) out.note = s.note;
             return out;
         });
@@ -318,7 +318,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_math.js', versione: '2026-10-07.3', proprieta: 'MOTORE' };
+    var v = { file: 'calcolatore_math.js', versione: '2026-10-07.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

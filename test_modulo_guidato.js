@@ -1,4 +1,4 @@
-// @versione 2026-10-07.2 | test_modulo_guidato.js | proprieta`: chat TEST
+// @versione 2026-10-08.1 | test_modulo_guidato.js | proprieta`: chat TEST
 // Test end-to-end del modulo Guidato — node test_modulo_guidato.js
 // .2 (7 ott): il colore del tasto si prova contro M.COLORE_TASTO E si pretende
 //    non vuoto e diverso dal giallo dell IDLE — alla .1 era una tautologia.
@@ -98,8 +98,24 @@ ok(r.soloPrimarioInF2F && r.criticoSoloSulPrincipale, 'solo il Primario fa il F2
 
 console.log('\n=== 6. Burst dall arma, non scritto a mano ===');
 ok(r.burst === arma.burst, `Burst ${r.burst} dalla Blast Mode`);
-ok(window.combatTargets[0].burst === arma.burst && window.combatTargets[1].burst === 0,
-   'i dadi vanno al Primario; i secondari non tirano');
+// 🔴 GIRATA L 8 OTTOBRE (motore dalla .08.9). Questa prova pretendeva
+// `combatTargets[1].burst === 0`, ed era il modo SBAGLIATO di dire una
+// cosa giusta. Con Burst 0 risolviPayload saltava il secondario, che non
+// arrivava al tabellone (difetto misurato da INTERFACCIA): la prova
+// fissava proprio il campo che lo faceva sparire.
+//
+// Ora ogni bersaglio della Sagoma porta il Burst DEL COLPO, come nello
+// Speculativo, e "solo il Primario tira" si dice dove va detto: nel
+// confronto (soloPrimarioInF2F, criticoSoloSulPrincipale) e negli usi
+// (creaAttacco conta il MASSIMO, non la somma: un colpo, un uso).
+//
+// Le tre prove qui sotto sono quella vecchia rifatta: il Burst, l ARRIVO
+// del secondario, e il conto degli usi. La seconda e` la cosa che il
+// difetto rompeva, e prima nessuno la guardava.
+ok(window.combatTargets[0].burst === arma.burst && window.combatTargets[1].burst === arma.burst,
+   `ogni bersaglio della Sagoma porta il Burst del colpo, non 0 (${window.combatTargets[0].burst} / ${window.combatTargets[1].burst})`);
+ok(window.combatTargets[1].burst > 0,
+   `e quello del secondario NON e` + ` zero: con zero risolviPayload lo saltava e non arrivava al tabellone (${window.combatTargets[1].burst})`);
 
 console.log('\n=== 7. Schermata ===');
 h = nodo('targets-allocation-container').innerHTML;
@@ -208,6 +224,74 @@ window.toggleRequisitoGuidato(0, 'gittata');
 ok(window.combatTargets[0].fuoriGittata === true,
    `e gira fuoriGittata, non un campo chiamato "gittata" (${JSON.stringify(window.combatTargets[0].gittata)} / ${window.combatTargets[0].fuoriGittata})`);
 ok(tastoG().innerText === 'IDLE', 'e il tasto si aggiorna da solo');
+
+// ==================================================================
+// 11. IL SECONDARIO DELLA SAGOMA ARRIVA AL TABELLONE, E I DADI SI
+//     CONTANO UNA VOLTA SOLA (motore dalla .08.9)
+//
+//   Sta in fondo e non dentro la sezione 6 perche` chiama il motore con
+//   un tavolo suo: messo in mezzo, sporcava lo stato del modulo e
+//   faceva cadere la sezione 8 (l invio). Misurato: cinque prove
+//   diventavano rosse senza che il motore avesse niente di sbagliato.
+// ==================================================================
+console.log('\n=== 11. Il secondario della Sagoma arriva, e i dadi si contano una volta ===');
+// Il secondario arriva davvero allo scontro. Senza questa, "il Burst non
+// e` zero" resta una prova sul campo, non sul fatto che il giocatore
+// legga il secondario sul tabellone.
+const inCampoG = [
+    { id: 'att', alias: 'Lanciatore', bs: 12, wip: 13, ph: 10, arm: 1, bts: 0, states: {}, weapon: 'Missile Launcher' },
+    { id: 'p1', alias: 'Designato', tipo: 'LI', arm: 1, bts: 0, ph: 10, states: { targeted: true } },
+    { id: 'p2', alias: 'Vicino', tipo: 'LI', arm: 1, bts: 0, ph: 10, states: {} }
+];
+const trovaG = (n, id) => inCampoG.find(u =>
+    (id && String(u.id) === String(id)) ||
+    M.nomeUnita(u).toUpperCase() === String(M.nomeUnita(n) || n).toUpperCase()) || null;
+const bustaG = { attacchi: [{
+    attaccante: 'Lanciatore', attaccanteId: 'att', azione: M.AZIONI.BS_ATTACK, arma: arma,
+    bersagli: [
+        { id: 'p1', name: 'Designato', burst: arma.burst, rangeIndex: 3, rangeMod: 3, principale: true },
+        { id: 'p2', name: 'Vicino', burst: arma.burst, rangeIndex: 3, rangeMod: 3 }
+    ]
+}] };
+// 🔴 UN BANCO CHE MUORE NON E` UN BANCO ROSSO. Rompendo il motore mi e`
+// uscita un eccezione dentro risolviPayload: il banco e` morto senza
+// stampare la riga di riepilogo, e di quale prova fosse non si sapeva
+// niente. Qui l eccezione diventa una prova rossa che la nomina.
+let scG = [], cadutaG = null;
+try { scG = M.risolviPayload(bustaG, [], { trovaUnita: trovaG }) || []; }
+catch (e) { cadutaG = e; }
+ok(cadutaG === null,
+   `risolviPayload non lancia sulla busta della Sagoma${cadutaG ? ': ' + cadutaG.message + ' — ' + ((cadutaG.stack || '').split('\n')[1] || '').trim() : ''}`);
+ok(scG.length === 2,
+   `i DUE bersagli della Sagoma arrivano al tabellone, primario e secondario (${scG.length} scontri)`);
+ok(scG.some(s => /Vicino/.test(String(((s || {}).reattivo || {}).nome || ''))),
+   `e il secondario si legge col suo nome (${scG.map(s => ((s || {}).reattivo || {}).nome).join(', ')})`);
+// I DADI: un colpo, un uso. Due bersagli con il Burst del colpo ciascuno
+// non fanno due dadi da trovare. E` il punto esatto in cui "il Burst sta
+// su OGNI bersaglio" potrebbe far contare doppio: creaAttacco per le
+// Sagome prende il MASSIMO (riga 544), non la somma (riga 545), e senza
+// quello uscirebbe E21 "Assegnati 2 dadi ma ne hai solo 1".
+M._rosterProprio = [inCampoG[0]]; M._rosterNemico = [inCampoG[1], inCampoG[2]];
+const codiciDi = (e) => ((e || {}).errori || []).map(x => String((x && x.codice) || x));
+const attG = M.creaAttacco({ attaccante: inCampoG[0], azione: M.AZIONI.BS_ATTACK, arma: arma,
+    bersagli: bustaG.attacchi[0].bersagli });
+ok(codiciDi(attG).indexOf('E21') < 0,
+   `due bersagli col Burst del colpo NON fanno due dadi: niente E21 (${JSON.stringify(codiciDi(attG))})`);
+ok(attG.ok === true,
+   `e l attacco a Sagoma passa la validazione (ok: ${attG.ok}, errori ${JSON.stringify(codiciDi(attG))})`);
+// CONTROPROVA: la stessa forma con un arma SENZA Sagoma deve sommare, e
+// con due dadi chiesti su un Burst da 1 l errore DEVE uscire. Senza
+// questa, "niente E21" non distingue "conta il massimo" da "non controlla
+// piu` niente".
+const pistola = M.profiloArma('Pistol') || M.profiloArma('Combi Rifle');
+const attNoSag = M.creaAttacco({ attaccante: inCampoG[0], azione: M.AZIONI.BS_ATTACK, arma: pistola,
+    bersagli: [{ id: 'p1', name: 'Designato', burst: pistola.burst, rangeIndex: 0 },
+               { id: 'p2', name: 'Vicino', burst: pistola.burst, rangeIndex: 0 }] });
+ok(!!pistola && pistola.isTemplate !== true,
+   `premessa della controprova: ${pistola && pistola.nome} non e` + ` un arma a Sagoma (isTemplate: ${pistola && pistola.isTemplate})`);
+ok(codiciDi(attNoSag).indexOf('E21') >= 0,
+   `CONTROPROVA: senza Sagoma i dadi si SOMMANO, e ${pistola.burst}+${pistola.burst} oltre ${pistola.burst} da` + ` E21 (${JSON.stringify(codiciDi(attNoSag))})`);
+M._rosterProprio = null; M._rosterNemico = null;
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

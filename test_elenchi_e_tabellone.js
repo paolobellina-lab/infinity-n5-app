@@ -1,4 +1,4 @@
-// @versione 2026-10-07.6 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-08.2 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -28,6 +28,10 @@
 //
 //  13. Scoprire + Attacco BS quando reagisce il Marker stesso:
 //      "SCOPRIRE: NON SI TIRA" e Faccia a Faccia (motore dalla 2026-10-07.7).
+//  14. Dopo lo Scoprire: Piazzare in Ordine singolo, Attacco BS anche in
+//      Ordine Coordinato; la nota di uno scontro senza tiro si legge.
+//  15. Senza allarme l'Hub non aspetta (Movimento Cauto fuori da LoF e
+//      ZdC); controprova: con l'allarme aspetta.
 //
 //  NON PROVA: l'aspetto vero nel browser (altezze, colori, immagini che
 //  esistono o no). Il DOM qui e` finto: si guarda l'HTML prodotto.
@@ -456,6 +460,12 @@ sezione('12. Scoprire + Attacco BS: la manovra intera, fino al tabellone', () =>
     N.confermaScoprirePoiAttacco();
     ok(/dopo lo Scoprire/.test(testo(T.nomadi.el('targets-allocation-container').innerHTML)), 'poi i modificatori dell Attacco, col Marker segnato "dopo lo Scoprire"');
     N.eseguiCalcoloBS(); T.giro();
+    // 8 ottobre (motore 2026-10-08.1): la busta porta aroAtteso, perche` per
+    // quest'Ordine l'allarme e` partito. Qui arriva PRIMA della risposta del
+    // reattivo: l'Hub aspetta. Al tavolo il reattivo risponde sempre, anche
+    // col tasto PASSA (NESSUN ARO), e allora si calcola.
+    ok(!risoluzione(T), 'la busta arriva prima della risposta del reattivo: l Hub ASPETTA');
+    T.pano.g.annullaAro(); T.giro();
     const t = tabellone(T);
     ok(risoluzione(T) && N.alert_.length === 0, 'parte UNA busta e l Hub la risolve (alert: ' + N.alert_.length + ')');
     const iS = t.indexOf('Azione: SCOPRIRE'), iA = t.indexOf('Azione: ATTACCO BS');
@@ -484,6 +494,81 @@ sezione('13. Scoprire + Attacco BS quando reagisce il Marker stesso', () => {
        'e l Attacco e` un Faccia a Faccia col suo ARO: 10 con 4 dadi contro 12 con 1');
     ok(/si è rivelato da solo/.test(t), 'con la spiegazione del motore a vista');
     ok(reazioniViste && reazioniViste.length === 1 && reazioniViste[0].id === 'p1', 'la reazione che l Hub passa al calcolo porta l id di chi reagisce, nel campo `id` (' + (reazioniViste && reazioniViste[0] && reazioniViste[0].id) + ')');
+});
+
+sezione('14. Dopo lo Scoprire: Piazzare (Ordine singolo) e Attacco BS (anche Coordinato)', () => {
+    const offerte = (T) => (T.nomadi.el('second-half-buttons-container').innerHTML.match(/selectAction\('[^']+', true\)/g) || []).map(x => x.match(/'([^']+)'/)[1]);
+    // Ordine singolo: Scoprire + Piazzare, fino al tabellone.
+    const T = creaTavolo(DIR); const N = T.nomadi.g;
+    T.schiera([truppa(profilo(T, /^Puppet Masters/), { id: 'n1', alias: 'Posa' })],
+              [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Ombra', deployState: 'CAMO', states: { camo: true } })], 'NOMADI');
+    T.apriMenu(T.nomadi, 0); N.selectAction('SCOPRIRE', false); N.scegliBersaglioScoprire('p1'); T.giro();
+    T.pano.g.annullaAro(); T.giro();      // il reattivo risponde PASSA (NESSUN ARO)
+    ok(offerte(T).indexOf('PIAZZARE EQUIPAGGIAMENTO') >= 0 && offerte(T).indexOf('ATTACCO BS') >= 0, 'Ordine singolo, dopo SCOPRIRE: si offrono ATTACCO BS e PIAZZARE EQUIPAGGIAMENTO (' + J(offerte(T)) + ')');
+    N.selectAction('PIAZZARE EQUIPAGGIAMENTO', true);
+    const tasto = () => T.nomadi.el('btn-esegui-calcolo');
+    ok(tasto().innerText === 'AVANTI: PIAZZA EQUIPAGGIAMENTO', 'prima i modificatori dello Scoprire (' + tasto().innerText + ')');
+    tasto().onclick(); N.scegliArmaDaPiazzare('Shock Mine');
+    (N.deployableDomande || []).forEach(d => N.rispondiDeployable(d.id, false));
+    ok(tasto().innerText === 'PIAZZA', 'poi equipaggiamento e domande, fino a PIAZZA (' + tasto().innerText + ')');
+    tasto().onclick(); T.giro();
+    const t = tabellone(T);
+    ok(risoluzione(T) && N.alert_.length === 0, 'parte una busta e l Hub la risolve (alert: ' + N.alert_.length + ')');
+    ok(t.indexOf('Azione: SCOPRIRE') >= 0 && t.indexOf('Azione: PIAZZARE EQUIPAGGIAMENTO') > t.indexOf('Azione: SCOPRIRE'), 'sul tabellone lo Scoprire e poi il Piazzamento');
+    ok(N.roster.some(u => u.deployable), 'e il segnalino e` nel roster');
+    // Ordine singolo con la risposta SI: il piazzamento e` condizionato, e la nota si legge.
+    const T3 = creaTavolo(DIR); const N3 = T3.nomadi.g;
+    T3.schiera([truppa(profilo(T3, /^Puppet Masters/), { id: 'n1', alias: 'Posa' })],
+               [truppa(profilo(T3, /^Fusilier \(Combi/), { id: 'p1', alias: 'Ombra', deployState: 'CAMO', states: { camo: true } })], 'NOMADI');
+    T3.apriMenu(T3.nomadi, 0); N3.selectAction('SCOPRIRE', false); N3.scegliBersaglioScoprire('p1'); T3.giro();
+    T3.pano.g.annullaAro(); T3.giro();
+    N3.selectAction('PIAZZARE EQUIPAGGIAMENTO', true); T3.nomadi.el('btn-esegui-calcolo').onclick(); N3.scegliArmaDaPiazzare('Shock Mine');
+    N3.rispondiDeployable(N3.deployableDomande[0].id, true);
+    ok(N3.deployableDomande.length === 2, 'col Marker nell area compare la seconda domanda (' + N3.deployableDomande.length + ')');
+    N3.rispondiDeployable(N3.deployableDomande[1].id, true); T3.nomadi.el('btn-esegui-calcolo').onclick(); T3.giro();
+    ok(/ABILITÀ SENZA TIRO/.test(tabellone(T3)) && /PIAZZAMENTO CONDIZIONATO/.test(tabellone(T3)), 'la nota "PIAZZAMENTO CONDIZIONATO" di uno scontro senza tiro si legge a vista');
+    // Ordine Coordinato: l'Attacco BS si`, il Piazzare no.
+    const T2 = creaTavolo(DIR); const N2 = T2.nomadi.g; const al = profilo(T2, /^Alguacil \(Combi/);
+    T2.schiera([truppa(al, { id: 'n1', alias: 'AlgA' }), truppa(al, { id: 'n2', alias: 'AlgB' })],
+               [truppa(profilo(T2, /^Fusilier \(Combi/), { id: 'p1', alias: 'Ombra', deployState: 'CAMO', states: { camo: true } })], 'NOMADI');
+    N2.currentOrder = {}; N2.isCoordinated = true; N2.spearheadUnit = N2.roster[0]; N2.selectedCoordinatedUnits = [N2.roster[0], N2.roster[1]];
+    N2.confermaCoordinato();
+    const menu = (T2.nomadi.el('action-list-container').innerHTML.match(/selectAction\('[^']+', false\)/g) || []).map(x => x.match(/'([^']+)'/)[1]);
+    ok(menu.indexOf('FUOCO SPECULATIVO') < 0 && menu.indexOf('ATTACCO INTUITIVO') < 0 && menu.indexOf('SCOPRIRE') >= 0, 'in Coordinato il menu non offre Speculativo ne` Intuitivo (righe 11399-11401)');
+    N2.selectAction('SCOPRIRE', false); N2.scegliBersaglioScoprire('p1'); T2.giro();
+    ok(offerte(T2).indexOf('ATTACCO BS') >= 0, 'in Coordinato, dopo SCOPRIRE, si offre ATTACCO BS (' + J(offerte(T2)) + ')');
+    ok(offerte(T2).indexOf('PIAZZARE EQUIPAGGIAMENTO') < 0, 'ma NON il Piazzare, che e` costruito solo per l Ordine singolo');
+});
+
+sezione('15. Senza allarme l Hub NON aspetta: Movimento Cauto fuori da LoF e ZdC', () => {
+    // L'altra faccia della sezione 12 (richiesta di TEST, 8 ottobre): se la
+    // busta chiedesse SEMPRE di aspettare, ogni Ordine senza ARO lascerebbe
+    // l'Hub fermo ad aspettare una risposta che non arriva.
+    const giro = (fuori) => {
+        const T = creaTavolo(DIR); const N = T.nomadi.g;
+        T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Piano' })],
+                  [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        let busta = null; const vero = T.hub.g.generaRisoluzioneDaDati;
+        T.hub.g.generaRisoluzioneDaDati = function (d) { busta = JSON.parse(J(d)); return vero.apply(this, arguments); };
+        const dal = Object.keys(T.server).length;
+        T.apriMenu(T.nomadi, 0); N.selectAction('CAUTO', false);
+        const dove = ((Object.values(T.nomadi.elementi).map(e => e.innerHTML).join(' ').match(/rispondiCauto\(true, '([^']*)'\)/) || [])[1]);
+        N.rispondiCauto(fuori, dove);
+        const allarme = !!T.pano.g.currentAttackData || T.hub.g.ordineDelleReazioni != null;
+        T.giro(); T.giro();
+        return { T, N, busta, allarme: allarme || !!T.pano.g.currentAttackData, dove };
+    };
+    const a = giro(true);
+    ok(!!a.dove, 'la domanda del Movimento Cauto e` a schermo (' + a.dove + ')');
+    ok(!a.allarme, 'fuori da LoF e ZdC: nessun allarme arriva al reattivo');
+    ok(a.busta && a.busta.aroAtteso !== true, 'la busta NON chiede di aspettare (aroAtteso: ' + (a.busta && a.busta.aroAtteso) + ')');
+    ok(risoluzione(a.T), 'e l Hub calcola SUBITO, senza che il reattivo risponda');
+    // CONTROPROVA: dentro LoF o ZdC l'allarme parte, e l'Hub aspetta.
+    const b = giro(false);
+    ok(b.allarme, 'CONTROPROVA, dentro LoF o ZdC: l allarme arriva al reattivo');
+    ok(!risoluzione(b.T), 'e l Hub aspetta la risposta');
+    b.T.pano.g.annullaAro(); b.T.giro();
+    ok(risoluzione(b.T), 'finche` il reattivo non risponde (qui: PASSA)');
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

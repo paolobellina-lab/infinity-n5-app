@@ -1,4 +1,4 @@
-<!-- @versione 2026-10-07.2 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-10-08.6 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
 
 # PRONTUARIO ORDINI N5 — richiamo rapido durante la partita
 
@@ -94,14 +94,15 @@ Vale per ogni ordine, sempre.
 | `(+N)` | +N all'**utente**, solo con quella skill/arma |
 | `(-N)` | −N al **nemico**. Se la skill è Automatica (Mimetism, Surprise Attack, ECM) si applica sempre come dice la sua regola; negli altri casi (`Dodge (-3)`, `CC Attack (-3)`) **solo nei Faccia a Faccia** |
 | `(+1B)` | +1 Burst all'utente, **solo in Turno Attivo** |
-| `(+1 SD)` | 1 dado extra, poi se ne scarta uno. **Non** aumenta il Burst (né il tetto di 6), **non** consuma usi Disposable, **non** si applica alle Long Skill né a chi non tira (Sagome Dirette). Vale in **Attivo e in Reattivo**. Col Burst diviso, il dado extra va a **un solo** bersaglio e lo scarto avviene su quel tiro. Nel F2F si scarta dopo che entrambi hanno tirato; sceglie prima l'attivo |
+| `(+1 SD)` | 1 dado extra, poi se ne scarta uno. **Non** aumenta il Burst (né il tetto di 6), **non** consuma usi Disposable, **non** si applica alle Long Skill né a chi non tira (Sagome Dirette) — righe **1957–1959**. Vale in **Attivo e in Reattivo**. Col Burst diviso, il dado extra va a **un solo** bersaglio e lo scarto avviene su quel tiro. Nel F2F si scarta dopo che entrambi hanno tirato; sceglie prima l'attivo. **Un'arma a due modalità lo usa solo nella modalità che tira**: vedi il caso Drop Bears in §3.3 |
 | `(+1B)` in ARO | **mai**, nemmeno col Total Reaction: il testo lo esclude esplicitamente nel Turno Reattivo (righe 6646–6648) |
-| `(ReRoll)` | Ritira **un dado** del tiro, solo quando si usa quella skill/arma. **N5.2**: la forma dell'Ingegnere è ora `Engineer (ReRoll WIP=X)` — si ritira **usando** il WIP fra parentesi, non applicando un malus. `Doctor (ReRoll −3)` resta nei dati ufficiali: ⚠️ forma pre-N5.2 da verificare |
+| `(ReRoll)` **nudo** | Ritira **un dado** del tiro, solo quando si usa quella skill/arma. ✅ **Invariato a N5.3**: verificato l'8 ottobre sulla wiki *Template:Modifiers-explained* (oldid 4027, marcata «PDF 5.3, September 2026»), che dice ancora «will allow the user to reroll **one die** from the Roll, only when using that Skill, Weapon, or Equipment» — identico alle righe 1939–1941 del nostro .txt, e **senza** limite per Ordine. Riguarda `Booty (ReRoll)` 16 profili, `MetaChemistry (ReRoll)` 8, `Deactivator (ReRoll)` 8, `Discover (ReRoll)` 2: tutti tiri a **un dado solo**, quindi "un dado" e "il tiro" coincidono e non c'è ambiguità da sciogliere |
+| `(ReRoll …)` **con un valore**, solo Dottore e Ingegnere | ⚠️ **È un'altra notazione, non la stessa con un numero in più**: ha un limite per Ordine e ritira *il tiro*, non un dado. ✅ **Chiuso l'8 ottobre sulla wiki** (pagina *Doctor*, oldid 3979, che mostra le due forme affiancate): `(ReRoll −X)` è la forma **pre-N5.2** — «any failed Roll with this Skill may be rerolled, but with a negative MOD (−X) to the WIP Attribute»; in **N5.2** è diventata `(ReRoll WIP=X)` — «rerolled, but **applying the WIP Attribute indicated between brackets**». Non sono la stessa cosa: la prima è un malus, la seconda **sostituisce** il WIP. Vale per Dottore e Ingegnere. 🔴 **Nei dati ufficiali vive ancora la forma vecchia, e non esiste un numero per convertirla** — vedi il riquadro sotto |
 | `(SR-1)` / `(SR-2)` | I **bersagli** applicano −1/−2 al proprio Tiro Salvezza. Non è gittata |
-| `(PS=X)` | Fissa il PS dell'arma a X in tutte le modalità |
+| `(PS=X)` | Fissa il PS dell'arma a X **in tutte le modalità**, e **sovrascrive** i PS diversi che la Weapon Chart dà alle singole modalità. Righe **6659–6660**, dove l'esempio del regolamento è proprio il nostro caso: «**Heavy Rocket Launcher (PS=5)** means that the PS of this Weapon is 5 in all usage Modes, **regardless of the different PS values listed in the Weapons Chart for its Modes**». In chart l'HRL ha Blast Mode **PS 6** (riga 16022) e Hit Mode **PS 5** (riga 16025): con la notazione il Blast scende a 5, cioè diventa **più letale** (PS basso = più letale) |
 | `(PH=X)` / `(WIP=X)` | Usa X al posto dell'attributo del profilo per quel tiro |
-| `(ARM+N)` / `(BTS+N)` | +N al proprio ARM/BTS se il tiro fallisce (es. `Dodge (ARM+3)`) |
-| `(AP)`, `(Shock)`, `(Continuous Damage)` | L'utente aggiunge quella munizione o tratto a tutti i suoi attacchi |
+| `(ARM+N)` / `(BTS+N)` | +N al proprio ARM/BTS se il tiro fallisce. ⚠️ **La fonte scrive lo spazio**: l'extra ufficiale è `ARM +3`, e così sta nei dati su 9 profili Coyote (misurato da DATABASE, 8 ottobre). Da oggi questo file segue la fonte: `Dodge (ARM +3)` |
+| `(AP)`, `(Shock)`, `(Continuous Damage)` | L'utente aggiunge quella munizione o tratto a tutti i suoi attacchi. 🔴 **Non "correggere" la grafia verso l'ufficiale**: la fonte scrive *«Continous Damage»*, senza la u. Il progetto usa la grafia corretta **da entrambi i lati** (catalogo e database), e per questo `M.haTratto` trova 9 armi su 9. Allineare un lato solo spegne il tratto in silenzio su Lanciafiamme Pesante e Leggero, Lanciarazzi Pesante e Leggero nelle due modalità, Vulkan Shotgun e Flammenspeer nelle due (misurato da DATABASE, 8 ottobre) |
 | `(2W)` | Il bersaglio recupera 2 Ferite invece di 1 |
 
 > **NFB (Negative Feedback).** Una skill, equip o programma con l'etichetta NFB è
@@ -113,6 +114,31 @@ Vale per ogni ordine, sempre.
 >
 > ⚠️ **Il livello non sta fra parentesi.** `Martial Arts L3`, `MSV L2`, `Fatality L1`:
 > il numero fa parte del **nome**. Fra parentesi c'è sempre un MOD, mai un livello.
+
+> 🔴 **IL CASO BIPANDRA: una notazione orfana, e perché si lascia com'è.**
+> Censito da DATABASE l'8 ottobre su `database_panoceania.js 4a97dcf6.152854` e sulla fonte
+> ARMY `7.26246.158`:
+> - nei dati esistono tre forme di Doctor: `Doctor` nuda (5 profili), `Doctor (+3)` (2) e
+>   **`Doctor (ReRoll -3)` (2: `bipandra` e `bipandra_ta`)**. Nessun `Doctor (2W)`, nessun
+>   `Doctor (ReRoll WIP=…)`;
+> - la fonte ufficiale **porta ancora la forma vecchia**, e la prova è a livello di tabella, non
+>   di profilo: la `filters.extras` di PanOceania ha la voce `{"id": 366, "name": "ReRoll -3"}`,
+>   ed è quella che l'opzione Bipandra attacca alla skill. In nessuna delle due fazioni esiste
+>   un extra `WIP=…`, su 85 extra distinti controllati.
+>
+> **Non esiste una fonte per X**, e l'ho cercata l'8 ottobre: l'aggiornamento ufficiale del
+> 15 ottobre 2025 (*Army Update October 2025, Part 2*) dice soltanto «Revised wording in the
+> following Special Skills» ed elenca il Doctor, **senza** rinotare nessun profilo; e
+> l'aggiornamento N5.3 del 1 settembre 2026 non nomina né il Doctor né le notazioni `ReRoll`.
+> Quindi è il caso che DATABASE aveva previsto: **la skill è cambiata, quel profilo no.**
+>
+> **Che cosa ne fa il motore** — ⚠️ LETTURA: legge `-3` **con la regola vecchia**, cioè ritira a
+> **WIP − 3**. Bipandra ha WIP 13 in entrambi i profili, quindi ritira a **10**. Le altre due
+> strade sono peggiori: leggerlo come `WIP=3` farebbe ritirare un Dottore a 3, che nessuno ha
+> mai inteso; ignorare il numero sarebbe un potenziamento senza fonte. Tenere la lettura vecchia
+> conserva il significato che quel numero ha sempre avuto e non fa regredire niente.
+> **Non si inventa X**, ed è la decisione giusta: da `-3` non si ricava, e la wiki dice
+> espressamente che in `WIP=X` la X può essere più alta o più bassa del WIP della truppa.
 
 > 🔴 **I nomi del regolamento si contengono a vicenda: non si cercano per sottostringa.**
 > Non è una cautela astratta, sono coppie che esistono nel testo, e in ciascuna le due voci
@@ -129,6 +155,13 @@ Vale per ogni ordine, sempre.
 > La forma giusta del confronto è sulla **voce esatta**: separare sulle virgole **fuori
 > parentesi** e confrontare per uguaglianza. Un nome reso per la lettura non è un campo:
 > se una decisione di regola dipende da come è scritta una stringa, la decisione è fragile.
+>
+> ⚠️ **E la spaziatura non è uniforme nemmeno dentro i nostri dati.** Censito da DATABASE
+> l'8 ottobre: `PARA CC Weapon(-3)` su **49** profili contro `PARA CC Weapon (-3)` su **29**,
+> e per il `(-6)` 23 contro 27. Al motore non importa, perché taglia sulla parentesi — ma una
+> regola agganciata alla stringa esatta inciampa lì, ed è lo stesso difetto della sottostringa
+> `HACKER`, visto dall'altro lato: non un nome che contiene un altro nome, ma lo **stesso** nome
+> scritto in due modi.
 
 > 🧠 **Il malus fra parentesi non è tuo.** La Chimera ha `CC 24` e `CC Attack (-3)`:
 > tira sul **24 pieno**, è l'avversario ad applicare −3 al proprio CC nel Faccia a Faccia.
@@ -254,6 +287,11 @@ Bersagliato ✅
 > - **Si conta per alleato, non per nemico.** Due tuoi alleati in quel CC = **−12**. Nessun tuo
 >   alleato in quel CC — il bersaglio è Ingaggiato con un neutrale, o per una regola di
 >   scenario — = **nessun MOD**. Il default 1 va bene nel caso normale, ma lo zero esiste.
+> - **Quanti possono essere.** Righe **4422–4425**: al massimo **4** Modelli in contatto di
+>   Silhouette con un Modello su base da 25 mm, **6** su base da 40 mm o più. Quindi il conteggio
+>   degli alleati va da **0 a 4** (o a 6 contro un TAG), non da 0 a 3. In pratica però **da 2 in
+>   su il risultato è sempre −12**, perché −6×2 tocca già il tetto: gli esiti distinti sono tre,
+>   0 · 1 · 2-o-più.
 > - **Si somma a tutto il resto** (gittata, copertura, mimetismo, zone) e poi vale il tetto di
 >   −12, come ogni altra somma di MOD.
 > - **La Copertura Parziale del bersaglio ingaggiato resta**, sia il −3 al tiro (la riga 3391 la
@@ -265,7 +303,48 @@ Bersagliato ✅
 >   Sagome su un gruppo in Corpo a Corpo «will always affect **every** Trooper involved»; e
 >   righe **3586–3594**, se un Alleato è nell'area quel colpo **è annullato** (l'uso Disposable
 >   si consuma comunque, e i reattivi nell'area possono ancora dichiarare ARO). Quindi il −6
->   vale per le armi a tiro singolo, non per Sagome e Lanciafiamme.
+>   vale per le armi a tiro singolo, non per Sagome e Lanciafiamme. Per il che-cosa-si-annulla
+>   esattamente, vedi il riquadro qui sotto.
+
+> 🔴 **L'UNITÀ DELL'ANNULLAMENTO È IL COLPO, NON IL BERSAGLIO.** Testo intero, righe
+> **3584–3594**:
+>
+> «Declaring Attacks against Allied or Neutral Troopers is not allowed, nor is it allowed to
+> perform Attacks that may affect them, unless the Template lacks a PS Attribute value and does
+> not inflict States. Therefore, if when declaring an Attack with a Template Weapon, an Allied or
+> Neutral Trooper would be affected by the Template, **that shot is cancelled** (but not other
+> **shots of that same Burst** that have no Allies or Neutrals within their Area of Effect). Any
+> reactive Troopers within the Area of Effect of the cancelled shot **can still declare AROs**.
+> In this case of a cancelled shot, if a Weapon with the Disposable Trait was used, the initially
+> declared use **is still consumed**.»
+>
+> **Un colpo = una Sagoma = un tiro.** Righe **3746–3757**: la Sagoma Circolare fa **un** tiro,
+> confrontato separatamente contro ciascuno degli affetti; il Bersaglio Principale serve solo a
+> determinare i MOD, gli altri sono «Secondary Targets». E righe **3772–3775**: «To Dodge an
+> Attack with **several Impact Templates in the same Order**…» — più Sagome esistono solo con
+> Burst maggiore di 1.
+>
+> | Burst | Quante Sagome | Che cosa annulla un alleato nell'area |
+> |---|---|---|
+> | **1** — Speculativo (3909–3910), Guidato (3340–3341), Intuitivo (4027–4028): B **sempre** 1 | **una** | **tutto**: nessun tiro, nessun Tiro Salvezza per nessuno, né Principale né secondari. La parentesi «but not other shots of that same Burst» è vuota per costruzione: di colpi ce n'è uno |
+> | **2 o più** — p.es. Missile Launcher Blast Mode B2 (riga 16022) dichiarato come Attacco BS | **una per colpo** | **solo quel colpo**. Gli altri colpi dello stesso Burst che non hanno alleati nella *loro* area si risolvono |
+>
+> ⚠️ **Dove "per bersaglio" e "per colpo" non coincidono.** Con Burst diviso 1+1 su due bersagli
+> le due letture danno lo stesso esito quasi sempre, ma divergono in un caso reale: **un alleato
+> può stare sotto la Sagoma di un colpo diretto a un altro bersaglio.** Se il tuo alleato è nella
+> mischia del bersaglio B e la Sagoma del colpo su A arriva a toccare quella mischia, allora **va
+> annullato anche il colpo su A** — perché un alleato è nell'area *di quel colpo*. Un controllo
+> fatto per bersaglio annullerebbe solo il colpo su B. È lo stesso principio che il regolamento
+> scrive a chiare lettere per i Marker Impersonation (righe 14285–14289: il colpo è annullato
+> «even if another Enemy Trooper was designated as the Main Target»).
+>
+> **Due cose che il Fumo cambia** (righe 3586 e 3601–3602): una Sagoma **senza PS e che non
+> infligge Stati** può colpire gli alleati. Quindi il Fumo non si annulla mai per un alleato
+> nell'area. Tutto il resto — Granate, Missili, Lanciafiamme — ha un PS e si annulla.
+>
+> **In Coordinato o in Fireteam** la Sagoma «affects every Trooper that was in Silhouette contact
+> with its Area of Effect **at any time during that Order**» (righe 3603–3606), perché tutto è
+> simultaneo: basta che un alleato ci sia passato.
 
 ### E. Reazioni del bersaglio voce per voce
 > **Come si sommano gli stati (vale per ogni tiro di questa scheda).**
@@ -288,7 +367,7 @@ Bersagliato ✅
 | `Dodge (+N)` / `Dodge (PH+N)` del proprio profilo | +N | ✅ |
 | `Dodge (-N)` del proprio profilo | −N **all'attaccante** nel F2F | ✅ (lato attaccante) |
 | `Dodge (+1")` | movimento extra | ❌ non tocca il tiro |
-| `Dodge (ARM+3)` | +3 ARM alla salvezza **se fallisci** | ❌ non tocca il tiro |
+| `Dodge (ARM +3)` | +3 ARM alla salvezza **se fallisci** | ❌ non tocca il tiro |
 | Immobilizzato-B | — | ❌ **non può Schivare** |
 | Bersagliato | — | ❌ il suo −3 vale sul Reset, non qui |
 | Isolato | — | ❌ il suo −9 vale sul Reset, non qui |
@@ -432,7 +511,7 @@ Bersagliato ✅
 | `Dodge (+N)` / `Dodge (PH+N)` del proprio profilo | +N | ✅ |
 | `Dodge (-N)` del proprio profilo | −N **all'attaccante** nel F2F | ✅ (lato attaccante) |
 | `Dodge (+1")` | movimento extra | ❌ non tocca il tiro |
-| `Dodge (ARM+3)` | +3 ARM alla salvezza **se fallisci** | ❌ non tocca il tiro |
+| `Dodge (ARM +3)` | +3 ARM alla salvezza **se fallisci** | ❌ non tocca il tiro |
 | Immobilizzato-B | — | ❌ **non può Schivare** |
 | Bersagliato | — | ❌ il suo −3 vale sul Reset, non qui |
 | Isolato | — | ❌ il suo −9 vale sul Reset, non qui |
@@ -529,8 +608,65 @@ Bersagliato ✅
 | Stordito | — non puoi attaccare |
 | MOD di **danno** (`BS Attack (SR-1)`, `(AP)`, `(Shock)`) | ✅ **sì**: toccano la salvezza, non il tiro (FAQ N5) |
 
-> Testo ufficiale: *"the user must pass an unmodified WIP Roll. MODs from Partial Cover, Special
-> Skills, pieces of Equipment or any other source do not apply to this Roll."*
+> Testo ufficiale, righe **4029–4031**: *"the user must pass an unmodified WIP Roll. MODs from
+> Partial Cover, Special Skills, pieces of Equipment **or any other source** do not apply to
+> this Roll."* «Any other source» chiude la lista: nessun MOD, mai, da niente.
+
+> 🔴 **INTUITIVO SU UNA MISCHIA.** Due cose opposte, e vanno insieme.
+>
+> **Il −6 per alleato NON si applica.** La regola dello sparare nel corpo a corpo (righe
+> 3389–3391) impone «a −6 MOD… for each Allied Trooper engaged in the CC», ma è un MOD, e
+> l'Intuitivo non ne accetta nessuno (righe 4029–4031). Il tiro resta **WIP nudo**.
+>
+> **Il colpo però si ANNULLA**, se l'arma ha una Sagoma. Righe **3584–3590**: «Declaring Attacks
+> against Allied or Neutral Troopers is not allowed, nor is it allowed to perform Attacks that
+> may affect them, unless the Template lacks a PS Attribute value and does not inflict States.
+> Therefore, if when declaring an Attack with a Template Weapon, an Allied or Neutral Trooper
+> would be affected by the Template, **that shot is cancelled**». E righe **3622–3626**: una
+> Sagoma su un gruppo in Corpo a Corpo «will always affect **every** Trooper involved». Quindi
+> con un tuo alleato nella mischia l'alleato è sempre colpito, e il colpo cade.
+> L'uso **Disposable si consuma comunque** e i reattivi nell'area **possono ancora dichiarare
+> ARO** (righe 3593–3594). Con **zero** tuoi alleati nella mischia il colpo vale normalmente.
+> Eccezione della riga 3586: una Sagoma **senza PS e che non infligge Stati** (il Fumo) può
+> colpire gli alleati — ma il Fumo è Targetless e non c'entra con l'Intuitivo.
+>
+> **Attenzione a quando il caso è davvero raggiungibile.** Un bersaglio in **Engaged** non può
+> essere un Marker: non si entra in contatto di Silhouette con un Marker CAMO (riga 13608) né
+> IMP (riga 14206), e un Marker che entra in contatto perde lo stato (righe 13636 e 14240).
+> Quindi dei due rami del requisito (righe 4017–4022) resta **solo** quello della **Zona di
+> Visibilità Zero**: il bersaglio è in mischia *e* fuori dalla tua LoF per il Fumo o l'Eclipse.
+> Il caso esiste, ma solo così.
+
+### F. Con che armi si può dichiarare, davvero
+Il requisito è il **Tratto Intuitive Attack** (riga 4016). Spogliando tutte le chart del
+regolamento, **ogni** arma che lo porta è una **Sagoma Diretta** — Lanciafiamme (15329, 15335),
+Mine di ogni tipo (15595, 15625–15663), Chest Mine (15605), Drop Bear (6177), WildParrot (15665),
+Cybermine, Sepsitor (16443–16451), E/Mitter (16297, 16465) — **con una sola eccezione**:
+
+| L'unica senza Sagoma | Righe **16401–16405** |
+|---|---|
+| **Jammer** | `BS Weapon (WIP)`, **Comms Attack**, Intuitive Attack, Disposable (2), State: Isolated, Non-Lethal, No LoF, Zone of Control · PS 7 · salvezza su **BTS** |
+
+> ⚠️ **Non sono tutte Disposable, e la differenza conta** quando il colpo si annulla (sopra: «l'uso
+> Disposable si consuma comunque», righe 3593–3594). Fra le armi Intuitive, **i Lanciafiamme NON
+> hanno il Tratto Disposable** — chart righe **15321–15339**, dove i due profili sono solo
+> *Intuitive Attack, Continuous Damage, Direct Template*:
+>
+> | Arma | PS | Sagoma | Disposable |
+> |---|---|---|---|
+> | Lanciafiamme **Pesante** (riga 15331) | 6 | Large Teardrop | **no** |
+> | Lanciafiamme **Leggero** (riga 15337) | 7 | Small Teardrop | **no** |
+> | **Drop Bear** (righe 6165–6167) | 7 | Small Teardrop | **sì, (3)** condivisa fra le due modalità |
+> | Mine, WildParrot, Chest Mine, Cybermine, Sepsitor | — | Teardrop | **sì** |
+>
+> Il contrasto è leggibile nella chart stessa: le voci appena sopra i Lanciafiamme (righe
+> 15303–15319) dichiarano `DISPOSABLE (2)` per esteso. Dove non c'è, non c'è.
+> *(Correzione del 6 ottobre, misurata da MOTORE sul database e verificata in chart.)*
+
+Conseguenza pratica: **il ramo "Intuitivo senza Sagoma" esiste solo per il Jammer**, e lì non
+serve niente della regola della mischia, perché il Jammer è un **Attacco Comms** — la riga 3389
+parla di «a **BS Attack**… against an enemy Trooper that is engaged in CC Combat», e la difesa
+del Jammer è il **Reset**, non la Schivata. Quindi né il −6 né il fuoco amico della riga 3393.
 
 ### E. Reazioni del bersaglio voce per voce
 > **Come si sommano gli stati (vale per ogni tiro di questa scheda).**
@@ -557,7 +693,7 @@ tuo WIP.
 | `Dodge (+N)` / `Dodge (PH+N)` del proprio profilo | +N | ✅ |
 | `Dodge (-N)` del proprio profilo | −N **all'attaccante** nel F2F | ✅ (lato attaccante) |
 | `Dodge (+1")` | movimento extra | ❌ non tocca il tiro |
-| `Dodge (ARM+3)` | +3 ARM alla salvezza **se fallisci** | ❌ non tocca il tiro |
+| `Dodge (ARM +3)` | +3 ARM alla salvezza **se fallisci** | ❌ non tocca il tiro |
 | Immobilizzato-B | — | ❌ **non può Schivare** |
 | Bersagliato | — | ❌ il suo −3 vale sul Reset, non qui |
 | Isolato | — | ❌ il suo −9 vale sul Reset, non qui |
@@ -714,7 +850,7 @@ coinvolto e tutti dichiarano gli ARO → si misura → si tira.
 | `Dodge (+N)` / `Dodge (PH+N)` del proprio profilo | +N | ✅ |
 | `Dodge (-N)` del proprio profilo | −N **all'attaccante** nel F2F | ✅ (lato attaccante) |
 | `Dodge (+1")` | movimento extra | ❌ non tocca il tiro |
-| `Dodge (ARM+3)` | +3 ARM alla salvezza **se fallisci** | ❌ non tocca il tiro |
+| `Dodge (ARM +3)` | +3 ARM alla salvezza **se fallisci** | ❌ non tocca il tiro |
 | Immobilizzato-B | — | ❌ **non può Schivare** |
 | Bersagliato | — | ❌ il suo −3 vale sul Reset, non qui |
 | Isolato | — | ❌ il suo −9 vale sul Reset, non qui |
@@ -869,7 +1005,7 @@ del Bersagliato sparisce** (e anche Stordito e Surprise Attack), ma IMM-B e Isol
 | Stordito | **−3** | ✅ |
 | Surprise Attack dell'attaccante | −3/−6 | ✅ solo nel Faccia a Faccia (N5.2, adottata) |
 | Fireteam Livello 3 | **+1** | ✅ |
-| `Dodge (+N)` / `Dodge (PH+N)` del profilo | +N | ✅ (`Dodge (+1")` è movimento, non va al tiro; `Dodge (ARM+3)` va alla salvezza se fallisci) |
+| `Dodge (+N)` / `Dodge (PH+N)` del profilo | +N | ✅ (`Dodge (+1")` è movimento, non va al tiro; `Dodge (ARM +3)` va alla salvezza se fallisci) |
 | Immobilizzato-B | — | ❌ **non può Schivare**: l'IMM-B consente **solo il Reset** |
 | Bersagliato | — | ❌ il −3 del Bersagliato è **sul Reset**, non sulla Schivata |
 | Isolato | — | ❌ il −9 è **sul Reset**, non sulla Schivata |
@@ -1117,10 +1253,19 @@ metà**, l'Attacco la seconda. Non esiste Attacco + Scoprire.
 
 **La sequenza.**
 1. **Dichiarazione.** Si dichiara lo Scoprire, e l'Attacco **si dichiara contro il Marker**,
-   con tutte le scelte già fissate — arma, modo, Burst, punto di tiro (righe 1226–1233: «All
-   details and choices… must be specified when it is declared»). È proprio questo che la
-   manovra autorizza: senza di essa l'Attacco contro un Marker è vietato (13609–13610).
-   L'esito dello Scoprire **non si conosce ancora**.
+   con tutte le scelte già fissate — arma, modo, munizione, Burst, punto di tiro (righe
+   1226–1233: «All details and choices… must be specified when it is declared»). È proprio
+   questo che la manovra autorizza: senza di essa l'Attacco contro un Marker è vietato
+   (13609–13610). L'esito dello Scoprire **non si conosce ancora**.
+   ⚠️ **Un'eccezione, dalla FAQ F18** (0.1, set 2026 — pagine wiki *Order Expenditure Sequence*,
+   *Ballistic Skills*, *White Noise*): sì a tutti i dettagli, **tranne la posizione del
+   bersaglio**, che si sceglie **nella Risoluzione**, prima di misurare le gittate; e se conta
+   chi dichiara prima, sceglie il giocatore attivo. Riguarda il *punto* — dove va la sagoma di
+   White Noise, dove si misura sul bersaglio — non *quale* bersaglio né *con che arma*. Per
+   l'app non cambia niente, perché non ha mappa e non misura: la segnalo perché è l'unica
+   eccezione scritta alla riga 1226, e perché va tenuta d'occhio accanto alla procedura in 4
+   passi del Fuoco Speculativo (righe 3930–3944), che la sagoma la piazza **prima** del
+   controllo degli ARO.
 2. **ARO.** Il reattivo dichiara. Un Marker ha solo quattro ARO possibili (riga 13621:
    Discover, Schivata, Look Out!, Reset) **più** l'Attacco, che però gli cancella il CAMO
    (riga 13634). Nota: *qualunque* ARO rivela un Marker CAMO, perché tutti e quattro
@@ -1156,6 +1301,56 @@ riuscito o fallito sul primo non tocca il secondo.
 - **IMP-1**: **no**. Riga 14207 vieta gli Attacchi contro IMP-1 senza alcuna eccezione, e uno
   Scoprire riuscito su IMP-1 non rivela il Modello: lo porta a **IMP-2** (righe 14227–14229).
   Servono due Ordini.
+
+### G. La manovra in ORDINE COORDINATO
+Fino a 4 truppe dichiarano Scoprire + Attacco BS, e per la riga **11357–11359** tutte sullo
+**stesso** Marker e poi sullo **stesso** bersaglio. In Coordinato è anche l'**unica** via per
+colpire un Marker, perché le righe **11399–11401** vietano Speculativo e Intuitivo dentro un
+Coordinato.
+
+**Basta UNO Scoprire riuscito.** Tre righe che convergono:
+- **11427–11429**: «If the participants of a Coordinated Order declare the use of a Skill or
+  Equipment **such as** Doctor, MediKit or Engineer **on a common target, any successful Roll
+  means that the Skill was successful**». «Such as» è una categoria aperta, non un elenco di tre.
+- **6842–6843**: uno Scoprire riuscito *rimuove il Marker dal tavolo* e lo sostituisce col
+  Modello. Lo stato sta sul Marker, che è un oggetto unico: non esiste in Infinity una
+  conoscenza per singola truppa.
+- **1058–1059** e **3603–3606**: tutto quanto avviene in un Ordine è **simultaneo**, «since
+  everything happens simultaneously during the Order». Non c'è un ordine in cui il successo di
+  una truppa "arrivi prima" dell'attacco di un'altra.
+
+⚠️ **LETTURA**, perché la riga 11427 nomina Doctor, MediKit ed Engineer e non lo Scoprire, e la
+riga **6824–6826** della manovra è scritta al singolare («**the Trooper** will need to pass the
+Discover Roll»). È però la sola lettura compatibile con le tre righe sopra, ed è anche l'unica
+che non richiede uno stato di conoscenza per truppa, che il regolamento non ha. Resta il tipo di
+punto da girare a una FAQ: con quattro truppe diventa un tiro su quattro per quattro attacchi.
+
+**Il Burst.** Lo Scoprire **non ha Burst**: la sua voce (righe 6832–6855) non ne dichiara
+nessuno, quindi è **un tiro per ciascuno** e il dimezzamento dello Spearhead non ha nulla su cui
+agire. Ma attenzione: la riga **11366–11370** parla di «their weapon, Equipment or **Special
+Skill**», e si applica in pieno alla **seconda metà**: nell'Attacco BS lo Spearhead usa **metà
+del Burst arrotondata per eccesso**, tutti gli altri **1**. È lì che il calcolo cambia, non nello
+Scoprire.
+
+**Se il Marker reagisce** (riga 11371–11373: sceglie **uno** solo degli attivi come bersaglio):
+- **si rivela per tutti**, perché la cancellazione è sul Marker, e *qualunque* ARO la innesca —
+  tutti e quattro gli ARO ammessi contro un Marker richiedono un tiro, e la riga **13634**
+  cancella il CAMO per «any Skill that requires a Roll»;
+- **nessuno tira lo Scoprire** (righe 6822–6823);
+- il tipo di tiro dei quattro Attacchi dipende da **che cosa** ha dichiarato, non da chi ha
+  scelto: vedi la tabella in **§1.12 lettera E**. In breve: con una **Schivata** è un solo
+  Faccia a Faccia contro tutti e quattro (righe 7258–7263); con un **BS Attack** è Faccia a
+  Faccia col solo bersagliato e Normale per gli altri tre.
+
+**Chi fallisce resta fuori.** Riga **6845–6846**: ogni truppa che fallisce il tiro non può
+ritentare **quel** Marker fino al Turno di Giocatore successivo. In un Coordinato a 4 tirano
+tutte e quattro, quindi un Marker sopravvissuto brucia il tentativo a tutte e quattro per il
+turno. È il prezzo della manovra.
+
+**Chi non ha i requisiti fa Idle da solo.** Riga **11374–11376**: «If any of the Troopers does
+not meet the Requirements of a Skill declared during the Coordinated Order, they perform an Idle
+instead, **while the others may act normally**». Una partecipante senza LoF al Marker fa Idle e
+non trascina le altre.
 
 ### H. Trappole
 - Fallito: niente nuovo tentativo **di quella truppa su quel Marker** fino al prossimo Turno di
@@ -1263,7 +1458,7 @@ l'attivo con qualcosa che quella difesa può evitare (Schivata: BS/CC/Sagome; Re
 | `Dodge (+N)` / `Dodge (PH+N)` del proprio profilo | +N | ✅ |
 | `Dodge (-N)` del proprio profilo | −N **all'attaccante** nel F2F | ✅ (lato attaccante) |
 | `Dodge (+1")` | movimento extra | ❌ non tocca il tiro |
-| `Dodge (ARM+3)` | +3 ARM alla salvezza **se fallisci** | ❌ non tocca il tiro |
+| `Dodge (ARM +3)` | +3 ARM alla salvezza **se fallisci** | ❌ non tocca il tiro |
 | Immobilizzato-B | — | ❌ **non può Schivare** |
 | Bersagliato | — | ❌ il suo −3 vale sul Reset, non qui |
 | Isolato | — | ❌ il suo −9 vale sul Reset, non qui |
@@ -1396,9 +1591,39 @@ bersaglio (N5.3: la regola vale già con 2 truppe in contatto).
 | `(+1B)` del profilo | ✅ prima del dimezzamento dello Spearhead ⚠️ ("inclusi i bonus") |
 
 ### E. Reazioni
-Ogni reattivo sceglie **un solo** bersaglio fra le truppe attivate (non sono obbligati a scegliere lo
-stesso). Le tabelle di Schivata/Reset/ARO sono quelle dell'ordine coordinato dichiarato (BS: §1.1).
-La truppa in Fuoco di Soppressione spara B3 tutto su **uno** degli attivi.
+Ogni reattivo sceglie **un solo** bersaglio fra le truppe attivate, e non sono obbligati a scegliere
+lo stesso (righe **11371–11373**). Le tabelle di Schivata/Reset/ARO sono quelle dell'ordine
+coordinato dichiarato (BS: §1.1). La truppa in Fuoco di Soppressione spara B3 tutto su **uno**
+degli attivi.
+
+> 🔴 **"Un solo bersaglio" NON vuol dire "un solo Faccia a Faccia".** Dipende da che cosa
+> dichiara il reattivo, e la Schivata è il caso che rompe la regola:
+>
+> | ARO del reattivo | Com'è il tiro dei 4 attaccanti |
+> |---|---|
+> | **Schivata** | **un solo tiro PH in Faccia a Faccia contro TUTTI e quattro gli attacchi.** Righe **7258–7263**: «Allows the user to make a Face to Face Roll to evade **all enemy Attacks during an Order or ARO, regardless of the Burst (B) value** (for example, Dodging every strike in Close Combat, **or shots from several opponents**)». «Shots from several opponents» è esattamente l'Ordine Coordinato. Confermato dalla riga **11405–11406**: «his Roll is Face to Face against attacking **Rolls** as appropriate», al plurale. Nessun Tiro Normale |
+> | **BS Attack / CC Attack** | sceglie **uno** degli attivi (11371–11373): contro quello è Faccia a Faccia, gli altri tre tirano **Normale** |
+> | **Reset** | il Reset evita solo gli Attacchi Comms (riga 7269). Contro attacchi BS non li influenza → i quattro tirano **Normale**. È il senso di «as appropriate» alla riga 11406 |
+> | **Scoprire / Look Out!** | non influenzano l'attacco → tutti e quattro **Normale** (righe 2068–2070) |
+>
+> La differenza non è di stile: con una Schivata il difensore ha **un** tiro contro quattro, e i
+> suoi successi si confrontano con tutti; con un BS Attack in ARO tre attaccanti su quattro
+> tirano senza opposizione.
+
+### F. Una truppa, un successo: il principio del bersaglio comune
+Riga **11357–11359**: «If one of the Skills of the Coordinated Order demands a Trooper, a
+Marker, or a mission objective as a target, **all Troopers must act against the same single
+target**».
+
+E quando il bersaglio è comune e l'effetto è binario, vale la riga **11427–11429**, sezione
+*COORDINATED ORDER: SUCCESS + FAILURE*:
+
+> «If the participants of a Coordinated Order declare the use of a Skill or Equipment **such as**
+> Doctor, MediKit or Engineer **on a common target, any successful Roll means that the Skill was
+> successful**.»
+
+«Such as» apre la categoria: non è un elenco chiuso di tre voci, è il principio del bersaglio
+comune. Serve per lo **Scoprire coordinato**, §1.7 lettera F.
 
 > **Come si sommano gli stati (vale per ogni tiro di questa scheda).**
 > Stati che toccano lo stesso attributo **si sommano** (regolamento, righe 1921 e 13594
@@ -1491,8 +1716,38 @@ FO: voci come un BS Attack sul WIP. Sensor: solo `+6`. Triangulated: **zero** vo
   Reattivo: **serve LoF verso l'attivo** e si piazza a contatto.
 - Il token compare nella **Conclusione** dell'ordine: il nemico reagisce **a chi piazza**, mai al deployable.
 - **Vietato** piazzare un'arma Deployable con un Marker CAMO nemico nella sua Trigger Area → serve un
-  **Attacco Intuitivo** (tiro WIP non modificato, §1.3); fallendo non si piazza e il Disposable perde un uso.
+  **Attacco Intuitivo** (tiro WIP non modificato, §1.3); fallendo non si piazza e il Disposable perde un uso
+  (righe 7572–7573 e 4044–4053).
 - Il Disco Ball nasce dall'esito del tiro del Disco Baller (Fuoco Speculativo), non da qui.
+
+> 🔴 **SCOPRIRE + PIAZZARE: due abilità indipendenti, con un unico punto di contatto.**
+>
+> Lo Scoprire è Basic Short, il Piazzamento è Short: è la combinazione `Basic Short + Short`
+> (righe 1047–1054), e le due metà **non si condizionano**. Il Piazzamento non è un Attacco
+> *contro* il Marker, quindi non c'è la dipendenza della manovra *Discover + Attack*
+> (§1.7 lettera F): lo Scoprire si tira come se fosse da solo, e il token si piazza comunque.
+>
+> **L'unico punto di contatto è la Trigger Area, e qui il tempo conta.** Due righe:
+> - riga **7563**: «The Token… is placed **at the Conclusion of the Order**».
+> - riga **7572**: «A Deployable Weapon **cannot be placed** if there is an enemy Camouflage
+>   Marker inside its Trigger Area. **This restriction does not apply if there is a valid,
+>   non-camouflaged enemy inside the Trigger Area**, or an Intuitive Attack was made.»
+>
+> Lo Scoprire si risolve al passo **5 (Risoluzione)**, il piazzamento alla **Conclusione**, che
+> è il passo **5.2** (righe 1219–1223). Quindi lo Scoprire arriva **prima**. Conseguenza:
+>
+> | Lo Scoprire riesce sul Marker che era nella Trigger Area | Il Marker è già stato sostituito dal Modello (righe 6842–6844): nella Trigger Area c'è ora «a valid, non-camouflaged enemy», e la restrizione della riga 7572 **non si applica più**. Il token **si piazza** |
+> |---|---|
+> | Lo Scoprire **fallisce** | alla Conclusione il Marker CAMO è ancora lì: il token **non si piazza**. L'Ordine è speso, e un uso Disposable dichiarato si consuma (⚠️ LETTURA per questa via: la riga 4051–4053 lo scrive per la via dell'Intuitivo, non per questa) |
+> | Il Marker nella Trigger Area è un **altro** Marker, diverso da quello scoperto | lo Scoprire non c'entra: la restrizione resta, e serve l'Intuitivo |
+>
+> ⚠️ **LETTURA**, e il gancio testuale è il verbo: la riga 7572 dice «cannot be **placed**», e il
+> piazzamento avviene alla Conclusione (7563). La lettura contraria — la restrizione si valuta
+> alla **dichiarazione**, quando il giocatore indica il punto — è difendibile, perché la riga non
+> dice quando si controlla, e perché i vincoli di piazzamento di solito agiscono sulla scelta del
+> punto (è il criterio del Combat Jump, §0). Ma qui il giocatore alla dichiarazione **non può
+> sapere** l'esito dello Scoprire, quindi valutare allora significherebbe vietare sempre una
+> combinazione che il regolamento non vieta.
 - **Minelayer**: piazza allo schieramento una sua arma o equip Deployable nella propria ZdC, scalando un uso Disposable. Requisito: **niente truppe né Marker nemici** nella Trigger Area dell'oggetto, **o nella ZdC se è un'arma Perimeter**. Se l'utente si schiera con una skill Superior Deployment e **fallisce** il tiro (Infiltration, Combat Jump), **perde anche il Deployable**, e l'uso resta speso.
 
 ### I. Controllo dell'app
@@ -1788,6 +2043,36 @@ casella vale la scheda dell'ordine (§1).
 | Mine | Direct Template Small Teardrop · Schivata a PH−3 · CAMO(−3) | wiki "Mines" |
 | Cybermine | Attacco Comms · si evita **solo con Reset a WIP−3** · 2 salvezze BTS, PS5 · Stordito (IMM-B se hackerabile o Hacker) | wiki "Mines" |
 | Disco Baller | Tiro Normale BS (Targetless) · Eclipse circolare · Activate Disco Ball: WIP+3 con le gittate del Deactivator | wiki "Disco Baller" |
+| Jammer, l'unica arma con Intuitive Attack **senza Sagoma** | vedi sopra. Essendo Comms Attack, **niente** regola della mischia (il −6 e il fuoco amico delle righe 3389–3396 valgono per i BS Attack) | righe 16401–16405 |
+| Heavy Rocket Launcher | Blast Mode **PS 6** + Impact Template (Circular) · Hit Mode **PS 5**, senza sagoma · entrambe Continuous Damage, B2, ARM, 1 salvezza | righe 16021–16025, gittate 15954–15962 |
+| Mine Dispenser | B1 · nessun PS, nessuna munizione propria · *Speculative Attack, **Double Shot**, Disposable (2), Targetless* · «uses the same rules as **Drop Bears in BS Mode**», e le Mine che contiene sono elencate fra parentesi dopo il nome nel profilo | wiki *Mine Dispenser*, oldid 4099 (letta l'8 ottobre) |
+
+### Drop Bears: due modalità, e il `(+1 SD)` ne tocca una sola
+Il Drop Bear è un'arma con **due profili distinti** e `Disposable (3)` **condiviso** fra i due
+(righe 6165–6167):
+
+| Modalità | Profilo | Tira? |
+|---|---|---|
+| **Deployable Mode** (riga 6177) | PS7 · B1 · SHOCK · ARM · 1 salvezza · *Intuitive Attack, Disposable (3), **Direct Template (Small Teardrop)**, Deployable* | **no**: Sagoma Diretta |
+| **BS Mode** (righe 6192–6194) | nessun PS, nessuna munizione propria · B1 · *BS Weapon (PH), **Speculative Attack**, Disposable (3), Targetless* · gittate +3 a 8", −3 a 16" | **sì**, su **PH** |
+
+Il token piazzato è un **Mine Token [MINE (−3)]** con profilo proprio (ARM 0, BTS 0, STR 1, S 0 —
+righe 6182–6183) e funziona «just like a Mine» (righe 6143–6146). Non può detonare nell'Ordine in
+cui è stato lanciato (righe 6156–6157).
+
+**Dove vale il `(+1 SD)` del profilo** (regola alle righe 1957–1959: mai sulle **Long Skill**, mai
+su ciò che **non tira**):
+
+| Azione | `(+1 SD)` | Perché |
+|---|---|---|
+| Lancio in **BS Mode** come **BS Attack** | ✅ **sì** | è un tiro di PH, Abilità Breve |
+| Lancio in **BS Mode** come **Fuoco Speculativo** | ❌ no | lo Speculativo è una **Long Skill** (chart riga 16634) |
+| Piazzamento in **Deployable Mode** (Place Deployable) | ❌ no | nessun tiro |
+| Piazzamento via **Attacco Intuitivo** (serve col Marker CAMO nella Trigger Area, riga 6144) | ❌ no | l'Intuitivo è una **Long Skill** |
+| **Detonazione** del token piazzato | ❌ no | **Sagoma Diretta**: nessun tiro d'attacco, il bersaglio salva o Schiva a PH−3 (riga 6232). E il token è un elemento di gioco a sé, non la truppa che porta la notazione |
+
+Promemoria della Mina che vale anche qui: riga **6227**, «A Mine **never triggers** if the Small
+Teardrop Template would affect an ally, even if that ally is Unconscious».
 
 ---
 
@@ -1813,7 +2098,7 @@ casella vale la scheda dell'ordine (§1).
 - **Critico** = +1 salvezza con lo stesso attributo e gli stessi Tratti (salvo Immunity Critical).
 - **Munizioni combinate** (`AP+DA`, `AP+EXP`, `N+E/M`…): sommano gli effetti. AP+EXP = 3 salvezze dimezzate.
 - **Salvezza combinata** (`ARM+BTS`, es. Plasma): una salvezza per attributo; il Critico aggiunge una salvezza su ARM.
-- **Bonus alla salvezza** del bersaglio: Copertura Parziale **+3** (contro BS), Nanoscreen **+3** (contro BS), Firewall **+3** (contro Comms), `Dodge (ARM+3)` se la Schivata fallisce.
+- **Bonus alla salvezza** del bersaglio: Copertura Parziale **+3** (contro BS), Nanoscreen **+3** (contro BS), Firewall **+3** (contro Comms), `Dodge (ARM +3)` se la Schivata fallisce.
 - **Malus alla salvezza**: `(SR-1)` / `(SR-2)` dell'attaccante.
 - **Il Weapon Chart vince sulla munizione generica** per attributo e numero di salvezze.
 
@@ -1823,6 +2108,7 @@ casella vale la scheda dell'ordine (§1).
 
 | Skill | Effetto | Dove pesa |
 |---|---|---|
+| **Journalist** | ⚠️ **non è nel .txt 5.1.1**: skill nuova di N5.2 (wiki, oldid 4086, «New rule added PDF 5.2»). Automatic, Optional. Truppe nella ZdC di un Journalist **alleato**: **+3 al Guts Roll**. Nella ZdC di uno **nemico**: **−3**. In campagna, a fine scenario e solo se il Journalist è sul tavolo in stato non Null: +3 a CUBEVAC e +3 al tiro di Promozione, **non cumulabili** fra più Journalist | **Guts**, che l'app oggi non tira. 3 profili PanOceania |
 | **Mimetism (−X)** | −X a chi dichiara BS Attack con LoF o Discover contro l'utente; non vale in CC | BS, Scoprire, FO |
 | **Camouflage** | stato Camuffato: serve Scoprire prima di attaccare | 1.7 |
 | **Surprise Attack (−X)** | solo in Attivo, partendo da Marker/Hidden. **N5.2 (adottata):** il −X vale **solo sui Faccia a Faccia** dei **bersagli** in ARO. `(CC−X)` solo su quell'attributo; non cumulabile con un altro Surprise Attack; più truppe con Sorpresa sullo stesso bersaglio: **non si sommano** (F02) | reazioni |
@@ -2091,14 +2377,26 @@ allows the user to execute no action at all». **L'Idle è una Skill.** Quindi:
 | Versione | Regola | Effetto sul calcolo | Scheda |
 |---|---|---|---|
 | **5.3** (set 2026) | CC con più truppe: basta **2 o più** in contatto (prima "più di 2") | +1 B per alleato scatta prima | 1.2, 1.12 |
-| **5.3** | Aggiunto fra gli esempi di notazione `PARA CCW (−6)` (*chiarimento* su come si legge il MOD, come `Dodge (ARM+3)`) | **nessuno**: non cambia il valore delle armi, che resta per profilo | 1.2 |
+| **5.3** | Aggiunto fra gli esempi di notazione `PARA CCW (−6)` (*chiarimento* su come si legge il MOD, come `Dodge (ARM +3)`) | **nessuno**: non cambia il valore delle armi, che resta per profilo | 1.2 |
 | **5.3** | Movimento: rotazione libera a fine movimento, metà base sulla superficie | nessuno | 1.11 |
 | **5.2** (ott 2025) | Guidato senza modalità circolare: si applica comunque la Sagoma Circolare centrata sul bersaglio | quale modalità/munizione | 1.5 |
 | **5.2** | `Dodge (-3)` = −3 agli avversari nel F2F quando si Schiva | lato attaccante | tutte |
 | **5.2** | Surprise Attack: il MOD vale sui **Faccia a Faccia** dei bersagli in ARO (5.1.1, riga 10116: "any Skill Roll") | un Reset/Schivata **Normale** non lo subirebbe. ✅ **Adottata** (decisione di Paolo: vale la wiki); ⏳ da applicare nel motore | tutte |
-| Mazebreaker (mag 2026) | `Dodge (ARM+3)` | +3 ARM se la Schivata fallisce | tutte |
+| Mazebreaker (mag 2026) | `Dodge (ARM +3)` | +3 ARM se la Schivata fallisce | tutte |
 | FAQ N5 | Le skill con etichetta BS Attack (Intuitivo, Speculativo, FO…) contano come BS Attack per `(SR-1)`, `(AP)`, `(+1 SD)`; il `+1 SD` mai su Long Skill | salvezze | 1.3, 1.4, 1.13 |
 | Regola generale | I MOD con etichetta **Optional** (es. Bonus Burst di Fireteam) sono facoltativi | Burst | tutte |
+| **5.2** | `Doctor (ReRoll −X)` e `Engineer (ReRoll −X)` diventano `(ReRoll WIP=X)`: si ritira **usando** il WIP fra parentesi invece di applicare un malus | cambia il SV del ritiro | §0 |
+| **5.2** | **Journalist**: skill *nuova*, aggiunta in 5.2 — per questo non è nel nostro .txt 5.1.1. Automatic, Optional. Truppe nella ZdC di un Journalist **alleato**: **+3 al Guts Roll**; nella ZdC di uno **nemico**: **−3**. In campagna anche +3 a CUBEVAC e Promozione, non cumulabili fra più Journalist | nessuno **finché l'app non tira i Guts**. 3 profili PanOceania | §5 |
+| **5.2** | **FT Master**: Automatic, Obligatory. Nel Conteggio Ordini rende **Regolari** tutti i membri del suo Fireteam; se lo sono già, **+2"** alla ZdC del Leader per i controlli di Coerenza; e il Fireteam si annulla se il FT Master lo lascia | **nessuno**: non tocca tiri, MOD né Burst | — |
+
+> ⚠️ **Trappola della wiki, da sapere prima di citarla.** Le pagine aggiornate mostrano **due
+> versioni affiancate**: una casella marcata *Update PDF 5.2/5.3* e una marcata ***Original***.
+> La casella **Original NON è la regola corrente**: è il testo precedente. Esempio verificato
+> l'8 ottobre sulla pagina *Ballistic Skills*: l'Original dice «A Trooper who is **on** a
+> vertical surface cannot benefit from Partial Cover MODs» (N5.2), l'Update N5.3 dice «A Trooper
+> who is **performing a Climb Skill or holding onto** a vertical surface…». Il nostro .txt 5.1.1
+> (righe 2925–2926) dice già quest'ultima: **nessuna correzione da fare**, ma chi legge la
+> casella sbagliata si ritrova con la regola di due versioni fa.
 
 
 ---
@@ -2269,3 +2567,93 @@ sempre: verificato con `cmp`).
 | Uso **Disposable**: si consuma | ✅ in entrambi i rami: righe 1246–1247 e, per la gittata, riga 3513 |
 | **Gittata** e **LoF** non sono la stessa cosa | ⚠️ i Requisiti dell'Attacco BS sono due (righe 3320–3323) e **la gittata non c'è**. Fuori gittata l'attacco «automatically fails» (3512–3514): il dado si tira-e-fallisce invece di perdersi. Esito identico, base diversa |
 | La regola vale oltre l'Attacco BS | ⚠️ la riga 3112 dice «dice of the Burst (B) assigned to a target»: vale per ogni attacco col Burst diviso, CC e programmi di Hacking compresi |
+
+---
+
+**Scoprire in Coordinato e Scoprire + Piazzare — verifica del 7 ottobre 2026, pomeriggio.**
+Metrica `5ea7581f.904498`. ⚠️ La pagina wiki *Coordinated Order* **non** è stata riletta (la
+richiesta di accesso è scaduta due volte): queste risposte poggiano sul PDF.
+
+| Caso | Esito |
+|---|---|
+| **A1** — basta **uno** Scoprire riuscito | ✅ lettura confermata, e più solida di quanto sembrasse: righe **11427–11429** («on a common target, **any successful Roll** means that the Skill was successful», con «such as» che apre la categoria) + 6842–6843 (il Marker è rimosso dal tavolo) + 1058–1059 e 3603–3606 (simultaneità). Resta **LETTURA** perché la 11427 non nomina lo Scoprire e la 6824–6826 è al singolare |
+| **A2** — Burst dello Scoprire: 1 per tutti | ✅ ma per un'altra ragione: lo Scoprire **non ha Burst** (righe 6832–6855), quindi non c'è nulla da dimezzare. ⚠️ Il dimezzamento dello Spearhead vale in pieno sulla **seconda metà**, l'Attacco BS (righe 11366–11370): è lì che il calcolo cambia |
+| **A3** — si rivela per tutti, nessuno tira lo Scoprire | ✅ righe 13634 (ogni ARO ammesso contro un Marker richiede un tiro) + 6822–6823 |
+| **A3** — «uno in F2F, gli altri Normali» | ⛔ **vero solo se l'ARO è un Attacco.** Se il Marker **Schiva**, è **un** tiro PH in Faccia a Faccia contro **tutti e quattro** gli attacchi: righe **7258–7263**, «to evade all enemy Attacks during an Order or ARO… **or shots from several opponents**», e 11405–11406 al plurale. Tabella completa in §1.12 lettera E |
+| **A-extra** — chi fallisce lo Scoprire brucia il tentativo | ⚠️ riga 6845–6846: in un Coordinato a 4 tirano tutte e quattro, e tutte e quattro restano fuori da quel Marker per il turno |
+| **A-extra** — in Coordinato è l'unica via contro un Marker | ⚠️ righe 11399–11401: Speculativo e Intuitivo sono vietati dentro un Coordinato |
+| **B** — Scoprire e Piazzare sono indipendenti | ✅ confermato: il Piazzamento non è un Attacco contro il Marker, quindi non c'è la dipendenza della manovra *Discover + Attack* |
+| **B** — la Trigger Area si valuta alla **Conclusione**, non alla dichiarazione | ⚠️ riga **7572** dice «cannot be **placed**» e il token si piazza alla Conclusione (riga 7563), che è il passo 5.2 (1219–1223): lo Scoprire si risolve prima. Se riesce, nella Trigger Area c'è «a valid, non-camouflaged enemy» e la restrizione **non si applica** (7573). **LETTURA**, con la lettura contraria indicata in §1.14 |
+| **B** — e se il Marker nella Trigger Area è un **altro** | ⚠️ lo Scoprire non aiuta: la restrizione resta e serve l'Intuitivo. La domanda unica di oggi non distingue i due casi |
+
+---
+
+**Intuitivo sulla mischia, PS=X e Drop Bears +1SD — verifica dell'8 ottobre 2026.**
+Metrica `5ea7581f.904498`.
+
+| Caso | Esito |
+|---|---|
+| **1a** — Intuitivo con Sagoma su una mischia con un proprio alleato: colpo **annullato** | ✅ **confermato**: righe **3584–3590** (l'alleato nell'area annulla il colpo) + **3622–3626** (la Sagoma nel CC prende tutti i coinvolti). L'uso Disposable si consuma e gli ARO restano (3593–3594) |
+| **1a** — il **−6** per alleato **non** si applica | ✅ **confermato**: righe 4029–4031, «an unmodified WIP Roll… **or any other source** do not apply» |
+| **1a-extra** — quando il caso è raggiungibile | ⚠️ un Engaged non può essere un Marker (13608, 14206, 13636, 14240): resta **solo** il ramo della Zona di Visibilità Zero del requisito (4017–4022) |
+| **1b** — esistono armi Intuitive Attack **senza** Sagoma? | ⚠️ **una sola: il Jammer** (righe 16401–16405). Tutte le altre, in tutte le chart, sono Sagome Dirette |
+| **1b** — il fuoco amico della riga 3393 vale per il Jammer? | ❌ **no**, e quindi la nota non serve: il Jammer è un **Comms Attack**, e la riga 3389 parla di «a **BS Attack**… engaged in CC Combat». Né −6 né fuoco amico |
+| **2** — `Heavy Rocket Launcher (PS=5)` sovrascrive il PS 6 del Blast Mode | ✅ **sì, REGOLA SCRITTA**, e l'esempio del regolamento è letteralmente quest'arma: righe **6659–6660**, «the PS of this Weapon is 5 in all usage Modes, **regardless of the different PS values listed in the Weapons Chart for its Modes**». Chart: Blast PS 6 (16022), Hit PS 5 (16025) |
+| **3** — `Drop Bears (+1SD)` vale alla detonazione? | ❌ **no**. Il Deployable Mode è **Direct Template** (riga 6177) e la riga **1958–1959** esclude il +1SD da «Skills, Weapons, or Equipment that do not require a Roll, for example, Direct Template Weapons» |
+| **3** — dove vale allora | ⚠️ **solo** nel lancio in **BS Mode dichiarato come BS Attack**. Non come Fuoco Speculativo né via Attacco Intuitivo: sono **Long Skill**, e la riga **1957** le esclude |
+
+| Lanciafiamme **non** Disposable | ⚠️ **correzione**: nel messaggio dell'8 ottobre avevo scritto che fra le armi Intuitive «il Drop Bear e il Lanciafiamme sono Disposable». Il Drop Bear sì (6165–6167), i **Lanciafiamme no**: chart righe **15321–15339**, solo *Intuitive Attack, Continuous Damage, Direct Template*. Segnalato da MOTORE, misurato sul database e verificato in chart. Il prontuario non conteneva l'errore; ora contiene i due profili (§1.3 lettera F) |
+
+**Annullamento della Sagoma per alleato: colpo o bersaglio? — verifica dell'8 ottobre, sera.**
+
+| Caso | Esito |
+|---|---|
+| Burst 1 su più bersagli sotto una Sagoma, un alleato nella mischia di uno: **annullato per tutti** | ✅ **confermato**. L'unità è il **colpo** (righe 3584–3590, «that shot is cancelled»), e con Burst 1 il colpo è uno: righe 3746–3757, una Sagoma Circolare fa un tiro solo, e il Principale serve solo per i MOD. La vecchia resa (Principale annullato, secondario colpito) trattava il bersaglio come unità ed era sbagliata |
+| La parentesi «but not other shots of that same Burst» | ⚠️ è la prova a contrario: esiste perché un Burst può contenere più colpi. Con Burst 1 è vuota |
+| Burst 2+: annullamento **per colpo** | ✅ corretto, ma l'unità giusta della domanda è il **colpo**, non il bersaglio. Le due coincidono col Burst diviso 1+1 **tranne** quando la Sagoma di un colpo arriva a coprire la mischia di un altro bersaglio: lì va annullato anche quel colpo (stesso principio delle righe 14285–14289 per i Marker IMP) |
+| Serve una domanda nuova al giocatore? | ⚠️ non una in più: una **riformulata**. «C'è un alleato o un neutrale nell'area di *questo colpo*?» è letteralmente il test della riga 3587, si risponde guardando il tavolo, e degenera in una sola domanda col Burst 1. Chiedere «questa Sagoma prende anche quel bersaglio?» costa una domanda per ogni coppia colpo×bersaglio per la stessa informazione |
+| Il **Fumo** non si annulla mai | ⚠️ righe 3586 e 3601–3602: una Sagoma senza PS e che non infligge Stati può colpire gli alleati |
+| In Coordinato/Fireteam basta che l'alleato ci sia **passato** | ⚠️ righe 3603–3606, «at any time during that Order» |
+
+| Quanti alleati possono stare nella mischia | ⚠️ righe **4422–4425**: max **4** in contatto su base 25 mm, **6** su 40 mm o più. Il conteggio va da 0 a 4 (o 6), **non** da 0 a 3. Esiti distinti però solo tre: 0 · 1 · 2-o-più (da 2 il tetto −12 è già raggiunto) |
+| Fumo ed Eclipse: niente annullamento **e** niente −6 | ✅ l'annullamento non li tocca (3586, 3601–3602, nessun PS e nessuno Stato) e il −6 non si applica perché sono **Targetless**: la riga 3389 chiede «a BS Attack… declared **against an enemy Trooper**», e con un'arma Targetless non si dichiara nessun bersaglio nemico (righe 3763–3766) |
+| Domanda preimpostata a SÌ quando il bersaglio è Ingaggiato | ✅ ben fondata in **entrambi** i casi: se il bersaglio è Ingaggiato, chi lo tiene impegnato è un tuo alleato **o un neutrale**, e la riga 3584 annulla il colpo per gli uni e per gli altri |
+
+---
+
+**Giro di chiusura delle letture di wiki in sospeso — 8 ottobre, sera.** Sei pagine mai aperte
+o lette in versione vecchia, tutte chiuse. Wiki a **N5.3 + FAQ 0.1**.
+
+| Pagina | Esito |
+|---|---|
+| *Coordinated Order* (oldid 4108) — mai aperta | ✅ **testo identico al PDF**, parola per parola: Requirements, Effects, Coordinating Skills, Dodge and Reset, States, Hacking Programs, **Success + Failure**. Le prove F8–F12 reggono. Le sue tre FAQ erano già **F02** (Sorpresa non si somma), **F03** (ARO contro chi usa Stealth) e **F04** (+1 SD nel Coordinato): nessuna nuova |
+| *Ballistic Skills* (oldid 4094) | ✅ «BS Attack into a Close Combat» identico al PDF (3389–3396). La casella *Update N5.3* riguarda la copertura su superficie verticale, e il nostro 5.1.1 **già coincide** con N5.3 (righe 2925–2926): la casella *Original* è il testo N5.2, più stretto. Trappola annotata in §9 |
+| *White Noise* (oldid 4091) | ✅ testo di regola ottenuto: NFB, Sagoma Circolare ad altezza infinita, **tutta** dentro l'Hacking Area, piazzata a fine Ordine su WIP Normale, dura **fino all'inizio della Fase Stati**, Reflective. La sua FAQ era già **F18** |
+| *Mine Dispenser* (oldid 4099) — mai aperta | ✅ le due FAQ erano già **F10** e **F11**. Nuovo: il profilo dell'arma, aggiunto in §3.3 |
+| *ITS FAQ* (oldid 4119) — mai aperta | ✅ dieci FAQ: nove sono materia di torneo e scenario (HVT neutrali, Obiettivi Classificati, Akial Interference, Crossing Lines…), la decima era già **F16**. **Niente** che tocchi un tiro, un MOD o un profilo d'arma nel perimetro dell'app |
+| *Shasvastii* (oldid 3976) | ⚠️ **correzione a una mia scheda**: l'Embryo **non è uno stato a sé**. È l'**Incosciente** di una Shasvastii con il token sostituito, da annunciare quando entra in Incosciente; conta per i Punti Vittoria della Ritirata! **durante** la partita e non a fine partita; e **le munizioni Shock lo mandano diritto a Morto**. Non c'è nessun "resto degli effetti" da implementare, come diceva la scheda gruppoB |
+| *FT Master* (oldid 4114) | ✅ Automatic, Obligatory. Rende **Regolari** i membri del Fireteam nel Conteggio Ordini; se già Regolari, **+2"** alla ZdC del Leader per la Coerenza; annulla il Fireteam se il FT Master lo lascia. **Non tocca tiri, MOD né Burst**: niente da implementare nel calcolatore. La sua FAQ era già **F13** |
+| *Journalist* (oldid 4086) | ⚠️ **skill nuova di N5.2**, ecco perché manca dal nostro .txt. **Tocca un tiro**: ±3 ai Guts Roll nella ZdC (vedi §5 e §9). Nessun effetto finché l'app non tira i Guts |
+| *Doctor* (oldid 3979) | ✅ **chiude la nota aperta dal 21 settembre**: `(ReRoll −X)` è la forma **pre-N5.2**, sostituita in N5.2 da `(ReRoll WIP=X)`, che **non è equivalente** (sostituisce il WIP invece di penalizzarlo). Dettaglio in §0. Confermato anche che un WIP **fallito** del Dottore manda il bersaglio a **Morto** |
+| **F18 mai applicata** | ⚠️ era nell'indice FAQ dal 28 settembre e **non era mai entrata in questo file**: ora è in §1.7 lettera F. È l'unica eccezione scritta alla riga 1226 |
+
+---
+
+**Censimento delle notazioni di DATABASE `2026-10-08` e risposte di REGOLE.** Letto su
+`database_nomad.js 15cb7716.154798`, `database_panoceania.js 4a97dcf6.152854`,
+`database_comune.js 1323de62.58651`; fonte ARMY `7.26246.158`. Metodo loro: ogni contenuto fra
+parentesi del campo `skills` di tutti i 765 profili, confrontato **byte per byte** con gli 85
+extra ufficiali — 61 notazioni distinte, 53 combaciano, 8 spiegate, **nessun terzo caso** di
+stringa vecchia oltre a ECM e Doctor.
+
+| Punto | Esito |
+|---|---|
+| `Doctor (ReRoll -3)` su Bipandra: esiste un X? | ❌ **nessuna fonte lo dice**, cercato l'8 ottobre su entrambi gli annunci ufficiali. Si tiene la stringa e si legge col vecchio significato: **ritira a WIP − 3**, cioè 10. Riquadro in §0. La scelta di DATABASE di non inventare il numero è quella giusta |
+| `(ReRoll)` **nudo**: N5.2 ne ha cambiato il senso? | ❌ **no**, invariato a N5.3 (wiki *Template:Modifiers-explained*, oldid 4027): «reroll **one die** from the Roll». I 34 profili (Booty 16, MetaChemistry 8, Deactivator 8, Discover 2) **non sono in gioco**, e in più sono tutti tiri a un dado solo, quindi l'ambiguità "un dado o il tiro" non li tocca nemmeno in teoria |
+| `(ReRoll …)` con valore è un'**altra** notazione | ⚠️ ha un limite **per Ordine** e ritira *il tiro*; il nudo ritira *un dado* e non ha limite scritto. Due famiglie, non una con un numero in più. §0 ora le separa |
+| **Engineer**: una sola forma, nuda, 39 profili | ✅ niente da convertire. La forma `(ReRoll WIP=X)` conta quando arriverà una fazione che la usa |
+| `Dodge (ARM +3)`: la fonte ha lo **spazio** | ⚠️ **avevo io la grafia sbagliata**: l'extra ufficiale è `ARM +3` e i dati lo seguono su 9 profili Coyote. Corrette tutte e 10 le occorrenze in questo file |
+| `Dodge (-3)` su 5 profili | ✅ la stringa è l'extra ufficiale e il **significato nuovo di 5.2 è già in §9** (−3 agli avversari nel F2F quando si Schiva). Dato corretto, regola registrata: niente da fare |
+| `PARA`: nessuna forma `PARA (-X)` nuda, e spaziatura non uniforme | ✅ coerente con la ritrattazione del 23 settembre (i valori −3/−6/−9 sono per profilo, non per versione). ⚠️ La spaziatura disuniforme è ora annotata in §0: è il difetto della sottostringa `HACKER` visto dall'altro lato |
+| `Combat Jump (PH=11)` e `Infiltration` nuda | ✅ già nella forma nuova, nessuna conversione |
+| **«Continous Damage»** senza la u nella fonte | 🔴 **avviso accolto e scritto in §0.** Il progetto usa la grafia corretta da entrambi i lati e `M.haTratto` trova 9 armi su 9; allinearne uno solo all'ufficiale spegne il tratto in silenzio su 9 armi. **Non va toccato.** Il punto è di MOTORE (`catalogo_n5.js`), che DATABASE ha già messo in c.c. |

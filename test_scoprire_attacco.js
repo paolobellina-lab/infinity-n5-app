@@ -1,5 +1,10 @@
-// @versione 2026-10-07.2 | test_scoprire_attacco.js | proprieta`: chat TEST
+// @versione 2026-10-08.2 | test_scoprire_attacco.js | proprieta`: chat TEST
 // SCOPRIRE + ATTACCO BS: i tre campi nuovi — node test_scoprire_attacco.js
+// .2 dell 8 ott: sezioni 10 (M.nonPiuMarker e M.scoprireSuperatoInPagina, con
+//    l accordo fra schermata e scontro) e 11 (i due casi che erano aperti:
+//    Coordinato a quattro, Scoprire + Piazzare col Marker che reagisce).
+// .1 dell 8 ott: sezioni 7 (condizionatoDaScoprire, scoprirePoiPiazzare) e
+//    8 (aroAtteso sulla busta vera di una seconda meta`).
 // .2 (7 ott): sezione 0 girata su burstNonScritto (assente non e` zero) e
 //    i bersagli si riconoscono per identita` OPPURE per id.
 //
@@ -405,6 +410,359 @@ ok(conFlag.ammesso === true,
 // CONTROPROVA: su un Marker vero il flag non serve, ed è ammesso comunque.
 ok(M.bersagliValidi(M.AZIONI.SCOPRIRE, [spektr], { attaccante: zero })[0].ammesso === true,
    'CONTROPROVA: su un Marker vero è ammesso anche senza il flag');
+
+// ==================================================================
+// 7. SCOPRIRE + PIAZZARE: i due campi nuovi dell adattatore .4
+//    (MOTORE, 8 ottobre: condizionatoDaScoprire e scoprirePoiPiazzare)
+//
+//   FIRMA, che la consegna non nomina e che ho dovuto tracciare: la voce
+//   SCOPRIRE di un Ordine Scoprire + Piazzare porta
+//   `regole.giaDichiarato`, NON `regole.poiAttacco`. Il motore entra nel
+//   ramo solo se scoprireCombinato e` vero (riga 6552: poiAttacco OPPURE
+//   giaDichiarato) e scoprirePoiAttacco e` falso (riga 6553): l unica via
+//   e` giaDichiarato. Con poiAttacco si finisce nel ramo dell Attacco e
+//   `scoprirePoiPiazzare` non si accende mai. Lo manda
+//   ordine_piazzamento.js .7 alla riga 81.
+//
+//   Il piazzamento e` condizionato SOLO col Marker nell area d innesco
+//   (ordine_piazzamento.js riga 364): quello e` il caso in cui il
+//   segnalino resta sul tavolo solo se lo Scoprire e` riuscito.
+// ==================================================================
+console.log('\n=== 7. Scoprire + Piazzare: condizionatoDaScoprire e scoprirePoiPiazzare ===');
+const J = JSON.stringify;
+const NOTA_COND = 'PIAZZAMENTO CONDIZIONATO: il segnalino resta SOLO SE lo Scoprire e\` riuscito.';
+function bustaPiazzare(opz) {
+    opz = opz || {};
+    const b = { attacchi: [] };
+    b.attacchi.push({
+        attaccante: M.nomeUnita(zero), attaccanteId: zero.id, azione: M.AZIONI.SCOPRIRE,
+        regole: opz.conPoiAttacco ? { poiAttacco: true } : { giaDichiarato: true },
+        bersagli: [{ id: spektr.id, name: M.nomeUnita(spektr), burst: 1, rangeIndex: 0 }]
+    });
+    b.attacchi.push({
+        attaccante: M.nomeUnita(zero), attaccanteId: zero.id, azione: M.AZIONI.PIAZZA_DEPLOYABLE,
+        regole: Object.assign({ senzaTiro: true },
+            opz.senzaCondizione ? {} : { condizionatoDaScoprire: true, noteScontro: [NOTA_COND] }),
+        bersagli: []
+    });
+    return b;
+}
+const pz = risolvi(bustaPiazzare());
+ok(pz.length === 2, `la busta produce due scontri: lo Scoprire e il Piazzamento (${pz.length})`);
+ok(att(sc(pz, 0)).azione === M.AZIONI.SCOPRIRE &&
+   att(sc(pz, 1)).azione === M.AZIONI.PIAZZA_DEPLOYABLE,
+   `e nell ordine giusto: prima lo Scoprire, poi il Piazzamento (${att(sc(pz, 0)).azione} / ${att(sc(pz, 1)).azione})`);
+ok(sc(pz, 1).condizionatoDaScoprire === true,
+   `lo scontro del Piazzamento porta condizionatoDaScoprire (${sc(pz, 1).condizionatoDaScoprire})`);
+ok(/PIAZZAMENTO CONDIZIONATO/.test(noteDi(sc(pz, 1))),
+   `con la nota A VISTA, in note e non nei dettagli chiusi (${noteDi(sc(pz, 1)).slice(0, 60)})`);
+ok(sc(pz, 0).scoprirePoiPiazzare === true,
+   `lo scontro dello Scoprire porta scoprirePoiPiazzare (${sc(pz, 0).scoprirePoiPiazzare})`);
+ok(/SCOPRIRE \+ PIAZZARE: tira PRIMA questo Scoprire/.test(noteDi(sc(pz, 0))),
+   `e dice di tirarlo per primo, col testo del motore (${noteDi(sc(pz, 0)).slice(0, 60)})`);
+ok(/se fallisce, il segnalino non si piazza/i.test(noteDi(sc(pz, 0))),
+   'e dice cosa succede se fallisce: il segnalino non si piazza');
+
+// CONTROPROVA 1: senza la condizione nelle regole nessuno dei due campi
+// compare. E non compare come `false`: ASSENTE NON E` FALSO, altrimenti il
+// tabellone non distingue "non condizionato" da "non chiesto".
+const pzLibero = risolvi(bustaPiazzare({ senzaCondizione: true }));
+ok(sc(pzLibero, 1).condizionatoDaScoprire === undefined,
+   `CONTROPROVA: piazzamento non condizionato, il campo non c e` + ` — e non e\` false (${J(sc(pzLibero, 1).condizionatoDaScoprire)})`);
+ok(sc(pzLibero, 0).scoprirePoiPiazzare === undefined,
+   `e nemmeno sullo Scoprire (${J(sc(pzLibero, 0).scoprirePoiPiazzare)})`);
+ok(!/PIAZZAMENTO CONDIZIONATO|tira PRIMA questo Scoprire/.test(noteDi(sc(pzLibero, 0)) + noteDi(sc(pzLibero, 1))),
+   'e nessuna delle due note compare');
+
+// CONTROPROVA 2: con `poiAttacco` al posto di `giaDichiarato` si e` nell
+// Ordine Scoprire + Attacco: scoprirePoiPiazzare NON si accende, e si
+// accende scoprirePoiAttacco. Senza questa, le due prove sopra non
+// distinguono i due Ordini — passerebbero per il campo sbagliato.
+const pzAttacco = risolvi(bustaPiazzare({ conPoiAttacco: true }));
+ok(sc(pzAttacco, 0).scoprirePoiPiazzare === undefined && sc(pzAttacco, 0).scoprirePoiAttacco === true,
+   `CONTROPROVA: con poiAttacco e` + ` l Ordine Scoprire + Attacco (poiPiazzare: ${J(sc(pzAttacco, 0).scoprirePoiPiazzare)}, poiAttacco: ${J(sc(pzAttacco, 0).scoprirePoiAttacco)})`);
+ok(!/SCOPRIRE \+ PIAZZARE/.test(noteDi(sc(pzAttacco, 0))),
+   'e la nota del piazzamento non compare su un Ordine che piazza niente');
+
+// ==================================================================
+// 8. aroAtteso attraverso creaPayload, nella forma che manda la schermata
+//    (MOTORE, 8 ottobre). Il banco di MOTORE prova la funzione con una
+//    busta vuota; qui si prova la busta VERA di una seconda meta`, che e`
+//    il caso che ha fatto rovesciare la decisione del 6 ottobre.
+//    Senza questo, "la funzione e` giusta" e "la busta che parte e`
+//    giusta" non sono la stessa prova.
+// ==================================================================
+console.log('\n=== 8. aroAtteso sulla busta vera di una seconda meta` ===');
+const vociSeconda = [{
+    attaccante: M.nomeUnita(zero), attaccanteId: zero.id, azione: M.AZIONI.BS_ATTACK,
+    arma: combi, bersagli: [{ id: fusilier.id, name: M.nomeUnita(fusilier), burst: 3, rangeIndex: 0 }]
+}];
+const bustaDi = (ordine, allarmato, opz) => {
+    window.currentOrder = ordine; window._ordineAllarmato = allarmato;
+    const e = M.creaPayload(vociSeconda, opz || {});
+    return e && e.payload ? e.payload : {};
+};
+ok(bustaDi({ id: 'ord_A' }, 'ord_A').aroAtteso === true,
+   `allarme partito per QUESTO Ordine: la busta dell Attacco porta aroAtteso true (${bustaDi({ id: 'ord_A' }, 'ord_A').aroAtteso})`);
+ok(bustaDi({ id: 'ord_B' }, 'ord_A').aroAtteso === false,
+   `CONTROPROVA: l allarme era di un Ordine PRIMA, false (${bustaDi({ id: 'ord_B' }, 'ord_A').aroAtteso})`);
+ok(bustaDi({}, 'ord_A').aroAtteso === false,
+   `CONTROPROVA: Ordine senza identificativo, false come prima (${bustaDi({}, 'ord_A').aroAtteso})`);
+ok(bustaDi({ id: 'ord_C' }, null).aroAtteso === false,
+   `CONTROPROVA: nessun allarme mai partito, false (${bustaDi({ id: 'ord_C' }, null).aroAtteso})`);
+ok(bustaDi({ id: 'ord_D' }, 'ord_A', { aroAtteso: true }).aroAtteso === true,
+   'e un aroAtteso true scritto dal modulo resta valido, qualunque sia l allarme');
+// La busta porta gli attacchi veri: se li perdesse, le quattro prove sopra
+// sarebbero sulla busta vuota del banco di MOTORE, non su questa.
+ok((bustaDi({ id: 'ord_E' }, 'ord_E').attacchi || []).length === 1,
+   `e la busta misurata porta davvero l Attacco, non e` + ` vuota (${(bustaDi({ id: 'ord_E' }, 'ord_E').attacchi || []).length} attacchi)`);
+window.currentOrder = null; window._ordineAllarmato = null;
+
+// ==================================================================
+// 9. IL LIMITE E31 CONTA LE TRUPPE, NON LE VOCI
+//    (MOTORE, 8 ottobre, punto 3. Riga 655 del motore.)
+//
+//   In SCOPRIRE + ATTACCO ogni partecipante porta DUE voci: lo Scoprire e
+//   l Attacco. Contando le voci, tre partecipanti "erano" sei e l invio si
+//   bloccava con E31. Nessun banco nominava E31 prima di questa sezione:
+//   il limite si poteva rompere in entrambi i versi senza che niente
+//   diventasse rosso.
+//
+//   I due versi contano:
+//   - troppo severo: tre partecipanti (sei voci) rifiutati -> al tavolo
+//     l Ordine non parte e il giocatore non sa perche`;
+//   - troppo largo: cinque partecipanti accettati -> si gioca un Ordine
+//     che il regolamento non permette.
+// ==================================================================
+console.log('\n=== 9. Il limite E31 del Coordinato conta le truppe, non le voci ===');
+const unitaCoord = (n) => Array.from({ length: n }, (_, i) =>
+    ({ id: 'c' + i, alias: 'Alg' + i, bs: 11, wip: 12, ph: 10, arm: 1, bts: 0, states: {}, weapon: 'Combi Rifle' }));
+// Ogni partecipante porta due voci: lo Scoprire sul Marker e l Attacco.
+function bustaCoord(n, opz) {
+    opz = opz || {};
+    const voci = [];
+    unitaCoord(n).forEach(u => {
+        voci.push({ attaccante: u, attaccanteId: u.id, azione: M.AZIONI.SCOPRIRE,
+                    regole: { poiAttacco: true },
+                    bersagli: [{ id: spektr.id, name: M.nomeUnita(spektr), burst: 1, rangeIndex: 0 }] });
+        if (!opz.unaVoceSola) {
+            voci.push({ attaccante: u, attaccanteId: u.id, azione: M.AZIONI.BS_ATTACK, arma: combi,
+                        scoprendo: spektr.id,
+                        bersagli: [{ id: spektr.id, name: M.nomeUnita(spektr), burst: 1, rangeIndex: 0, dopoScoprire: true }] });
+        }
+    });
+    window.currentOrder = { id: 'coord_' + n }; window._ordineAllarmato = null;
+    // Senza un tavolo schierato la busta esce piena di E05 ("nessuna unita`
+    // nemica"), e le prove sotto leggerebbero E31 dentro un rumore che non
+    // c entra: con il tavolo, l elenco degli errori e` vuoto oppure e` solo
+    // E31, e si vede a occhio quale dei due. Si usano gli appigli dichiarati
+    // dal motore (M._rosterProprio / M._rosterNemico, righe 185 e 196),
+    // non il gameState, che qui dentro il motore non legge.
+    M._rosterProprio = unitaCoord(n); M._rosterNemico = [spektr];
+    return M.creaPayload(voci, { isCoordinated: true });
+}
+const erroriDi = (e) => (e && Array.isArray(e.errori) ? e.errori : []).map(x => String((x && x.codice) || x));
+const e31Di = (e) => erroriDi(e).filter(c => /E31/.test(c)).length;
+const msgE31 = (e) => String((((e || {}).errori) || []).map(x => (x && x.messaggio) || '').join(' ')).normalize('NFC');
+
+const coord3 = bustaCoord(3);
+ok((coord3.payload ? coord3.payload.attacchi : []).length === 6,
+   `tre partecipanti con Scoprire + Attacco fanno SEI voci (${(coord3.payload ? coord3.payload.attacchi : []).length})`);
+ok(e31Di(coord3) === 0,
+   `e NON scatta E31: il limite conta le tre truppe, non le sei voci (errori: ${J(erroriDi(coord3))})`);
+const coord4 = bustaCoord(4);
+ok(e31Di(coord4) === 0,
+   `quattro partecipanti (otto voci) restano ammessi: quattro e` + ` il massimo (errori: ${J(erroriDi(coord4))})`);
+// CONTROPROVA: alla quinta truppa E31 scatta. Senza questa, "non scatta
+// mai" e "conta le truppe" sono la stessa riga verde.
+const coord5 = bustaCoord(5);
+ok(e31Di(coord5) === 1,
+   `CONTROPROVA: alla QUINTA truppa E31 scatta (errori: ${J(erroriDi(coord5))})`);
+// 🔴 .normalize('NFC') in msgE31: il motore scrive "unità" con l accento
+// DECOMPOSTO (a + U+0300) e un /unità/ crudo non lo trova (trappola nota).
+ok(/5 unità/.test(msgE31(coord5)),
+   `e il messaggio conta 5 unita\`, non 10 voci (${(/Coordinato con [^.]*/.exec(msgE31(coord5)) || ['nessun messaggio'])[0]})`);
+// CONTROPROVA: con UNA voce per truppa il limite si comporta uguale, cosi`
+// la prova sopra non passa per il numero di voci per caso.
+ok(e31Di(bustaCoord(4, { unaVoceSola: true })) === 0 && e31Di(bustaCoord(5, { unaVoceSola: true })) === 1,
+   'CONTROPROVA: con una voce per truppa la soglia e` la stessa, quattro sì e cinque no');
+window.currentOrder = null; window._ordineAllarmato = null;
+M._rosterProprio = null; M._rosterNemico = null;
+
+// ==================================================================
+// 10. LE DUE FUNZIONI NUOVE DEL MOTORE (MOTORE, 8 ottobre, motore .08.2)
+//     M.nonPiuMarker(dif)
+//     M.scoprireSuperatoInPagina(dif, {poiAttacco}) -> {superato, testo}
+//
+//   Nascono perche` la schermata dello Scoprire della seconda meta`
+//   mostrava "WIP 14 -> 17", gittata e copertura per un tiro che il
+//   tabellone poi annullava. Erano state misurate con due sonde e MAI
+//   messe in un banco: le prove qui sotto sono la rete.
+//
+//   PERCHE` CONTA CHE SIANO UNA SOLA: la stessa domanda la fanno la
+//   schermata (riga 8901) e lo scontro (riga 6559), con la stessa
+//   funzione. Se le due risposte potessero divergere, la schermata
+//   direbbe "si tira" e il tabellone "NON SI TIRA" — la famiglia di
+//   difetti di sempre, vista da due letture dello stesso fatto. L ultima
+//   prova della sezione pretende che vadano d accordo.
+// ==================================================================
+console.log('\n=== 10. M.nonPiuMarker e M.scoprireSuperatoInPagina ===');
+const modello = { id: 'r1', alias: 'Fusilier', tipo: 'LI', arm: 1, bts: 0, ph: 10,
+                  deployState: 'NORMAL', states: {} };
+ok(M.nonPiuMarker(modello) === true,
+   `un Modello normale NON e` + ` piu` + ` un Marker: true (${M.nonPiuMarker(modello)})`);
+ok(M.nonPiuMarker(spektr) === false,
+   `un CAMO lo e` + ` ancora: false (${M.nonPiuMarker(spektr)})`);
+ok(M.nonPiuMarker(speculo) === false,
+   `e un IMP-2 anche: false (${M.nonPiuMarker(speculo)})`);
+ok(M.nonPiuMarker({ id: 'h1', alias: 'Zero', deployState: 'HIDDEN', states: {} }) === false,
+   'e un Hidden Deployment anche');
+// I TRE CASI CHE NON SONO "NON PIU` MARKER" MA UN ALTRO FATTO. Senza
+// questi, una funzione che rispondesse `true` a tutto quello che non e`
+// CAMO passerebbe le tre prove sopra.
+ok(M.nonPiuMarker(null) === false && M.nonPiuMarker(undefined) === false,
+   `un bersaglio assente non e` + ` "non piu` + ` Marker": false, non true (${M.nonPiuMarker(null)} / ${M.nonPiuMarker(undefined)})`);
+ok(M.nonPiuMarker('Fusilier') === false,
+   `e nemmeno il solo NOME, che non e` + ` un oggetto (${M.nonPiuMarker('Fusilier')})`);
+const fantasma = { id: 'f1', alias: 'Fantasma', deployState: 'NORMAL', states: {}, nonRisolto: true };
+ok(M.nonPiuMarker(fantasma) === false,
+   `e un bersaglio nonRisolto nemmeno, benche` + ` per il resto sia un Modello: lo dicono altri campi (${M.nonPiuMarker(fantasma)})`);
+
+console.log('\n--- la schermata: due Ordini, due code diverse ---');
+const pagBS = M.scoprireSuperatoInPagina(modello, { poiAttacco: true });
+const pagPZ = M.scoprireSuperatoInPagina(modello, {});
+ok(pagBS.superato === true && pagPZ.superato === true, 'col Modello la schermata dice superato in entrambi gli Ordini');
+ok(/^Fusilier non è più un Marker: si è rivelato da solo \(ha dichiarato un ARO\)\. Lo Scoprire non si tira/
+      .test(String(pagBS.testo).normalize('NFC')),
+   `il testo nomina l unita` + ` e dice perche` + ` (${String(pagBS.testo).slice(0, 62)}…)`);
+ok(/; si passa direttamente all'Attacco\.$/.test(String(pagBS.testo).normalize('NFC')),
+   `in SCOPRIRE + ATTACCO finisce con "si passa direttamente all Attacco" (${String(pagBS.testo).slice(-42)})`);
+ok(/; l'Ordine prosegue\.$/.test(String(pagPZ.testo).normalize('NFC')),
+   `in SCOPRIRE + PIAZZARE finisce con "l Ordine prosegue" (${String(pagPZ.testo).slice(-26)})`);
+ok(pagBS.testo !== pagPZ.testo,
+   'e le due code sono DAVVERO diverse: un testo solo per due Ordini sarebbe sbagliato in uno dei due');
+// Col Marker ancora Marker: superato false, e `testo` NULL. Assente non e`
+// vuoto: una stringa vuota la schermata la stamperebbe come riquadro cieco.
+const pagCamo = M.scoprireSuperatoInPagina(spektr, { poiAttacco: true });
+ok(pagCamo.superato === false && pagCamo.testo === null,
+   `CONTROPROVA: col Marker ancora Marker superato false e testo NULL, non '' (${J(pagCamo)})`);
+// Chiamata senza il secondo argomento: non deve cadere, e vale il Piazzare.
+ok(M.scoprireSuperatoInPagina(modello).superato === true &&
+   /; l'Ordine prosegue\.$/.test(String(M.scoprireSuperatoInPagina(modello).testo).normalize('NFC')),
+   'senza opzioni non cade, e la coda e` quella dell Ordine che prosegue');
+ok(/^Il bersaglio non è più un Marker/.test(String(M.scoprireSuperatoInPagina({ deployState: 'NORMAL', states: {} }, {}).testo).normalize('NFC')),
+   'e senza nome scrive "Il bersaglio", non una stringa vuota');
+
+console.log('\n--- e la schermata e lo scontro rispondono la stessa cosa ---');
+// UN FATTO, UNA RISPOSTA. Si confronta la decisione della pagina con quella
+// dello scontro sugli stessi bersagli: devono coincidere caso per caso.
+// Qui sta la prova che vale: i testi possono essere scritti diversi, la
+// DECISIONE no.
+const casiAccordo = [['Modello', modello], ['CAMO', spektr], ['IMP-2', speculo]];
+const disaccordi = casiAccordo.filter(([nome, dif]) => {
+    const pagina = M.scoprireSuperatoInPagina(dif, { poiAttacco: true }).superato;
+    const inCampoPrima = inCampo.slice();
+    inCampo.length = 0; inCampo.push(zero, dif);
+    const lista = risolvi(bustaCombinata(zero, dif, dif));
+    inCampo.length = 0; inCampoPrima.forEach(u => inCampo.push(u));
+    const scontro = !!sc(lista, 0).scoprireSuperato;
+    return pagina !== scontro;
+});
+ok(disaccordi.length === 0,
+   `schermata e scontro d accordo su tutti e ${casiAccordo.length} i casi${disaccordi.length ? ' — in disaccordo: ' + disaccordi.map(x => x[0]).join(', ') : ''}`);
+// CONTROPROVA della lettura: se lo scontro non si producesse, `scoprireSuperato`
+// sarebbe undefined per tutti e il confronto direbbe "d accordo" a vuoto.
+inCampo.length = 0; inCampo.push(zero, modello);
+const accordoModello = risolvi(bustaCombinata(zero, modello, modello));
+inCampo.length = 0; [zero, zeroMsv, spektr, speculo, fusilier].forEach(u => inCampo.push(u));
+ok(accordoModello.length >= 1 && sc(accordoModello, 0).scoprireSuperato === true,
+   `CONTROPROVA: sul Modello lo scontro si produce davvero e dice scoprireSuperato (${accordoModello.length} scontri, ${sc(accordoModello, 0).scoprireSuperato})`);
+ok(sc(accordoModello, 0).titolo === 'SCOPRIRE: NON SI TIRA',
+   `e il titolo dello scontro e` + ` quello che il giocatore legge (${sc(accordoModello, 0).titolo})`);
+
+// ==================================================================
+// 11. I DUE CASI CHE ERANO "APERTI" (MOTORE, 8 ottobre, punto 4)
+//     INTERFACCIA li ha misurati con le sonde sui tre dispositivi, ma in
+//     un banco non c erano. Una sonda si lancia una volta; un banco
+//     rimisura a ogni giro. Qui stanno al livello del motore.
+// ==================================================================
+console.log('\n=== 11a. Coordinato con QUATTRO partecipanti, Scoprire + Attacco ===');
+const squadra4 = [0, 1, 2, 3].map(i =>
+    ({ id: 'q' + i, alias: 'Alg' + i, bs: 11, wip: 12, ph: 10, arm: 1, bts: 0, states: {}, weapon: 'Combi Rifle' }));
+// Burst: 2 alla Punta di Lancia, 1 ai gregari (lo decide la schermata; qui
+// si pretende che la busta lo porti fino allo scontro senza perderlo).
+function busta4(n) {
+    const voci = [];
+    squadra4.slice(0, n).forEach((x, i) => {
+        voci.push({ attaccante: x, attaccanteId: x.id, azione: M.AZIONI.SCOPRIRE, regole: { poiAttacco: true },
+                    bersagli: [{ id: spektr.id, name: M.nomeUnita(spektr), burst: 1, rangeIndex: 0 }] });
+        voci.push({ attaccante: x, attaccanteId: x.id, azione: M.AZIONI.BS_ATTACK, arma: combi, scoprendo: spektr.id,
+                    bersagli: [{ id: spektr.id, name: M.nomeUnita(spektr), burst: (i === 0 ? 2 : 1),
+                                 rangeIndex: 0, rangeMod: 3, dopoScoprire: true }] });
+    });
+    window.currentOrder = { id: 'co' + n }; window._ordineAllarmato = null;
+    M._rosterProprio = squadra4.slice(0, n); M._rosterNemico = [spektr];
+    return M.creaPayload(voci, { isCoordinated: true });
+}
+const b4 = busta4(4);
+const inCampo4 = squadra4.concat([spektr]);
+const trova4 = (n, id) => inCampo4.find(u =>
+    (id && String(u.id) === String(id)) ||
+    M.nomeUnita(u).toUpperCase() === String(M.nomeUnita(n) || n).toUpperCase()) || null;
+ok(erroriDi(b4).length === 0,
+   `quattro partecipanti: la busta parte senza errori (${J(erroriDi(b4))})`);
+ok(((b4.payload || {}).attacchi || []).length === 8,
+   `con OTTO voci, due per partecipante (${((b4.payload || {}).attacchi || []).length})`);
+const sc4 = M.risolviPayload(b4.payload, [], { trovaUnita: trova4 }) || [];
+ok(sc4.length === 8, `e produce OTTO scontri, uno per voce (${sc4.length})`);
+const bsDi = sc4.filter(s => att(s).azione === M.AZIONI.BS_ATTACK).map(s => att(s).burst);
+ok(J(bsDi) === J([2, 1, 1, 1]),
+   `Burst 2 alla Punta di Lancia e 1 ai tre gregari, fino allo scontro (${J(bsDi)})`);
+const scopDi = sc4.filter(s => att(s).azione === M.AZIONI.SCOPRIRE);
+ok(scopDi.length === 4 && scopDi.every(s => s.scoprirePoiAttacco === true),
+   `e i quattro Scoprire portano tutti scoprirePoiAttacco (${scopDi.length} Scoprire)`);
+// CONTROPROVA: se la busta perdesse un partecipante, le prove sopra
+// leggerebbero quattro scontri invece di otto e lo direbbero. Si misura la
+// soglia dal basso per essere sicuri che il numero non sia fisso.
+const sc2 = M.risolviPayload(busta4(2).payload, [], { trovaUnita: trova4 }) || [];
+ok(sc2.length === 4,
+   `CONTROPROVA: con DUE partecipanti gli scontri sono quattro, non otto (${sc2.length})`);
+
+console.log('\n=== 11b. Scoprire + Piazzare quando reagisce il Marker stesso ===');
+const bpm = bustaPiazzare();
+const scPm = risolvi(bpm, aroBs(spektr));
+ok(scPm.length === 3,
+   `tre scontri: lo Scoprire, il Piazzamento e l ARO del Marker a se` + ` (${scPm.length})`);
+const sScop = scPm.find(s => att(s).azione === M.AZIONI.SCOPRIRE) || {};
+const sPiaz = scPm.find(s => att(s).azione === M.AZIONI.PIAZZA_DEPLOYABLE) || {};
+const sAro = scPm.find(s => att(s).azione === M.AZIONI.BS_ATTACK) || {};
+ok(sScop.titolo === 'SCOPRIRE: NON SI TIRA' && sScop.scoprireSuperato === true,
+   `lo Scoprire non si tira, e lo dice il titolo (${sScop.titolo}, scoprireSuperato ${sScop.scoprireSuperato})`);
+ok(/si è rivelato da solo/.test(noteDi(sScop)),
+   `con la spiegazione a vista (${noteDi(sScop).slice(0, 56)})`);
+ok(sPiaz.condizionatoDaScoprire === true && /PIAZZAMENTO CONDIZIONATO/.test(noteDi(sPiaz)),
+   `il piazzamento resta condizionato anche cosi` + ` (${sPiaz.condizionatoDaScoprire})`);
+ok(sAro.titolo === 'TIRO NORMALE' && /Spektr/.test(String(att(sAro).nome || '')),
+   `e l ARO del Marker e` + ` un Tiro Normale a se` + `, non un Faccia a Faccia (${sAro.titolo}, ${att(sAro).nome})`);
+// LE DUE NOTE SONO ALTERNATIVE. Se il Marker si e` rivelato non c e` niente
+// da tirare per primo: la nota "tira PRIMA questo Scoprire" NON deve
+// comparire, e `scoprirePoiPiazzare` nemmeno. Senza questa prova il
+// giocatore leggerebbe due istruzioni che si contraddicono.
+ok(!/tira PRIMA questo Scoprire/.test(noteDi(sScop)),
+   'e la nota "tira PRIMA questo Scoprire" NON compare: non c e` piu` niente da tirare');
+ok(sScop.scoprirePoiPiazzare === undefined,
+   `nemmeno il campo scoprirePoiPiazzare (${J(sScop.scoprirePoiPiazzare)})`);
+// CONTROPROVA: col Marker che NON reagisce torna la nota "tira PRIMA" e
+// sparisce "si è rivelato da solo". Senza, le due prove sopra non
+// distinguono "alternative" da "mai scritte".
+const scPmNo = risolvi(bustaPiazzare(), []);
+const sScopNo = scPmNo.find(s => att(s).azione === M.AZIONI.SCOPRIRE) || {};
+ok(/tira PRIMA questo Scoprire/.test(noteDi(sScopNo)) && sScopNo.scoprirePoiPiazzare === true,
+   'CONTROPROVA: senza ARO del Marker torna "tira PRIMA" e il campo si accende');
+ok(!/si è rivelato da solo/.test(noteDi(sScopNo)) && sScopNo.scoprireSuperato !== true,
+   `e la nota del Marker rivelato NON c e` + ` (scoprireSuperato: ${J(sScopNo.scoprireSuperato)})`);
+window.currentOrder = null; window._ordineAllarmato = null;
+M._rosterProprio = null; M._rosterNemico = null;
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

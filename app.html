@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-07.4 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-07.5 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -515,7 +515,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-07.4', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-10-07.5', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -1374,7 +1374,14 @@
         // busta sola. Oggi e` una: Scoprire + Attacco BS (ordine_scoprire.js e
         // ordine_attacco_bs.js, chat MOTORE, 7 ottobre). Offrirne una che il
         // modulo non compone vorrebbe dire perdere lo Scoprire per strada.
-        window.SECONDA_META_DOPO = { 'SCOPRIRE': ['ATTACCO BS'] };
+        // 7 ottobre, pomeriggio: MOTORE ha costruito anche SCOPRIRE +
+        // PIAZZARE EQUIPAGGIAMENTO (ordine_piazzamento.js 2026-10-07.7), ma
+        // SOLO per l'Ordine singolo; SCOPRIRE + ATTACCO BS vale anche in
+        // Ordine Coordinato (ordine_attacco_bs.js 2026-10-07.7). Per questo
+        // ogni voce dice se vale in Coordinato: offrire il Piazzare a una
+        // squadra vorrebbe dire perdere lo Scoprire dei gregari.
+        window.SECONDA_META_DOPO = { 'SCOPRIRE': ['ATTACCO BS', 'PIAZZARE EQUIPAGGIAMENTO'] };
+        window.SECONDA_META_SOLO_SINGOLO = ['PIAZZARE EQUIPAGGIAMENTO'];
 
         window.confirmMultiAro = (isMovementOnly = false) => {
             if(!isMovementOnly && window.pendingTargets.length === 0) return alert("Seleziona almeno un bersaglio per continuare!");
@@ -1430,6 +1437,7 @@
                     window.dbAzioniN5.movimento.filter(a => window.puoFareAzione(window.currentOrder.unit, a.id)).forEach(a => container.innerHTML += window.creaBottoneAzione(a, true, '#002244', '#00ccff'));
                     window.dbAzioniN5.brevi
                         .filter(a => window.SECONDA_META_DOPO[window.currentOrder.action1].indexOf(a.id) >= 0)
+                        .filter(a => !(window.coordMode && window.SECONDA_META_SOLO_SINGOLO.indexOf(a.id) >= 0))
                         .filter(a => window.puoFareAzione(window.currentOrder.unit, a.id))
                         .forEach(a => container.innerHTML += window.creaBottoneAzione(a, true, '#003300', '#00ff00'));
                 } else {

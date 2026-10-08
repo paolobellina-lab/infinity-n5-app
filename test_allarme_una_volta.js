@@ -1,4 +1,4 @@
-// @versione 2026-10-07.1 | test_allarme_una_volta.js | proprieta`: chat MOTORE
+// @versione 2026-10-08.1 | test_allarme_una_volta.js | proprieta`: chat MOTORE
 // ============================================================================
 //  UN ALLARME PER ORDINE, ALLA PRIMA ABILITA`.
 //
@@ -257,11 +257,15 @@ ok(M.allarmeOrdine('ALLERTA', { unita: g.roster[0], coordUnits: [g.roster[0]] })
    'e quindi non c è nessuna busta d allarme da spedire');
 
 console.log('\n=== 6. La busta di chiusura di un Ordine in due meta` ===');
-// aroAtteso false sulla busta finale e` VOLUTO (dichiarato da MOTORE il 6
-// ottobre): l allarme e` partito con la prima meta`, e la schermata non
-// lascia dichiarare la seconda finche` le reazioni non sono arrivate. Si
-// scrive qui perche` un `false` senza una ragione accanto, al prossimo giro,
-// sembra un difetto e qualcuno lo "corregge".
+// 🔴 8 ottobre: aroAtteso TRUE sulla busta finale. Fino al 7 era false,
+// "voluto": l allarme parte con la prima meta` e la schermata non lascia
+// dichiarare la seconda finche` le reazioni non arrivano. Ma l Hub, con
+// aroAtteso false, calcola SUBITO: se la busta arriva prima della risposta
+// ARO (chiamata diretta, pagina ricaricata, un tasto rimasto a schermo)
+// l ARO finisce in latestAroData e il tabellone non lo mostra mai (misura
+// di INTERFACCIA, 8 ottobre). Ora la busta dice il fatto: per questo
+// Ordine un allarme e` partito. Se le reazioni sono gia` arrivate, l Hub
+// non aspetta niente (reazioniPronte).
 nuovoOrdine();
 g.selectAction('MOVIMENTO', false);
 g.selectAction('IDLE', true);
@@ -270,8 +274,8 @@ g.selectAction('IDLE', true);
 // chiede meno. Si pretende il numero, e si dice quale.
 ok(buste.length === 1, `una busta sola per l Ordine (${buste.length})`,
    buste.map(b => b && b.azione));
-ok(buste.length === 1 && buste[0].aroAtteso === false,
-   `e non chiede di aspettare l ARO: aroAtteso false, voluto (${buste.length === 1 ? buste[0].aroAtteso : 'nessuna busta'})`);
+ok(buste.length === 1 && buste[0].aroAtteso === true,
+   `e chiede all Hub di aspettare l ARO della prima metà: aroAtteso true (${buste.length === 1 ? buste[0].aroAtteso : 'nessuna busta'})`);
 ok(allarmi().length === 1,
    `l allarme resta uno: è partito con la prima metà (${allarmi().length})`, azioni());
 
@@ -386,6 +390,22 @@ g.inviaAllarmeAro({ attaccante: 'Zero', azione: 'SENZA ID 1', bersagli: [] }); c
 g.inviaAllarmeAro({ attaccante: 'Zero', azione: 'SENZA ID 2', bersagli: [] }); consuma();
 ok(allarmi().length === 2, `senza id d Ordine partono tutti e due: la guardia non può sapere (${allarmi().length})`, azioni());
 ok(allarmi().every(a => a.dato && a.dato.ordineId == null), 'e nessuno dei due porta un id inventato');
+
+console.log('\n=== 11. aroAtteso dice se per QUESTO Ordine un allarme e` partito ===');
+// Si chiama creaPayload direttamente: e` li` che il campo si scrive, per
+// tutti i moduli. Quattro casi, e i tre che devono dare false sono le
+// controprove: senza, "true" non si distingue da "sempre true".
+const M11 = g.MotoreN5;
+const busta11 = (op) => { const e = M11.creaPayload([], Object.assign({ consentiVuoto: true }, op || {})); return e.payload ? e.payload.aroAtteso : 'nessuna busta'; };
+g.currentOrder = { id: 'ordine_11_A' }; g._ordineAllarmato = 'ordine_11_A';
+ok(busta11() === true, `allarme partito per questo Ordine, il modulo non dice niente: true (${busta11()})`);
+g._ordineAllarmato = 'ordine_11_VECCHIO';
+ok(busta11() === false, `l allarme è di un Ordine PRIMA: false (${busta11()})`);
+ok(busta11({ aroAtteso: true }) === true, `ma se il modulo lo dice, vale quello che dice (${busta11({ aroAtteso: true })})`);
+g.currentOrder = {}; g._ordineAllarmato = 'ordine_11_A';
+ok(busta11() === false, `Ordine senza identificativo: non si può sapere, false come prima (${busta11()})`);
+g.currentOrder = { id: 'ordine_11_C' }; g._ordineAllarmato = null;
+ok(busta11() === false, `nessun allarme mai partito (Movimento Cauto fuori LoF): false (${busta11()})`);
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

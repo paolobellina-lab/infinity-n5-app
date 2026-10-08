@@ -1,4 +1,4 @@
-// @versione 2026-10-07.1 | test_adattatore.js | proprieta`: chat TEST
+// @versione 2026-10-08.1 | test_adattatore.js | proprieta`: chat TEST
 // Test dell'adattatore calcolatore_math.js — node test_adattatore.js
 global.window = global;
 require('./catalogo_n5.js'); require('./database_comune.js');
@@ -360,21 +360,37 @@ ok(bersBuono.bersaglioNonRisolto === undefined && (bersBuono.note || []).length 
 ok(/Munizione/.test(String((bfz.reattivo || {}).salvezza || '')),
    'la salvezza del fantasma viene calcolata comunque, su un unita` vuota: il campo avverte, non blocca');
 
-// L ELENCO DEI CAMPI COPIATI. Erano quattro il 6 ottobre, oggi sono OTTO:
-// l adattatore .2 ne ha aggiunti quattro (bersaglioNonRisolto piu` tre che
-// la consegna di MOTORE non nomina: scoprirePoiAttacco, scoprireSuperato,
-// dopoScoprire). Un campo nuovo dello scontro va aggiunto QUI o non arriva
-// al tabellone: e` la famiglia di difetti che inseguiamo, e questa prova e`
-// la rete. Se MOTORE ne aggiunge un nono senza dirlo, qui non si vede —
-// quindi si fissa anche il NUMERO.
+// L ELENCO DEI CAMPI COPIATI. Erano quattro il 6 ottobre, otto il 7, oggi
+// sono DIECI: l adattatore .4 ne ha aggiunti due (condizionatoDaScoprire,
+// scoprirePoiPiazzare). Un campo nuovo dello scontro va aggiunto QUI o non
+// arriva al tabellone: e` la famiglia di difetti che inseguiamo, e questa
+// prova e` la rete.
+//
+// 🔴 GIRATA L 8 OTTOBRE. Fino alla .1 la rete era un CONTEGGIO: diceva
+// "sono 10 e ne aspettavo 8" e poi bisognava andare a cercare QUALI. Ora
+// confronta i due insiemi e NOMINA la differenza nei due versi: un campo
+// comparso e un campo sparito si leggono senza aprire il sorgente. Il
+// conteggio restava anche cieco a uno scambio (un campo togliato e uno
+// aggiunto nello stesso giro lasciano il numero fermo).
 const campiCopiati = ['coperturaNegata', 'reattivoNonBersagliato', 'bersaglioDiSagoma',
                       'attaccanteNonRisolto', 'bersaglioNonRisolto',
-                      'scoprirePoiAttacco', 'scoprireSuperato', 'dopoScoprire'];
+                      'scoprirePoiAttacco', 'scoprireSuperato', 'dopoScoprire',
+                      'condizionatoDaScoprire', 'scoprirePoiPiazzare'];
 campiCopiati.forEach(k => ok(new RegExp("'" + k + "'").test(srcMath),
     `l adattatore nomina il campo ${k}`));
 const elenco = (/\[([^\]]*)\]\.forEach\(k => \{ if \(s\[k\]\)/.exec(srcMath) || [])[1] || '';
-ok((elenco.match(/'/g) || []).length / 2 === campiCopiati.length,
-   `e l elenco ne ha esattamente ${campiCopiati.length}: se ne compare un nono, questa prova lo dice (${(elenco.match(/'/g) || []).length / 2})`);
+const letti = (elenco.match(/'([^']+)'/g) || []).map(x => x.slice(1, -1));
+// Senza questa, un elenco che la regex non trova darebbe zero campi letti e
+// "nessuno in piu`, nessuno in meno" contro una lista vuota: verde per il
+// motivo sbagliato.
+ok(letti.length > 0,
+   `l elenco dei campi si legge nel sorgente dell adattatore (${letti.length} nomi trovati)`);
+const inPiu = letti.filter(k => campiCopiati.indexOf(k) < 0);
+const inMeno = campiCopiati.filter(k => letti.indexOf(k) < 0);
+ok(inPiu.length === 0,
+   `nessun campo copiato che questo banco non conosca${inPiu.length ? ': COMPARSO ' + inPiu.join(', ') : ''} (letti ${letti.length})`);
+ok(inMeno.length === 0,
+   `e nessuno di quelli che conosce e\` stato togliato${inMeno.length ? ': SPARITO ' + inMeno.join(', ') : ''}`);
 // E il ripiego del trovaUnita, letto nel sorgente: e` il punto esatto che
 // era rotto nella .4. Una prova sul testo, perche` il comportamento sopra
 // non dice QUALE riga lo produce.
