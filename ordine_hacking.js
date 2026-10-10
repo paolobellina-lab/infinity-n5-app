@@ -1,4 +1,4 @@
-// @versione 2026-10-07.1 | ordine_hacking.js | proprieta`: chat MOTORE
+// @versione 2026-10-09.1 | ordine_hacking.js | proprieta`: chat MOTORE
 // ==========================================
 // 💻 INFOGUERRA (HACKING) N5 - ordine_hacking.js
 // ------------------------------------------
@@ -92,9 +92,11 @@
                            : 'Solo Hackerabili';
                 const salvezza = `PS ${p.ps}${p.dimezzaBTS ? ' · BTS dimezzato' : ' · BTS pieno'}${p.salvezze > 1 ? ` · ${p.salvezze} salvezze` : ''}`;
                 const nomeEsc = (p.scelta || p.nome).replace(/'/g, "\\'");
-                container.innerHTML += `<button class="huge-btn" style="border-color:${COL.bordo};" onclick="window.declareHackingAttack('${nomeEsc}')">
-                    ${p.scelta || p.nome}<br><span style="color:${COL.bordo}; font-size:13px;">B${p.burst} · ${p.ammo} · ${salvezza}<br>${bers} → ${p.effetto}</span>
-                </button>`;
+                // 9 ottobre: il bottone approvato da Paolo (M.bottoneArma), col
+                // contorno azzurro dei programmi e l'icona dello stato che il
+                // programma provoca. Sotto, quello che serve per scegliere.
+                container.innerHTML += M.bottoneArma(p, { attributi: `onclick="window.declareHackingAttack('${nomeEsc}')"`,
+                    sotto: `${bers} · B${p.burst} · ${salvezza}` });
             });
         }
 
@@ -371,7 +373,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_hacking.js', versione: '2026-10-07.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_hacking.js', versione: '2026-10-09.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

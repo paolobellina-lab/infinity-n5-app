@@ -1,4 +1,20 @@
-// @versione 2026-10-08.3 | test_piano_schieramento.js | proprieta`: chat TEST
+// @versione 2026-10-10.1 | test_piano_schieramento.js | proprieta`: chat TEST
+// 2026-10-10.1: REV_MINIMA = 25. Il roster di collaudo passa da 43 a 52 righe
+//    (37 Nomadi, 15 PanOceania): nove voci AGGIUNTE, per nove prove che
+//    nominavano una truppa non schierata (LOG-02, DIS-02 due volte, DET-04 due
+//    volte, MU-07, MU-08, MU-10, MU-21, MU-23). Le prove restano 297.
+// .8 (9 ott, sera): REV_MINIMA = 24 — il blocco DC va a ZERO. Il numero delle
+//    prove incompiute sta ora in grassetto nel titolo ("**0 prove su 297**") e
+//    il gruppo della regex accetta UNA cifra: con \d{2,4} lo zero non sarebbe
+//    stato letto e la prova sarebbe passata per assenza di numero.
+// .7 (9 ott, sera): il roster di collaudo passa da 40 a 43 righe (28 Nomadi,
+//    15 PanOceania). REV_MINIMA = 23.
+// .6 (9 ott, sera): REV_MINIMA = 22 — il piano completa FT e GUI (7 prove),
+//    trova il difetto del +1 SD del Fireteam e corregge GUI-01/03/05; restano 25.
+// .5 (9 ott, sera): REV_MINIMA = 21 — il piano completa CC e SUP (12 prove),
+//    trova il difetto SUP-05 e corregge CC-02; restano 32 prove da completare.
+// .4 (9 ott, pomeriggio): REV_MINIMA = 20 — il piano completa BS, HK e TER
+//    (24 prove) e corregge TER-04; restano 44 prove da completare.
 // ============================================================================
 //  LE UNITA` CHE IL PIANO CHIEDE DI SCHIERARE ESISTONO DAVVERO?
 //
@@ -100,7 +116,7 @@ const perFazione = voci.reduce(function (m, v) { m[v.fazione] = (m[v.fazione] ||
 // (Il 7 ottobre ho cambiato questi numeri senza alzare la versione del
 // banco, e due chat hanno letto due contenuti diversi sotto la stessa
 // 2026-10-07.1. Da qui la .2.)
-const REV_MINIMA = 16;
+const REV_MINIMA = 25;
 const testoPiano = fs.readFileSync(PIANO, 'utf8');
 const revisione = (/revisione\s+(\d+)/.exec(testoPiano) || [])[1];
 ok(revisione !== undefined && parseInt(revisione, 10) >= REV_MINIMA,
@@ -133,7 +149,7 @@ const PUNTI = [
     ['sezione 0',      /tutte e (\d{3,4}), nelle stesse/],
     ['convenzioni',    /stessa riga (\d{3,4}) volte/],
     ['codici univoci', /alla revisione \d+ sono (\d{3,4})/],
-    ['blocco DC',      /prove su (\d{3,4})\n/]
+    ['blocco DC',      /prove su (\d{3,4})\*\*/]
 ];
 const letti = PUNTI.map(([nome, re_]) => {
     const m = re_.exec(testoPiano);
@@ -149,14 +165,24 @@ ok(fuori.length === 0,
 // diceva "135 prove su 277" e nessuno dei due numeri era giusto.
 const blocchi = testoPiano.split(/(?=^\*\*[A-Z]+-\d+ —)/m).slice(1);
 const incompiute = blocchi.filter(b => /DA COMPLETARE/.test(b)).length;
-const dcDichiarate = (/(\d{2,4}) prove su \d{3,4}\n/.exec(testoPiano) || [])[1];
+// 9 ottobre sera: il blocco DC e` arrivato a ZERO, e il numero sta in grassetto
+// nel titolo ("**0 prove su 297**"). Il gruppo accetta UNA cifra: con \d{2,4}
+// lo zero non sarebbe stato letto e la prova sarebbe diventata "undefined" —
+// cioe` verde per assenza di numero invece che per numero giusto.
+const dcDichiarate = (/\*\*(\d{1,4}) prove su \d{3,4}\*\*/.exec(testoPiano) || [])[1];
 ok(blocchi.length === prove,
    `le prove si separano una per una (${blocchi.length} blocchi per ${prove} prove)`);
 ok(dcDichiarate !== undefined && parseInt(dcDichiarate, 10) === incompiute,
    `il blocco DC dichiara ${dcDichiarate} prove con un campo da completare, contate ${incompiute}`);
-ok(perFazione.NOMADI === 25 && perFazione.PANOCEANIA === 15,
-   `righe lette per fazione: 25 Nomadi e 15 PanOceania (${JSON.stringify(perFazione)})`);
-ok(voci.length === 40, `righe di schieramento lette dal piano: 40 (${voci.length})`);
+// 9 ottobre sera: il roster passa da 40 a 43. Le tre voci nuove (Nomadi
+// 26-28) sono state AGGIUNTE, non sostituite, per una ragione misurata: ogni
+// voce delle 40 era nominata da almeno una prova, e cinque da una sola —
+// sostituirne una avrebbe tolto il soggetto a quella prova. Aggiungere non
+// costa nessuna prova; costa solo questi due numeri.
+// 10 ottobre: da 43 a 52, sempre aggiungendo (vedi la nota in testa).
+ok(perFazione.NOMADI === 37 && perFazione.PANOCEANIA === 15,
+   `righe lette per fazione: 37 Nomadi e 15 PanOceania (${JSON.stringify(perFazione)})`);
+ok(voci.length === 52, `righe di schieramento lette dal piano: 52 (${voci.length})`);
 ok(voci.some(v => v.fazione === 'NOMADI') && voci.some(v => v.fazione === 'PANOCEANIA'),
    'e vengono da entrambe le tabelle');
 // CONTROPROVA della lettura: se il formato della tabella cambiasse, qui si

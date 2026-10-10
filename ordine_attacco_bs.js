@@ -1,4 +1,4 @@
-// @versione 2026-10-08.1 | ordine_attacco_bs.js | proprieta`: chat MOTORE
+// @versione 2026-10-10.2 | ordine_attacco_bs.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎯 ATTACCO BS (TIRO A DISTANZA) - ordine_attacco_bs.js
 // ------------------------------------------
@@ -121,19 +121,39 @@
         // Ogni voce del profilo può espandersi in più modalità (MULTI, Plasma,
         // Missile...). Le varianti le trova il motore leggendo il database,
         // invece dei cinque casi scritti a mano che c'erano qui.
-        const grezze = M.dividiLista(unita.weapon);
+        // 2026-10-10.1 (TEST): le armi si leggono da weapon E da equip, come fa
+        // M.armiARO. Prima solo da weapon: 629 profili su 765 avevano un'arma
+        // (Pistol, Boarding Pistol, MULTI Pistol...) offerta in ARO e non
+        // nell'Attacco BS attivo. Le voci di equip che NON sono armi (visori,
+        // ECM, Hacking Device...) si saltano in silenzio: non sono "armi
+        // scartate", sono un'altra cosa.
+        const daWeapon = M.dividiLista(unita.weapon);
+        const daEquip = M.dividiLista(unita.equip).filter(function (n) { return daWeapon.indexOf(n) < 0; });
+        const grezze = daWeapon.concat(daEquip);
         const profili = [];
         const scartate = [];
+        // Si piazzano, non si sparano: hanno l'Ordine Piazzare Equipaggiamento.
+        const SI_PIAZZA = ['COPERTURA', 'RIPETITORE', 'PIAZZATO'];
 
         grezze.forEach(function (nome) {
+            const dallEquip = daEquip.indexOf(nome) >= 0;
             let varianti = M.variantiArma(nome);
             if (varianti.length === 0) {
                 const p = M.profiloArma(nome);
-                if (p.nonTrovata) { scartate.push({ nome: nome, motivo: 'non presente nel database armi' }); return; }
+                if (p.nonTrovata) {
+                    if (!dallEquip) scartate.push({ nome: nome, motivo: 'non presente nel database armi' });
+                    return;
+                }
                 varianti = [p];
             }
             varianti.forEach(function (p) {
                 if (p.isCC) { scartate.push({ nome: p.nome, motivo: 'arma da Corpo a Corpo' }); return; }
+                const voce = (window.RULES_WEAPONS || {})[p.nome] || p;
+                if (SI_PIAZZA.indexOf(voce.risoluzione) >= 0) { scartate.push({ nome: p.nome, motivo: 'si piazza, non si spara' }); return; }
+                // MediKit, GizmoKit, Deactivator: bersaglio vincolato, solo la
+                // loro azione (REGOLE, 10 ottobre; M.ARMI_AZIONE_DEDICATA).
+                const dedicata = M.azioneDedicataArma ? M.azioneDedicataArma(p.nome) : null;
+                if (dedicata) { scartate.push({ nome: p.nome, motivo: 'si usa solo con la sua azione (' + dedicata + ')' }); return; }
                 if (profili.some(x => x.nome === p.nome)) return;
                 profili.push(p);
             });
@@ -153,9 +173,8 @@
                 // VS 9 invece di VS 7. Nei due database sono 227 notazioni
                 // d'arma che passano da qui.
                 const nomeEsc = (p.nomeRichiesto || p.nome).replace(/'/g, "\\'");
-                container.innerHTML += `<button class="huge-btn" style="border-color:${COL.bordo};" onclick="window.declareAttackBS('${nomeEsc}')">
-                    ${p.nome}<br><span style="color:${COL.bordo}; font-size:14px;">B${p.burst} | ${p.ammoOpzioni.join('/')} | ${gittata}</span>
-                </button>`;
+                // 9 ottobre: il bottone e` quello approvato da Paolo (M.bottoneArma).
+                container.innerHTML += M.bottoneArma(p, { attributi: `onclick="window.declareAttackBS('${nomeEsc}')"` });
             });
         }
 
@@ -596,7 +615,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-08.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-10.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

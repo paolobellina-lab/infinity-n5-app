@@ -1,7 +1,50 @@
-// @versione 2026-09-28.4 | database_comune.js | proprieta`: chat DATABASE
+// @versione 2026-10-10.1 | database_comune.js | proprieta`: chat DATABASE
 // ==========================================
 // --- database_comune.js ---
 // Regole, armi, equipaggiamenti, strutture e terreni
+// ==========================================
+
+// ==========================================
+// DA DOVE VENGONO QUESTI DATI — scritto qui il 2026-10-09 perche` i tre file
+// della fonte (501.json, 101.json, metadata.json) escono dal Project per
+// fare spazio. I file si riscaricano in un minuto; sapere COME non era
+// scritto in nessun posto, ed e` la cosa che non si ricostruisce.
+//
+// API ufficiale Corvus Belli (la stessa che usa l'app ARMY):
+//   https://api.corvusbelli.com/army/units/en/<numero>      una fazione
+//   https://api.corvusbelli.com/army/infinity/en/metadata    tabelle generali
+// Richiedono l'intestazione:  Origin: https://infinityuniverse.com/
+// Senza quella intestazione rispondono con un errore, non col JSON.
+// Numeri di fazione usati finora:  101 = PanOceania,  501 = Nomadi.
+// Versione dei dati su cui sono stati generati i profili:  7.26246.158
+//   (il campo `version` in testa a ogni file di fazione: va riletto a ogni
+//    scarico, perche` e` lui che dice se la fonte e` cambiata)
+//
+// COSA STA IN QUALE FILE, perche` non sono interscambiabili:
+//   501/101.json  le UNITA` con profili, opzioni, punti e SWC, piu` le
+//                 tabelle `filters` RIDOTTE a quella fazione — fra cui
+//                 `filters.extras`, che e` l'unico posto dove stanno le
+//                 notazioni ("+1B", "PS=5", "ReRoll -3", "CC=21"...).
+//                 metadata NON le contiene.
+//   metadata.json le tabelle COMPLETE di gioco: 185 armi, 114 skill, 40
+//                 munizioni, 39 equip, hack, martialArts, metachemistry,
+//                 booty. Serve per le domande che non riguardano una
+//                 fazione sola.
+// Per controllare un ATTRIBUTO o un'ARMA di un profilo servono i file di
+// fazione interi: le tabelle da sole non bastano, non contengono le unita`.
+//
+// TRE COSE DELLA FONTE CHE INGANNANO, e che qui hanno gia` fatto danno:
+//   - le DISTANZE sono in centimetri (10 cm = 4"). Gli extra di tipo
+//     DISTANCE vanno convertiti: "+2.5" e` +1", "+5" e` +2", "+10" e` +4".
+//   - `str` nei profili e` un BOOLEANO ("usa STR invece di VITA"), non un
+//     valore: il numero sta sempre in `w`. Letto come valore dava 60 REM,
+//     TAG e VH con la Struttura sbagliata.
+//   - `disabled: true` su un'opzione NON vuol dire da scartare: sono i
+//     profili collegati (periferiche, piloti, righe di statistiche
+//     secondarie).
+//   - una skill scritta a livello di PROFILO vale per TUTTE le opzioni di
+//     quel gruppo: i conteggi per opzione e per profilo non si confrontano
+//     uno a uno.
 // ==========================================
 
 // RULES_AMMO e` stata RIMOSSA il 2026-09-20.
@@ -83,6 +126,43 @@ window.DB_DEPLOYABLES = [
 //          CC                 = solo corpo a corpo.
 // `salvAttr` e `salvTiri` vengono dalla tabella e hanno la precedenza sulla munizione:
 //          es. Breaker Combi Rifle usa munizione AP ma si salva su BTS/2, non su ARM/2.
+//
+// ==========================================
+// DOVE I NOSTRI TRATTI SI SCOSTANO DALLA FONTE, E PERCHE` NON VA "CORRETTO"
+// Scritto qui il 2026-10-10 perche` confronto_armi_metadata.txt esce dal
+// Project. Quel file era il confronto fra questa tabella e metadata.json:
+// esaurito, tranne queste due voci, che sono SCELTE e non lacune. Senza
+// questa nota il prossimo confronto con la fonte segnalera` 74 "differenze"
+// e qualcuno le sistemera`. E` il giro della PARA CC Weapon, che ci e`
+// costato cinque richieste identiche.
+//
+// 1) "Continuous Damage" — noi; "Continous Damage" — la fonte, senza la 'u'.
+//    E` un errore di battitura loro. Noi usiamo la grafia corretta DA
+//    ENTRAMBI I LATI: 9 armi qui (i due Lanciafiamme, i due Lanciarazzi
+//    nelle due modalita`, Vulkan Shotgun, Flammenspeer nelle due) e 9
+//    occorrenze in catalogo_n5.js, che e` di MOTORE.
+//    ⚠️ QUESTA NON E` UNA DIFFERENZA DI MAIUSCOLE: manca una lettera, e
+//    M.haTratto confronta in maiuscolo ma non corregge l'ortografia.
+//    Misurato il 2026-10-10 sul motore 2026-10-09.1:
+//       haTratto(arma, "Continuous Damage")  ->  9 su 9
+//       haTratto(arma, "Continous Damage")   ->  0 su 9
+//    Funziona perche` le due grafie COMBACIANO FRA I DUE FILE. Allineare un
+//    lato solo alla fonte spegne il tratto in silenzio su 9 armi: il Danno
+//    Continuato smette di esistere e nessun banco se ne accorge.
+//    Se un giorno si cambia, si cambiano i due file nello stesso giro.
+//
+// 2) I marcatori "[*]", "[**]", "[***]" della fonte: 45 in metadata.json
+//    (24 + 14 + 7), zero qui, di proposito. Sono i rimandi alle note a pie`
+//    di pagina del Weapon Chart, non tratti con un effetto in gioco.
+//    Ometterli e` giusto; non scriverlo faceva segnalare 45 mancanze a ogni
+//    confronto.
+//
+// Non e` un caso da elencare, ma vale saperlo: "Non-Lethal" (noi) contro
+// "Non-lethal" (fonte) e` SOLO una maiuscola, su 29 armi. Misurato, haTratto
+// le trova 29 su 29 con l'una e con l'altra grafia: innocuo in entrambi i
+// versi. La nostra grafia e` quella di catalogo_n5.js, e si tiene per
+// coerenza interna, non perche` cambiarla romperebbe qualcosa.
+// ==========================================
 window.RULES_WEAPONS = {
     "Tactical Bow": { traits: ["Anti-materiel","Silent (-6)"], b: 1, dam: 8, ammo: "DA", salvAttr: "ARM", salvTiri: 2, bande: [3, 0, -6] },
     "E/M Carbine": { traits: ["Non-Lethal"], b: 2, dam: 7, ammo: "E/M", salvAttr: "BTS/2", salvTiri: 2, bande: [3, 3, -3, -3, -6] },
@@ -416,14 +496,35 @@ window.DB_TERRENI = [
     { id: 'TER_18', nome: 'Sala del Nucleo Energetico', tratti: ['Bassa Visibilità', 'Rumore Bianco'] }
 ];
 
+// I tratti hanno due facce. `modBS`/`modB`/`lof` sono la faccia VECCHIA: il
+// numero crudo del tratto da solo. Restano perche` sono quello che il menu
+// mostra fra parentesi e perche` toglierle sarebbe una rottura gratuita.
+// Le chiavi NUOVE sono le PROPRIETA`, e dal 2026-10-09 e` su quelle che
+// calcola applicaModTerreno:
+//   visibilita: 1|2|3   livello sulla scala graduata (Bassa, Pessima, Zero)
+//   alzaVisibilita: 1   NON e` una zona: ALZA di un livello quella presente
+//   saturazione: true   -1 al Burst, UNA sola volta, non e` visibilita`
+//   rumoreBianco: true  categoria a se`: vale solo per chi ha MSV o Marksmanship
+// Perche` per proprieta` e non per nome di tratto: con piu` terreni sulla
+// stessa LoF i livelli vanno combinati PRIMA dei visori, e un confronto fra
+// numeri gia` risolti non lo permette. Era il difetto della Tempesta.
 window.TRATTI_TERRENO = {
-    'Bassa Visibilità': { modBS: -3, modB: 0 },
-    'Pessima Visibilità': { modBS: -6, modB: 0 },
-    'Visibilità Zero': { modBS: -6, modB: 0, lof: false },
-    'Zona di Saturazione': { modBS: 0, modB: -1 },
-    'Rumore Bianco': { msv_only: true, lof: false },
-    'Peggiora Visibilità di 1': { modBS: -3, modB: 0 } 
+    'Bassa Visibilità': { modBS: -3, modB: 0, visibilita: 1 },
+    'Pessima Visibilità': { modBS: -6, modB: 0, visibilita: 2 },
+    'Visibilità Zero': { modBS: -6, modB: 0, lof: false, visibilita: 3 },
+    'Zona di Saturazione': { modBS: 0, modB: -1, saturazione: true },
+    'Rumore Bianco': { msv_only: true, lof: false, rumoreBianco: true },
+    'Peggiora Visibilità di 1': { modBS: -3, modB: 0, alzaVisibilita: 1 }
 };
+
+// FUMO ed ECLIPSE non stanno qui, e non devono starci. Sono Zone di Visibilita`
+// Zero create in partita da una Sagoma, non tipi di campo: il motore le tiene
+// nel campo `zona` della busta, separato da `terrain`, e le risolve con
+// M.modZona (motore_regole_n5.js righe 12388-12420) nei due versi, con la
+// FAQ F17 sul bersaglio che ha MSV L1. Aggiungerle fra i terreni farebbe
+// contare la stessa zona DUE volte: -6 da `zona` piu` -6 da `terrain`.
+// Se Paolo le vuole nella stessa tendina, e` l'INTERFACCIA che mette le due
+// voci in elenco e le manda nel campo `zona`: il dato non si duplica.
 
 // ==========================================
 // 🗺️ MENU TERRENO — funzione mancante che bloccava il selettore in ordine_attacco_bs.js
@@ -463,16 +564,59 @@ window.generaOpzioniTerreni = (valoreAttuale) => {
 //   La Schivata in questa situazione si fa SENZA il MOD: questa funzione restituisce
 //   un modBS, quindi chi la chiama per una Schivata non deve applicarlo.
 //
+// PIU` TERRENI SULLA STESSA LINEA DI TIRO (2026-10-09, richiesta di Paolo).
+// Il primo argomento accetta anche un ELENCO di id. La funzione lo dichiara con
+//   window.applicaModTerreno.accettaElenco = true
+// ed e` quella bandiera che M.esitoTerreni guarda per passare l'elenco intero
+// invece di chiamare una volta per terreno e combinare da se`.
+// Perche` la combinazione deve stare QUI e non nel motore: la Tempesta alza un
+// LIVELLO, e i livelli esistono solo prima che i visori li traducano in numeri.
+// Chi riceve "-3" e "-3" gia` risolti non puo` piu` sapere che uno dei due era
+// una Bassa Visibilita` e l'altro una Tempesta che la fa diventare Pessima.
+// Il motore ha solo gli id; i tratti grezzi li ha questo file.
+//
+// ORDINE DEL CALCOLO, e il motivo di ogni passo:
+//   1. livello = il PIU` ALTO fra le visibilita` graduate dei terreni in elenco
+//      (non cumulo, righe 12688-12695: si applica una sola zona, la peggiore)
+//   2. livello = livello + la somma degli alzaVisibilita`, fermo a 3
+//      (la Tempesta trasforma, non si somma e non si confronta)
+//   3. il livello risultante lo traducono i visori in UN solo MOD
+//   4. il Rumore Bianco e` una categoria a parte: propone il SUO effetto, e fra
+//      lui e il livello graduato vince il piu` restrittivo
+//   5. Saturazione: -1 al Burst UNA volta sola, quanti che siano i terreni
+//      (righe 12645-12648), e si somma alla Visibilita` perche` tocca il Burst
+//      e non l'attributo (righe 12667-12669)
+// Massimo-poi-alza e alza-poi-massimo danno lo stesso numero, perche`
+// max(a,b)+1 == max(a+1,b+1): l'ordine fra 1 e 2 non e` una scelta discutibile.
+//
+// LETTURA, non regola scritta — la Tempesta quando non c'e` niente da alzare.
+// "Increases Visibility Conditions by one level" non dice da che livello parta
+// se l'area non ha nessuna Condizione. Qui 0 + 1 = Bassa, che e` anche quello
+// che faceva la versione precedente (-3 fisso), quindi non cambia nessun
+// risultato di oggi. Se REGOLE decide che una Tempesta senza altra Visibilita`
+// non fa niente, cambia una riga: il `+ alza` si applica solo se livello > 0.
+// Stessa incertezza con Tempesta + Rumore Bianco e nessuna zona graduata: il
+// Rumore Bianco non sta sulla scala -3/-6/niente-LoF, e sopra di lui non c'e`
+// un livello. Qui la Tempesta produce la sua Bassa sulla scala graduata e il
+// Rumore Bianco resta intatto, e il caso finisce in `avvisi` invece di passare
+// in silenzio.
+//
 // FIRMA — due forme, equivalenti:
-//   applicaModTerreno(terrainId, { msv1, msv2, msv3, marksmanship, bersaglio })   <- da preferire
-//   applicaModTerreno(terrainId, hasMSV1, hasMSV2, hasMarksmanship, hasMSV3, bersaglio)
+//   applicaModTerreno(terreni, { msv1, msv2, msv3, marksmanship, bersaglio })   <- da preferire
+//   applicaModTerreno(terreni, hasMSV1, hasMSV2, hasMarksmanship, hasMSV3, bersaglio)
+// `terreni` = un id, oppure un elenco di id.
 // La forma a oggetto esiste perche` sei booleani posizionali sono indistinguibili al sito
 // di chiamata: invertire bersaglio e hasMSV3 non lo nota nessun controllo. Con l'oggetto
 // l'inversione e` impossibile, e una chiave sconosciuta (un refuso, es. "bersagio")
 // produce un avviso in console invece di diventare false in silenzio.
 // La forma posizionale resta valida per retrocompatibilita`. hasMSV3 conta come L2.
+// I sei parametri posizionali restano DICHIARATI anche se il primo ora puo`
+// essere un elenco: M.verificaFirme controlla `f.length >= 6` e una firma piu`
+// corta lo farebbe diventare rosso (test_finiture.js).
+// RITORNO: { modBS, modB, lofBloccata, note, avvisi } — `avvisi` e` sempre un
+// array, perche` e` quello che M.esitoTerreni si aspetta di poter scorrere.
 // ==========================================
-window.applicaModTerreno = (terrainId, hasMSV1, hasMSV2, hasMarksmanship, hasMSV3, bersaglio) => {
+window.applicaModTerreno = (terreni, hasMSV1, hasMSV2, hasMarksmanship, hasMSV3, bersaglio) => {
     if (hasMSV1 !== null && typeof hasMSV1 === 'object') {
         const o = hasMSV1;
         const noti = ['msv1', 'msv2', 'msv3', 'marksmanship', 'bersaglio'];
@@ -485,50 +629,101 @@ window.applicaModTerreno = (terrainId, hasMSV1, hasMSV2, hasMarksmanship, hasMSV
     }
     if (hasMSV3) hasMSV2 = true;
     const hasMSV = !!(hasMSV1 || hasMSV2);
-    let risultato = { modBS: 0, modB: 0, lofBloccata: false, note: "" };
-    if (!terrainId || terrainId === "NESSUNO") return risultato;
+    const risultato = { modBS: 0, modB: 0, lofBloccata: false, note: "", avvisi: [] };
 
-    let terr = (window.DB_TERRENI || []).find(t => t.id === terrainId);
-    if (!terr || !terr.tratti || terr.tratti.length === 0) return risultato;
+    const lista = (Array.isArray(terreni) ? terreni : [terreni])
+        .filter(id => id && id !== 'NESSUNO')
+        .filter((id, i, a) => a.indexOf(id) === i);
+    if (!lista.length) return risultato;
 
-    // Ogni tratto di visibilita` propone UN effetto; alla fine si tiene il piu` restrittivo.
+    const TR = window.TRATTI_TERRENO || {};
+    const trovati = [], ignoti = [];
+    lista.forEach(id => {
+        const t = (window.DB_TERRENI || []).find(x => x.id === id);
+        if (t) trovati.push(t); else ignoti.push(id);
+    });
+    if (ignoti.length) {
+        risultato.avvisi.push('Terreni non in DB_TERRENI, ignorati: ' + ignoti.join(', ') +
+                              '. Nessun MOD applicato per loro: controlla l\'id.');
+    }
+    if (!trovati.length) return risultato;
+
+    // --- 1 e 2: le PROPRIETA`, lette dalla tabella dei tratti, non dai nomi ---
+    let livello = 0, alza = 0, saturazione = false, rumoreBianco = false;
+    const nomiVisibilita = [], terreniVisibilita = [], nomiAlza = [];
+    trovati.forEach(t => {
+        (t.tratti || []).forEach(nome => {
+            const p = TR[nome];
+            if (!p) {
+                risultato.avvisi.push('Tratto "' + nome + '" (' + t.nome +
+                                      ') non e` in TRATTI_TERRENO: ignorato.');
+                return;
+            }
+            if (p.visibilita) {
+                if (p.visibilita > livello) livello = p.visibilita;
+                nomiVisibilita.push(`${nome} (${t.nome})`);
+                terreniVisibilita.push(t.nome);
+            }
+            if (p.alzaVisibilita) { alza += p.alzaVisibilita; nomiAlza.push(t.nome); }
+            if (p.saturazione) saturazione = true;
+            if (p.rumoreBianco) rumoreBianco = true;
+        });
+    });
+
+    const livelloBase = livello;
+    if (alza) livello = Math.min(3, livello + alza);
+
+    // --- 5: Saturazione, una sola, e non e` visibilita` ---
+    if (saturazione) {
+        risultato.modB = -1;
+        risultato.note += 'Zona di Saturazione: -1 B';
+        risultato.note += (trovati.length > 1) ? ' (una sola, non si cumula). ' : '. ';
+    }
+
+    // --- 3 e 4: un candidato dal livello graduato, uno dal Rumore Bianco ---
     const candidati = [];
     const proponi = (modBS, lofBloccata, nota) => candidati.push({ modBS, lofBloccata, nota });
+    const NOMI = { 1: 'Bassa Visibilità', 2: 'Pessima Visibilità', 3: 'Visibilità Zero' };
+    const daTempesta = nomiAlza.join(', ');
+    let quale = NOMI[livello];
+    if (nomiVisibilita.length > 1 && !alza)
+        quale += ' (la piu restrittiva fra ' + nomiVisibilita.join(', ') + ')';
+    else if (alza && livelloBase === 0)
+        quale += ' (dalla ' + daTempesta + ', dove non c-era nessuna zona)';
+    else if (alza && livello > livelloBase)
+        quale += ' (' + NOMI[livelloBase] + ' di ' + terreniVisibilita.join(' + ') +
+                 ', alzata di un livello dalla ' + daTempesta + ')';
+    else if (alza)
+        quale += ' (' + terreniVisibilita.join(' + ') + ': gia` al massimo, la ' +
+                 daTempesta + ' non la alza oltre)';
 
-    terr.tratti.forEach(nomeTratto => {
-        if (nomeTratto === 'Zona di Saturazione') {
-            risultato.modB -= 1;                                   // cumulativa: non e` visibilita`
-            risultato.note += `Zona di Saturazione: -1 B. `;
-        }
-        else if (nomeTratto === 'Bassa Visibilità' || nomeTratto === 'Peggiora Visibilità di 1') {
-            if (hasMSV) proponi(0, false, `${nomeTratto}: ignorata (Visore).`);
-            else        proponi(-3, false, `${nomeTratto}: -3 BS.`);
-        }
-        else if (nomeTratto === 'Pessima Visibilità') {
-            if (hasMSV2)      proponi(0, false, `Pessima Visibilità: ignorata (MSV2).`);
-            else if (hasMSV1) proponi(-3, false, `Pessima Visibilità: MSV1 riduce a -3 BS.`);
-            else              proponi(-6, false, `Pessima Visibilità: -6 BS.`);
-        }
-        else if (nomeTratto === 'Visibilità Zero') {
-            if (hasMSV2)        proponi(0, false, `Visibilità Zero: MSV2 permette LoF senza MOD.`);
-            // Bersaglio con MSV L1: resta -6, confermato dalla chat REGOLE.
-            // Fonte: FAQ F17 (wiki "Multispectral Visor", FAQ 0.0.0), che concede a
-            // MSV L1 PIU` Sixth Sense l'annullamento di questo -6: quindi l'MSV L1 da
-            // solo lo subisce. Il caso con Sixth Sense lo gestisce il motore, perche`
-            // questa funzione non riceve le skill.
-            else if (bersaglio) proponi(-6, false, `Visibilità Zero: bersaglio che risponde, -6 BS con LoF.`);
-            else if (hasMSV1)   proponi(-6, false, `Visibilità Zero: MSV1 permette LoF con -6 BS.`);
-            else                proponi(0, true,  `Visibilità Zero: NESSUNA LoF senza Visore MSV.`);
-        }
-        else if (nomeTratto === 'Rumore Bianco') {
-            if (!hasMSV && !hasMarksmanship)
-                proponi(0, false, `Rumore Bianco: nessun effetto (serve MSV o Marksmanship).`);
-            else if (bersaglio)
-                proponi(-6, false, `Rumore Bianco: bersaglio che risponde, Pessima -6 BS, il Visore non la riduce.`);
-            else
-                proponi(0, true, `Rumore Bianco: NESSUNA LoF per chi ha ${hasMSV ? 'un Multispectral Visor' : 'Marksmanship'}.`);
-        }
-    });
+    if (livello === 1) {
+        if (hasMSV) proponi(0, false, `${quale}: ignorata (Visore).`);
+        else        proponi(-3, false, `${quale}: -3 BS.`);
+    } else if (livello === 2) {
+        if (hasMSV2)      proponi(0, false, `${quale}: ignorata (MSV2).`);
+        else if (hasMSV1) proponi(-3, false, `${quale}: MSV1 riduce a -3 BS.`);
+        else              proponi(-6, false, `${quale}: -6 BS.`);
+    } else if (livello === 3) {
+        if (hasMSV2)        proponi(0, false, `${quale}: MSV2 permette LoF senza MOD.`);
+        // Bersaglio con MSV L1: resta -6, confermato dalla chat REGOLE.
+        // Fonte: FAQ F17 (wiki "Multispectral Visor", FAQ 0.0.0), che concede a
+        // MSV L1 PIU` Sixth Sense l'annullamento di questo -6: quindi l'MSV L1 da
+        // solo lo subisce. Il caso con Sixth Sense lo gestisce il motore, perche`
+        // questa funzione non riceve le skill.
+        else if (bersaglio) proponi(-6, false, `${quale}: bersaglio che risponde, -6 BS con LoF.`);
+        else if (hasMSV1)   proponi(-6, false, `${quale}: MSV1 permette LoF con -6 BS.`);
+        else                proponi(0, true,  `${quale}: NESSUNA LoF senza Visore MSV.`);
+    }
+
+    if (rumoreBianco) {
+        if (!hasMSV && !hasMarksmanship)
+            proponi(0, false, `Rumore Bianco: nessun effetto (serve MSV o Marksmanship).`);
+        else if (bersaglio)
+            proponi(-6, false, `Rumore Bianco: bersaglio che risponde, Pessima -6 BS, il Visore non la riduce.`);
+        else
+            proponi(0, true, `Rumore Bianco: NESSUNA LoF per chi ha ${hasMSV ? 'un Multispectral Visor' : 'Marksmanship'}.`);
+    }
 
     // NON CUMULO: LoF bloccata batte qualunque MOD; altrimenti vince il MOD piu` negativo.
     if (candidati.length) {
@@ -543,8 +738,22 @@ window.applicaModTerreno = (terrainId, hasMSV1, hasMSV2, hasMarksmanship, hasMSV
             risultato.note += '(Zone di visibilita non cumulabili: applicata solo la piu restrittiva.) ';
     }
 
+    // Il caso che non e` scritto da nessuna parte: la Tempesta non ha una zona
+    // graduata da alzare, e l'unica Condizione presente e` un Rumore Bianco,
+    // che non sta sulla scala. Qui la Tempesta fa una Bassa per conto suo.
+    if (alza && livelloBase === 0 && rumoreBianco) {
+        risultato.avvisi.push('Tempesta su Rumore Bianco senza altra zona graduata: qui la Tempesta ' +
+            'produce una Bassa Visibilita` a se`, e il Rumore Bianco resta intatto. E` una LETTURA, ' +
+            'non una riga del regolamento: il Rumore Bianco non sta sulla scala Bassa/Pessima/Zero. ' +
+            'Da confermare con REGOLE.');
+    }
+
     return risultato;
 };
+// La bandiera che M.esitoTerreni guarda per passarmi l'elenco intero.
+// Se un domani questa funzione tornasse a non saper combinare, basta togliere
+// questa riga e il motore ricomincia a chiamarla una volta per terreno.
+window.applicaModTerreno.accettaElenco = true;
 
 // Dichiarazione di versione per il controllo incrociato fra chat.
 // UN SOLO punto in cui il numero e` scritto: la riga @versione in testa al file.

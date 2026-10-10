@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | logica_stati.js | proprieta`: chat MOTORE
+// @versione 2026-10-09.1 | logica_stati.js | proprieta`: chat MOTORE
 // ==========================================
 // NOTA: le regole di questo file passano da MotoreN5.
 //  - la cancellazione degli stati Marker (Ritirata!, Ingaggiato, Stati Nulli)
@@ -398,6 +398,13 @@ window.salvaStatiUnita = () => {
     }
     else if (s.impersonation) window.unitToEdit.deployState = window.tempImpState;
     else if (window.unitToEdit.deployState && (window.unitToEdit.deployState.startsWith('CAMO') || window.unitToEdit.deployState.startsWith('IMP'))) {
+        // 🔴 9 ottobre (chat REGOLE, F07): con Camouflage (1 Use) l'uso e`
+        // l'ENTRATA nello Stato CAMO, schieramento compreso. Chi ne esce lo
+        // ha speso, anche se ci era entrato schierandosi come Marker (il
+        // database lo fa nascere in CAMO, senza passare da qui).
+        if (window.unitToEdit.deployState.startsWith('CAMO') && window.MotoreN5 && typeof window.MotoreN5.consumaCamo === 'function') {
+            window.unitToEdit.camoUsato = window.MotoreN5.consumaCamo(window.unitToEdit).unitaAggiornata.camoUsato;
+        }
         window.unitToEdit.deployState = "NORMAL";
     }
     
@@ -506,7 +513,7 @@ window.salvaStatiUnita = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_stati.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
+    var v = { file: 'logica_stati.js', versione: '2026-10-09.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

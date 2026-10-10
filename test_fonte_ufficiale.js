@@ -1,4 +1,8 @@
-// @versione 2026-09-29.3 | test_fonte_ufficiale.js | proprieta`: chat TEST
+// @versione 2026-10-09.2 | test_fonte_ufficiale.js | proprieta`: chat TEST
+// .2 (9 ott, sera): 501.json e 101.json escono dal Project. Senza di loro le 8
+//    prove sono NON ESEGUITE (contate e nominate), non rosse: vedi il blocco
+//    FONTI FUORI DAL PROJECT. Con i due file in cartella il banco e` quello
+//    della .1: 8 passati, 0 falliti.
 // ================================================================
 // Il confronto dei DATI con la fonte ESTERNA: 101.json e 501.json.
 // Diviso da test_coerenza_dati.js il 29 settembre, su proposta di DATABASE:
@@ -30,6 +34,36 @@ let passati = 0, falliti = 0;
 const ok = (c, m) => { if (c) { passati++; console.log('  ✅ ' + m); } else { falliti++; console.log('  ❌ ' + m); } };
 const J = JSON.stringify, fs = require('fs');
 const DIR = (process.env.CARTELLA || __dirname).replace(/\/?$/, '/');
+// ---------------------------------------------------------------------------
+// FONTI FUORI DAL PROJECT — convenzione del 9 ottobre sera (chat TEST).
+// I file della fonte (501.json, 101.json) non stanno piu` nel Project: Paolo
+// li allega quando servono. Senza di loro le prove che li leggono non sono
+// ROSSE (un rosso che e` lo stato normale smette di essere letto) e non sono
+// VERDI (una prova che passa senza guardare niente e` peggio): sono NON
+// ESEGUITE, contate a parte e nominate, una riga per prova e nel riepilogo:
+//     N passati, 0 falliti, K non eseguite (fonte assente: ...)
+// Tre guardie perche` "non eseguita" non diventi un posto dove nascondersi:
+//  - vale SOLO per i file nominati qui, e solo se il file NON C'E`. Un file
+//    presente ma illeggibile, o un altro file che manca, resta un rosso;
+//  - eseguite + non eseguite deve fare PROVE_ATTESE: una prova che sparisce
+//    senza essere dichiarata e` un rosso;
+//  - con la fonte in cartella la riga di riepilogo e` quella di sempre.
+let nonEseguite = 0; const fontiAssenti = [];
+const fonteAssente = (file) => {
+    const nome = String(file).split('/').pop();
+    const manca = !require('fs').existsSync(file);
+    if (manca && fontiAssenti.indexOf(nome) < 0) fontiAssenti.push(nome);
+    return manca;
+};
+const nonEseguita = (m, n) => { nonEseguite += (n || 1); console.log('  ⏸ NON ESEGUITA (fonte assente: ' + fontiAssenti.join(', ') + '): ' + m); };
+const rigaFinale = (attese) => {
+    const viste = passati + falliti + nonEseguite;
+    if (viste !== attese) { falliti++; console.log('  ❌ prove eseguite + non eseguite: ' + viste + ', attese ' + attese + ' — una prova e` sparita o ne e` nata una: se e` voluto, aggiorna PROVE_ATTESE'); }
+    console.log('\n──────────────\n' + passati + ' passati, ' + falliti + ' falliti' +
+        (nonEseguite ? ', ' + nonEseguite + ' non eseguite (fonte assente: ' + fontiAssenti.join(', ') + ')' : '') + '\n');
+};
+// ---------------------------------------------------------------------------
+const PROVE_ATTESE = 8;
 
 global.window = global;
 require(DIR + 'catalogo_n5.js'); require(DIR + 'database_comune.js');
@@ -69,7 +103,31 @@ function indice(file) {
 }
 
 console.log('\n=== 1. La fonte è leggibile e non è vuota ===');
-const idx = { NOMADI: indice('501.json'), PANOCEANIA: indice('101.json') };
+// 🔴 UN BANCO CHE MUORE NON E` UN BANCO ROSSO. Senza 501.json o 101.json
+// in cartella questo banco finiva con un ENOENT di node: nessuna riga di
+// riepilogo, e chi misura vedeva un file muto senza sapere perche`.
+// Misurato il 9 ottobre, rompendo in una copia di servizio dove i due
+// JSON non c erano. Ora la mancanza e` una prova rossa che nomina il file.
+['501.json', '101.json'].forEach(f => fonteAssente(DIR + f));
+if (fontiAssenti.length) {
+    // Tutte e otto: senza la fonte anche le due prove 'nessun attributo fuori'
+    // passavano, ma su ZERO profili accoppiati — vere per il motivo sbagliato.
+    ['i due JSON ufficiali si leggono', 'i nomi indicizzati sono piu` di 100 per fazione',
+     'NOMADI: piu` del 90% dei profili trovato nella fonte', 'NOMADI: nessun attributo diverso dalla fonte',
+     'PANOCEANIA: piu` del 90% dei profili trovato nella fonte', 'PANOCEANIA: nessun attributo diverso dalla fonte',
+     'controprova: c e` un profilo che la fonte conosce', 'controprova: un attributo spostato di 3 viene visto'
+    ].forEach(m => nonEseguita(m));
+    rigaFinale(PROVE_ATTESE);
+    process.exit(falliti ? 1 : 0);
+}
+const idx = { NOMADI: {}, PANOCEANIA: {} };
+const fonteMancante = [];
+[['NOMADI', '501.json'], ['PANOCEANIA', '101.json']].forEach(([f, file]) => {
+    try { idx[f] = indice(file); }
+    catch (e) { fonteMancante.push(file + ': ' + e.message.split('\n')[0].slice(0, 60)); }
+});
+ok(fonteMancante.length === 0,
+   `i due JSON ufficiali si leggono${fonteMancante.length ? ' — MANCA ' + fonteMancante.join(' | ') : ''}`);
 ok(Object.keys(idx.NOMADI).length > 100 && Object.keys(idx.PANOCEANIA).length > 100,
    `nomi indicizzati: Nomadi ${Object.keys(idx.NOMADI).length}, PanOceania ${Object.keys(idx.PANOCEANIA).length}`);
 
@@ -113,10 +171,35 @@ const secondario = secondarioDi(u);
         if (!righe || !righe.length) { senzaCorrispondenza.push(u.nome); return; }
         // Basta che il profilo combaci con UNA delle righe ufficiali che
         // portano quel nome: quale delle unità sia, dal nome non si deduce.
+        // 🔴 9 ottobre. UN ATTRIBUTO CHE LA FONTE CAMBIA CON UNA SKILL
+        // DELL OPZIONE non e` un errore del database. Nella fonte ufficiale
+        // lo Swiss Guard opz. 5 e 6 porta la skill 274 "CC=21" e lo Stempler
+        // Zond opz. 4 la 278 "BS=12": il PROFILO BASE dice 15 e 11, la skill
+        // dell opzione li alza. DATABASE ha scritto il valore finale, e fa
+        // bene: e` quello col quale si tira.
+        //
+        // Questo banco confrontava col profilo base e segnava tre scarti.
+        // Ora, quando il NOME del profilo dichiara "Cc=21" o "Bs=12", il
+        // confronto si fa contro QUEL numero invece che contro la fonte — e
+        // pretende che combacino. Non e` un salto: e` un confronto diverso,
+        // piu` stretto, perche` il numero dichiarato nel nome deve essere
+        // quello scritto nel profilo.
+        const dichiarati = {};
+        (String(u.nome).match(/\b(CC|BS|PH|WIP|ARM|BTS)\s*=\s*(\d+)\b/gi) || []).forEach(t => {
+            const m = /\b(CC|BS|PH|WIP|ARM|BTS)\s*=\s*(\d+)\b/i.exec(t);
+            if (m) dichiarati[m[1].toLowerCase()] = Number(m[2]);
+        });
+        Object.keys(dichiarati).forEach(a => {
+            if (Number(u[a]) !== dichiarati[a])
+                fuori.push(`${u.nome} ${a}: il nome dichiara ${dichiarati[a]}, il profilo ha ${u[a]}`);
+        });
         const scarti = (rif) => ATTRIBUTI.filter(a => {
             const mio = u[a], suo = rif[a];
             if (suo === undefined || suo === null) return false;
             if (mio === '-' || mio === undefined) return false;
+            // L attributo che il nome dichiara e` gia` stato confrontato
+            // sopra, contro il valore dichiarato: qui non si guarda.
+            if (dichiarati[a] !== undefined) return false;
             return Number(mio) !== Number(suo);
         });
         const migliore = righe.map(scarti).sort((x, y) => x.length - y.length)[0];
@@ -144,12 +227,20 @@ const conRiferimento = window.DB_NOMADI.find(u => {
     const r = idx.NOMADI[norm(String(u.nome).split(/ [-(]/)[0])];
     return r && r.length && ATTRIBUTI.some(a => r[0][a] !== undefined && r[0][a] !== null && u[a] !== '-');
 });
-const rifProva = idx.NOMADI[norm(String(conRiferimento.nome).split(/ [-(]/)[0])][0];
-const attrProva = ATTRIBUTI.find(a => rifProva[a] !== undefined && rifProva[a] !== null && conRiferimento[attrProva_ = a] !== '-');
-const finto = Object.assign(JSON.parse(J(conRiferimento)), { [attrProva]: Number(rifProva[attrProva]) + 3 });
-const prova = confronta([finto], 'NOMADI');
-ok(prova.fuori.length >= 1,
-   `un ${attrProva} spostato di 3 su ${finto.nome.split(' (')[0]} viene visto (${J(prova.fuori.slice(0, 1))})`);
+// Senza la fonte non c e` nessun profilo di riferimento: la controprova non
+// si puo` fare, e va DETTO. Prima qui il banco cadeva con un TypeError e la
+// riga di riepilogo non usciva: il file diventava muto, e il conteggio non
+// lo vedeva. (Misurato il 9 ottobre.)
+ok(!!conRiferimento,
+   `c e` + ` un profilo che la fonte conosce, su cui fare la controprova${conRiferimento ? '' : ' — senza la fonte non si puo` fare'}`);
+if (conRiferimento) {
+    const rifProva = idx.NOMADI[norm(String(conRiferimento.nome).split(/ [-(]/)[0])][0];
+    const attrProva = ATTRIBUTI.find(a => rifProva[a] !== undefined && rifProva[a] !== null && conRiferimento[a] !== '-');
+    const finto = Object.assign(JSON.parse(J(conRiferimento)), { [attrProva]: Number(rifProva[attrProva]) + 3 });
+    const prova = confronta([finto], 'NOMADI');
+    ok(prova.fuori.length >= 1,
+       `un ${attrProva} spostato di 3 su ${finto.nome.split(' (')[0]} viene visto (${J(prova.fuori.slice(0, 1))})`);
+}
 
-console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
+rigaFinale(PROVE_ATTESE);
 process.exit(falliti ? 1 : 0);

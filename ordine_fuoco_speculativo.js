@@ -1,4 +1,4 @@
-// @versione 2026-10-08.1 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
+// @versione 2026-10-09.1 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
 // ==========================================
 // ☄️ FUOCO SPECULATIVO (N5) - ordine_fuoco_speculativo.js
 // ------------------------------------------
@@ -91,9 +91,8 @@
                 // VS 9 invece di VS 7. Nei due database sono 227 notazioni
                 // d'arma che passano da qui.
                 const nomeEsc = (p.nomeRichiesto || p.nome).replace(/'/g, "\\'");
-                container.innerHTML += `<button class="huge-btn" style="border-color:${COL.bordo};" onclick="window.declareSpeculativoAttack('${nomeEsc}')">
-                    ${p.nome}<br><span style="color:${COL.bordo}; font-size:14px;">Tira su ${attr.attributo} | ${p.ammoOpzioni.join('/')} | Burst 1</span>
-                </button>`;
+                // 9 ottobre: il bottone e` quello approvato da Paolo (M.bottoneArma).
+                container.innerHTML += M.bottoneArma(p, { attributi: `onclick="window.declareSpeculativoAttack('${nomeEsc}')"` });
             });
         }
 
@@ -512,7 +511,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-08.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-09.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

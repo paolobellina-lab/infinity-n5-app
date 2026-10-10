@@ -1,4 +1,4 @@
-// @versione 2026-10-07.2 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-09.2 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -207,8 +207,12 @@
             }
             const tocco = `onclick="window.toggleAroUnit('${String(u.id).replace(/'/g, "\\'")}')"`;
             if (typeof window.rigaUnitaConFoto === 'function') {
+                // 9 ottobre: la riga nuova dice "scelta" da sola, nei colori
+                // della fazione. Prima qui si passava un fondo e un bordo
+                // scritti a mano, e il tocco li ricambiava a mano.
                 container.innerHTML += window.rigaUnitaConFoto(u, {
-                    id: 'aro-btn-' + u.id, sfondo: bg, bordo: '2px solid ' + bordo, opacita: '1',
+                    id: 'aro-btn-' + u.id, fazione: 'PROPRIA', opacita: '1',
+                    scelta: (window.selectedAroUnits || []).indexOf(u.id) >= 0,
                     dopoNome: sopp + rit, attributi: tocco
                 });
             } else {
@@ -487,16 +491,21 @@
         }
     };
 
+    // 9 ottobre: sulla riga con la foto la scelta si accende con
+    // data-scelta (la disegna il foglio di stile della riga). Cambiare il
+    // fondo del bottone, come prima, colorava il riquadro trasparente
+    // intorno alla riga e non la riga. Il fondo si cambia solo sul bottone
+    // semplice, quello che si disegna se la riga con la foto non c'e`.
     window.toggleAroUnit = function (id) {
         const i = window.selectedAroUnits.indexOf(id);
         const btn = document.getElementById(`aro-btn-${id}`);
-        if (i > -1) {
-            window.selectedAroUnits.splice(i, 1);
-            if (btn) { btn.style.background = isNomads() ? '#1a0000' : '#001122'; btn.style.borderColor = isNomads() ? '#550000' : '#003366'; }
-        } else {
-            window.selectedAroUnits.push(id);
-            if (btn) { btn.style.background = isNomads() ? '#8b0000' : '#003366'; btn.style.borderColor = isNomads() ? '#ff0000' : '#00ccff'; }
-        }
+        const scelto = (i < 0);
+        if (scelto) window.selectedAroUnits.push(id);
+        else window.selectedAroUnits.splice(i, 1);
+        if (!btn) return;
+        if (/riga-unita/.test(String(btn.className || ''))) { btn.setAttribute('data-scelta', scelto ? 'si' : 'no'); return; }
+        btn.style.background = scelto ? (isNomads() ? '#8b0000' : '#003366') : (isNomads() ? '#1a0000' : '#001122');
+        btn.style.borderColor = scelto ? (isNomads() ? '#ff0000' : '#00ccff') : (isNomads() ? '#550000' : '#003366');
     };
 
     window.goToAroStep = function (stepId) {
@@ -644,6 +653,22 @@
             container.innerHTML += `<p style="color:#ff3333; text-align:center; font-size:18px;">❌ Nessuna arma utilizzabile per questo ARO.</p>`;
         } else {
             esito.armi.forEach(function (p) {
+                // 9 ottobre (Paolo): i PROGRAMMI di hacking hanno il bottone
+                // dell'arma del motore (M.bottoneArma), col contorno azzurro e
+                // l'icona dello stato che provocano: lo stesso del Turno
+                // Attivo (ordine_hacking.js). Prima qui erano un bottone
+                // semplice con "B2 | AP | " e una gittata vuota, perche` un
+                // programma la gittata non ce l'ha. Il disegno sta nel motore:
+                // qui si passa solo il tocco e la riga sotto.
+                if (act === 'HACKING' && typeof M.bottoneArma === 'function') {
+                    const nomeP = p.nome.replace(/'/g, "\\'");
+                    const salv = (p.ps != null) ? ` · PS ${p.ps}${p.dimezzaBTS ? ' · BTS dimezzato' : ' · BTS pieno'}` : '';
+                    container.innerHTML += M.bottoneArma(p, {
+                        attributi: `onclick="window.selezionaArmaAro('${nomeP}')"`,
+                        sotto: `B${p.burst}${salv}`
+                    });
+                    return;
+                }
                 const gittata = p.isTemplate ? `Sagoma ${p.template || ''}`.trim()
                               : p.isCC ? 'Corpo a Corpo'
                               : (p.bands || []).map(b => `${b.mod > 0 ? '+' : ''}${b.mod}`).join(' / ');
@@ -1096,7 +1121,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-10-07.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-10-09.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

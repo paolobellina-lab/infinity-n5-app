@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-09.6 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-09.1 | app_PROVA.html | proprieta`: chat INTERFACCIA | COPIA DI PROVA di app.html 2026-10-09.1 -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -251,39 +251,6 @@
         .state-checkbox:checked + .fallback-emoji { filter: grayscale(0%) opacity(100%) drop-shadow(0 0 10px var(--nomad-red)); transform: scale(1.15); }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        /* LA RIGA DI UN'UNITA` — 9 ottobre (Paolo): la FORMA e` quella del
-           bottone dell'arma, e la disegna il motore: M.formaBottone (motore
-           2026-10-09.4), la stessa funzione che usa M.bottoneArma. Qui resta
-           solo cio` che e` dell'unita`: la foto, la sigla, il nome, il
-           soprannome, le icone, e i colori della fazione.
-           Fino alla 2026-10-09.4 la forma era RICOPIATA qui (ottagono,
-           pieghe, bande, ombre): due copie della stessa forma, che alla
-           prima modifica di una si sarebbero separate.
-           I colori passano per variabili, perche` la scelta si accende anche
-           DOPO il disegno (toggleAroUnit cambia solo data-scelta):
-             --rup-a  fondo della banda alta   --rup-c  contorno e pieghe
-             --rup-o  ombra del bottone (con l'alone quando e` scelta)
-           Le variabili -n (normale) e -s (scelta) le scrive rigaUnitaConFoto
-           sul bottone; qui si sceglie quale vale. */
-        .riga-unita-foto { min-height:0; -webkit-tap-highlight-color:transparent; transition:transform .12s ease;
-            --rup-a: var(--rup-a-n); --rup-c: var(--rup-c-n); --rup-o: var(--rup-o-n); }
-        .riga-unita-foto[data-scelta="si"] { --rup-a: var(--rup-a-s); --rup-c: var(--rup-c-s); --rup-o: var(--rup-o-s); }
-        .riga-unita-foto:active { transform:scale(0.985); }
-        .riga-unita-foto .rup-foto { position:absolute; left:-4px; top:-6px; width:86px; height:calc(100% + 12px); min-height:96px;
-            object-fit:contain; object-position:center bottom; z-index:5; filter:drop-shadow(0 4px 8px rgba(0,0,0,.9)); pointer-events:none; }
-        .riga-unita-foto .rup-sigla { position:absolute; left:0; top:14px; width:80px; text-align:center;
-            color:#ddd; font-size:34px; z-index:5; text-shadow:0 2px 6px #000; pointer-events:none; }
-        .riga-unita-foto .rup-nome { flex:1 1 auto; min-width:0; overflow-wrap:anywhere; font-size:26px; font-weight:700; color:#fff;
-            text-transform:uppercase; line-height:.95; letter-spacing:1px; }
-        .riga-unita-foto .rup-alias { color:#e6e6e6; font-family:'Share Tech Mono',monospace; font-style:italic; font-size:15px; }
-        /* Le icone le disegna window.generaIconeStati con stili in linea da
-           45px: qui si fanno grandi quanto le due bande insieme, a destra,
-           sopra le bande. Se il file manca c'e` l'emoji (uno <span>). */
-        .riga-unita-foto .rup-icone { position:absolute; right:-2px; top:50%; transform:translateY(-50%); z-index:6; display:flex;
-            flex-direction:row-reverse; align-items:center; pointer-events:none; }
-        .riga-unita-foto .rup-icone img { width:64px !important; height:64px !important; margin:0 0 0 -8px !important;
-            filter:drop-shadow(0 3px 6px rgba(0,0,0,.9)) !important; }
-        .riga-unita-foto .rup-icone span { font-size:44px !important; margin:0 !important; line-height:1; filter:drop-shadow(0 3px 6px rgba(0,0,0,.9)); }
     </style>
 </head>
 <body>
@@ -558,7 +525,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-09.6', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app_PROVA.html', versione: '2026-10-09.1', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -1025,22 +992,15 @@
         //     attributi  stringa messa nel tag: i gestori, es.
         //                'onclick="window.scegli(\'p1\')"'
         //     id         id del <button>
-        //     bordo      un colore che dice qualcosa: '2px solid #00ffff' diventa
-        //                un contorno luminoso di quel colore, '2px dashed #777'
-        //                un contorno tratteggiato (non attivabile, morta).
-        //                Il rosso generico var(--nomad-red) non disegna niente.
-        //     opacita    trasparenza della riga
-        //     (sfondo NON si legge piu`: dal 9 ottobre "scelta" si dice con
-        //      scelta:true, e il fondo e` quello della fazione)
+        //     sfondo, bordo, opacita   per dire "selezionata", "non valida"
         //     nome       HTML al posto del nome letto dall'unita`
         //     dopoNome   HTML in coda al nome (un'etichetta, un avviso)
         //     sotto      HTML sotto nome e alias (una riga di spiegazione)
         //     destra     HTML a destra; se manca, le icone degli stati
-        //     fazione    'NEMICA' | 'PROPRIA' | 'NOMADI' | 'PANOCEANIA': i colori
-        //                della riga (Nomads rossi, PanOceania blu). Senza,
-        //                e` una truppa PROPRIA.
-        //     scelta     true: la riga e` selezionata (nome piu` chiaro e
-        //                contorno luminoso); diventa data-scelta="si"
+        //     fazione    'NEMICA' | 'PROPRIA' | 'NOMADI' | 'PANOCEANIA': bordo
+        //                e fondo del colore di quella fazione (Nomads rossi,
+        //                PanOceania blu), se non li passi tu
+        //     scelta     true: la riga e` selezionata (colore piu` acceso)
         //   window.fotoUnita(unita) -> il percorso dell'immagine
         //
         // 7 ottobre (Paolo, dal tavolo): foto e carattere UGUALI in tutti gli
@@ -1109,104 +1069,53 @@
             NOMADI:     { bordo: '#cc0000', sfondo: '#1a0000', scelto: '#8b0000', bordoScelto: '#ff3333' },
             PANOCEANIA: { bordo: '#00ccff', sfondo: '#001a33', scelto: '#004477', bordoScelto: '#66ddff' }
         };
-        // Le tinte della riga dell'unita` (9 ottobre, dalla prova approvata):
-        //   alta / altaScelta   fondo della riga del nome, normale e scelta
-        //   bassa               fondo della riga del soprannome
-        //   luce                contorno luminoso della riga scelta
-        // Stanno accanto a COLORI_FAZIONE e non dentro la funzione: sono i
-        // colori di una fazione, non di un disegno.
-        window.COLORI_FAZIONE.NOMADI.riga     = { alta: '#a80000', altaScelta: '#e02424', bassa: '#3a0000', luce: '#ff6a6a' };
-        window.COLORI_FAZIONE.PANOCEANIA.riga = { alta: '#005f94', altaScelta: '#168fcf', bassa: '#00263b', luce: '#7fe3ff' };
         window.fazionePropria = () => document.title.toUpperCase().includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA';
         window.fazioneNemica = () => (window.fazionePropria() === 'NOMADI') ? 'PANOCEANIA' : 'NOMADI';
 
-        // Il bordo passato da chi chiama dice qualcosa che va tenuto:
-        // TRATTEGGIATO = non attivabile o morta; azzurro = Punta di Lancia;
-        // arancio = scelta per il Coordinato. Nella forma dell'arma non c'e`
-        // un bordo intorno a tutto: c'e` il COLORE DI CONTORNO (bordo delle
-        // due bande e pieghe). Il colore passato diventa quello, con un alone
-        // se e` un segno da notare; "tratteggiato" diventa un contorno senza
-        // alone (la riga e` gia` mezza trasparente e porta la scritta NON
-        // ATTIVABILE). Il rosso generico var(--nomad-red) non cambia niente.
-        // Torna le variabili da mettere sul bottone (vedi .riga-unita-foto).
-        window.bordoRigaUnita = (bordo) => {
-            const b = String(bordo || '');
-            if (!b || /var\(--nomad-red\)/.test(b)) return '';
-            const colore = (b.match(/#[0-9a-fA-F]{3,6}/) || [])[0];
-            if (!colore) return '';
-            if (/dashed/.test(b)) return `--rup-c-n:${colore}; --rup-c-s:${colore};`;
-            const alone = `drop-shadow(0 0 6px ${colore}) drop-shadow(0 6px 12px rgba(0,0,0,0.6))`;
-            return `--rup-c-n:${colore}; --rup-c-s:${colore}; --rup-o-n:${alone}; --rup-o-s:${alone};`;
-        };
-
-        // 9 ottobre (Paolo): la riga dell'unita` ha la FORMA del bottone
-        // dell'arma, disegnata dal motore (M.formaBottone). Qui si danno
-        // contenuto e colori. Prima era un rettangolo con foto quadrata, nome
-        // e soprannome in colonna e icone a destra; "scelta" si diceva
-        // cambiando il fondo, e ogni elenco passava il suo colore (il roster
-        // un rosso fisso anche per PanOceania).
-        // Senza M.formaBottone la riga NON si disegna a mano: si dice che
-        // manca e si mostra il solo nome, ben visibile. Una seconda copia
-        // della forma qui e` proprio quello che si e` tolto.
         window.rigaUnitaConFoto = (u, opz) => {
             opz = opz || {};
-            const M = window.MotoreN5;
-            const f = (opz.fazione === 'NEMICA') ? window.fazioneNemica()
-                    : (opz.fazione === 'NOMADI' || opz.fazione === 'PANOCEANIA') ? opz.fazione
-                    : window.fazionePropria();
-            const c = window.COLORI_FAZIONE[f];
-            const t = c.riga;
+            // opz.fazione: 'NEMICA', 'PROPRIA', 'NOMADI' o 'PANOCEANIA'. Da`
+            // alla riga bordo e fondo di quella fazione; opz.scelta la
+            // accende. Bordo e sfondo passati a mano vincono comunque.
+            {
+                const f = (opz.fazione === 'NEMICA') ? window.fazioneNemica()
+                        : (opz.fazione === 'PROPRIA') ? window.fazionePropria() : opz.fazione;
+                const c = window.COLORI_FAZIONE[f];
+                if (c) {
+                    opz = Object.assign({
+                        bordo: '2px solid ' + (opz.scelta ? c.bordoScelto : c.bordo),
+                        sfondo: opz.scelta ? c.scelto : c.sfondo
+                    }, opz);
+                }
+            }
             const s = (u && u.states) || {};
             const morto = !!u && u.state === 'DEAD';
-            const opacita = opz.opacita || (morto ? '0.35' : (s.unconscious ? '0.6' : '1'));
+            const sfondo = opz.sfondo || (morto ? '#000000' : (s.unconscious ? '#220000' : '#110000'));
+            const bordo = opz.bordo || '2px solid var(--nomad-red)';
+            const opacita = opz.opacita || (morto ? '0.3' : (s.unconscious ? '0.6' : '1'));
 
             const nomePuro = window.nomeInElenco(u);
             let nome = (opz.nome !== undefined) ? opz.nome : (morto ? `<s>${nomePuro}</s>` : nomePuro);
             if (opz.dopoNome) nome += opz.dopoNome;
-            if (s.fireteam) nome += ` <span style="color:#9ff; font-size:15px;">[ TEAM ${s.fireteam} ]</span>`;
-            const alias = (u && u.alias && u.alias !== nomePuro) ? `<div class="rup-alias">"${u.alias}"</div>` : '';
+            if (s.fireteam) nome += ` <br><span style="color:#00ffff; font-size:14px; font-weight:bold;">[ TEAM ${s.fireteam} ]</span>`;
+            const alias = (u && u.alias && u.alias !== nomePuro) ? `<div style="color:var(--nomad-orange); font-size:15px; font-style:italic;">"${u.alias}"</div>` : '';
             const destra = (opz.destra !== undefined) ? opz.destra : window.generaIconeStati(u);
-            const attributi = `${opz.id ? `id="${opz.id}" ` : ''}data-fazione="${f}" data-scelta="${opz.scelta ? 'si' : 'no'}" oncontextmenu="return false;" ${opz.attributi || ''}`;
 
-            if (!M || typeof M.formaBottone !== 'function') {
-                console.error('⛔ M.formaBottone manca (serve motore_regole_n5.js dalla 2026-10-09.4): riga dell\'unita` senza forma.');
-                return `<button type="button" class="huge-btn riga-unita" ${attributi} style="opacity:${opacita}; border-color:${c.bordo};">${nome}${alias}</button>`;
-            }
-
-            // Le icone stanno SOPRA le due bande, a destra: il testo deve
-            // fermarsi prima, o finisce sotto. Lo spazio dipende da quante
-            // sono (64px l'una, accavallate di 8).
-            const quante = (String(destra).match(/<img/g) || []).length || (String(destra).trim() ? 1 : 0);
-
-            // La foto e` un png senza sfondo: sta libera, intera, senza
-            // cornice. Senza foto, la sigla del tipo, libera allo stesso posto.
-            const foto = window.fotoUnita(u);
-            const sigla = String((u && u.tipo) || '').slice(0, 3) || '?';
-            const immagine = foto
-                ? `<img class="rup-foto" src="${foto}" alt="" onerror="this.outerHTML='<span class=&quot;rup-sigla&quot;>${sigla}</span>';">`
-                : `<span class="rup-sigla">${sigla}</span>`;
-
-            const ombra = 'drop-shadow(0 6px 12px rgba(0,0,0,0.6))';
-            const variabili = `--rup-a-n:${t.alta}; --rup-a-s:${t.altaScelta}; --rup-c-n:${c.bordo}; --rup-c-s:${c.bordoScelto}; ` +
-                              `--rup-o-n:${ombra}; --rup-o-s:drop-shadow(0 0 6px ${t.luce}) ${ombra}; ` + window.bordoRigaUnita(opz.bordo);
-            return M.formaBottone({
-                classe: 'huge-btn riga-unita riga-unita-foto',
-                attributi: attributi,
-                contorno: 'var(--rup-c)',
-                fondoAlta: 'var(--rup-a)',
-                fondoBassa: t.bassa,
-                spazioDestra: quante ? 16 + 56 * quante : 16,
-                stile: `${variabili} opacity:${opacita}; filter:var(--rup-o);`,
-                // L'altezza minima conta anche lo spazio interno: lo garantisce
-                // il box-sizing:border-box della banda bassa di M.formaBottone
-                // (motore 2026-10-09.6). Fino alla 2026-10-09.5 lo ripetevo
-                // qui, perche` il motore non lo dichiarava e la banda veniva
-                // alta 44 invece di 30.
-                stileBassa: (quante ? `padding-right:${10 + 56 * quante}px; ` : '') + 'min-height:30px;',
-                sopra: immagine + `<div class="rup-icone">${destra}</div>`,
-                alta: `<div class="rup-nome">${nome}</div>`,
-                bassa: alias + (opz.sotto || '')
-            });
+            return `
+                    <button ${opz.id ? `id="${opz.id}" ` : ''}class="huge-btn riga-unita" style="background:${sfondo}; border:${bordo}; opacity:${opacita}; padding:10px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; text-align:left; width:100%; min-height:95px;"
+                        ${opz.attributi || ''}
+                        oncontextmenu="return false;">
+                        <img src="${window.fotoUnita(u)}" alt="" style="width:70px; height:70px; flex-shrink:0; object-fit:contain; margin-right:15px; background: rgba(0,0,0,0.5); border-radius:5px; border: 1px solid #444;" onerror="this.style.display='none';">
+                        <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
+                            <div style="font-size:22px; line-height:1; color:#fff; font-weight:bold;">${nome}</div>
+                            ${alias}
+                            ${opz.sotto || ''}
+                        </div>
+                        <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; max-width:45%;">
+                            ${destra}
+                        </div>
+                    </button>
+                `;
         };
 
         // L'intestazione di un Gruppo di Combattimento dentro un elenco.
@@ -1302,9 +1211,7 @@
                 const pedina = !!u.deployable;
 
                 let opzioni = {
-                    // Scelta per il Coordinato: prima si diceva con un fondo
-                    // rosso scuro fisso, rosso anche per PanOceania.
-                    scelta: !!isSelected,
+                    sfondo: isSelected ? '#440000' : undefined,
                     bordo: isSpearhead ? '2px solid #00ffff' : (isSelected ? '2px solid #ff9900' : '2px solid var(--nomad-red)'),
                     attributi: `onpointerdown="window.avvioPressioneUnita(${originalIndex}, event)"
                         onpointerup="window.finePressioneUnita(${originalIndex}, ${ordinabile.ok})"
@@ -2534,5 +2441,18 @@
         });
         document.addEventListener('pointerdown', requestWakeLock, { once: true });
     </script>
+    <!-- ===================================================================
+         PAGINA DI PROVA ESTETICA (9 ottobre). E` una COPIA di app.html
+         2026-10-09.1 con in piu` SOLO queste righe: carica DOPO tutto il
+         resto le due prove da approvare, il bottone delle armi (chat MOTORE)
+         e il bottone dell'unita` (chat INTERFACCIA). Gli originali non sono
+         toccati: l'app vera resta app.html. Si apre con
+         app_PROVA.html?fazione=nomadi oppure ?fazione=panoceania.
+         Se le prove si approvano, il disegno passa negli originali e questa
+         pagina si butta; se no, si buttano questa pagina e le due prove.
+         =================================================================== -->
+    <div id="striscia-prova" style="position:fixed; top:0; left:0; right:0; z-index:9999; background:#ffcc00; color:#000; font:bold 12px sans-serif; text-align:center; padding:2px 0; pointer-events:none;">PAGINA DI PROVA ESTETICA &mdash; non &egrave; l'app vera</div>
+    <script src="prova_estetica_armi.js"></script>
+    <script src="prova_estetica_unita.js"></script>
 </body>
 </html>

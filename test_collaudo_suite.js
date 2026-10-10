@@ -1,4 +1,8 @@
-// @versione 2026-10-06.1 | test_collaudo_suite.js | proprieta`: chat TEST
+// @versione 2026-10-09.1 | test_collaudo_suite.js | proprieta`: chat TEST
+// 2026-10-09.1: un banco puo` dichiarare prove NON ESEGUITE per una fonte che
+//    non sta nel Project ("N passati, 0 falliti, K non eseguite (fonte
+//    assente: ...)"). Un banco cosi` non e` VUOTO anche con 0 passati: ha
+//    detto cosa non ha fatto e perche`. Vuoto resta chi non dice niente.
 // ================================================================
 // Il banco che guarda gli altri banchi.
 // Nasce dal 26 settembre: test_modulo_piazzamento.js cadeva con un
@@ -34,7 +38,8 @@ const esiti = banchi.map(f => {
           env: Object.assign({}, process.env, { CARTELLA: DIR }) });
     const testo = (r.stdout || '') + (r.stderr || '');
     const m = testo.match(RIEPILOGO);
-    return { f, uscita: r.status, passati: m ? +m[1] : null, falliti: m ? +m[2] : null,
+    const ne = testo.match(/falliti, (\d+) non eseguite \(fonte assente: ([^)]+)\)/);
+    return { f, uscita: r.status, passati: m ? +m[1] : null, falliti: m ? +m[2] : null, nonEseguite: ne ? +ne[1] : 0, fonte: ne ? ne[2] : '',
              ultima: testo.trim().split('\n').slice(-1)[0] || '' };
 });
 ok(banchi.length > 50, `banchi eseguiti: ${banchi.length}`);
@@ -53,7 +58,9 @@ console.log('\n=== 3. Il totale è la somma, e nessun banco è vuoto ===');
 const totale = esiti.reduce((a, e) => a + (e.passati || 0), 0);
 const rossi = esiti.reduce((a, e) => a + (e.falliti || 0), 0);
 ok(totale > 2000, `prove totali: ${totale} (rossi: ${rossi})`);
-const vuoti = esiti.filter(e => e.passati === 0 && e.falliti === 0);
+const vuoti = esiti.filter(e => e.passati === 0 && e.falliti === 0 && !e.nonEseguite);
+const sospesi = esiti.filter(e => e.nonEseguite > 0);
+if (sospesi.length) console.log('  ⏸ non eseguite per fonte assente: ' + sospesi.reduce((a, e) => a + e.nonEseguite, 0) + ' — ' + sospesi.map(e => `${e.f} ${e.nonEseguite} (${e.fonte})`).join(' | '));
 ok(vuoti.length === 0, `nessun banco esegue zero prove (${vuoti.map(e => e.f).join(', ') || 'nessuno'})`);
 
 console.log('\n=== 4. Controprova: il controllo sa accorgersi di un banco muto ===');

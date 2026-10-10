@@ -1,4 +1,4 @@
-// @versione 2026-10-06.2 | test_sei_casi.js | proprieta`: chat TEST
+// @versione 2026-10-09.1 | test_sei_casi.js | proprieta`: chat TEST
 // I SEI CASI CHE NESSUNO AVEVA MISURATO — node test_sei_casi.js
 //
 // Elencati da MOTORE come scoperti il 6 ottobre:
@@ -279,10 +279,15 @@ ok(ing.attributo === 'PH' && ing.base === 11,
    `si tira sul PH della truppa: ${ing.attributo} ${ing.base}`);
 ok(ing.mod === 0 && ing.valore === 11, `nessun MOD: valore ${ing.valore}`);
 const divieti = ing.divieti || [];
-ok(divieti.length === 5,
-   `cinque divieti sul punto di atterraggio (${divieti.length})`);
+// 🔴 GIRATA IL 9 OTTOBRE: erano cinque, ora sono SEI (il sesto e` del Combat
+// Jump, righe 12755-12758). Il conteggio resta, ma accanto alle parole: cosi`
+// un divieto SOSTITUITO da un altro — che lascia il numero fermo — non passa.
+ok(divieti.length === 6,
+   `sei divieti sul punto di atterraggio (${divieti.length})`);
 ok(divieti.some(d => /Prono/.test(d)) && divieti.some(d => /edifici/.test(d)),
    'fra cui il Prono e gli interni degli edifici');
+ok(divieti.some(d => /Combat Jump/i.test(d) && /Visibilit/i.test(d)),
+   `e il sesto: col Combat Jump niente aree a Visibilita` + ` Bassa, Pessima o Zero (${(divieti.find(d => /Combat Jump/i.test(d)) || 'assente').slice(0, 50)})`);
 const cnIng = ing.coperturaNegata || {};
 ok(cnIng.negata === true,
    'e l Ingresso in campo NEGA la Copertura Parziale per tutto l Ordine');

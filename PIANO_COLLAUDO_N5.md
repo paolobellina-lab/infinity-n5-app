@@ -1,8 +1,158 @@
-<!-- @versione 2026-10-08.3 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-10-10.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 16)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 25)
 
-La **revisione 16** aggiunge il **blocco SG** (dieci prove: la Sagoma e i
+La **revisione 25** (10 ottobre) è una revisione di **allineamento**: non aggiunge
+prove — restano **297** — e riporta il piano allo stato dell'app di oggi. Tre
+cose erano diventate false senza che nessun numero cambiasse.
+
+**Voci marcate "da costruire" che sono costruite.** ORD-02 (Cybermask), ORD-03
+(Rientrare in CAMO) e C-03 (Fumo ed Eclipse) portavano ancora l'etichetta e
+l'atteso di quando non esistevano. Sono riscritte sull'app vera, e due attese
+erano sbagliate: alla domanda sulla Linea di Tiro, rispondere **NO non vuol
+dire "non si può dichiarare"** ma **"il requisito non è soddisfatto: Idle, e
+l'Ordine è speso"**; e la voce si chiama `RIENTRARE IN CAMO`, non "in Camuffato".
+
+**Il blocco G dopo la correzione di MOTORE.** `M.haGuidato` legge ora solo la
+Skill (motore 2026-10-09.5), `M.armiGuidate` senza Skill non restituisce armi
+(2026-10-09.6) e il modulo non disegna bottoni (2026-10-09.2). Con questo
+**GUI-02 e GUI-04 non erano più eseguibili** — usavano l'Alguacil, che la Skill
+non ce l'ha — e la controprova di GUI-01 diceva il contrario di quello che
+l'app fa. Rifatte sul **Vertigo Zond** (BS 12): GUI-02 dà **18**, GUI-04 **12**.
+
+**Il roster passa da 43 a 52 righe** (Nomadi 29-37). Nove prove nominavano una
+truppa che non era schierata: cinque del blocco MU lo dicevano con un ⚠️ da
+un giorno, quattro erano fra le "non eseguibili". Sono aggiunte, non sostituite.
+Cercando chi mettere sono uscite **due attese sbagliate del piano**, tutte mie:
+- DET-04 diceva che `Chest Mines` **non è nell'armamento di nessun profilo**.
+  Cercavo il plurale: al singolare, `Chest Mine`, lo portano **8** profili (i
+  Krakot Renegade). Non mancava il dato, mancava la voce di roster.
+- DIS-02 diceva che un'arma **Disposable con `(+1SD)` non esiste**. Cercavo
+  `Panzerfaust (+1SD)`: esiste `Drop Bears (+1SD)`, sullo **Spector**, 4 profili.
+Le "regole senza nessun profilo che possa invocarle" scendono così da quattro
+a **due** — il Cubo di SUP-07 e `Sapper` di LOG-01 — e restano per DATABASE.
+
+**Due difetti dell'app trovati misurando dalla pagina**, segnalati e non corretti:
+- **L'Attacco BS attivo non offre le armi scritte fra gli equipaggiamenti.**
+  `ordine_attacco_bs.js` legge solo il campo `weapon`; le pistole stanno in
+  `equip`. Risultato: **629 profili su 765** hanno almeno un'arma a distanza che
+  in ARO viene offerta (`M.armiARO` legge tutti e due i campi) e nell'Attacco BS
+  attivo no. Il Morlock non può sparare con la Kobra Pistol nel suo turno
+  (MU-21). → MOTORE
+- **PIAZZARE EQUIPAGGIAMENTO è offerto a chi non ha niente da piazzare.** Il
+  menu decide dal nome (cerca `MINE` fra le armi), il motore dai Tratti: al
+  Krakot (Chest Mine) e al Bambabot (Mine Dispenser) la voce compare, la
+  schermata dice *«Questa unità non ha equipaggiamento da piazzare»* — ma
+  l'allarme è già partito e l'Ordine è speso (DET-04). → INTERFACCIA
+
+**Cosa resta non eseguibile, e perché nessun roster può sanarlo:** quattro
+prove, elencate nel blocco DC — metà SUP-07, LOG-01, HK-07 e CO-09 (E44). Per
+tutte la regola è provata nei banchi con un soggetto costruito a mano.
+
+La **revisione 23 allarga il roster di collaudo da 40 a 43 righe** e rende
+eseguibili cinque prove che erano scritte e ferme: **CC-05** (Berserk),
+**DIF-09** (Sesto Senso) e **GUI-01/03/05** (Attacco Guidato). Le tre voci
+nuove sono tutte nomadi — **26 Wolfgang Amadeus**, **27 Warcor (Sixth Sense)**,
+**28 Vertigo Zond (Missile Launcher)** — e sono **aggiunte, non sostituzioni**:
+misurando si è visto che ognuna delle 40 voci era nominata da almeno una prova
+e cinque da una sola, quindi sostituirne una avrebbe tolto il soggetto a quella
+prova. Aggiungere non costa nessuna prova. La revisione corregge anche l'atteso
+di **DIF-09**: il **−3 della Soppressione non è mai stato nella Schivata** di
+chi è soppresso — va a **chi attacca**, e il Sesto Senso non lo tocca. Resta
+non eseguibile metà di **SUP-07**: la parola `Cube` non è in nessuno dei 765
+profili, e **nessuna aggiunta al roster può rimediare** — è una domanda per
+DATABASE. Le prove da completare restano **25**.
+
+La **revisione 24 chiude il blocco DC: le prove con un campo da riempire sono
+0 su 297.** Riempire un campo sembrava lavoro di segreteria e non lo era — per
+sapere quale truppa mettere bisogna chiedere al motore chi può farlo, e la
+risposta ha trovato cose che nessuna prova guardava. **Quattro attese del piano
+erano sbagliate**, tutte mie: **TPL-05** diceva «nessun −3» schivando una
+Sagoma senza LoF (il −3 si applica: confondevo *concessa* con *senza malus*),
+**SW-01** dichiarava 21 contenitori di modalità e un A47 sul Jammer (sono 23, e
+il Jammer non dà più avvisi), **SW-02** quattro filtri invece di cinque, e
+**SW-04** controllava un campo (`sconosciuta`) **che non esiste su nessuna
+notazione** — una spazzata che non poteva stampare niente e il cui "nessuna" era
+vero per il motivo sbagliato. **Un difetto nuovo dell'app**: `M.haGuidato` legge
+l'`ECM (Guided -6)` — la **difesa** contro i Guidati — come la capacità di
+farli, e 27 profili risultano capaci dove 2 lo sono; per 3 di loro l'ordine
+viene **concesso**. Le cinque spazzate del blocco SW non si incollano più in
+console: girano in `test_coerenza_dati.js` sezioni 8-12, +25 prove, ed è proprio
+quello spostamento che ha scoperto tre delle quattro attese sbagliate. **Sette
+prove hanno ora tutti i campi e restano non eseguibili**: tre per una voce di
+roster che manca (LOG-02, metà DIS-02, metà DET-04), quattro perché **il dato
+non c'è in nessuno dei 765 profili** — il Cubo di SUP-07, `Sapper` di LOG-01, un
+Disposable `(+1SD)`, un portatore di `Chest Mines`. Stessa famiglia quattro
+volte: una regola scritta nel catalogo e nel motore, con zero profili che
+possano invocarla. → DATABASE.
+
+La **revisione 22** completa **FT** (4 prove: Fireteam) e **GUI** (3: Attacco
+Guidato): 7 prove, ogni valore misurato col motore **2026-10-09.4**. Ha trovato
+**un difetto aperto** — il **+1 SD del Fireteam di Livello 2** è calcolato da
+`M.bonusFireteam`, scritto nel banner, e **non arriva né al Burst né allo
+scontro**: il meccanismo del dado speciale funziona, manca la fonte Fireteam. E
+ha corretto **tre cose del piano**: la premessa di **GUI-01** (l'Alguacil non ha
+la Skill `BS Attack (Guided)`, come l'Intruder non aveva l'X Visor) con i suoi
+numeri (non 40 e 68 ma **107 e 87** con l'arma, **1 e 1** con la Skill),
+l'atteso di **GUI-05** (contro un Guidato si difendono **Schivata E Reset**, non
+il solo Reset) e quello di **GUI-03**, dove il filtro cambia col ruolo. Le prove
+da completare scendono da 32 a **25**.
+
+La **revisione 21** completa **CC** (6 prove: Arti Marziali, NBW, Colpo di Grazia,
+Ingaggiato, Gang-Up) e **SUP** (6: Dottore, MediKit, GizmoKit, filtro, strumento
+sconosciuto, ri-tiri): 12 prove, ogni valore misurato col motore **2026-10-09.4**.
+Ha trovato **un difetto aperto** — **SUP-05**: il filtro dei bersagli del Supporto
+**non distingue VITA da STR** e non cambia con lo strumento, quindi un Dottore si
+vede offrire un REM, dove il suo fallimento è letale. E ha corretto **CC-02**, che
+il piano aveva calcolato col **PS 8 generico** invece delle notazioni (PS=6) e
+(PS=5) dei profili: cioè col difetto che CC-01 esiste per scoprire. Due prove non
+sono eseguibili con questo roster e lo dicono: **CC-05** (nessuna delle 40 aveva
+Berserk) e metà di **SUP-07** (la parola `Cube` non è in nessuno dei 765 profili).
+Le prove da completare erano scese da 44 a **32**.
+
+La **revisione 20** completa **BS** (8 prove), **HK** (8: Infoguerra) e
+**TER** (8: terreni e visibilità): 24 prove, ogni valore misurato col motore
+**2026-10-09.1**. Tre valori che il piano dichiarava erano sbagliati e sono
+stati corretti: **BS-15** (il Sierra in Total Reaction reagisce col suo HMG a
+Burst **4**, non 3), **BS-25** (l'HMG in ARO è **4**, non 1) e soprattutto
+**TER-04** — il White Noise blocca la Linea di Tiro per **tutti e tre** i
+livelli di Multispectral Visor, mentre il piano aveva copiato lo schema della
+Foresta (dove L2 e L3 passano). Le prove da completare erano scese da 68 a **44**.
+
+La **revisione 19** completa **DIF** (13 prove: Schivata, Reset, Soppressione) e
+**CO** (12 prove: Ordine Coordinato). Tutti i valori che il piano già dichiarava
+sono stati verificati col motore: **tutti combaciavano**, e decodificano un
+reattivo con **WIP 13** — l'Alguacil #1 serve da solo per DIF-01…DIF-08, perché
+è PH 10 e WIP 13. Le prove da completare erano scese da 93 a **68**.
+
+**Due cose non sono eseguibili e lo dicono:** il Sesto Senso (DIF-09) non ce
+l'aveva nessuna delle 40 truppe di allora, e **E44** (CO-09, Regolari con Irregolari) non è
+innescabile perché **nessuno dei 385 profili Nomadi dichiara la Skill
+`IRREGULAR`** — il controllo del motore è giusto, i dati non lo raggiungono.
+
+**Un difetto del motore trovato scrivendo CO-03:** il Leader di un Fireteam che
+è gregario di un Ordine Coordinato dovrebbe avere il **Burst pieno**, e il
+commento del motore lo dichiara; il codice lo porta a 1 come ogni altro
+gregario. Segnalato a MOTORE; la prova resta, perché è quella che lo prende.
+
+La **revisione 18** completa **tutto il blocco MU** (23 prove sulle munizioni):
+ogni prova ha ora l'unità che porta davvero quell'arma, il bersaglio col suo
+numero di schieramento, e l'**atteso misurato** col motore 2026-10-09.1. I
+valori che il piano già dichiarava sono stati **verificati uno per uno**, non
+ricopiati: tutti combaciavano tranne due, corretti (vedi sotto). Le prove da
+completare scendono da 116 a **93**.
+
+**Cinque prove MU chiedono un'arma che nessuna delle 40 truppe schierate
+porta** — T2, E/Mitter, Adhesive Launcher Rifle, Kobra Pistol, K1. Sono
+marcate ⚠️ con il profilo esatto da aggiungere; la Kobra Pistol è una variante
+del Morlock, che è già in lista.
+
+La **revisione 17** corregge la premessa sbagliata di **BS-08** e **BS-09**
+(l'X Visor non ce l'ha l'Intruder: sono rifatte su **Croc Man**, con i valori
+misurati) e aggiunge **BS-26** come controprova. Il roster dice ora
+**Intruder (MULTI Sniper Rifle)**, il nome vero del database.
+
+La **revisione 16** aveva aggiunto il **blocco SG** (dieci prove: la Sagoma e i
 tuoi alleati — la domanda nuova, il colpo annullato per tutti, il Fumo che non
 si annulla mai, il secondario che ora arriva sul tabellone).
 
@@ -13,7 +163,7 @@ partecipanti).
 La **revisione 14** aveva aggiunto il **blocco SP** e **corretto la
 convenzione 4**, che diceva una cosa sbagliata e bloccava il tavolo.
 
-Sostituisce la revisione 13 dell'8 ottobre. **296 prove, tutte nello stesso
+Sostituisce la revisione 13 dell'8 ottobre. **297 prove, tutte nello stesso
 format**: si eseguono dall'app, una per una, senza dover andare a
 cercare un'altra prova per capire cosa fare.
 
@@ -23,7 +173,7 @@ campo da completare, non un difetto dell'app.
 
 # 0. Quello che è cambiato dalla revisione 12
 
-**Ogni prova è riscritta nel format dichiarato dal piano stesso**, tutte e 296, nelle stesse
+**Ogni prova è riscritta nel format dichiarato dal piano stesso**, tutte e 297, nelle stesse
 cinque righe: Attivo, Con, Bersaglio, ARO, Atteso. Prima erano scritte in modi
 diversi — alcune su quattro righe, altre tutto su una — e **42 ereditavano
 dalla precedente** ("Come BS-01 ma l'ARO bersaglia un'altra unità"): quelle
@@ -40,11 +190,14 @@ ER-01…22, MU-01…14 e TER-01…08 erano righe di tabella senza i campi: ora s
 dichiarazione sola, copertura non scritta = da decidere al tavolo,
 `ARO: nessuno` = il reattivo c'è ma non dichiara niente.
 
-**Quello che manca è dichiarato, non riempito a caso.** 118 prove hanno un
-campo che il piano non dice: sono marcate **DA COMPLETARE** dentro la prova,
-e l'elenco sta nel **blocco DC** in fondo. Lì ci sono anche le due prove non
-eseguibili così come sono (SW-03 senza Atteso, TPL-04 senza il valore del
-reattivo) e quattro contraddizioni interne da decidere.
+**Nessun campo è più lasciato in bianco, e nessuno è stato riempito a caso.**
+Il 9 ottobre sera l'ultimo dei 135 campi muti è stato riempito: ogni soggetto
+è una voce vera del roster, verificata nel database con il requisito che la
+prova chiede, e ogni numero atteso è stato misurato sul motore di oggi. Il
+**blocco DC** in fondo non elenca più i buchi — racconta cosa è venuto fuori
+riempiendoli: quattro attese del piano sbagliate, un difetto nuovo dell'app, e
+sette prove che hanno tutti i campi e restano non eseguibili perché il dato o
+la truppa non esistono.
 
 **Una prova aveva il valore sbagliato.** SPEC-02 chiedeva **18**, cioè il −6
 che salta contro un bersaglio Bersagliato: è la regola **N4**. Misurato col
@@ -60,10 +213,11 @@ stessa ricerca sul database.
 **Cinque codici erano doppi.** `DIS-01…DIS-05` identificava due gruppi di
 prove diversi, nel blocco J (Scoprire) e nel blocco 23-bis (Disposable):
 dieci prove, cinque codici. Le cinque dello Scoprire sono ora
-**SCO-01…SCO-05**. Adesso i codici sono tutti univoci: alla revisione 16 sono 296.
+**SCO-01…SCO-05**. Adesso i codici sono tutti univoci: alla revisione 17 sono 297.
 
-**Resta aperto un difetto solo**, il Burst della Soppressione in reazione
-(BS-12 / D-02).
+**I difetti aperti e segnalati sono dodici**, e stanno tutti insieme nel
+**blocco V**, ognuno con la prova che lo mostra e con la data della misura.
+Uno è stato chiuso il 9 ottobre sera (`M.haGuidato`).
 
 # 0-bis. Come si legge una prova
 
@@ -80,7 +234,7 @@ Senza ARO il reattivo dichiara **Nessun ARO** e il confronto deve uscire
 **TIRO NORMALE**. Le bande si contano dal Weapon Chart, otto pollici l'una:
 banda 0 = 0-8", banda 1 = 8-16", banda 2 = 16-24", e così via.
 
-## Quattro convenzioni, per non ripetere la stessa riga 296 volte
+## Quattro convenzioni, per non ripetere la stessa riga 297 volte
 
 Valgono per **tutte** le prove, e sono la ragione per cui i cinque campi sono
 spesso più corti del format completo:
@@ -107,10 +261,11 @@ spesso più corti del format completo:
    l'attivo, che senza risposta resta fermo perché lo sblocco parte solo da
    lì. Dato misurato dalla chat INTERFACCIA sui tre dispositivi.
 
-Dove invece manca un dato che nessuna convenzione può sostituire — quale
-unità usare, quale arma, quale banda — c'è scritto **DA COMPLETARE** o
-**non detta**. Sono buchi veri del piano, non abbreviazioni: l'elenco
-completo sta in fondo, nel **blocco DC**.
+Dove un dato resta indicato come **non detta** — tipicamente la copertura o la
+banda — è una delle convenzioni di sopra, non un buco: si decide al tavolo e
+non cambia il numero atteso. I buchi veri, quelli dove il numero *dipendeva*
+dalla scelta, sono stati chiusi uno per uno: cosa è venuto fuori a chiuderli
+sta nel **blocco DC** in fondo.
 
 ## I numeri, e da dove vengono
 
@@ -119,9 +274,12 @@ prova dà un numero diverso da quello scritto qui, guarda prima la scheda
 ufficiale — il piano invecchia insieme ai dati.
 
 Le prove si eseguono **dall'app**. Tutto ciò che si poteva verificare col
-motore è **verde**: **93 file di test, 4111 prove, 0 falliti**, nessun banco
+motore è **verde**: **96 file di test, 4491 prove, 0 falliti** con le fonti in
+cartella; **4471 passati e 20 non eseguite** come sta oggi il Project, dove
+`501.json`, `101.json` e `REGOLE_N5_v5_1_1.txt` non ci sono più (le prove che li
+leggono sono contate a parte e nominate, né rosse né verdi). Nessun banco
 muto, banco di confronto a zero divergenze (354 scontri identici, 294 attese,
-uscita 0). La cartella è allineata su tutte e tre le chat.
+uscita 0). Misura del 10 ottobre: sta in `CONTEGGIO_TEST_10ott.txt`.
 
 🔴 **Il numero delle prove di questo piano non si cambia più a mano.**
 `test_piano_schieramento.js` le conta nel testo e pretende che i cinque punti
@@ -132,15 +290,21 @@ sbagliati, fra cui un "135 prove su 277" che non era mai stato giusto.
 Il conto della **suite** qui sopra resta invece una misura del momento, come
 un'impronta: va riletto a ogni giro.
 
-I valori attesi sono calcolati con `motore_regole_n5.js` **2026-10-08.9,
-impronta `f55db800.690577`**, `catalogo_n5.js` **2026-10-07.3, impronta
-`40d0a9f7.195688`**, `motore_core.js` **2026-10-07.1, impronta
-`8e76e8a1.39346`** e `calcolatore_math.js` **2026-10-07.4, impronta
-`afb03fe9.18214`**, sui profili veri. Dei file di INTERFACCIA: `app.html`
-**2026-10-07.5**, `logica_aro.js` **2026-10-07.2**, `calcolatore_controller.js`
-e `calcolatore_hub.html` **2026-10-07.1**. Le regole citate rimandano a
-`REGOLE_N5_v5_1_1.txt` (impronta `5ea7581f.904498`, 17029 righe), con
-`grep -n`.
+I valori attesi sono stati calcolati, blocco per blocco, col motore del giorno
+in cui il blocco è stato completato (dal **2026-10-09.1** al **2026-10-09.4**:
+lo dice ogni revisione, in testa). Quelli toccati dalla revisione 25 — GUI-01,
+GUI-02, GUI-04, LOG-02, DIS-02, DET-04, ORD-02, ORD-03, C-03 e le cinque MU
+con la truppa nuova — sono **rimisurati** con `motore_regole_n5.js`
+**2026-10-09.6, impronta `a406fef4.705879`**, `catalogo_n5.js` **2026-10-09.3,
+impronta `c310f11a.197821`**, `motore_core.js` **2026-10-09.1, impronta
+`563a26c8.39990`** e `calcolatore_math.js` **2026-10-07.4, impronta
+`afb03fe9.18214`**, sui profili veri. Gli altri **non** sono stati rimisurati
+uno per uno col motore di oggi: li tiene la suite, che con questo motore è
+verde. Dei file di INTERFACCIA: `app.html` **2026-10-09.6**, `logica_aro.js`
+**2026-10-09.2**, `calcolatore_controller.js` e `calcolatore_hub.html`
+**2026-10-07.1**. Le regole citate rimandano a `REGOLE_N5_v5_1_1.txt`
+(impronta `5ea7581f.904498`, 17029 righe), con `grep -n` — il file non è più
+nel Project: lo allega Paolo quando serve.
 
 Il conteggio dei banchi si legge così: **un file, una riga di riepilogo**, e
 si somma su tutti i file `test_*.js`, `test_collaudo_suite.js` compreso.
@@ -152,21 +316,23 @@ si somma su tutti i file `test_*.js`, `test_collaudo_suite.js` compreso.
 
 ## 1.1 Roster
 
-**Nomadi** — Sessione A i primi dieci, Sessione B gli altri. Nessuna prova
+**Nomadi** — Sessione A i primi dieci, Sessione B gli altri. Le voci **26-28** sono
+le tre aggiunte del 9 ottobre sera, le voci **29-37** le nove del 10 ottobre:
+ognuna per una prova che senza di lei non era eseguibile. Nessuna prova
 salta fra le due.
 
 | # | Profilo | Serve per |
 |---|---|---|
 | 1 | Alguacil (Combi Rifle) | BS base, gittate, contratto |
 | 2 | Alguacil (HMG) | bande negative, Burst 4, Coordinato |
-| 3 | Alguacil (Missile Launcher) | Sagoma a Impatto, EXP, **Guidato** |
+| 3 | Alguacil (Missile Launcher) | Sagoma a Impatto, EXP; **controprova del Guidato** (ha l'arma, non la Skill) |
 | 4 | Alguacil (Forward Observer) | Flash Pulse, Stato Bersagliato |
 | 5 | Alguacil (Paramedic) | MediKit |
 | 6 | Daktari (Doctor) | Dottore |
 | 7 | Clockmaker (Engineer) | Ingegnere, GizmoKit(+1B) |
 | 8 | Interventor (Hacker Plus) | Carbonite, Oblivion, Spotlight, Total Control |
 | 9 | Zero (Hacker, Killer Hacking Device) | Trinity, Camo, mine |
-| 10 | Intruder (X Visor) | MSV L2 + X Visor, Surprise Attack |
+| 10 | Intruder (MULTI Sniper Rifle) | MSV L2, Surprise Attack |
 | 11 | Grenzer (Marksmanship) | Marksmanship |
 | 12 | Grenzer (Forward Observer, Sensor, NCO) | MSV L1, **le tre osservazioni** |
 | 13 | Morlock (Assault Pistol) | Martial Arts L2, Chain Rifle, **No Cover** |
@@ -182,6 +348,18 @@ salta fra le due.
 | 23 | **Kulak (Hacker, Killer Hacking Device)** | **Disco Baller** → Disco Ball, Cybermine 3/3 |
 | 24 | **Intruder (HMG)** | **BS-07**: MSV L2 annulla il Mimetismo −6, Burst 4 |
 | 25 | **Intruder (Hacker, Killer Hacking Device)** | **blocco F**: è il solo del roster con le **Grenades** (Fuoco Speculativo) |
+| 26 | **Wolfgang Amadeus** | **CC-05**: è il solo del roster col **Berserk** (+3). Porta anche Martial Arts L3 e Frenzy |
+| 27 | **Warcor (Sixth Sense)** | **DIF-09**: è il solo del roster col **Sesto Senso**. PH 11, come il piano già dichiarava |
+| 28 | **Vertigo Zond (Missile Launcher)** | **GUI-01/03/05**: è il solo nomade con la Skill **BS Attack (Guided)** (uno dei due in 765 profili) |
+| 29 | **Spector (Parachutist, Combat Jump)** | **LOG-02**: Schieramento Aereo, PH 13. **DIS-02**: `Drop Bears (+1SD)`, l'unico Disposable col dado speciale |
+| 30 | **Triphammer (Heavy Shotgun, Heavy Rocket Launcher, Panzerfaust)** | **DIS-02**: è il solo con un `Panzerfaust (+1B)`. TAG, BS 13 |
+| 31 | **Krakot Renegade (Boarding Shotgun)** | **DET-04**: porta il `Chest Mine`, che non si piazza e non detona |
+| 32 | **Bambabot-1 (Chain Rifle (ps=6))** | **DET-04**: porta il `Mine Dispenser (AP)`, che non si piazza e non detona |
+| 33 | **Saito Togan (T2 Boarding Shotgun)** | **MU-07**: munizione T2 |
+| 34 | **Go-Pod (MULTI Rifle)** | **MU-08**: porta l'E/Mitter |
+| 35 | **Racerbot Mk-I (Adhesive Launcher Rifle)** | **MU-10**: Adhesive Launcher Rifle |
+| 36 | **Morlock (Kobra Pistol, DA CC)** | **MU-21**: Kobra Pistol, le due modalità |
+| 37 | **Hawkwood (K1 Sniper Rifle)** | **MU-23**: ARM = 0 |
 
 **PanOceania**
 
@@ -261,11 +439,11 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 - **Atteso:** nessun calcolo, ordine intero consumato, **ARO generato**.
 
 **A-02 — Movimento + attacco**
-- **Attivo:** — *(il piano non dice l'unità né lo stato)* · MUOVERE → ATTACCO BS
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**
+- **Attivo:** Alguacil (Combi Rifle) (Normale) · MUOVERE → ATTACCO BS
+- **Con:** Combi Rifle
+- **Bersaglio:** Fusilier (Combi Rifle) @ banda 2 (8-16"), **senza** copertura
 - **ARO:** nessuno
-- **Atteso:** la prima metà non chiede nulla, il calcolo parte sulla seconda.
+- **Atteso:** la prima metà non chiede nulla, il calcolo parte sulla seconda: **BS 14** (11 + 3 di gittata, banda 8-16" del Combi) **B3**, e salvezza del Fusilier **ARM VS 8** (ARM 1 + PS 7), un dado, una Ferita. I numeri sono quelli di A-01 più l'attacco: se la prima metà chiedesse qualcosa, o il calcolo partisse sulla prima, si vede subito.
 
 **A-03 — Cauto: la domanda viene prima** *(risolto, da confermare)*
 - **Attivo:** — *(il piano non dice l'unità né lo stato)* · MOVIMENTO CAUTO
@@ -338,11 +516,11 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 - **Atteso:** **un solo scontro**, FACCIA A FACCIA. Attivo BS 11 +3 = **14** B3. Reattivo BS 12 +3 = **15** B1. Salvezza Fusilier ARM **VS 8** ×1; salvezza Alguacil ARM **VS 8** ×1. Se ne compaiono **due**, ognuno con un Tiro Normale, è un difetto: la reazione non si è accoppiata con l'attacco.
 
 **BS-02 — Reazione contro un altro**
-- **Attivo:** Alguacil (Combi Rifle)
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)*
 - **Con:** Combi Rifle
-- **Bersaglio:** Fusilier @ banda 0, senza copertura
-- **ARO:** Fusilier → ATTACCO BS, Combi Rifle, banda 0, contro un'unità diversa dall'Alguacil — quale unità, **DA COMPLETARE**
-- **Atteso:** **TIRO NORMALE**, "La reazione non è diretta contro l'attaccante." Stessi valori di tiro: attivo BS 11 +3 = **14** B3, reattivo BS 12 +3 = **15** B1; salvezza Fusilier ARM **VS 8** ×1.
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* @ banda 0, senza copertura
+- **ARO:** Fusilier (Combi Rifle) → ATTACCO BS, Combi Rifle, banda 0, **contro Alguacil (HMG)** *(Nomadi #2)* — un'unità diversa da chi lo sta attaccando
+- **Atteso:** **TIRO NORMALE**, con la nota *«La reazione non è diretta contro l'attaccante»*. I valori restano quelli: attivo BS 11 +3 = **14** B3, reattivo BS 12 +3 = **15** B1; salvezza del Fusilier **ARM VS 8 ×1**. Se esce un Faccia a Faccia, il motore sta accoppiando due tiri che non si affrontano.
 
 **BS-03 — Gittata negativa e copertura, contro Schivata**
 - **Attivo:** Alguacil (Combi Rifle)
@@ -379,19 +557,34 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 - **ARO:** nessuno
 - **Atteso:** BS 13 **+3** di gittata **−3** di copertura = **13**, Burst **4**, e nel dettaglio la nota *"Multispectral Visor L2+: il Mimetismo (−6) non si applica"*. Se leggi **7** il visore non sta funzionando.
 
-**BS-08 — X-Visor su banda negativa**
-- **Attivo:** Intruder (X Visor)
-- **Con:** MULTI Sniper AP
-- **Bersaglio:** **DA COMPLETARE** @ **banda 0 (−3)**, copertura **non detta**
+**BS-08 — X Visor su banda negativa**
+- **Attivo:** Croc Man (MULTI Sniper Rifle) *(PanOceania #6, BS 12, porta l'X Visor)*
+- **Con:** MULTI Sniper Rifle (AP Mode), Burst 2
+- **Bersaglio:** Alguacil (Combi Rifle) @ **banda 0 (0-8")**, copertura **no**
 - **ARO:** nessuno
-- **Atteso:** gittata **0**, totale **13**. Se leggi 10 l'X-Visor non si applica.
+- **Atteso:** la voce della **gittata non compare** e il totale è **12** (il BS pieno). Se leggi **9** l'X Visor non si sta applicando: quella banda vale −3 per tutti gli altri.
 
-**BS-09 — X-Visor non crea bonus**
-- **Attivo:** Intruder (X Visor)
-- **Con:** MULTI Sniper AP
-- **Bersaglio:** **DA COMPLETARE** @ banda 6 (−3), copertura **non detta**
+**BS-09 — L'X Visor cancella il malus, non crea un bonus**
+- **Attivo:** Croc Man (MULTI Sniper Rifle) *(PanOceania #6)*
+- **Con:** MULTI Sniper Rifle (AP Mode), Burst 2
+- **Bersaglio:** Alguacil (Combi Rifle) @ **banda 6 (48-56")**, copertura **no**
 - **ARO:** nessuno
-- **Atteso:** gittata **0**, mai +3.
+- **Atteso:** totale **12**, non 15. L'X Visor porta a zero le bande negative; **non** le trasforma in +3. Alle bande **2-5** il +3 vero resta e il totale è **15**: provale per vedere la differenza.
+
+**BS-26 — Controprova: senza X Visor la stessa banda vale −3**
+- **Attivo:** Nisse (Heavy Machine Gun) *(PanOceania #5, NON porta l'X Visor)*
+- **Con:** Heavy Machine Gun
+- **Bersaglio:** Alguacil (Combi Rifle) @ **banda 0 (0-8")**, copertura **no**
+- **ARO:** nessuno
+- **Atteso:** la voce **"Gittata: −3"** compare, e il totale è il BS **meno 3**. Senza questa prova, "l'X Visor funziona" non si distingue da "quella banda non ha malus per nessuno."
+
+🔴 **Premessa corretta il 9 ottobre.** Fino alla revisione 16 queste due prove
+dicevano *Intruder (X Visor)*. Quel profilo non esiste: nell'N5 ufficiale
+l'Intruder col MULTI Sniper Rifle porta **solo** il Multispectral Visor L2, e
+il motore fa bene a leggere 10 (BS 13 − 3). Nel roster l'X Visor ce l'hanno
+**Croc Man (MULTI Sniper Rifle)** e **Dr. Harper FTO**, entrambi PanOceania e
+già schierati: le prove sono rifatte su Croc Man. I valori sopra sono
+**misurati** col motore 2026-10-09.1, non dedotti.
 
 **BS-10 — Marksmanship ignora la copertura**
 - **Attivo:** Grenzer (Marksmanship)
@@ -422,29 +615,29 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 - **Atteso:** il −3 **non** si applica.
 
 **BS-14 — Attaccante Stordito**
-- **Attivo:** unità **DA COMPLETARE**, **Stordito** · apri il menu degli Ordini
-- **Atteso:** ATTACCO BS **non compare** nel menu.
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)*, stato **Stordito** · apri il menu degli Ordini
+- **Atteso:** **ATTACCO BS non compare** nel menu. Chiedendolo a forza, il motivo è *«Stato Stordito: ATTACCO BS non è permessa»*. Lo stesso Alguacil senza lo stato ha l'ATTACCO BS disponibile: è la controprova da fare subito prima.
 
 **BS-15 — Total Reaction**
-- **Attivo:** **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**
-- **ARO:** Sierra Dronbot (Total Reaction) → azione, arma, banda e bersaglio dell'ARO **DA COMPLETARE**
-- **Atteso:** **Burst 3**, con la voce.
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* · dichiara **MOVIMENTO**
+- **Con:** —
+- **Bersaglio:** —
+- **ARO:** Sierra Dronbot (Heavy Machine Gun) *(PanOceania #9, Total Reaction)* → **ATTACCO BS**, Heavy Machine Gun, banda 1, contro l'Alguacil
+- **Atteso:** Burst **4** — il Burst **pieno dell'arma** — con le due voci *«In Turno Reattivo il Burst è 1»* e *«Total Reaction: Burst pieno dell'arma in ARO»*. L'HMG ha Burst 4: con un'arma a Burst 3 leggeresti 3. **Controprova:** l'Alguacil con la stessa HMG in ARO resta a **1**.
 
 **BS-16 — ARO normale e il (+1B) che non vale in reazione**
-- **Attivo:** **Puppetbot (Red Fury)** — o un altro dei 25 profili con *BS Attack (+1B)*
-- **Con:** Red Fury
-- **Bersaglio:** **DA COMPLETARE**
-- **ARO:** qualunque **Fusilier** → ATTACCO BS, arma, banda e bersaglio dell'ARO **DA COMPLETARE**
-- **Atteso:** il Fusilier in ARO ha **Burst 1**. Il Fusiliere **non ha** il (+1B) in nessuno dei suoi dieci profili, quindi la nota si vede solo con un profilo che ha davvero *BS Attack (+1B)*: in attivo il Burst **sale**, **in ARO no**, con la nota che lo dice.
+- **Attivo:** Fusilier (Combi Rifle) *(PanOceania #1)* · dichiara **MOVIMENTO**
+- **Con:** —
+- **Bersaglio:** —
+- **ARO:** Puppetbot (Red Fury) *(Nomadi #17, ha BS Attack (+1B))* → **ATTACCO BS**, Red Fury, banda 1, contro il Fusilier
+- **Atteso:** in ARO il Puppetbot ha **Burst 1**, con la sola voce *«In Turno Reattivo il Burst è 1»*: il **(+1B) non compare**. Lo stesso Puppetbot in **attivo** ha Burst **5** (vedi BS-17). La differenza fra i due numeri è la prova: il (+1B) vale solo in Turno Attivo. Un Fusilier in ARO ha Burst 1 anche lui, ma per un altro motivo — non ha il (+1B) in nessuno dei suoi profili, quindi su di lui la regola non si vede.
 
 **BS-17 — BS Attack (+1B) solo in attivo**
-- **Attivo:** Puppetbot
-- **Con:** Red Fury
-- **Bersaglio:** **DA COMPLETARE** @ banda 1, copertura **non detta**
+- **Attivo:** Puppetbot (Red Fury) *(Nomadi #17)*
+- **Con:** Red Fury *(Burst 4)*
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* @ banda 1, copertura **no**
 - **ARO:** nessuno
-- **Atteso:** **Burst 5**, tiro **15**. Lo stesso Puppetbot in ARO: Burst **1**.
+- **Atteso:** Burst **5** — 4 dell'arma **+1** dalla Skill, con le voci *«Burst dell'arma Red Fury»* e *«BS Attack (+1B): +1 Burst in Turno Attivo»* — e tiro **15**. Lo stesso Puppetbot in ARO: Burst **1** (BS-16).
 
 **BS-18 — Burst su due bersagli**
 - **Attivo:** Alguacil (HMG)
@@ -461,11 +654,11 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 - **Atteso:** attivo **10** B4, reattivo **11** B1, salvezza Orc **VS 9**, salvezza Brigada **VS 10**.
 
 **BS-20 — Tiro dentro una mischia**
-- **Attivo:** **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** un bersaglio **ingaggiato in mischia** con un'altra truppa — quali unità, **DA COMPLETARE** @ banda — , copertura **non detta**
+- **Attivo:** Intruder (HMG) *(Nomadi #24, BS 13)*
+- **Con:** Heavy Machine Gun
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)*, **Ingaggiato** in mischia con **un tuo alleato** @ banda **2 (16-24")**, copertura **no**. Alla domanda «quanti TUOI alleati in quella mischia» rispondi **1**
 - **ARO:** nessuno
-- **Atteso:** fra i modificatori compare la voce **−6**.
+- **Atteso:** tiro **10** = BS 13 **+3** di gittata **−6** della mischia, con le due voci *«Gittata: +3»* e *«Tiro dentro una mischia: −6»*. Con **2** alleati la voce diventa −12 e il totale si ferma a 0 (vedi SG-02).
 
 **BS-21 — Limite dei MOD**
 - **Attivo:** **Alguacil (Combi Rifle)**, BS 11
@@ -489,18 +682,18 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 - **Atteso:** cade **solo** il −3 all'attaccante, il +3 all'ARM resta (p.98) → tiro **14**, salvezza **VS 13**. Nell'elenco MOD non deve comparire la copertura; nel Tiro Salvezza sì.
 
 **BS-24 — Combat Instinct** *(risolto, da confermare)*
-- **Attivo:** Intruder **in Camo**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** Squalo Mk-II @ banda — , copertura **non detta**
-- **ARO:** Squalo Mk-II (Combat Instinct) → ATTACCO BS, arma e banda **non detta**, contro l'Intruder
-- **Atteso:** lo Squalo **non** prende il −3 di Attacco a Sorpresa (p.88); il −3 di Mimetismo resta. Nell'elenco del reattivo devono comparire gittata e mimetismo, e nient'altro.
+- **Attivo:** Intruder (HMG) *(Nomadi #24)*, **in Camo**, con **Mimetism (−3)** e **Surprise Attack (−3)**
+- **Con:** Heavy Machine Gun
+- **Bersaglio:** Squalo Mk-II (MULTI Marksman Rifle) *(PanOceania #12, BS 15, Combat Instinct)* @ banda **2**, copertura **no**
+- **ARO:** Squalo Mk-II → **ATTACCO BS**, MULTI Marksman Rifle (AP Mode), banda 2, contro l'Intruder
+- **Atteso:** lo Squalo tira a **15** = BS 15 **+3** di gittata **−3** di Mimetismo. Nell'elenco del reattivo ci devono essere **esattamente due voci**, *«Gittata: +3»* e *«Mimetismo del bersaglio: −3»*, **e nient'altro**: il **−3 di Attacco a Sorpresa non c'è** (p.88), perché il Combat Instinct lo annulla. Il Mimetismo **resta**: Combat Instinct non è immunità a tutto. Se vedi tre voci, la Skill non si applica.
 
 **BS-25 — Neurocinetics** *(risolto, da confermare)*
-- **Attivo:** Sin-Eater, in attivo contro un singolo bersaglio
-- **Con:** Mk12, poi MULTI Sniper, poi HMG
-- **Bersaglio:** un singolo bersaglio — quale unità, **DA COMPLETARE** @ banda — , copertura **non detta**
-- **ARO:** Sin-Eater → ATTACCO BS contro un singolo bersaglio, Mk12 / MULTI Sniper / HMG, banda e attaccante **DA COMPLETARE**
-- **Atteso:** (regolamento p.102) Burst **1 in attivo** e **Burst pieno in reazione** — **3** col Mk12, **2** col MULTI Sniper, **4** con l'HMG. Controprova: un Alguacil con la stessa HMG resta a **1**. Se in ARO vedi 1 col Mk12, è un difetto.
+- **Attivo:** Sin-Eater (MULTI Sniper Rifle) *(Nomadi #20, Neurocinetics)*, in attivo contro un singolo bersaglio
+- **Con:** Mk12, poi MULTI Sniper Rifle (AP Mode), poi Heavy Machine Gun
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* @ banda **2**, copertura **no**
+- **ARO:** lo stesso Sin-Eater → ATTACCO BS contro un singolo bersaglio, con la stessa arma, banda 2, contro l'Alguacil (Combi Rifle) #1 che si muove
+- **Atteso:** (regolamento p.102) Burst **1 in attivo** con tutte e tre le armi, e **Burst pieno in reazione** — **3** col Mk12, **2** col MULTI Sniper (AP Mode), **4** con l'HMG — con la voce *«Neurocinetics: Burst pieno dell'arma in ARO»*. **Controprova:** un Alguacil con la stessa HMG in ARO resta a **1**. Se in ARO vedi 1 col Mk12, è un difetto.
 
 ---
 
@@ -511,161 +704,166 @@ dell'arma; si tira 1d20 e serve **uguale o meno**. Bersagli: **Fusilier**
 (ARM 1, BTS 0, PH 10) e **Orc** (ARM 4, BTS 3, PH 14).
 
 **MU-01 — Combi Rifle (N)**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)*
 - **Con:** Combi Rifle, munizione **N**
 - **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
 - **ARO:** nessuno
 - **Atteso:** vs Fusilier **ARM VS 8 ×1**; vs Orc **ARM VS 11 ×1**. Da controllare oltre al numero: Critico = 1 salvezza extra.
 
 **MU-02 — AP Submachine Gun (AP)**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Intruder (Hacker, Killer Hacking Device) *(Nomadi #25, porta l'AP Submachine Gun)*
 - **Con:** AP Submachine Gun, munizione **AP**
 - **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
 - **ARO:** nessuno
 - **Atteso:** vs Fusilier **ARM VS 8 ×1**; vs Orc **ARM VS 9 ×1**. Da controllare oltre al numero: l'ARM dell'Orc dimezzato.
 
 **MU-03 — Missile Launcher (Blast) (EXP)**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Alguacil (Missile Launcher) *(Nomadi #3)*
 - **Con:** Missile Launcher, **Blast Mode**, munizione **EXP**
 - **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
 - **ARO:** nessuno
 - **Atteso:** vs Fusilier **ARM VS 7 ×3**; vs Orc **ARM VS 10 ×3**. Da controllare oltre al numero: tutte e 3 obbligatorie.
 
 **MU-04 — Missile Launcher (Hit) (AP+EXP)**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Alguacil (Missile Launcher) *(Nomadi #3)*
 - **Con:** Missile Launcher, **Hit Mode**, munizione **AP+EXP**
 - **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
 - **ARO:** nessuno
 - **Atteso:** vs Fusilier **ARM VS 7 ×3**; vs Orc **ARM VS 8 ×3**. Da controllare oltre al numero: dimezza **e** 3 tiri.
 
 **MU-05 — Red Fury (SHOCK)**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Puppetbot (Red Fury) *(Nomadi #17)*
 - **Con:** Red Fury, munizione **SHOCK**
 - **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
 - **ARO:** nessuno
 - **Atteso:** vs Fusilier **ARM VS 8 ×1**; vs Orc **ARM VS 11 ×1**. Da controllare oltre al numero: VITA 1 + Incosciente → **Morto**; annulla Dogged/NWI.
 
 **MU-06 — DA CC Weapon (DA)**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Teutonic Knight (TinBot: Firewall) *(PanOceania #7 — questa la tira l'avversario)*
 - **Con:** DA CC Weapon, munizione **DA**
 - **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
 - **ARO:** nessuno
 - **Atteso:** vs Fusilier **ARM VS 9 ×2**; vs Orc **ARM VS 12 ×2**. Da controllare oltre al numero: entrambe obbligatorie.
 
 **MU-07 — T2 Boarding Shotgun (T2)**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Saito Togan (T2 Boarding Shotgun) *(Nomadi #33, aggiunto il 10 ottobre)*
 - **Con:** T2 Boarding Shotgun, munizione **T2**
-- **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
+- **Bersaglio:** (a) **Fusilier (Combi Rifle)** *(PanOceania #1,* ARM 1, BTS 0, PH 10), copertura no; (b) **Orc (Hacker, Hacking Device)** *(PanOceania #4,* ARM 4, BTS 3, PH 14), copertura no
 - **ARO:** nessuno
 - **Atteso:** vs Fusilier **ARM VS 7 ×1**; vs Orc **ARM VS 10 ×1**. Da controllare oltre al numero: ogni fallimento = **2 Ferite**.
 
 **MU-08 — E/Mitter (E/M)**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Go-Pod (MULTI Rifle) *(Nomadi #34, aggiunto il 10 ottobre: porta MULTI Rifle ed E/Mitter)*
 - **Con:** E/Mitter, munizione **E/M**
-- **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
+- **Bersaglio:** (a) **Fusilier (Combi Rifle)** *(PanOceania #1)*, copertura no; (b) **Orc (Hacker, Hacking Device)** *(PanOceania #4)*, copertura no
 - **ARO:** nessuno
 - **Atteso:** vs Fusilier **BTS VS 7 ×2**; vs Orc **BTS VS 9 ×2**. Da controllare oltre al numero: BTS dimezzato, fallimento = Isolato.
 
 **MU-09 — PARA CC Weapon (PARA)**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Reaktion Zond (HMG) *(Nomadi #15, porta la PARA CC Weapon)*
 - **Con:** PARA CC Weapon, munizione **PARA**
 - **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
 - **ARO:** nessuno
 - **Atteso:** vs Fusilier **PH VS 4 ×1**; vs Orc **PH VS 8 ×1**. Da controllare oltre al numero: è PH−6, non ARM/BTS. Nessuna Ferita, IMM-A.
 
 **MU-10 — Adhesive Launcher Rifle**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Racerbot Mk-I (Adhesive Launcher Rifle) *(Nomadi #35, aggiunto il 10 ottobre)*
 - **Con:** Adhesive Launcher Rifle
-- **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
+- **Bersaglio:** (a) **Fusilier (Combi Rifle)** *(PanOceania #1)*, copertura no; (b) **Orc (Hacker, Hacking Device)** *(PanOceania #4)*, copertura no
 - **ARO:** nessuno
 - **Atteso:** vs Fusilier **PH VS 4 ×1**; vs Orc **PH VS 8 ×1**. Da controllare oltre al numero: è PH−6, non ARM/BTS; nessuna Ferita, IMM-A; ma con gittate.
 
 **MU-11 — Flash Pulse (STUN)**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Alguacil (Forward Observer) *(Nomadi #4)*
 - **Con:** Flash Pulse, munizione **STUN**
 - **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
 - **ARO:** nessuno
 - **Atteso:** vs Fusilier **BTS VS 7 ×1**; vs Orc **BTS VS 10 ×1**. Da controllare oltre al numero: l'attributo BTS viene dall'arma.
 
 **MU-12 — Nanopulser**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Chimera *(Nomadi #14)*
 - **Con:** Nanopulser
 - **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
 - **ARO:** nessuno
 - **Atteso:** vs Fusilier **BTS VS 7 ×1**; vs Orc **BTS VS 10 ×1**. Da controllare oltre al numero: l'arma sovrascrive la munizione.
 
 **MU-13 — Smoke Grenades**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Morlock (Assault Pistol) *(Nomadi #13, porta le Smoke Grenades)*
 - **Con:** Smoke Grenades
 - **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
 - **ARO:** nessuno
 - **Atteso:** **nessuna** salvezza vs Fusilier e **nessuna** vs Orc. Da controllare oltre al numero: "azione non offensiva".
 
 **MU-14 — Panzerfaust (AP+EXP)**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Teutonic Knight (TinBot: Firewall) *(PanOceania #7, porta il Panzerfaust)*
 - **Con:** Panzerfaust, munizione **AP+EXP**
 - **Bersaglio:** (a) **Fusilier** (ARM 1, BTS 0, PH 10), copertura no; (b) **Orc** (ARM 4, BTS 3, PH 14), copertura no
 - **ARO:** nessuno
 - **Atteso:** vs Fusilier **ARM VS 7 ×3**; vs Orc **ARM VS 8 ×3**. Da controllare oltre al numero: Disposable (2), l'uso va scalato.
 
 **MU-15 — Copertura sulla salvezza**
-- **Attivo:** **DA COMPLETARE**
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)*
 - **Con:** Combi Rifle, munizione **N**
 - **Bersaglio:** **Fusilier** (ARM 1, BTS 0, PH 10), **in copertura**
 - **ARO:** nessuno
 - **Atteso:** **ARM VS 11 ×1**.
 
 **MU-16 — Guidato e Speculativo ignorano la copertura**
-- **Attivo:** **DA COMPLETARE** · dichiara **Fuoco Speculativo**
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* · dichiara **Fuoco Speculativo**
 - **Con:** Combi Rifle, munizione **N**
 - **Bersaglio:** **Fusilier** (ARM 1, BTS 0, PH 10), **in copertura**
 - **ARO:** nessuno
 - **Atteso:** **ARM VS 8 ×1** — il +3 della copertura non entra nella salvezza.
 
 **MU-17 — Munizioni N3**
-- **Attivo:** **DA COMPLETARE**
-- **Con:** le munizioni N3 VIRAL, BREAKER, K1, PLASMA, NANOTECH, ADHESIVE, FLASH, MONOFILAMENT, BIOWEAPON — armi non nominate **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**
-- **Atteso:** avviso **A50** con l'equivalente N5, e il calcolo non si ferma.
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)*
+- **Con:** Combi Rifle, forzando a mano ciascuna delle nove munizioni N3: **VIRAL, BREAKER, K1, PLASMA, NANOTECH, ADHESIVE, FLASH, MONOFILAMENT, BIOWEAPON**
+- **Bersaglio:** **Fusilier (Combi Rifle)** *(PanOceania #1)* @ banda 1, copertura no
+- **ARO:** nessuno
+- **Atteso:** per **tutte e nove** l'avviso **A50** — *«Munizione "X" non esiste in N5 (era N3)»* — e **il calcolo non si ferma**: il tiro si risolve comunque. La **BREAKER** ne porta **due**, A50 più **A53** (*«"AP" dimezza ARM o BTS a seconda dell'arma: assunto ARM»*): è l'unica delle nove che richiede un'assunzione.
 
 **MU-18 — Munizione sconosciuta**
-- **Attivo:** **DA COMPLETARE**
-- **Con:** una munizione sconosciuta — arma e munizione non nominate **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**
-- **Atteso:** avvisi **A51** e **A52**, nessun numero inventato.
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)*
+- **Con:** Combi Rifle, munizione forzata a un nome che non esiste (per esempio **FUFFA**)
+- **Bersaglio:** **Fusilier (Combi Rifle)** *(PanOceania #1)* @ banda 1, copertura no
+- **ARO:** nessuno
+- **Atteso:** **due** avvisi, **A51** (*«Componente "FUFFA" di "FUFFA" non presente nel catalogo munizioni»*) e **A52** (*«Munizione "FUFFA" sconosciuta»*), e **nessun numero inventato**. Con un nome composto (**AP+FUFFA**) escono A51 e **A53**, non A52: il pezzo noto si usa, l'ignoto si dichiara.
 
 **MU-19 — Tiro Salvezza Combinato**
-- **Attivo:** **DA COMPLETARE**
-- **Con:** un'arma con Tiro Salvezza Combinato **ARM+BTS** — arma non nominata **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**
+- **Attivo:** Dr. Harper FTO *(PanOceania #14, porta il Plasma Carbine)*
+- **Con:** **Plasma Carbine (Blast Mode)** — va scelta la modalità, il Plasma Carbine da solo non si tira (vedi MU-20)
+- **Bersaglio:** **Fusilier (Combi Rifle)** *(PanOceania #1,* ARM 1, BTS 0), copertura no
 - **ARO:** nessuno
-- **Atteso:** due salvezze con attributi diversi, descritte come tali.
+- **Atteso:** **due** salvezze con attributi **diversi**: **ARM VS 8** e **BTS VS 7**, descritte come Tiro Salvezza Combinato. In **Hit Mode** sono **ARM VS 7** e **BTS VS 6**. Un Critico aggiunge una salvezza ARM.
 
 **MU-20 — Contenitore di modalità**
-- **Attivo:** **DA COMPLETARE**
-- **Con:** MULTI Rifle oppure Missile Launcher, **senza modalità scelta**
-- **Bersaglio:** **DA COMPLETARE**
-- **Atteso:** avviso **A51b**, nessun calcolo a caso.
+- **Attivo:** Orc (Hacker, Hacking Device) *(PanOceania #4, porta il MULTI Rifle)*
+- **Con:** **MULTI Rifle** senza scegliere la modalità *(ripeti con il Missile Launcher di Alguacil #3)*
+- **Bersaglio:** **Fusilier (Combi Rifle)** *(PanOceania #1)* @ banda 1, copertura no
+- **ARO:** nessuno
+- **Atteso:** avviso **A51b** — *«"MULTI Rifle" richiede la scelta di una modalità»* — con l'elenco delle modalità disponibili (AP Mode, Shock Mode, Anti-Materiel Mode), e **nessun calcolo a caso**: Burst e munizione restano vuoti finché non scegli.
 
 **MU-21 — Kobra Pistol**
-- **Attivo:** **DA COMPLETARE**
-- **Con:** Kobra Pistol, in **BS Mode** e in **CC Mode**
-- **Bersaglio:** **DA COMPLETARE**
-- **Atteso:** BS Mode **SHOCK**; CC Mode **DA con 2 salvezze** e Anti-materiel.
+- **Attivo:** Morlock (Kobra Pistol, DA CC) *(Nomadi #36, aggiunto il 10 ottobre: si schiera **accanto** al Morlock #13, non al suo posto)* · **ATTACCO CC** per la CC Mode; per la BS Mode vedi sotto
+- **Con:** **Kobra Pistol (BS Mode)**, poi **Kobra Pistol (CC Mode)**
+- **Bersaglio:** **Fusilier (Combi Rifle)** *(PanOceania #1)* @ banda 0, copertura no
+- **ARO:** nessuno
+- **Atteso:** in **BS Mode** munizione **SHOCK**, Burst 2, **una** salvezza; in **CC Mode** munizione **DA**, Burst 1, **due** salvezze, e il Tratto **Anti-materiel**. È la stessa arma con due profili: se leggi la stessa munizione in entrambe le modalità, la scelta non si applica.
+- 🔴 **Misurato dalla pagina il 10 ottobre: la BS Mode oggi non si può dichiarare nel Turno Attivo.** Nell'ATTACCO BS il Morlock #36 si vede offrire **Chain Rifle** e **Smoke Grenades**, non la Kobra Pistol: il modulo legge solo il campo `weapon` e la Kobra Pistol sta in `equip`. In **ARO** invece compare (`M.armiARO` → Chain Rifle, Smoke Grenades, **Kobra Pistol (BS Mode)**), e in **ATTACCO CC** compare la **CC Mode**. Quindi oggi: la CC Mode si prova da attivo, la BS Mode **solo reagendo** a un Ordine avversario. È il difetto delle armi in `equip` (629 profili su 765), segnalato a MOTORE: il giorno che è corretto, la BS Mode si prova anche da attivo e questa nota va tolta.
 
 **MU-22 — BioWeapon condizionale** *(nuovo)*
-- **Attivo:** **DA COMPLETARE**
-- **Con:** Viral Rifle
-- **Bersaglio:** (a) **Fusilier** (VITA 1; ARM 1, BTS 0, PH 10); (b) **Gecko** (STR)
+- **Attivo:** Chimera *(Nomadi #14, porta la Viral CC Weapon(PS=6))*
+- **Con:** **Viral CC Weapon(PS=6)** *(una delle sette armi BioWeapon: Rifle, Combi, Marksman, Sniper, Pistol, CC Weapon, Mine — questa è quella che il roster porta davvero)*
+- **Bersaglio:** (a) **Fusilier (Combi Rifle)** *(PanOceania #1,* **con VITA**, ARM 1, BTS 0); (b) **Tikbalang** *(PanOceania #8,* **STR 3**, senza VITA)
 - **ARO:** nessuno
-- **Atteso:** contro il Fusilier BTS **VS 7 ×2**, con la nota "Bersaglio con VITA: si applica la combinazione DA+Shock" e l'effetto Shock; contro il Gecko BTS **VS 13 ×1**, con la nota "Bersaglio senza VITA: il BioWeapon non lo potenzia". Se passa un solo caso dei due, la condizione non è implementata. Sono sette armi: Rifle, Combi, Marksman, Sniper, Pistol, CC Weapon, Mine.
+- **Atteso:** contro il Fusilier **BTS VS 6**, con la nota *«Bersaglio con VITA: si applica la combinazione DA+Shock»* e l'effetto Shock; contro il Tikbalang **BTS VS 12**, con la nota *«Bersaglio senza VITA: il BioWeapon non lo potenzia»*. **Se passa un solo caso dei due, la condizione non è implementata.**
 
 **MU-23 — ARM = 0** *(chiarito)*
-- **Attivo:** **DA COMPLETARE**
-- **Con:** K1 Combi Rifle; poi un Combi Rifle normale
-- **Bersaglio:** un bersaglio con **ARM 3** — unità non nominata **DA COMPLETARE**
+- **Attivo:** Hawkwood (K1 Sniper Rifle) *(Nomadi #37, aggiunto il 10 ottobre)*
+- **Con:** **K1 Sniper Rifle**; poi un **Combi Rifle** normale *(Alguacil #1)* sullo stesso bersaglio
+- **Bersaglio:** **Nisse (Heavy Machine Gun)** *(PanOceania #5,* **ARM 3**, BTS 0), copertura no
 - **ARO:** nessuno
-- **Atteso:** K1 Combi Rifle → **ARM VS 7**; Combi normale sullo stesso bersaglio → **VS 10**. **ARM=0 non vuol dire "nessun Tiro Salvezza"**: il tiro c'è, e vale solo il PS dell'arma. Vive in `salvAttr`, non fra i Tratti condizionali: cinque armi lo portano — K1 Combi, K1 Marksman, K1 Sniper, Monofilament CC Weapon, Monofilament Mine. **Target (Attribute)** esiste solo nelle Pheroware Tohaa e **BTS = 0** su nessuna arma delle due fazioni: non sono lacune, sono fuori dalle nostre liste.
+- **Atteso:** l'arma K1 → **ARM VS 7**; il Combi normale sullo stesso bersaglio → **ARM VS 10**. **ARM=0 non vuol dire «nessun Tiro Salvezza»**: il tiro c'è, e vale solo il PS dell'arma. Vive in `salvAttr`, non fra i Tratti condizionali: cinque armi lo portano — K1 Combi, K1 Marksman, K1 Sniper, Monofilament CC Weapon, Monofilament Mine. **Target (Attribute)** esiste solo nelle Pheroware Tohaa e **BTS = 0** su nessuna arma delle due fazioni: non sono lacune, sono fuori dalle nostre liste.
 
 ---
 
@@ -700,11 +898,12 @@ dell'arma; si tira 1d20 e serve **uguale o meno**. Bersagli: **Fusilier**
 - **Atteso:** **F2F**, attivo 11 +3 = **14** B1 — *non* "Auto". Salvezza Orc ARM **VS 10 ×3**.
 
 **TPL-05 — Schivata senza LoF contro Sagoma**
-- **Attivo:** — *(il piano non dice l'unità né l'azione)*
-- **Con:** un'arma a Sagoma — *(il piano non dice quale)*
-- **Bersaglio:** **DA COMPLETARE**
-- **ARO:** SCHIVATA senza LoF — *(il piano non dice l'unità reattiva)*
-- **Atteso:** **nessun −3**, con la nota.
+- **Attivo:** `Morlock (Assault Pistol)` · ATTACCO BS
+- **Con:** **Chain Rifle** (Direct Template, Large Teardrop)
+- **Bersaglio:** `Fusilier (Combi Rifle)` (PH 10) sotto la Sagoma, **senza LoF** verso il Morlock
+- **ARO:** `Fusilier (Combi Rifle)` → SCHIVATA senza LoF
+- **Atteso:** *(corretto il 9 ottobre: la riga di prima era sbagliata.)* la Schivata **è sempre concessa** contro una Sagoma, anche senza LoF — questa è la nota, e il motore la dà: *«Chi e` colpito da una Sagoma puo` sempre dichiarare Schivata, anche senza LoF verso chi attacca.»* Ma il **−3 si applica**: PH 10 → **7**. Il catalogo è esplicito (`DIFESA.SCHIVATA.noteMalus`): *«-3 se non si ha LoF verso l'attaccante. **Stesso -3 schivando un'arma a Sagoma senza LoF**, o un'arma Deployable (mina).»* Il piano diceva "nessun −3": era mio, ed era una confusione fra *concessa* e *senza malus*. Due cause insieme (nessuna LoF **e** Sagoma senza LoF) non si sommano: il malus resta −3, e il motore lo dice con una nota.
+- **Controprova nella stessa prova:** lo stesso Fusilier **con** LoF verso il Morlock → PH **10**, nessun malus, e la nota sulla Schivata sempre concessa resta. Il −3 compare e scompare col solo cambio della LoF.
 
 **TPL-06 — Critico**
 - **Attivo:** — *(il piano non dice l'unità né l'azione)*
@@ -721,11 +920,12 @@ dell'arma; si tira 1d20 e serve **uguale o meno**. Bersagli: **Fusilier**
 - **Atteso:** ammesso. Due scontri, uno per bersaglio, entrambi **colpo automatico**, ognuno col proprio Tiro Salvezza — 8 al Fusiliere, 11 all'Orc. Controprove: due dadi su **un** bersaglio con la stessa Sagoma danno ancora **E21** (il conteggio non è sparito, ha cambiato criterio); e un Panzerfaust, B1 e non a Sagoma, su due bersagli dà **E21**, perché la raffica si divide. Sagoma a **Impatto** su due bersagli: lo stesso tiro in entrambi gli scontri. Al tavolo si tira una volta sola.
 
 **TPL-08 — Alleati sotto la sagoma** **[NON CHIESTO]**
-- **Attivo:** — *(il piano non dice l'unità né l'azione)* · una Sagoma con **alleati nell'area**
-- **Con:** un'arma a Sagoma — *(il piano non dice quale)*
-- **Bersaglio:** **DA COMPLETARE**
+- **Attivo:** `Morlock (Assault Pistol)` · ATTACCO BS · una Sagoma con **un alleato nell'area**
+- **Con:** **Chain Rifle** (la Sagoma più larga che il roster offre: Large Teardrop)
+- **Bersaglio:** `Fusilier (Combi Rifle)` come Principale, con un secondo **Nomade** (`Alguacil (Combi Rifle)`) sotto la stessa Sagoma
 - **ARO:** nessuno
-- **Atteso:** `regoleTemplate` prevede `colpoAnnullatoSeAlleatiInArea`, ma l'app non chiede nulla. Verifica se la domanda compare: oggi no.
+- **Atteso:** `regoleTemplate(Chain Rifle)` dichiara `colpoAnnullatoSeAlleatiInArea: true` e `puoCoinvolgereAlleati: false`, e `M.esitoSagomaAlleati` con `alleatoNellaSagoma: true` torna **`annullato: true`** con la frase intera — *«UN TUO ALLEATO, UN NEUTRALE O UN MARKER IMPERSONATION SOTTO LA SAGOMA: il colpo è ANNULLATO (righe 3584-3594...), per tutti i bersagli di quella Sagoma. Gli ARO restano; un uso Disposable dichiarato si consuma lo stesso.»* La regola c'è e risponde. **Quello che va verificato a mano è se la DOMANDA compare**: la risposta `alleatoNellaSagoma` deve arrivare da qualcuno, e nessun banco può vedere se la schermata la chiede. Al 9 ottobre: no.
+- **Controprova:** con **Smoke Grenades** (Sagoma innocua) la domanda **non va fatta** e il colpo **non** si annulla — `M.sagomaInnocua` è la riga che li separa. Se la domanda comparisse anche per il fumo, sarebbe la stessa regola applicata a chi non la riguarda.
 
 ---
 
@@ -790,78 +990,88 @@ dell'arma; si tira 1d20 e serve **uguale o meno**. Bersagli: **Fusilier**
 **SPEC-04 — Armi ammesse** *(cambiato)*
 - **Attivo:** Alguacil (Missile Launcher) · prova a dichiarare **Fuoco Speculativo**; poi Mary Problems · prova a dichiarare **Fuoco Speculativo**
 - **Con:** Missile Launcher per l'Alguacil; **Pitcher** per Mary Problems
-- **Bersaglio:** **DA COMPLETARE**
-- **Atteso:** Alguacil (Missile Launcher) **non** ottiene l'ordine (il Missile Launcher non ha il Tratto), mentre Mary Problems col **Pitcher** sì.
+- **Bersaglio:** per l'Alguacil **nessuno** — l'ordine è rifiutato prima di arrivare alla scelta del bersaglio; per Mary Problems **un punto del tavolo**, perché il Pitcher è Targetless
+- **Atteso:** Alguacil (Missile Launcher) **non** ottiene l'ordine: `M.armiSpeculative` torna **0 armi** e tre esclusioni col motivo scritto — *«Missile Launcher (Blast Mode): non ha il Tratto Speculative Attack»*, idem per la Hit Mode e per la Pistol. Mary Problems col **Pitcher** sì: **1 arma**, con le altre cinque escluse e nominate. Non è un conteggio: sono i due elenchi, e un'arma che cambia lato si vede.
 
-**SPEC-05 — Tratti dedotti**
-- **Attivo:** **DA COMPLETARE**
-- **Con:** un'arma il cui Tratto non viene dalla scheda — arma non nominata **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**
-- **Atteso:** avviso **A80** o **A49** dove la provenienza non è la scheda.
+**SPEC-05 — Tratti dedotti** **[NON RIPRODUCIBILE: il caso non esiste più, ed è una buona notizia]**
+- **Attivo:** nessuno, e non per un buco del roster. Misurato il 9 ottobre: **0 delle 188 armi** di `RULES_WEAPONS` è senza il campo `traits` (è la condizione di **A49**), e la spazzata di `M.armiSpeculative` su tutti i **765** profili emette **0 avvisi**, né A80 né A49. Lo stesso vale per `armiIntuitive`, `armiSoppressione`, `armiCC` e `armiARO`: zero codici. L'unico codice che esce da un filtro d'armi è **A95** da `armiGuidate`, e vuol dire un'altra cosa (manca la Skill).
+- **Atteso:** **che resti zero.** Da prova a mano diventa una **guardia**: `test_coerenza_dati.js` sezione 8 pretende «nessun altro codice di avviso sui profili delle armi» oltre ad A51b e A47, e la sezione 11 che ogni notazione meccanica porti un valore numerico. Il giorno che un'arma entra senza `traits`, A49 torna e la guardia lo dice — senza che nessuno debba ricordarsi di incollare niente.
 
 ---
 
 # 9. Blocco G — Attacco Guidato *(ora eseguibile)*
 
-**GUI-01 — L'ordine si raggiunge**
-- **Attivo:** Alguacil (Missile Launcher)
-- **Con:** Missile Launcher
-- **Bersaglio:** un nemico **Bersagliato** in campo — unità non nominata **DA COMPLETARE**
-- **Atteso:** ATTACCO GUIDATO **nella lista**. Sono 40 profili Nomadi e 68 PanOceania.
-
-**GUI-02 — Guidato su bersaglio Bersagliato**
-- **Attivo:** Alguacil (Missile Launcher) · dichiara **Attacco Guidato**
-- **Con:** Missile Launcher, **Blast Mode**
-- **Bersaglio:** Fusilier (**Bersagliato**) @ banda **3**, copertura sì
+**GUI-01 — L'ordine si raggiunge** *(eseguibile dal 9 ottobre sera)*
+- **Attivo:** **Vertigo Zond (Missile Launcher)**, voce **28** del roster *(aggiunta per questa prova)* — **non** l'Alguacil che il piano nominava
+- **Con:** **Missile Launcher (Blast Mode)**
+- **Bersaglio:** Fusilier (Combi Rifle), voce **1** di PanOceania, messo **Bersagliato** dall'editor degli stati
+- **Atteso:** ATTACCO GUIDATO **nella lista**, e `M.armiGuidate` risponde con **`Missile Launcher (Blast Mode)`** e **zero avvisi**. L'altra modalità è esclusa col motivo: `Missile Launcher (Hit Mode)` non è una Blast Mode né ha il Tratto Impact Template. BS del Vertigo: **12**.
+- 🔴 **Perché la premessa era sbagliata.** L'Attacco Guidato richiede la Skill **`BS Attack (Guided)`**. L'**Alguacil (Missile Launcher)** non la ha: `M.haGuidato` risponde `false` e `M.armiGuidate` restituisce l'avviso **A95** — *"Alguacil non ha \"BS Attack (Guided)\" nel profilo. L'Attacco Guidato richiede quella Skill."*, gravità `azione`. Stesso errore di BS-08/09 con l'X Visor: avevo nominato una truppa che non porta il requisito.
+- 🔴 **E i numeri erano sbagliati.** Il piano dichiarava *"40 profili Nomadi e 68 PanOceania"*. Misurati, sono **tre numeri diversi** e il piano ne confondeva due:
+  - profili con un'**arma** adatta (Blast Mode o Impact Template): **107** Nomadi e **87** PanOceania;
+  - profili con la **Skill** `BS Attack (Guided)`: **1 e 1** — `Vertigo Zond (Missile Launcher)` e `Clipper Dronbot (BS Attack [Guided])`, su 765;
+  - 40 e 68 non corrispondono a nessuno dei due: vengono da un commento di `app.html` che è vecchio, **da aggiornare** (segnalato a INTERFACCIA).
+- **Controprova, con l'Alguacil (Missile Launcher) voce 3 come attivo:** **ATTACCO GUIDATO non compare nel menu.** L'Alguacil ha l'arma giusta (Missile Launcher, Blast Mode) ma non la Skill, e dal motore 2026-10-09.6 `M.armiGuidate` senza Skill restituisce **zero armi**: la Blast Mode finisce fra le escluse col motivo *«manca la Skill "BS Attack (Guided)"»*, accanto all'avviso **A95**. Il menu legge quella lista, quindi la voce non si offre. Fino alla revisione 24 qui c'era scritto il contrario — *"l'ordine compare comunque, è il criterio avvisa-non-bloccare"* — ed era vero per l'app di allora: il modulo scriveva l'avviso e disegnava lo stesso il bottone dell'arma, e chi non aveva la Skill poteva dichiarare. Misurato in `test_modulo_guidato.js` sezioni 12 e 13 (senza Skill: avviso e **0** bottoni; con la Skill: **1** bottone, nessun avviso).
+**GUI-02 — Guidato su bersaglio Bersagliato** *(rifatta il 10 ottobre sul Vertigo Zond)*
+- **Attivo:** **Vertigo Zond (Missile Launcher)**, voce **28** del roster *(BS 12)* · dichiara **Attacco Guidato**
+- **Con:** **Missile Launcher (Blast Mode)**
+- **Bersaglio:** Fusilier (Combi Rifle), voce **1** di PanOceania (**Bersagliato**) @ banda **3** (24-32"), copertura sì
 - **ARO:** nessuno
-- **Atteso:** 11 +3 +3 = **17**, con la nota che ignora Copertura e Mimetismo. Salvezza **VS 7 ×3**.
+- **Atteso:** 12 +3 di gittata +3 di Bersagliato = **18**, con le due voci *«Gittata: +3»* e *«Bersaglio Bersagliato: +3 BS»* e la nota *«Attacco Guidato: ignora Copertura e Mimetismo»* — la copertura dichiarata **non** toglie niente. Salvezza **ARM VS 7 ×3** (ARM 1 + PS 6, munizione EXP).
+- **Perché non più l'Alguacil:** fino alla revisione 24 la prova diceva *11 +3 +3 = 17* con l'Alguacil (Missile Launcher), BS 11. L'Alguacil non ha la Skill e oggi non può dichiarare (vedi GUI-01): il numero era giusto per una truppa che non può tirarlo.
 
-**GUI-03 — Senza Stato Bersagliato**
-- **Attivo:** Alguacil (Missile Launcher) · dichiara **Attacco Guidato**
-- **Con:** Missile Launcher
-- **Bersaglio:** un bersaglio **senza** lo Stato Bersagliato — unità non nominata **DA COMPLETARE**
+**GUI-03 — Senza Stato Bersagliato** *(eseguibile dal 9 ottobre sera)*
+- **Attivo:** **Vertigo Zond (Missile Launcher)**, voce **28** del roster · dichiara **Attacco Guidato**
+- **Con:** **Missile Launcher (Blast Mode)**
+- **Bersaglio:** nell'elenco ci sono **Fusilier (Combi Rifle)** voce 1 **Bersagliato**, **Fusilier (Missile Launcher)** voce 2 **senza** lo stato, e **Croc Man (MULTI Sniper Rifle)** voce 6 in **CAMO**
 - **ARO:** nessuno
-- **Atteso:** bersaglio rifiutato, col motivo. Un Marker non può essere Bersagliato.
-
-**GUI-04 — ECM (Guided −6)** *(risolto, da confermare)*
-- **Attivo:** Alguacil (Missile Launcher) · dichiara **Attacco Guidato**
-- **Con:** Missile Launcher, **Blast Mode**
-- **Bersaglio:** **Tikbalang** (**Bersagliato**) @ banda **3**
+- **Atteso:** il piano diceva una cosa sola dove ce ne sono due — il filtro cambia col **ruolo**:
+  - **primario** — ammesso **solo** il Fusilier Bersagliato. Il Fusilier senza lo stato è rifiutato: *"Non è in Stato Bersagliato: il primario dell'Attacco Guidato deve esserlo"*. Il Croc Man in CAMO: *"In forma di Marker: non può essere in Stato Bersagliato"* — un Marker **non può** essere Bersagliato, ed è un motivo diverso dal primo.
+  - **secondario** — ammessi **tutti e due** i Fusilier, anche quello senza lo stato: la Sagoma prende chi le sta sotto, e lo Stato Bersagliato è requisito del **solo** Primario. Il Croc Man resta fuori con lo stesso motivo di prima.
+- **Controprova:** i due motivi vanno letti **distinti**. Se fossero la stessa frase, non si saprebbe se al bersaglio manca lo stato o se è un Marker — e si correggono in modi diversi (uno con un Forward Observer, l'altro Scoprendolo).
+**GUI-04 — ECM (Guided −6)** *(rifatta il 10 ottobre sul Vertigo Zond)*
+- **Attivo:** **Vertigo Zond (Missile Launcher)**, voce **28** del roster *(BS 12)* · dichiara **Attacco Guidato**
+- **Con:** **Missile Launcher (Blast Mode)**
+- **Bersaglio:** **Tikbalang**, voce **8** di PanOceania (**Bersagliato**) @ banda **3** (24-32")
 - **ARO:** nessuno
-- **Atteso:** 11 +3 +3 **−6** = **11**, con la voce "ECM (Guided -6) del bersaglio".
+- **Atteso:** 12 +3 +3 **−6** = **12**, con la terza voce *«ECM (Guided -6) del bersaglio: -6 BS»*. Salvezza **ARM VS 12 ×3** (ARM 6 + PS 6). Da leggere insieme a GUI-02: stesso attaccante, stessa banda, e la sola differenza è l'ECM — **6 punti**.
+- **L'ECM qui è del BERSAGLIO.** È lo stesso equipaggiamento che fino al motore 2026-10-09.4 veniva letto al contrario, come capacità di fare Attacchi Guidati: il Tikbalang risultava "capace" di un Guidato. Oggi `M.haGuidato` sul Tikbalang risponde `false`.
 
-**GUI-05 — Reset come difesa**
-- **Attivo:** Alguacil (Missile Launcher) · dichiara **Attacco Guidato**
-- **Con:** Missile Launcher
-- **Bersaglio:** un nemico **Bersagliato** — unità non nominata **DA COMPLETARE**
-- **ARO:** il bersaglio del Guidato — unità non nominata **DA COMPLETARE** → apre il menu ARO
-- **Atteso:** contro un Guidato il menu ARO offre **RESET**, non Schivata.
+**GUI-05 — La difesa contro un Guidato** 🔴 **atteso corretto il 9 ottobre, ed eseguibile**
+- **Attivo:** **Vertigo Zond (Missile Launcher)**, voce **28** del roster · dichiara **Attacco Guidato**
+- **Con:** **Missile Launcher (Blast Mode)**
+- **Bersaglio:** Fusilier (Combi Rifle), voce **1** di PanOceania, **Bersagliato**
+- **ARO:** il Fusilier apre il menu ARO
+- **Atteso:** il menu offre **tutte e due** le difese — **SCHIVATA** e **RESET** — più Attacco BS e Attacco CC. Sul RESET c'è la nota `Stato Bersagliato: -3 WIP`. L'Hacking è rifiutato col motivo *"Non è un Hacker."*
+- 🔴 **Il piano dichiarava "offre RESET, non Schivata": era sbagliato, e l'app ha ragione.** Il regolamento ne ammette due, e il motore lo scrive nel risultato dell'ordine: `reazioneBersaglio` = *"Schivata a PH-3 … **oppure** Reset a WIP-3"*. Sono due difese con due attributi e due malus: toglierne una avrebbe levato al giocatore una difesa che gli spetta.
+- **Da provare che i due malus ci siano:** la Schivata a **PH−3** (per la Sagoma senza LoF) e il Reset a **WIP−3** (per lo Stato Bersagliato). Il menu li offre; i valori si leggono sulla schermata dei modificatori dell'ARO, non nel menu.
+- **I MOD dell'attacco, misurati** sul `Missile Launcher (Blast Mode)` (bande −3 / 0 / 0 / +3 …): a 0-8" il totale è **0** (−3 di gittata +3 di Bersagliato), a 8-24" è **+3**, a 24-32" è **+6**. Burst **1**. E la gittata si misura **in linea retta**, non lungo la traiettoria: lo dice la voce `Gittata 0-8" (misurata in linea retta)`.
 
 ---
 
 # 10. Blocco H — Corpo a corpo
 
 **CC-01 — Martial Arts sui due lati**
-- **Attivo:** Morlock (MA L2)
-- **Con:** **AP CC Weapon(PS=6)**
-- **Bersaglio:** Fusilier
-- **ARO:** Fusilier → ATTACCO CC, arma **DA COMPLETARE**, contro il Morlock
-- **Atteso:** F2F. Attivo CC 23 **+3** = **26**. Reattivo 13 **−3** = **10**. Salvezza Fusilier ARM **VS 7** — il PS=6 del profilo, non il PS 8 del database armi. Se leggi VS 9 la notazione del PS si è persa.
-
+- **Attivo:** Morlock (Assault Pistol), voce **13** del roster · ATTACCO CC
+- **Con:** **AP CC Weapon(PS=6)** — è l'unica arma CC che il profilo gli dà
+- **Bersaglio:** Fusilier (Combi Rifle), voce **1** di PanOceania
+- **ARO:** Fusilier → ATTACCO CC con **CC Weapon** (l'unica del suo profilo), contro il Morlock
+- **Atteso:** F2F. Attivo CC 23 **+3** = **26**, una voce sola, `Martial Arts L2: +3 CC`. Reattivo 13 **−3** = **10**, una voce sola, `Martial Arts L2 del nemico: -3 al tuo CC`. Salvezza Fusilier **ARM VS 7** — il PS=6 del profilo, non il PS 8 del database armi. **Controprova:** la stessa arma scritta senza la notazione dà **ARM VS 9**; se leggi 9 qui, il PS del profilo si è perso. Salvezza del Morlock contro il CC Weapon del Fusilier: **ARM VS 9**.
 **CC-02 — NBW e CC Attack (−3)**
-- **Attivo:** Chimera (NBW)
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** Teutonic Knight (MA L2)
-- **ARO:** Teutonic Knight (MA L2) → ATTACCO CC, arma **DA COMPLETARE**, contro la Chimera
-- **Atteso:** attivo CC **24 pieno** con la nota su NBW; reattivo 22 +3 −3 = **22**. Salvezza Teutonic **BTS VS 11**; salvezza Chimera ARM VS 9 ×2.
-
+- **Attivo:** Chimera, voce **14** del roster · ATTACCO CC
+- **Con:** **Viral CC Weapon(PS=6)** — l'unica arma CC del suo profilo
+- **Bersaglio:** Teutonic Knight (TinBot: Firewall), voce **7** di PanOceania (Martial Arts L2)
+- **ARO:** Teutonic Knight → ATTACCO CC con **DA CC Weapon(PS=5)**, contro la Chimera
+- **Atteso:** attivo CC **24 pieno**, **nessuna voce di MOD**, e la nota `Natural Born Warrior annulla il -3 delle Martial Arts L2 nemiche`. Reattivo 22 **+3 −3** = **22**, due voci: `Martial Arts L2: +3 CC` e `Il nemico ha CC Attack (-3): si applica a te nel Faccia a Faccia`. Salvezza Teutonic **BTS VS 9 ×2** (il Viral CC Weapon tira su BTS, non su ARM, e la munizione dà due tiri); salvezza Chimera **ARM VS 6 ×2**.
+- 🔴 **Valori corretti alla revisione 21.** Il piano dichiarava BTS VS 11 e ARM VS 9: sono i valori che si ottengono col **PS 8 del CC Weapon generico**, ignorando le notazioni (PS=6) e (PS=5) dei due profili. Cioè il piano aveva calcolato questa prova **col difetto che CC-01 esiste per scoprire**. Misurati col motore 2026-10-09.4: 9 e 6.
 **CC-03 — Colpo di Grazia**
-- **Attivo:** **DA COMPLETARE** · ATTACCO CC contro un Incosciente
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**, **Incosciente**
+- **Attivo:** Morlock (Assault Pistol), voce **13** del roster · ATTACCO CC contro un Incosciente
+- **Con:** **AP CC Weapon(PS=6)**
+- **Bersaglio:** Fusilier (Combi Rifle), voce **1** di PanOceania, messo **Incosciente** dall'editor degli stati
 - **ARO:** nessuno
-- **Atteso:** **nessun tiro e nessuna salvezza**, passaggio automatico a Morto.
-
+- **Atteso:** la schermata mostra il riquadro rosso **☠️ COLPO DI GRAZIA** con `senzaTiro` e `senzaSalvezza`: **nessun tiro d'attacco e nessun Tiro Salvezza**, passaggio automatico a Morto. Il motivo a schermo è quello del catalogo: *"Senza alcun tiro, il bersaglio passa automaticamente da Incosciente a Morto, senza possibilità di Tiro Salvezza."*
+- **Controprova:** sullo stesso Fusilier **non** Incosciente il riquadro non compare, e il motivo è `Il bersaglio non è Incosciente.` — così un riquadro che comparisse sempre si distingue da uno che guarda lo stato.
+- **Da provare anche:** su un bersaglio con **Dogged** o **No Wound Incapacitation** il Colpo di Grazia è **bloccato** e compare il riquadro giallo `⚠️ COLPO DI GRAZIA NON APPLICABILE`. Fra le 40 schierate nessuna porta quelle due skill: serve una sostituzione nel roster.
 **CC-04 — PARA CC Weapon**
 - **Attivo:** Zondmate
 - **Con:** PARA CC Weapon
@@ -869,23 +1079,29 @@ dell'arma; si tira 1d20 e serve **uguale o meno**. Bersagli: **Fusilier**
 - **ARO:** nessuno
 - **Atteso:** CC **13** (il −3 è per il nemico), salvezza **PH VS 4**, Non-Lethal, IMM-A.
 
-**CC-05 — Berserk** *(chiuso)*
-- **Attivo:** **DA COMPLETARE** · BERSERK
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**
-- **ARO:** **DA COMPLETARE**
-- **Atteso:** **F2F**. In N5 il Berserk non evita il Faccia a Faccia.
-
+**CC-05 — Berserk** *(eseguibile dal 9 ottobre sera)*
+- **Attivo:** **Wolfgang Amadeus**, voce **26** del roster *(aggiunta per questa prova)* · BERSERK
+- **Con:** **PARA CC Weapon(-6)**, poi **DA CC Weapon(PS=4)** — le due armi CC del suo profilo, e danno due salvezze molto diverse
+- **Bersaglio:** Fusilier (Combi Rifle), voce **1** di PanOceania
+- **ARO:** Fusilier → ATTACCO CC con **CC Weapon**
+- **Atteso:** **F2F** — in N5 il Berserk non evita il Faccia a Faccia. Attivo CC **22 +3 = 25**, una voce sola, `Martial Arts L3: +3 CC` (il Berserk (+3) del profilo è un MOD al CC Attack, non al Berserk: non si somma qui). Reattivo Fusilier **13 −3 −6 = 4**, due voci — `Martial Arts L3 del nemico: -3 al tuo CC` e `PARA CC Weapon (-6) dell'avversario: -6 nel Faccia a Faccia`.
+- **Le due salvezze, che è il motivo per provare entrambe le armi:**
+  - con la **PARA CC Weapon(-6)** il Fusilier tira **PH VS 4**, **una** salvezza — è un tiro di PH, non di ARM, perché la PARA non fa Ferite ma Immobilizza;
+  - con la **DA CC Weapon(PS=4)** tira **ARM VS 5**, **due** salvezze.
+  Letto un attributo per l'altro, il numero sarebbe comunque plausibile: la coppia serve a distinguerli.
+- **Salvezza di Wolfgang** contro il CC Weapon del Fusilier: **ARM VS 11**.
+- **E in stato Ingaggiato:** `M.azionePermessaDaStati(Wolfgang, 'BERSERK')` risponde `permessa: true` — il Berserk è una delle cinque azioni che l'Ingaggiato ammette (vedi CC-06).
 **CC-06 — Ingaggiato**
-- **Attivo:** unità **DA COMPLETARE**, **Ingaggiato** · apri il menu degli Ordini
-- **Atteso:** compaiono solo ATTACCO CC, BERSERK, SCHIVATA, RESET, IDLE.
-
-**CC-07 — Gang-Up**
-- **Attivo:** **DA COMPLETARE** · ATTACCO CC con alleati in contatto di Silhouette col bersaglio
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**
+- **Attivo:** Alguacil (Combi Rifle), voce **1** del roster, messo **Ingaggiato** dall'editor degli stati · apri il menu degli Ordini
+- **Atteso:** compaiono **solo** ATTACCO CC, BERSERK, SCHIVATA, RESET, IDLE. Misurato con `M.azionePermessaDaStati`: queste cinque rispondono `permessa: true`; ATTACCO BS, MOVIMENTO, HACKING, SCOPRIRE, CAUTO e SALTO rispondono `false` col motivo *"Stato Ingaggiato: permette solo ATTACCO CC, BERSERK, SCHIVATA, RESET, IDLE"*.
+- **Controprova:** la stessa unità senza lo stato ha il menu intero — così un menu vuoto per altri motivi si distingue dal filtro dello stato.
+**CC-07 — Gang-Up (Close Combat with Multiple Troopers)**
+- **Attivo:** Morlock (Assault Pistol), voce **13** del roster · ATTACCO CC
+- **Con:** **AP CC Weapon(PS=6)** (Burst 1 di base)
+- **Bersaglio:** Fusilier (Combi Rifle), voce **1** di PanOceania
 - **ARO:** nessuno
-- **Atteso:** **+1 Burst** per ogni alleato in contatto di Silhouette col bersaglio, **escludendo** chi è in Stato Nullo o Immobilizzato e chi ha dichiarato Schivata, Idle o Reset.
+- **Atteso:** il selettore *"Quanti TUOI alleati sono ingaggiati in questa mischia?"* porta il Burst a **1 / 2 / 3 / 4** per **0 / 1 / 2 / 3** alleati — **+1 per ognuno**, e la voce lo dice: `Close Combat with Multiple Troopers: +1B (1 alleato/i nella mischia)`. Il selettore parte da 0 e arriva a 5.
+- **Nota di regola, non calcolata dall'app:** vanno **esclusi** dal conteggio gli alleati in Stato Nullo o Immobilizzato e, in ARO, chi ha dichiarato Schivata, Idle o Reset. L'app non ha la mappa e non sa chi ha dichiarato cosa: **il numero lo dichiara il giocatore**, come il Movimento Cauto. È una domanda, non un calcolo.
 
 ---
 
@@ -924,60 +1140,60 @@ dell'arma; si tira 1d20 e serve **uguale o meno**. Bersagli: **Fusilier**
 - **Atteso:** WIP 13 **+3** = **16**, B3, salvezza **BTS VS 9 ×1**.
 
 **HK-05 — Filtro bersagli**
-- **Attivo:** Interventor (HD Plus) per CARBONITE / OBLIVION / TOTAL CONTROL; per TRINITY serve un KHD e l'hacker è **DA COMPLETARE** · HACKING
+- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* per CARBONITE / OBLIVION / TOTAL CONTROL / SPOTLIGHT; per **TRINITY** serve un Killer Hacking Device: usa **Zero (Hacker, Killer Hacking Device)** *(Nomadi #9)* · HACKING
 - **Con:** CARBONITE, OBLIVION, TOTAL CONTROL, TRINITY, SPOTLIGHT, uno per uno
-- **Bersaglio:** Tikbalang, Orc (Hacker), Fusilier, Croc Man (Camuffato) · tutti nell'Area di Hacking, nessuna gittata, nessuna copertura
+- **Bersaglio:** Tikbalang *(#8)*, Orc (Hacker, Hacking Device) *(#4)*, Fusilier (Combi Rifle) *(#1)*, Croc Man (MULTI Sniper Rifle) *(#6, **Camuffato**)* · tutti nell'Area di Hacking, nessuna gittata, nessuna copertura
 - **ARO:** nessuno
-- **Atteso:** con CARBONITE e con OBLIVION: Tikbalang e Orc ammessi; Fusilier no ("non hackerabile"); Croc Man in Camo no ("va Scoperto prima"). Con TOTAL CONTROL: **solo Tikbalang**. Con TRINITY: **solo Orc**. Con SPOTLIGHT: anche il Fusilier.
+- **Atteso:** con **CARBONITE** e con **OBLIVION**: Tikbalang e Orc ammessi; Fusilier **no** (*«non hackerabile»*); Croc Man in Camo **no** (*«va Scoperto prima»*). Con **TOTAL CONTROL**: **solo Tikbalang**. Con **TRINITY**: **solo Orc**. Con **SPOTLIGHT**: anche il Fusilier. I programmi che l'Interventor ha davvero sono sei — CARBONITE, CYBERMASK, OBLIVION, SPOTLIGHT, TOTAL CONTROL, WHITE NOISE: TRINITY **non è fra i suoi**, ed è per questo che serve Zero.
 
 **HK-06 — Firewall**
-- **Attivo:** Interventor (HD Plus) · HACKING
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** Teutonic (TinBot: Firewall) · nell'Area di Hacking, nessuna gittata, nessuna copertura
+- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8, WIP 15)* · HACKING
+- **Con:** **CARBONITE**
+- **Bersaglio:** Teutonic Knight (TinBot: Firewall) *(PanOceania #7, BTS 3)* · nell'Area di Hacking, nessuna gittata, nessuna copertura
 - **ARO:** nessuno
-- **Atteso:** tiro attivo 15 **−3** = **12**, e salvezza del Teutonic **BTS VS 13** (BTS 3 **+3 Firewall** + PS 7).
+- **Atteso:** tiro attivo **15 −3 = 12**, con la voce *«Firewall del bersaglio: −3 WIP»*; e salvezza del Teutonic **BTS VS 13** — BTS 3 **+3 del Firewall** + PS 7 — con la voce *«Firewall del bersaglio: +3 BTS (equivalente Copertura)»*. Il Firewall fa **due** cose: se ne vedi una sola, metà della regola non si applica.
 
 **HK-07 — Firewall doppio**
-- **Attivo:** Interventor (HD Plus) · HACKING
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** un bersaglio con due Firewall · unità, stato e fonti dei due Firewall **DA COMPLETARE** · nell'Area di Hacking, nessuna gittata, nessuna copertura
+- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* · HACKING
+- **Con:** CARBONITE
+- **Bersaglio:** Teutonic Knight (TinBot: Firewall) *(PanOceania #7)* con **in più** lo stato che gli dà un secondo Firewall — ⚠️ **non eseguibile con questo schieramento**: nessuna delle 52 voci del roster può portare **due** Firewall insieme (il TinBot è uno solo e nessun programma del roster ne aggiunge un secondo). Serve una truppa con TinBot **e** un alleato che le dia un Firewall via programma
 - **ARO:** nessuno
-- **Atteso:** dei due Firewall se ne usa **uno solo**, a scelta.
+- **Atteso:** dei due Firewall se ne usa **uno solo**, a scelta: il −3 al tiro e il +3 al BTS **non si sommano**. Il motore ha la funzione (`firewallMultipli`): è il tavolo che non sa produrre il caso.
 
 **HK-08 — Firewall disabilitato**
-- **Attivo:** Interventor (HD Plus) · HACKING
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** Teutonic (TinBot: Firewall) in stato **Isolato** · nell'Area di Hacking, nessuna gittata, nessuna copertura
+- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8, WIP 15)* · HACKING
+- **Con:** CARBONITE
+- **Bersaglio:** Teutonic Knight (TinBot: Firewall) *(PanOceania #7)* in stato **Isolato** · nell'Area di Hacking, nessuna gittata, nessuna copertura
 - **ARO:** nessuno
-- **Atteso:** Firewall **0**: niente −3 al tiro dell'hacker e niente +3 al BTS del Teutonic.
+- **Atteso:** Firewall **0**: tiro attivo **15** (il −3 **non** c'è) e salvezza del Teutonic **BTS VS 10** (il +3 **non** c'è). È la controprova esatta di HK-06: gli stessi due numeri, 12/13 contro 15/10.
 
 **HK-09 — ECM (Hacker −3)** *(risolto, da confermare)*
-- **Attivo:** Interventor (HD Plus) · HACKING
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** Meteor Zond, che porta ECM (Hacker −3) · nell'Area di Hacking, nessuna gittata, nessuna copertura
+- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8, WIP 15)* · HACKING
+- **Con:** CARBONITE
+- **Bersaglio:** **Aquila** *(PanOceania #11, porta ECM (Hacking −3))* · nell'Area di Hacking, nessuna gittata, nessuna copertura
 - **ARO:** nessuno
-- **Atteso:** **−3** al tiro dell'hacker.
+- **Atteso:** tiro **12** = 15 **−3**, con la voce *«ECM (Hacking −3) del bersaglio: −3 WIP»*. L'ECM **non** dà il +3 alla salvezza: quello è del Firewall. La salvezza dell'Aquila è **BTS VS 13** perché il suo BTS è 6, non per l'ECM. *(Il piano diceva «Meteor Zond», che non è schierato: l'Aquila porta lo stesso ECM ed è in lista.)*
 
 **HK-10 — Dati non verificati**
-- **Attivo:** Interventor (HD Plus) per TOTAL CONTROL; per TRINITY serve un KHD e l'hacker è **DA COMPLETARE** · HACKING
+- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* per TOTAL CONTROL; per TRINITY **Zero (Hacker, Killer Hacking Device)** *(Nomadi #9)* · HACKING
 - **Con:** TOTAL CONTROL, poi TRINITY
-- **Bersaglio:** **DA COMPLETARE** · nell'Area di Hacking, nessuna gittata, nessuna copertura
+- **Bersaglio:** Tikbalang *(PanOceania #8)* per TOTAL CONTROL, Orc (Hacker) *(#4)* per TRINITY · nell'Area di Hacking, nessuna gittata, nessuna copertura
 - **ARO:** nessuno
-- **Atteso:** con TOTAL CONTROL o con TRINITY compare l'avviso **A91**.
+- **Atteso:** compare l'avviso **A91** — *«Dati di "<programma>" non verificati sulla scheda ufficiale»*. L'avviso scatta sui programmi che il catalogo marca `fonte: 'DA VERIFICARE'`: se **non** compare, o quei due programmi sono stati verificati (e allora l'avviso va togliuto dal piano), oppure il marcatore non viene letto. **Da chiarire con DATABASE prima di dare la prova per rossa.**
 
 **HK-11 — Upgrade dai profili**
-- **Attivo:** Jazz, poi Mary Problems, poi Kulak · HACKING
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE** · nell'Area di Hacking, nessuna gittata, nessuna copertura
+- **Attivo:** **Mary Problems (Hacker)** *(Nomadi #21, UPGRADE: Oblivion +1B)*, poi **Kulak (Hacker, Killer Hacking Device)** *(Nomadi #23, UPGRADE: Carbonite)*. Jazz (Hacker) porta *UPGRADE: Trinity SR-1* ma — ⚠️ **non è fra le 40 truppe schierate**
+- **Con:** per Mary Problems **OBLIVION**; per il Kulak **CARBONITE**
+- **Bersaglio:** Orc (Hacker, Hacking Device) *(PanOceania #4)* · nell'Area di Hacking, nessuna gittata, nessuna copertura
 - **ARO:** nessuno
-- **Atteso:** l'upgrade compare nel calcolo, oppure compare l'avviso **A94**. Mai ignorato in silenzio.
+- **Atteso:** l'upgrade **compare nel calcolo** — l'Oblivion di Mary Problems a **+1 Burst**, il Carbonite del Kulak col suo effetto — **oppure** compare l'avviso **A94**. **Mai ignorato in silenzio:** il profilo dichiara l'upgrade fra parentesi nell'equip, e se il calcolo non lo usa e non lo dice, il giocatore tira col programma base credendo di avere quello potenziato.
 
 **HK-12 — Reset, non Schivata**
-- **Attivo:** Interventor (HD Plus) · HACKING; poi un ATTACCO BS, con unità attiva e stato **DA COMPLETARE**
-- **Con:** per l'HACKING il programma **DA COMPLETARE**; per l'ATTACCO BS l'arma **DA COMPLETARE**
-- **Bersaglio:** Orc (Hacker) · per l'HACKING nell'Area di Hacking, nessuna gittata, nessuna copertura; per l'ATTACCO BS banda e copertura **non detta**
+- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* · HACKING; poi Alguacil (Combi Rifle) *(Nomadi #1)* · **ATTACCO BS**
+- **Con:** per l'HACKING **CARBONITE**; per l'ATTACCO BS il **Combi Rifle**
+- **Bersaglio:** Orc (Hacker, Hacking Device) *(PanOceania #4)* · per l'HACKING nell'Area di Hacking, nessuna gittata, nessuna copertura; per l'ATTACCO BS @ banda 1, copertura **no**
 - **ARO:** Orc (Hacker) → si apre il suo menu degli ARO contro l'unità attiva
-- **Atteso:** contro HACKING: Schivata assente, Reset presente. Contro ATTACCO BS: il contrario, Schivata presente e Reset assente.
+- **Atteso:** contro **HACKING**: **Schivata assente**, **Reset presente**. Contro **ATTACCO BS**: il contrario — **Schivata presente**, **Reset assente**. Le due metà vanno fatte una dopo l'altra sullo stesso Orc: è il confronto che prova la regola, non i due menu presi da soli.
 
 ---
 
@@ -1026,30 +1242,33 @@ dell'arma; si tira 1d20 e serve **uguale o meno**. Bersagli: **Fusilier**
 - **Atteso:** Breve su **WIP +6** = **19**, **senza LoF** e **senza bersaglio**: scopre tutti i Marker nella ZdC insieme. Nessun MOD di gittata né di Mimetismo.
 
 **OSS-03 — Triangulated Fire** *(ordine nuovo)*
-- **Attivo:** Zulu-Cobra (Triangulated Fire) · TRIANGULATED FIRE · Ordine **Intero**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** Croc Man @ media distanza, copertura sì
+- **Attivo:** `Zulu-Cobra (Triangulated Fire, Sensor)` (BS **13**) · TRIANGULATED FIRE · Ordine **Intero**
+- **Con:** **Combi Rifle** — le sue armi sono Combi Rifle, Jammer e Assault Pistol; il Combi è quello con le bande normali, così i MOD ignorati si vedono tutti
+- **Bersaglio:** Croc Man @ media distanza (banda 3, MOD -3), copertura sì (-3), Mimetism (-3)
 - **ARO:** nessuno
-- **Atteso:** il tiro è su **BS**, **senza alcun MOD**: resta il BS pieno. I MOD ignorati vanno mostrati **barrati**. Requisito: senza l'abilità l'ordine è rifiutato con "Serve l'Abilità Triangulated Fire".
+- **Atteso:** il tiro è su **BS 13 pieno**, `mod: 0`, **senza alcun MOD**. I tre MOD ignorati vanno mostrati **barrati** e sono nominati dal motore in `modIgnorati`: gittata −3, Copertura Parziale −3, Mimetismo −6. Il motore porta anche `valoreConMod: 1`, cioè quanto sarebbe stato il tiro senza l'Abilità: **13 contro 1**, dodici punti — nasconderli farebbe sembrare che il calcolatore se li sia dimenticati. Salvezza del Croc Man in copertura: **ARM VS 11** (ARM 1 + PS 7 + 3 di Copertura).
+- **Requisito:** `Alguacil (Combi Rifle)` → rifiutato con *«Serve l'Abilità Triangulated Fire.»*
+- **E il limite che resta:** oltre la Gittata Massima del Combi il tiro **non** diventa impossibile — resta 13 — ma arriva l'avviso **A74** con `oltreGittata: true`. Ignorare i MOD non è ignorare la gittata massima, e sono due cose che si confondono facilmente.
+- **Attenzione alla porta d'ingresso** *(costata una falsa segnalazione il 9 ottobre)*: la regola sta in **`M.regoleTriangulated`**. Chiedere il numero a `M.modAttacco` passandogli l'azione `TRIANGULATED FIRE` dà **1**, non 13: `M.SPEC['TRIANGULATED FIRE']` non porta `ignoraTuttiIMod`, e `modAttacco` ci viene chiamato **di proposito** con `BS_ATTACK`, solo per sapere quali MOD mostrare barrati. Il flag `ignoraTuttiIMod: true` sta nel catalogo (`OSSERVAZIONE`, riga 7854) e lo legge `regoleTriangulated`. Inchiodato in `test_modulo_osservazione.js`.
 
 ---
 
 # 13. Blocco K — Supporto
 
 **SUP-01 — Dottore**
-- **Attivo:** Daktari · DOTTORE
+- **Attivo:** Daktari (Doctor), voce **6** del roster · DOTTORE
 - **Con:** abilità Dottore
-- **Bersaglio:** un nomade **Incosciente con VITA** — quale unità, **DA COMPLETARE**
+- **Bersaglio:** Alguacil (Combi Rifle), voce **1** del roster, messo **Incosciente** dall'editor (ha VITA: `w: 1`)
 - **ARO:** nessuno
-- **Atteso:** tira il **Daktari** su **WIP 13**, Tiro Normale, **nessun bonus**. Fallimento: **MORTO**.
-
+- **Atteso:** tira il **Daktari** (`chiTira: UTENTE`) su **WIP 13**, Tiro Normale, **nessun bonus** — una voce sola, `WIP di Daktari: 13`. Critico con un 13. Fallimento: **MORTO**, e il risultato lo dichiara con `fallimentoLetale: true` più la nota *"⚠️ Il bersaglio entra AUTOMATICAMENTE in Stato Morto e viene rimosso dal tavolo."*
+- **Controprova:** lo stesso Daktari con l'**INGEGNERE** dà `fallimentoLetale: false` e la nota diventa *"il bersaglio riceve 1 Ferita invece di rimuoverla"*. È la differenza che conta al tavolo, e due strumenti che dessero la stessa nota non si distinguerebbero.
 **SUP-02 — MediKit**
-- **Attivo:** Alguacil (Paramedic) · MEDIKIT
+- **Attivo:** Alguacil (Paramedic), voce **5** del roster · MEDIKIT
 - **Con:** MediKit
-- **Bersaglio:** un Incosciente — quale unità, **DA COMPLETARE**
+- **Bersaglio:** Alguacil (Combi Rifle), voce **1** del roster, messo **Incosciente**
 - **ARO:** nessuno
-- **Atteso:** **due tiri in ordine** — prima l'Alguacil colpisce (**BS 11**), poi **tira il bersaglio** su **PH 10**. Nessun Tiro Salvezza. Fallimento: **MORTO** (N5.2).
-
+- **Atteso:** **due tiri in ordine**, e il risultato li tiene separati — prima l'Alguacil colpisce (`tiroPerColpire: BS 11`), poi **tira il bersaglio** (`chiTira: BERSAGLIO`) su **PH 10**. Nessun Tiro Salvezza (`Il bersaglio di un MediKit non esegue Tiro Salvezza`). Fallimento: **MORTO** (N5.2), `fallimentoLetale: true`.
+- **Nota:** il PH è quello del **bersaglio**, non dell'utente — tutti e due gli Alguacil hanno PH 10, quindi per distinguere i due casi serve un bersaglio con PH diverso: il **Teutonic Knight** (PH 14) o la **Chimera** (PH 13) se si prova fra fazioni, o il **Morlock** (PH 13) per restare fra nomadi. Con due PH uguali la prova passerebbe anche leggendo il PH sbagliato.
 **SUP-03 — Ingegnere**
 - **Attivo:** Clockmaker · INGEGNERE
 - **Con:** abilità Ingegnere
@@ -1058,95 +1277,127 @@ dell'arma; si tira 1d20 e serve **uguale o meno**. Bersagli: **Fusilier**
 - **Atteso:** **WIP 15**, fallimento **+1 Ferita**, non la morte.
 
 **SUP-04 — GizmoKit(+1B)**
-- **Attivo:** **DA COMPLETARE**, BS 11 · GIZMOKIT
-- **Con:** GizmoKit (+1B)
-- **Bersaglio:** **DA COMPLETARE**
+- **Attivo:** Clockmaker (Engineer), voce **7** del roster, **BS 11** · GIZMOKIT
+- **Con:** **GizmoKit(+1B)** — la notazione è nel suo equip
+- **Bersaglio:** Reaktion Zond (HMG), voce **15** del roster, messo **Incosciente** (ha STR: `str: 1`)
 - **ARO:** nessuno
-- **Atteso:** **BS 11** per colpire, poi il bersaglio su **PH 10**; il (+1B) deve portare il Burst a **2**.
-
-**SUP-05 — Filtro bersagli** *(risolto, da confermare)*
-- **Attivo:** **DA COMPLETARE** · apri l'elenco dei bersagli di Dottore, MediKit, Ingegnere e GizmoKit
-- **Bersaglio:** alleati con VITA, Incoscienti e un REM, da provare con ciascuno strumento
-- **Atteso:** Dottore e MediKit accettano **solo alleati con VITA e Incoscienti**; un REM va rifiutato con "Non ha l'attributo VITA". Ingegnere e GizmoKit accettano **solo alleati con STR**.
-
+- **Atteso:** **BS 11** per colpire (`tiroPerColpire`), poi il bersaglio su **PH 10**; il **(+1B) porta il Burst a 2**, con le due voci `Burst dell'arma GizmoKit` e `BS Attack (+1B): +1 Burst in Turno Attivo`. Fallimento: **1 Ferita**, non Morto (`fallimentoLetale: false`).
+- **Controprova:** il **Machinist (Combi Rifle)**, voce **13** di PanOceania, porta un **GizmoKit senza notazione**: lì il Burst resta **1**, con una voce sola. È la coppia che distingue "legge la notazione" da "dà sempre 2".
+- **Dove si legge il Burst:** non in `regoleSupporto`, che non lo restituisce, ma in **`M.burstIniziale`** con azione `SUPPORTO_BS`. Cercato nel posto sbagliato sembra un difetto: non lo è.
+**SUP-05 — Filtro bersagli** 🔴 **DIFETTO APERTO, MISURATO IL 9 OTTOBRE**
+- **Attivo:** Daktari (Doctor) voce **6** per Dottore e MediKit, Clockmaker (Engineer) voce **7** per Ingegnere e GizmoKit · apri l'elenco dei bersagli
+- **Bersaglio:** nell'elenco ci sono **Alguacil (Combi Rifle)** voce 1 Incosciente (VITA: `w: 1`, nessuno `str`), **Reaktion Zond (HMG)** voce 15 Incosciente (STR: `str: 1`, nessun `w`) e **Alguacil (HMG)** voce 2 **sano**
+- **Atteso:** la regola dice che Dottore e MediKit accettano **solo alleati con VITA** e Incoscienti — il Reaktion Zond va rifiutato con *"Non ha l'attributo VITA"*. Ingegnere e GizmoKit accettano **solo alleati con STR** — l'Alguacil va rifiutato.
+- **Misurato (cosa fa davvero):** il filtro rifiuta correttamente l'Alguacil **sano** (*"il Supporto bersaglia solo gli Incoscienti"*), ma **ammette tutti e due gli Incoscienti con tutti e quattro gli strumenti**. L'opzione `strumento` passata a `M.bersagliValidi` **non cambia niente**: Dottore, MediKit, Ingegnere e GizmoKit danno lo stesso elenco. Lo stesso in `M.regoleSupporto`, che risponde `valido: true` per un Dottore su un REM.
+- **Perché conta:** il fallimento del Dottore è **letale**. Offrire un REM a un Dottore offre una mossa che le regole non ammettono e che, se il giocatore la prende, può solo **uccidergli il REM** — e la nota accanto glielo dice, dopo. Al contrario, Ingegnere e GizmoKit vengono offerti su un bersaglio con VITA, dove non hanno effetto.
+- **Dove sta il dato, e dove manca:** la regola è scritta nel catalogo (`SUPPORTO.DOTTORE.requisiti`: *"Il bersaglio deve avere l'attributo VITA"*; `SUPPORTO.INGEGNERE.requisiti`: *"l'attributo STR"*). Il dato è nei profili (`w` contro `str`). **Nessun filtro li incrocia**, e nel motore non esiste un `M.haVita` / `M.haStr`. Da segnalare a MOTORE insieme all'eccezione **Technorganic** (con cui vale l'uno o l'altro indifferentemente), che però nei due database **nessun profilo porta**: 0 su 765.
 **SUP-06 — Strumento sconosciuto**
-- **Attivo:** dichiara un ordine con uno strumento sconosciuto — come, **DA COMPLETARE**
-- **Atteso:** avviso **A58** con l'elenco degli id attesi.
-
-**SUP-07 — Ri-tiri**
-- **Attivo:** **DA COMPLETARE** · DOTTORE, poi INGEGNERE
+- **Attivo:** Daktari (Doctor), voce **6** del roster · si chiama `M.regoleSupporto(utente, bersaglio, 'SCATOLETTA')` con un id che non è fra i quattro strumenti
+- **Atteso:** `valido: false` e l'avviso **A58** — `{ codice: 'A58', messaggio: 'Strumento di supporto "SCATOLETTA" sconosciuto.', gravita: 'azione' }`. La gravità `azione` è quella che fa comparire la finestra prima dell'invio (vedi il gancio su `M.creaPayload` in app.html): un `nota` resterebbe invisibile al giocatore.
+- 📋 **Nota misurata:** il messaggio **non elenca gli id attesi**, al contrario di `applicaModTerreno`, che per una chiave sconosciuta stampa `attese ["msv1","msv2",...]`. Il piano dichiarava *"con l'elenco degli id attesi"*: non c'è. Non è un difetto di calcolo — l'avviso c'è, è visibile e nomina lo strumento sbagliato — ma un elenco aiuterebbe come aiuta nei terreni. Segnalato a MOTORE.
+**SUP-07 — Ri-tiri col Command Token**
+- **Attivo:** Daktari (Doctor) voce **6** · DOTTORE, poi Clockmaker (Engineer) voce **7** · INGEGNERE
 - **Con:** abilità Dottore, poi abilità Ingegnere
-- **Bersaglio:** un bersaglio con Cubo per il Dottore, un bersaglio con Remote Presence per l'Ingegnere — quali unità, **DA COMPLETARE**
+- **Bersaglio:** per l'Ingegnere il **Reaktion Zond (HMG)**, voce **15**, Incosciente — ha davvero `Remote Presence`. Per il Dottore un Incosciente qualunque, per esempio l'**Alguacil (Combi Rifle)** voce 1
 - **ARO:** nessuno
-- **Atteso:** la nota sui Command Token — Cubo per il Dottore, Remote Presence per l'Ingegnere.
+- **Atteso:** la nota sui Command Token, **diversa per i due strumenti** e presa dal catalogo parola per parola:
+  - DOTTORE → *"Se il bersaglio ha un Cubo, si possono spendere Command Token per ripetere un tiro fallito."*
+  - INGEGNERE → *"Se il bersaglio ha Remote Presence, si possono spendere Command Token per ripetere un tiro fallito."*
+  Le due note vanno **confrontate fra loro**: se fossero la stessa stringa, il giocatore non saprebbe quale condizione guardare.
+- 🔴 **Misurato: la nota del Dottore non è verificabile al tavolo.** La parola `Cube` **non compare in nessuno dei 765 profili** dei due database. La nota è comunque corretta e si mostra sempre (non è condizionata al campo), quindi la prova è eseguibile per come è scritta — ma la **condizione** che enuncia non si può mettere alla prova con questi dati. Quella dell'Ingegnere sì: il Reaktion Zond ha Remote Presence. Da chiarire con DATABASE se il Cubo vada nei profili o sia implicito nel tipo di truppa.
 
 ---
 
 # 14. Blocco L — Difese e Soppressione
 
 **DIF-01 — Schivata con LoF**
-- **Attivo:** **DA COMPLETARE**
-- **ARO:** **DA COMPLETARE** → Schivata, **con LoF**
-- **Atteso:** PH **10**, nessun MOD nell'elenco.
+- **Attivo:** Fusilier (Combi Rifle) *(PanOceania #1)* · dichiara **ATTACCO BS**
+- **Con:** Combi Rifle
+- **Bersaglio:** Alguacil (Combi Rifle) *(Nomadi #1, PH 10, WIP 13)* @ banda 1
+- **ARO:** Alguacil (Combi Rifle) *(Nomadi #1, PH 10, WIP 13)* → **Schivata**, **con LoF** verso l'attaccante
+- **Atteso:** PH **10**, e l'elenco dei MOD **vuoto**: nessuna voce.
 
 **DIF-02 — Schivata senza LoF**
-- **Attivo:** **DA COMPLETARE**
-- **ARO:** **DA COMPLETARE** → Schivata, **senza LoF**
-- **Atteso:** **7**, con la voce nell'elenco MOD.
+- **Attivo:** Fusilier (Combi Rifle) *(PanOceania #1)* · dichiara **ATTACCO BS**
+- **Con:** Combi Rifle
+- **Bersaglio:** Alguacil (Combi Rifle) *(Nomadi #1, PH 10, WIP 13)* @ banda 1
+- **ARO:** Alguacil (Combi Rifle) *(Nomadi #1, PH 10, WIP 13)* → **Schivata**, **senza LoF** verso l'attaccante
+- **Atteso:** **7**, con la voce *«Schivata a −3: nessuna LoF verso l'attaccante»* nell'elenco dei MOD. Il numero da solo non basta: la voce deve esserci, altrimenti il giocatore non sa da dove viene il −3.
 
 **DIF-03 — Dodge (+3)**
-- **Attivo:** **DA COMPLETARE**
-- **ARO:** Puppetbot → Schivata
-- **Atteso:** **13**.
+- **Attivo:** Fusilier (Combi Rifle) *(PanOceania #1)* · dichiara **ATTACCO BS**
+- **Con:** Combi Rifle
+- **Bersaglio:** Puppetbot (Red Fury) *(Nomadi #17, PH 10, Dodge (+3))* @ banda 1
+- **ARO:** Puppetbot (Red Fury) → **Schivata**, con LoF
+- **Atteso:** **13**, con la voce *«Dodge (+3)»*. È PH 10 più il +3 della Skill: se leggi 10, la Skill non si applica.
 
 **DIF-04 — Schivata da IMM-A** *(risolto)*
-- **Attivo:** **DA COMPLETARE**
-- **ARO:** **DA COMPLETARE**, stato **IMM-A** → Schivata
-- **Atteso:** PH 10 **−6** = **4**, con la voce "Stato IMM-A".
+- **Attivo:** Fusilier (Combi Rifle) *(PanOceania #1)* · dichiara **ATTACCO BS**
+- **Con:** Combi Rifle
+- **Bersaglio:** Alguacil (Combi Rifle) *(Nomadi #1, PH 10, WIP 13)*, stato **Immobilizzato-A**
+- **ARO:** Alguacil (Combi Rifle) *(Nomadi #1, PH 10, WIP 13)*, stato **IMM-A** → **Schivata**, con LoF
+- **Atteso:** PH 10 **−6** = **4**, con la voce *«Stato Immobilizzato-A: −6 PH»*.
 
 **DIF-05 — Reset base**
-- **Attivo:** **DA COMPLETARE**
-- **ARO:** **DA COMPLETARE** → Reset
-- **Atteso:** WIP **13**, con la nota che il −3 senza LoF vale sulla Schivata e non sul Reset.
+- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* · dichiara un **programma di Hacking**
+- **Con:** Carbonite
+- **Bersaglio:** Orc (Hacker, Hacking Device) *(PanOceania #4)*
+- **ARO:** Orc (Hacker, Hacking Device) *(WIP 13)* → **Reset**, senza LoF
+- **Atteso:** WIP **13**, nessun MOD, e la **nota** che il −3 per assenza di LoF vale **sulla Schivata e non sul Reset**. È la nota che distingue le due reazioni: senza, i due −3 si confondono.
 
 **DIF-06 — Reset da Bersagliato**
-- **Attivo:** **DA COMPLETARE**
-- **ARO:** **DA COMPLETARE**, stato **Bersagliato** → Reset
-- **Atteso:** **10**.
+- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* · dichiara un programma di Hacking
+- **Con:** Carbonite
+- **Bersaglio:** Orc (Hacker, Hacking Device) *(PanOceania #4)*, stato **Bersagliato**
+- **ARO:** Orc (Hacker, Hacking Device) *(WIP 13)*, stato **Bersagliato** → **Reset**
+- **Atteso:** **10**, con la voce *«Stato Bersagliato: −3 WIP»*.
 
 **DIF-07 — Reset da IMM-B** *(risolto)*
-- **Attivo:** **DA COMPLETARE**
-- **ARO:** **DA COMPLETARE**, stato **IMM-B** → Reset
-- **Atteso:** **10**.
+- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* · dichiara un programma di Hacking
+- **Con:** Carbonite
+- **Bersaglio:** Orc (Hacker, Hacking Device) *(PanOceania #4)*, stato **Immobilizzato-B**
+- **ARO:** Orc (Hacker, Hacking Device) *(WIP 13)*, stato **IMM-B** → **Reset**
+- **Atteso:** **10**, con la voce *«Stato Immobilizzato-B: −3 WIP»*.
 
 **DIF-08 — Reset da Isolato** *(risolto)*
-- **Attivo:** **DA COMPLETARE**
-- **ARO:** **DA COMPLETARE**, stato **Isolato** → Reset
-- **Atteso:** **4**.
+- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* · dichiara un programma di Hacking
+- **Con:** Carbonite
+- **Bersaglio:** Orc (Hacker, Hacking Device) *(PanOceania #4)*, stato **Isolato**
+- **ARO:** Orc (Hacker, Hacking Device) *(WIP 13)*, stato **Isolato** → **Reset**
+- **Atteso:** **4**, con la voce *«Stato Isolato: −9 WIP»*. È il MOD più pesante del gioco: se leggi 10 si sta applicando quello dell'IMM-B.
 
-**DIF-09 — Sesto Senso** *(risolto, da confermare)*
-- **Attivo:** **DA COMPLETARE**
-- **ARO:** un reattivo con **Sixth Sense**, **sotto Soppressione** e **senza LoF** → Schivata
-- **Atteso:** **nessun MOD negativo**, salvo IMM-A (−6 PH), IMM-B (−3 WIP), Isolato (−9 WIP). Quindi PH pieno: nell'elenco MOD non deve comparire né il −3 della LoF né quello della Soppressione. Riferimento: p.109.
-
+**DIF-09 — Sesto Senso** 🔴 **atteso corretto il 9 ottobre sera, ed eseguibile**
+- **Attivo:** Fusilier (Combi Rifle) *(PanOceania #1)* · dichiara **ATTACCO BS**
+- **Con:** Combi Rifle, prima banda (0-8")
+- **Bersaglio:** **Warcor (Sixth Sense)**, voce **27** del roster *(aggiunta per questa prova)*, **PH 11**
+- **ARO:** il Warcor, **in Soppressione** e **senza LoF** → **SCHIVATA**
+- **Atteso:** la Schivata del Warcor è **PH pieno 11**, e l'elenco dei MOD è **vuoto** — nessuna voce. Al posto del −3 della LoF c'è la **nota** *"Sesto Senso: ignorato il -3 (nessuna LoF verso l'attaccante)."*
+- **Controprova, indispensabile:** un **Alguacil (Combi Rifle)** voce 1, nelle stesse condizioni, scende a **PH 10 → 7** con la voce `Schivata a -3: nessuna LoF verso l'attaccante`. Senza questa riga, un Sesto Senso che non facesse nulla e una Schivata che non applicasse mai il −3 darebbero lo stesso verde.
+- 🔴 **Il piano chiedeva una nota di troppo.** Diceva: *"nell'elenco non deve comparire né il −3 della LoF né quello della Soppressione; al loro posto una nota per ognuno"*. Misurato: la nota c'è **solo** per la LoF, e non è un difetto — **il −3 della Soppressione non è mai stato nella Schivata di chi è soppresso.** Va a **CHI ATTACCA**: il Fusilier passa da **15 a 12**, con la voce `Bersaglio in Fuoco di Soppressione a 8": -3`. Il catalogo lo scrive (`STATI.suppressive.modNemiciEntro24: -3`, *"Nemici entro 0-24" hanno -3 in tutti i F2F"*). Il Sesto Senso non lo tocca, perché non è un MOD del Warcor. **Da provare dal lato dell'attaccante**, dove vive.
+- **Le tre eccezioni che restano, e su quale tiro cadono** — il piano le elencava senza dirlo, e cadono su tiri diversi:
+  - **IMM-A**: **−6 PH sulla Schivata** (11 → 5);
+  - **IMM-B**: **−3 WIP sul Reset** (13 → 10), e la Schivata resta **11**;
+  - **Isolato**: **−9 WIP sul Reset** (13 → 4), e la Schivata resta **11**.
+  Cercate tutte e tre sulla Schivata, due sembrerebbero non applicate. Riferimento: p.109, e la riga 9941 del regolamento.
 **DIF-10 — Dichiarare la Soppressione**
-- **Attivo:** **DA COMPLETARE** · dichiara **Soppressione**
-- **Con:** **DA COMPLETARE**
-- **Atteso:** nessun tiro, stato visibile sul tabellone, arma che passa al profilo SF Mode.
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1, PH 10, WIP 13)* · dichiara **FUOCO DI SOPPRESSIONE**
+- **Con:** Combi Rifle *(ha il Tratto «Suppressive Fire»)*
+- **Atteso:** **nessun tiro**: lo stato compare sul tabellone e l'arma passa al profilo **Combi Rifle (SF Mode)**. Se esce un numero da tirare, la Soppressione è trattata come un attacco.
 
 **DIF-11 — Armi ammesse**
-- **Attivo:** Alguacil · dichiara **Soppressione**; poi Morlock · dichiara **Soppressione**
-- **Con:** Combi Rifle per l'Alguacil; per il Morlock tutte e tre le sue armi — non nominate **DA COMPLETARE**
-- **Atteso:** Alguacil col Combi **sì**, **Morlock no**: tutte e tre le sue armi escluse col motivo.
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1, PH 10, WIP 13)* · dichiara **Soppressione**; poi Morlock (Assault Pistol) *(Nomadi #13)* · dichiara **Soppressione**
+- **Con:** Combi Rifle per l'Alguacil; per il Morlock **tutte e tre** le sue armi: **Chain Rifle**, **Smoke Grenades**, **Assault Pistol**
+- **Atteso:** l'Alguacil col Combi **sì**; il Morlock **no**, con tutte e tre le armi escluse e il motivo scritto per ognuna — *«non ha il Tratto "Suppressive Fire"»*. Il Morlock non può mai dichiarare Soppressione: non è un caso particolare di una, sono tutte.
 
 **DIF-12 — SF Mode in ARO**
-- **Attivo:** **DA COMPLETARE**
-- **ARO:** **DA COMPLETARE**, in **Soppressione** → ARO con l'arma in SF Mode
-- **Atteso:** arma "Combi Rifle (SF Mode)", Burst **3**, bande 0/0/−3, gittata massima 24", avviso **A98**.
+- **Attivo:** Fusilier (Combi Rifle) *(PanOceania #1)* · dichiara **MOVIMENTO**
+- **Bersaglio:** —
+- **ARO:** Alguacil (Combi Rifle) *(Nomadi #1, PH 10, WIP 13)*, **in Soppressione** → ARO con l'arma in SF Mode
+- **Atteso:** l'arma diventa **«Combi Rifle (SF Mode)»**, Burst **3**, bande **0 / 0 / −3**, gittata massima **24"**, e l'avviso **A98**. Il profilo SF non è il Combi normale: se vedi Burst 3 con le bande del Combi, la sostituzione non è avvenuta.
 
 **DIF-13 — Attivare cancella la Soppressione**
-- **Attivo:** **DA COMPLETARE**, in **Soppressione** · spende un ordine
-- **Atteso:** la Soppressione viene cancellata, anche se l'ordine viene poi speso in altro.
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1, PH 10, WIP 13)*, **in Soppressione** · spende un Ordine per **qualunque** azione (anche un Movimento, anche un IDLE)
+- **Atteso:** la Soppressione viene **cancellata**, anche se l'Ordine viene poi speso in altro. Da controllare sul tabellone e sulla riga dell'unità: lo stato deve sparire nel momento in cui l'Ordine parte, non alla fine del turno.
 
 ---
 
@@ -1355,16 +1606,17 @@ Imposta lo stato e guarda **la lista ordini**.
   - e lo **Stealth non lo protegge**: il regolamento dice che lo Stealth non è efficace contro le armi Deployable.
 
 **DEP-08 — Il token muore**
-- **Attivo:** — *(il piano non dice l'unità né l'azione)* · un colpo che passa
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** il token deployable — *(il piano non dice banda né copertura)*
+- **Attivo:** `Alguacil (Combi Rifle)` · ATTACCO BS, un colpo che passa
+- **Con:** Combi Rifle
+- **Bersaglio:** il token `deployable_repeater` (STR 1, ARM 0, BTS 0, Tratti Disposable (3) + Deployable) @ banda 2, senza copertura
 - **ARO:** nessuno
-- **Atteso:** STR 1 più il Tratto Deployable = passa **direttamente a Morto** e si rimuove. Niente Incosciente, niente Ingegnere.
+- **Atteso:** salvezza **ARM VS 7** (ARM 0 + PS 7), **un dado**, una Ferita. Fallita: STR 1 più il Tratto Deployable = passa **direttamente a Morto** e si rimuove. Niente Incosciente, niente Ingegnere — la frase del motore è *«Un Deployable che entra in Stato Incosciente passa automaticamente a Morto, senza Ferita aggiuntiva, e si rimuove dal tavolo.»*
+- **Controprova indipendente, nella stessa prova:** prova TECH RECOVERY su quel token con `Clockmaker (Engineer)`. Deve essere **rifiutata**, con *«È un Deployable: passa direttamente a Morto, non c'è nulla da riparare.»* Due schermate diverse che devono dire la stessa cosa: se una delle due concede, la regola sta in un posto solo.
 
 **DEP-09 — Disco Ball**
-- **Attivo:** Kulak · FUOCO SPECULATIVO
-- **Con:** Disco Baller
-- **Bersaglio:** **DA COMPLETARE**
+- **Attivo:** `Kulak (Hacker, Killer Hacking Device)` · FUOCO SPECULATIVO
+- **Con:** Disco Baller — l'unica arma speculativa che il Kulak porta (`M.armiSpeculative` torna lei sola)
+- **Bersaglio:** **un punto del tavolo, non una truppa.** Il Disco Baller è Targetless: il Fuoco Speculativo si dichiara sul punto dove si vuole il token
 - **ARO:** nessuno
 - **Atteso:** il Disco Ball **non** compare fra le armi piazzabili: nasce dall'esito del tiro del **Disco Baller**, quindi passa dal Fuoco Speculativo. Verifica che il token nasca dopo un tiro riuscito, con la Sagoma Circolare Eclipse centrata, e che alla Fase Stati si rimuova **la sagoma e non il token**.
 
@@ -1382,19 +1634,24 @@ Imposta lo stato e guarda **la lista ordini**.
 
 # 18. Blocco P — Trincerarsi e logistica *(blocco nuovo)*
 
-**LOG-01 — Trincerarsi**
-- **Attivo:** **DA COMPLETARE** · TRINCERARSI, Ordine Intero
+**LOG-01 — Trincerarsi** **[NON ESEGUIBILE IN APP: manca il dato]**
+- **Attivo:** nessuno. Misurato il 9 ottobre: l'ordine chiede l'Abilità **`Sapper (Foxhole)`** (`M.azioneSenzaTiro('TRINCERARSI')` la nomina), e **`Sapper` non compare in nessuno dei 765 profili** — né `Foxhole`, né `Trincerarsi`. Nessuna voce di roster può sanarlo: il dato non c'è in tutto il database.
 - **ARO:** nessuno
-- **Atteso:** nessun tiro; l'unità entra in Foxhole, con gli effetti di ST-15.
+- **Atteso:** *(la regola, provata nel banco; in app non c'e` chi la invochi.)* nessun tiro; l'unità entra in Foxhole, con gli effetti di ST-15. `M.foxholeAllaDichiarazione` dà già le due strade con le loro conseguenze: cancellando il Foxhole si muove con MOV e Silhouette veri e perde per tutto l'Ordine Copertura a 360°, Mimetism (-3), Courage e S3 (righe 13871-13876); restandoci non si muove, **nemmeno con una Schivata riuscita** (riga 13867). Misurato in `test_modulo_trincerarsi.js` con un'unità costruita a mano.
+- **Secondo caso della stessa famiglia** (col Cubo di SUP-07): una regola scritta nel catalogo e nel motore, con **zero** profili che possano invocarla. Fino alla revisione 24 i casi dichiarati erano quattro: il Disposable `(+1SD)` e il `Chest Mine` **esistono** (li cercavo col nome sbagliato) e sono usciti dall'elenco. → **DATABASE**: `Sapper` è un'Abilità che manca ai profili, o non esiste in N5?
 
-**LOG-02 — Ingresso in campo**
-- **Attivo:** **DA COMPLETARE** · apri la schermata dell'Ingresso in campo
-- **Atteso:** la schermata dice **prima del tiro** che fallire non significa "non entri": si entra nella **propria Zona di Schieramento**, a contatto col bordo, come Modello e **senza i Deployable**.
+**LOG-02 — Ingresso in campo** *(eseguibile dal 10 ottobre)*
+- **Attivo:** **Spector (Parachutist, Combat Jump)**, voce **29** del roster *(PH 13)* · INGRESSO IN CAMPO · Ordine Intero
+- **ARO:** nessuno
+- **Atteso:** la voce `INGRESSO IN CAMPO (AD)` è nel menu. La schermata mostra **PH 13** con la voce *«PH di <soprannome>: 13»* — il tiro è sul **PH della truppa**, non fisso — poi **una domanda bloccante** sul punto di atterraggio (*«Il punto di atterraggio rispetta tutti i divieti…?»*) con **sei divieti** elencati, l'ultimo solo per il Combat Jump (niente aree con Visibilità Bassa, Pessima o Zero, Fumo ed Eclipse compresi). Finché non rispondi, il tasto dice **RISPONDI ALLA DOMANDA**. Sotto, **prima del tiro**, il riquadro *SE IL TIRO FALLISCE*: si entra comunque, nella **propria Zona di Schieramento** a contatto col bordo, **come Modello** e **senza i Deployable**; l'Ordine non è sprecato.
+- **Controprova:** `Alguacil (Combi Rifle)` voce 1 non ha la voce nel menu, e `M.regoleIngressoInCampo` gli risponde col motivo giusto — *«Serve un'Abilità di Schieramento Aereo: Combat Jump, Airborne Deployment, AD:, Parachutist.»*
+- **Da leggere insieme a LOG-03:** qui il numero è il PH del profilo (13), là è **fisso a 14** qualunque sia la truppa. Se le due schermate mostrano lo stesso numero, una delle due sta leggendo il campo sbagliato.
 
 **LOG-03 — Request Speedball**
-- **Attivo:** **DA COMPLETARE** · REQUEST SPEEDBALL
+- **Attivo:** **due truppe, scelte perché stanno ai due lati del 14**: `Alguacil (Combi Rifle)` (PH **10**) e `Squalo Mk-II (MULTI Marksman Rifle)` (PH **15**) · REQUEST SPEEDBALL
 - **ARO:** nessuno
-- **Atteso:** **non è un Ordine**, è un'Abilità Automatica, e il tiro è su **PH 14 fisso** — non il PH della truppa. Primo Token scelto, secondo tirato sulla Chart.
+- **Atteso:** per **entrambe** lo stesso numero, **14**, con la voce *«PH fisso 14: non quello della truppa»*; `nonEUnOrdine: true` e tipo `AUTOMATIC_SKILL`. Primo Token scelto, secondo tirato sulla Chart (1-3 VITAPACK, 4-6 AUTOREPAIRS, 7-10 SWITCH ON, 11-13 JETPACK (S:2), 14-16 OVERKILL, 17-20 NANOSHIELD); servono **due** Token.
+- **Perché due truppe e non una:** con una sola, un'app che leggesse per sbaglio il PH del profilo potrebbe passare per caso. Con il 10 e il 15 un errore si vede da che parte cade — 10 sarebbe un PH letto, 15 sarebbe un PH letto, e sono sbagli diversi. Il 15 è il caso cattivo: un numero **più alto** del vero fa sembrare riuscito un tiro che è fallito.
 
 ---
 
@@ -1408,94 +1665,105 @@ Imposta lo stato e guarda **la lista ordini**.
 - **Attivo:** un Fireteam con Alguacil + Moderator + Grenzer + Zero + Daktari · schermata del Fireteam
 - **Atteso:** **LIVELLO 1 (5 membri)**, con la nota esplicita, e **nessun bonus**.
 
-**FT-03 — Il +1 BS nel calcolo**
-- **Attivo:** un membro di un Fireteam di Livello 4 o più che dichiara un attacco · unità — unità **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**
+**FT-03 — Il +1 BS nel calcolo** 🔴 **con un difetto aperto accanto**
+- **Attivo:** Alguacil (Combi Rifle), voce **1** del roster, in un Fireteam con le voci **2, 3, 4** — tutti e quattro `Alguacil`, quindi **Livello 4** · ATTACCO BS
+- **Con:** Combi Rifle
+- **Bersaglio:** Fusilier (Combi Rifle), voce **1** di PanOceania, prima banda (0-8", +3)
 - **ARO:** nessuno
-- **Atteso:** da Livello 4 in su il **+1 BS** compare nel calcolo, con la voce.
-
+- **Atteso:** il **+1 BS** compare dal **Livello 4**, con la voce `Fireteam di Livello 4: +1 BS`. Misurato: Livelli 1, 2, 3 danno **14** (solo `Gittata: +3`); Livelli 4 e 5 danno **15**, due voci. Lo stesso passando l'elenco dei membri invece del numero.
+- **Il Livello NON è il numero di membri:** cinque unità **diverse** fanno un Fireteam di **Livello 1** e non prendono niente; quattro Alguacil più un Daktari fanno **Livello 4**. Da provare entrambi, o un conteggio sui membri passerebbe per corretto.
+- **Dove si passa:** l'opzione è `livelloFireteam` (un numero) oppure `fireteam` (l'elenco dei membri), documentata sopra `M.modAttacco`. Passata con un nome inventato non fa niente e non si lamenta: cercata col nome sbagliato questa prova sembra rossa quando non lo è.
+- 🔴 **DIFETTO APERTO, MISURATO IL 9 OTTOBRE — il +1 SD del Livello 2 non arriva a nessuno.** `M.bonusFireteam` restituisce `sd: 1` dal Livello 2 e il banner del Fireteam scrive `BS Attack (+1 SD)`. Ma `M.burstIniziale` risponde **`sd: 0`** con ogni forma dell'opzione — `livelloFireteam`, `fireteam`, niente — perché `M.dadiSpeciali` legge **solo le notazioni della truppa e dell'arma**, mai il Livello. E nello scontro completo del Hub non c'è **nessuna traccia** di dado speciale: cercato `sd`, `dadoSpeciale`, `specialDie` in tutto l'oggetto, zero. **Il meccanismo funziona** — una truppa con `BS Attack (+1 SD)` nel profilo dà `sd: 1`, con `(+2 SD)` dà 2 — **manca solo la fonte Fireteam**. La schermata ha già il codice per mostrarlo (`🎲 +1 Dado Speciale` se `burstDettaglio.sd > 0`): non si accende mai per un Fireteam. Dal Livello 2 un membro dovrebbe tirare un dado in più e scartarne uno, e nessuno glielo dice.
 **FT-04 — Non vale per Scoprire né Hacking**
-- **Attivo:** un membro di Fireteam che dichiara SCOPRIRE, poi HACKING · unità, stato, Livello del Fireteam **DA COMPLETARE**
-- **Con:** per l'HACKING il programma **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**
+- **Attivo:** Alguacil (Combi Rifle), voce **1**, in un Fireteam di quattro Alguacil (voci **1-4**, **Livello 4**) · dichiara SCOPRIRE, poi HACKING
+- **Con:** per lo SCOPRIRE nessun'arma (ha gittate proprie); per l'HACKING serve un Hacker — l'**Interventor (Hacker Plus)**, voce **8**, in un Fireteam di Livello 4 con tre Alguacil non va: il Livello conta le truppe della **stessa** Unità. Per questa metà serve un Fireteam di quattro Interventor, cioè una **sostituzione nel roster**; con le 40 di oggi si prova il solo caso a Livello 1, dove non c'è bonus da sbagliare
+- **Bersaglio:** per lo SCOPRIRE il **Croc Man (MULTI Sniper Rifle)**, voce **6** di PanOceania, messo in **CAMO**; per l'HACKING l'**Orc (Hacker, Hacking Device)**, voce **4**
 - **ARO:** nessuno
-- **Atteso:** il bonus del Fireteam non si applica né allo Scoprire né all'Hacking, con la nota.
-
+- **Atteso:** sullo **SCOPRIRE** si applica il **+3 Discover** del Livello 3 e **non** il +1 BS del Livello 4. Misurato: Livello 3 e Livello 4 danno **entrambi 13** — `Gittata: +3`, `Mimetismo del bersaglio: -6`, `Fireteam di Livello N: +3 Discover` — cioè il +1 BS del Livello 4 **non si aggiunge**. Sull'**HACKING** il Livello non cambia niente: **15** a Livello 3 e a Livello 4, nessuna voce di Fireteam.
+- **E la nota c'è:** fra le note del bonus si legge *"I bonus \"BS Attack (+1 SD)\" e \"+1 BS\" NON si applicano a Discover."* — così la regola non resta solo nel calcolo.
+- **Controprova:** sull'ATTACCO BS lo stesso Livello 4 **dà** il +1 BS (vedi FT-03). È la coppia che distingue "sa escluderlo" da "non lo applica mai".
 **FT-05 — Rotture**
-- **Attivo:** un membro del Fireteam che passa a Incosciente, poi Morto, poi Isolato, poi in Soppressione, poi IMM-A, poi IMM-B · unità e Livello del Fireteam **DA COMPLETARE**
-- **Atteso:** escono dal Fireteam Incoscienti, Morti, Isolati e in Soppressione. **Non** escono IMM-A e IMM-B, con la nota.
-
-**FT-06 — Neurocinetics in Fireteam** *(nuovo)*
-- **Attivo:** Sin-Eater (Neurocinetics) in un Fireteam di Livello alto, in Turno Attivo · stato, Livello esatto **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**
+- **Attivo:** Alguacil (Combi Rifle), voce **1** del roster, in un Fireteam di quattro Alguacil (voci **1-4**) · si passa dall'editor degli stati, uno stato per volta
+- **Atteso:** con `M.rotturaFireteam` — **escono** dal Fireteam **Incosciente** e **Morto** (causa `STATO_NULLO`), **Isolato** (`ISOLATO`) e **Fuoco di Soppressione** (`SOPPRESSIONE`): una causa ciascuno, nominata. **Non escono** **IMM-A** e **IMM-B**: nessuna causa, e la nota lo dice — *"Gli Stati Immobilizzato-A e Immobilizzato-B NON fanno uscire dal Fireteam: il regolamento li tratta come categoria distinta dagli Stati Nulli."*
+- **Perché conta:** fino al 28 settembre due file del progetto si contraddicevano proprio qui — `fireteam.js` includeva la Soppressione e non gli Immobilizzati, `logica_stati.js` il contrario — e delle **dieci** cause ufficiali ne conoscevano quattro ciascuno, diverse. Ora la lista è una sola, in `CATALOGO_N5.FIRETEAM_INTEGRITA`, e questa prova la guarda da lì.
+- **Le altre sei cause** non dipendono dallo stato e l'app non le vede da sola (Coerenza rotta, Ordine Irregolare, Ordine del Tenente, Impetuosa nella Fase Impetuosa, cambio di Gruppo, ARO diverso dal Fireteam): si passano a `M.rotturaFireteam` nel secondo argomento, e vanno provate una per una con quel campo.
+**FT-06 — Neurocinetics in Fireteam**
+- **Attivo:** Sin-Eater (MULTI Sniper Rifle), voce **20** del roster (ha **Neurocinetics**), in Turno Attivo · ATTACCO BS
+- **Con:** **MULTI Sniper Rifle (AP Mode)** (Burst 2 di base)
+- **Bersaglio:** Fusilier (Combi Rifle), voce **1** di PanOceania
 - **ARO:** nessuno
-- **Atteso:** il bonus di Burst **non** si applica in Turno Attivo. Dipende da BS-25.
+- **Atteso:** in Turno Attivo il Burst è **1**, con la voce `Neurocinetics: Burst 1 in Turno Attivo su tutte le armi BS` — e **nessun bonus di Fireteam lo rialza**, qualunque Livello. In ARO invece `M.burstReattivo` dà **2**, con le voci `In Turno Reattivo il Burst è 1` e `Neurocinetics: Burst pieno dell'arma in ARO (B2)`.
+- **La coppia che conta:** attivo **1** contro reattivo **2**, sulla stessa truppa e la stessa arma. Provata da un lato solo, una Neurocinetics che non funzionasse affatto passerebbe per corretta.
+- **Attenzione al punto d'ingresso:** il Burst reattivo lo dà **`M.burstReattivo`**, non `M.burstIniziale` con `inAro: true` — quello risponde ancora 1. Collegato a **BS-25**, dove la stessa distinzione vale per la Total Reaction.
 
 ---
 
 # 20. Blocco R — Ordine Coordinato
 
 **CO-01 — Burst della Punta di Lancia**
-- **Attivo:** **DA COMPLETARE**, **Punta di Lancia** di un Ordine Coordinato
-- **Con:** HMG, Burst **4**
-- **Atteso:** Burst **2**, con la voce "metà arrotondata per eccesso".
+- **Attivo:** Alguacil (HMG) *(Nomadi #2)*, **Punta di Lancia** di un Ordine Coordinato con Alguacil (Combi Rifle) #1 e Alguacil (Missile Launcher) #3
+- **Con:** Heavy Machine Gun, Burst **4**
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* @ banda 1
+- **Atteso:** Burst **2**, con le due voci *«Burst dell'arma Heavy Machine Gun»* e *«Punta di Lancia: metà del Burst arrotondata per eccesso»*. Metà di 4 è 2; con un'arma a Burst 3 sarebbe 2 anche lei (arrotondata per eccesso).
 
 **CO-02 — Gregari**
-- **Attivo:** i **gregari** di un Ordine Coordinato — unità non nominate **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Atteso:** Burst **1** per tutti.
+- **Attivo:** i due **gregari** dello stesso Ordine Coordinato di CO-01 — Alguacil (Combi Rifle) *(#1)* e Alguacil (Missile Launcher) *(#3)*
+- **Con:** Combi Rifle per il primo, Missile Launcher (Blast Mode) per il secondo
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* @ banda 1
+- **Atteso:** Burst **1** per tutti e due, con la voce *«Gregario in Ordine Coordinato: Burst 1»*. **Qualunque sia il Burst della loro arma**: il Missile Launcher a Burst 1 e il Combi a Burst 3 danno lo stesso risultato. È la controprova di CO-01: se il gregario tira più di un dado, la metà della Punta non c'entra.
 
 **CO-03 — Leader di Fireteam ≠ Punta di Lancia**
-- **Attivo:** il **Leader di un Fireteam** che non è la Punta di Lancia dell'Ordine Coordinato — unità non nominata **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Atteso:** in Fireteam il Leader ha Burst pieno.
+- **Attivo:** un Ordine Coordinato con **Alguacil (HMG) #2** come Punta di Lancia e, come gregario, il **Leader di un Fireteam** di quattro Alguaciles *(Nomadi #1, #4, #5 e un quarto Alguacil)*
+- **Con:** Heavy Machine Gun per la Punta, Combi Rifle per il Leader del Fireteam
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* @ banda 1
+- **Atteso:** **per regola** il Leader del Fireteam ha il **Burst pieno** — Combi Rifle **3** — anche se è gregario del Coordinato. La wiki mette i due casi in contrasto esplicito: la Punta scende a metà, il Leader **no**.
+- 🔴 **Oggi leggerai 1, e non è un tuo errore.** Misurato il 9 ottobre: il motore porta a Burst 1 **ogni** gregario del Coordinato, Leader di Fireteam compreso. Il commento del motore (riga ~1961) dichiara la regola giusta — *«Il Leader del Fireteam invece ha il Burst pieno… e qui erano trattati uguali»* — ma il codice sotto non la applica: `if (ctx.indiceCoord > 0)` scende a 1 senza eccezioni. **Segnalato a MOTORE.** Questa prova resta nel piano perché è quella che lo prende: quando sarà corretta, leggerai 3.
 
 **CO-04 — Cinque unità**
-- **Attivo:** un Ordine Coordinato con **cinque unità** — unità non nominate **DA COMPLETARE**
-- **Atteso:** **E41**.
+- **Attivo:** un Ordine Coordinato con **cinque** Alguaciles *(Nomadi #1-#5)*, Punta di Lancia il #1
+- **Atteso:** **E41** — *«Ordine Coordinato con 5 unità: il massimo è 4»*. Il messaggio conta le **truppe**, non le voci della busta: con Scoprire + Attacco cinque truppe fanno dieci voci e il numero deve restare 5 (vedi SP-08).
 
 **CO-05 — Nessuna**
 - **Attivo:** un Ordine Coordinato con **nessuna unità**
 - **Atteso:** **E40**.
 
 **CO-06 — Punta mancante**
-- **Attivo:** un Ordine Coordinato **senza Punta di Lancia** — unità non nominate **DA COMPLETARE**
-- **Atteso:** **E45**.
+- **Attivo:** un Ordine Coordinato con due Alguaciles *(#1 e #2)* e **nessuna Punta di Lancia** designata
+- **Atteso:** **E45** — *«Nessuna Punta di Lancia designata»*.
 
 **CO-07 — Punta non selezionata**
-- **Attivo:** un Ordine Coordinato con la **Punta di Lancia non selezionata** — unità non nominate **DA COMPLETARE**
-- **Atteso:** **E46**.
+- **Attivo:** un Ordine Coordinato con due Alguaciles *(#1 e #2)*, e come Punta di Lancia una **terza** truppa che non è fra le selezionate
+- **Atteso:** **E46** — *«La Punta di Lancia non è fra le unità selezionate»*. È diverso da CO-06: qui la Punta c'è, ma non è nel gruppo.
 
 **CO-08 — Unità non attivabile**
-- **Attivo:** un Ordine Coordinato con un'unità **Incosciente** nel gruppo — unità non nominate **DA COMPLETARE**
-- **Atteso:** **E42** col motivo.
+- **Attivo:** un Ordine Coordinato con Alguacil #1 e Alguacil #2, con il **#2 Incosciente**, Punta di Lancia il #1
+- **Atteso:** **E42** col motivo — *«<nome>: Stato Nullo: non può dichiarare Ordini attivi»*. Il nome dell'unità deve comparire: con due gregari non si saprebbe quale.
 
 **CO-09 — Gruppi diversi**
-- **Attivo:** un Ordine Coordinato con unità di **gruppi di combattimento diversi**; poi un Ordine Coordinato con unità di **addestramento diverso** — unità non nominate **DA COMPLETARE**
-- **Atteso:** **E43** per i gruppi diversi; **E44** per l'addestramento diverso.
+- **Attivo:** un Ordine Coordinato con Alguacil #1 nel **Gruppo 1** e Alguacil #2 nel **Gruppo 2**, Punta di Lancia il #1
+- **Atteso:** **E43** — *«Le unità appartengono a 2 Gruppi di Combattimento diversi»*.
+- ⚠️ **La seconda metà di questa prova non è eseguibile.** Chiedeva anche **E44** (Regolari con Irregolari): il motore lo controlla cercando la Skill `IRREGULAR` nelle skill della truppa, e **nessun profilo del database Nomadi la dichiara** — verificato su tutti e 385. Il controllo c'è ed è giusto, ma non è innescabile dai dati: è una lacuna del database, segnalata a DATABASE. Il Morlock è *Impetuous*, che non è la stessa cosa.
 
 **CO-10 — Stesso bersaglio**
-- **Attivo:** le unità di un Ordine Coordinato, tutte contro lo stesso bersaglio — unità non nominate **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** lo stesso per tutte — unità non nominata **DA COMPLETARE**
-- **Atteso:** chi non soddisfa i requisiti fa **Idle**, che genera comunque ARO e spende i Disposable (A-07).
+- **Attivo:** un Ordine Coordinato con Alguacil (HMG) #2 come Punta e Alguacil (Combi Rifle) #1 come gregario, **tutti contro lo stesso bersaglio**
+- **Con:** Heavy Machine Gun per la Punta, Combi Rifle per il gregario
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* @ banda **4 (32-40")** — fuori gittata per il Combi, dentro per l'HMG
+- **Atteso:** chi non soddisfa i requisiti fa **Idle**, che **genera comunque ARO** e **spende i Disposable** (A-07). L'Ordine non si blocca: una sola truppa fuori gittata non annulla il Coordinato.
 
 **CO-11 — CC coordinato**
-- **Attivo:** la **Punta di Lancia** di un Ordine Coordinato in CC, con alleati partecipanti ingaggiati — unità non nominate **DA COMPLETARE**
-- **Con:** arma da CC **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**
-- **Atteso:** tira solo la Punta, con **+1 Burst** e **+1 PH** per ogni alleato **partecipante** ingaggiato.
+- **Attivo:** Morlock (Assault Pistol) *(Nomadi #13)* come **Punta di Lancia** in CC, con **due** alleati partecipanti ingaggiati — Chimera *(#14)* e Alguacil #1
+- **Con:** CC Weapon
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)*, **Ingaggiato**
+- **Atteso:** tira **solo la Punta**. I due gregari hanno Burst **0** e `nonTira`, con la voce *«Gregario in Ordine Coordinato: in mischia non tira»*. La Punta ha **+1 Burst e +1 PH per ogni alleato partecipante ingaggiato**: con due alleati il Burst passa da 1 a **3**, con la voce *«Punta di Lancia: +2B per gli alleati»*. Se tirano anche i gregari, il Coordinato in CC è trattato come due attacchi separati.
 
 **CO-12 — ARO**
-- **Attivo:** le truppe attivate da un Ordine Coordinato — unità non nominate **DA COMPLETARE**
-- **ARO:** un nemico — unità non nominata **DA COMPLETARE**
-- **Atteso:** un solo ARO per nemico, contro una sola delle truppe attivate.
+- **Attivo:** un Ordine Coordinato con Alguacil #1 e Alguacil #2 · dichiarano **MOVIMENTO**
+- **ARO:** Fusilier (Combi Rifle) *(PanOceania #1)* → **ATTACCO BS**, Combi Rifle, banda 1, **contro una sola** delle due
+- **Atteso:** **un solo ARO per nemico**, contro **una sola** delle truppe attivate. L'elenco dei bersagli dell'ARO deve offrire entrambe le truppe ma permetterne **una**: se ne accetta due, il nemico sta reagendo due volte allo stesso Ordine.
 
 **CO-13 — Command Token**
-- **Attivo:** un Ordine Coordinato con la spesa di un **Command Token** — unità non nominate **DA COMPLETARE**
-- **Atteso:** promemoria: il motore non lo scala.
+- **Attivo:** un Ordine Coordinato con Alguacil #1 e Alguacil #2, dichiarando la spesa di un **Command Token**
+- **Atteso:** un **promemoria** a schermo che il Command Token va scalato **a mano**: il motore non tiene il conto dei Token. Non è un difetto, è un confine dichiarato — ma il promemoria deve esserci, o il giocatore crede che l'app li conti.
 
 ---
 
@@ -1529,60 +1797,60 @@ Imposta lo stato e guarda **la lista ordini**.
 Stesso attacco, cambia il terreno. Attaccante senza visore, poi MSV L1, L2/L3, poi Marksmanship.
 
 **TER-01 — TER_10 Bosco**
-- **Attivo:** lo stesso attacco nelle quattro varianti — senza visore, MSV L1, MSV L2/L3, Marksmanship · unità — unità **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE** · terreno **TER_10 Bosco** @ banda — , copertura **non detta**
+- **Attivo:** lo stesso attacco nelle quattro varianti — **senza visore** Alguacil (Combi Rifle) *(#1)*; **MSV L1** Grenzer (Forward Observer, Sensor, NCO) *(#12)*; **MSV L2** Intruder (HMG) *(#24)*; **Marksmanship** Grenzer (Marksmanship) *(#11)*
+- **Con:** l'arma di ciascuno
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* · terreno **TER_10 Bosco** *(Bassa Visibilità + Zona di Saturazione)* @ banda **1**, copertura **no**
 - **ARO:** nessuno
-- **Atteso:** senza visore **−3 BS** e −1 Burst; MSV L1 −1 Burst; MSV L2/L3 −1 Burst; Marksmanship −3 e −1 Burst.
+- **Atteso:** senza visore **−3 BS e −1 Burst**; MSV L1 **solo −1 Burst**; MSV L2 **solo −1 Burst**; Marksmanship **−3 e −1 Burst**. Il −1 al Burst viene dalla Saturazione e **non** lo toglie nessun visore; il −3 lo togli già con l'MSV L1. Il Marksmanship **non** è un visore: si comporta come chi non ne ha.
 
 **TER-02 — TER_11 Giungla**
-- **Attivo:** lo stesso attacco nelle quattro varianti — senza visore, MSV L1, MSV L2/L3, Marksmanship · unità — unità **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE** · terreno **TER_11 Giungla** @ banda — , copertura **non detta**
+- **Attivo:** le quattro varianti di TER-01 — Alguacil #1, Grenzer #12 (MSV L1), Intruder #24 (MSV L2), Grenzer #11 (Marksmanship)
+- **Con:** l'arma di ciascuno
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* · terreno **TER_11 Giungla** *(Pessima Visibilità + Saturazione)* @ banda **1**, copertura **no**
 - **ARO:** nessuno
-- **Atteso:** senza visore **−6** e −1 Burst; MSV L1 **−3** e −1 Burst; MSV L2/L3 −1 Burst; Marksmanship −6 e −1 Burst.
+- **Atteso:** senza visore **−6 e −1 Burst**; MSV L1 **−3 e −1 Burst** (dimezza, non annulla); MSV L2 **solo −1 Burst**; Marksmanship **−6 e −1 Burst**. È la prova che distingue i due livelli di visore: nel Bosco L1 e L2 fanno lo stesso, qui no.
 
-**TER-03 — TER_13 Foresta**
-- **Attivo:** lo stesso attacco nelle quattro varianti — senza visore, MSV L1, MSV L2/L3, Marksmanship · unità — unità **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE** · terreno **TER_13 Foresta** @ banda — , copertura **non detta**
+**TER-03 — TER_13 Foresta Primordiale**
+- **Attivo:** le quattro varianti di TER-01
+- **Con:** l'arma di ciascuno
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* · terreno **TER_13 Foresta Primordiale** *(Visibilità Zero + Saturazione)* @ banda **1**
 - **ARO:** nessuno
-- **Atteso:** senza visore **nessuna LoF**; MSV L1 **−6** e −1 Burst; MSV L2/L3 LoF libera e −1 Burst; Marksmanship nessuna LoF.
+- **Atteso:** senza visore **NESSUNA LoF** — l'attacco non si può nemmeno dichiarare; MSV L1 **−6 e −1 Burst**; MSV L2 **LoF libera e solo −1 Burst**; Marksmanship **nessuna LoF**. Qui il visore non riduce un malus: apre o non apre la linea di tiro.
 
 **TER-04 — TER_17 Sala Generatori**
-- **Attivo:** lo stesso attacco nelle quattro varianti — senza visore, MSV L1, MSV L2/L3, Marksmanship · unità — unità **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE** · terreno **TER_17 Sala Generatori** @ banda — , copertura **non detta**
+- **Attivo:** le quattro varianti di TER-01
+- **Con:** l'arma di ciascuno
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* · terreno **TER_17 Sala Generatori** *(Rumore Bianco + Saturazione)* @ banda **1**
 - **ARO:** nessuno
-- **Atteso:** senza visore nessun effetto e −1 Burst; MSV L1 **−6** e −1 Burst; MSV L2/L3 LoF libera e −1 Burst; Marksmanship **nessuna LoF**.
+- **Atteso:** **senza visore nessun effetto sul tiro e −1 Burst** — la LoF è libera; **con MSV L1, L2 o L3 NESSUNA LoF**; Marksmanship come chi non ha visore sul tiro, ma **nessuna LoF**. Il Rumore Bianco è il contrario di tutti gli altri terreni: **punisce chi ha il visore** e lascia passare chi non ce l'ha. 🔴 **Valore corretto il 9 ottobre:** il piano diceva «MSV L1 −6, MSV L2/L3 LoF libera», copiando lo schema della Foresta. Misurato col motore 2026-10-09.1: il Rumore Bianco **blocca la LoF a tutti e tre i livelli** di visore. È il senso della regola — il Rumore Bianco esiste per negare i multispettrali.
 
 **TER-05 — TER_15 Tempesta**
-- **Attivo:** lo stesso attacco nelle quattro varianti — senza visore, MSV L1, MSV L2/L3, Marksmanship · unità — unità **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE** · terreno **TER_15 Tempesta** @ banda — , copertura **non detta**
+- **Attivo:** le quattro varianti di TER-01
+- **Con:** l'arma di ciascuno
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* · terreno **TER_15 Tempesta** *(Peggiora Visibilità di 1)* @ banda **1**
 - **ARO:** nessuno
-- **Atteso:** senza visore **−3**; MSV L1 niente; MSV L2/L3 niente; Marksmanship −3.
+- **Atteso:** senza visore **−3**, e **nessun** −1 al Burst; MSV L1 **niente**; MSV L2 **niente**; Marksmanship **−3**. La Tempesta **non** è una Zona di Saturazione: se vedi il −1 al Burst, il motore la sta trattando come un bosco. E da sola alza la Visibilità di un livello: su un terreno che già ne ha una, i due si combinano (Bosco + Tempesta → **−6**).
 
 **TER-06 — Speculativo ignora le Zone di Visibilità**
-- **Attivo:** **DA COMPLETARE** · attacco Speculativo
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE** · terreno in Zona di Visibilità — quale, **DA COMPLETARE** @ banda — , copertura **non detta**
+- **Attivo:** Alguacil (Missile Launcher) *(Nomadi #3)* · dichiara **FUOCO SPECULATIVO**
+- **Con:** Missile Launcher (Blast Mode)
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* · terreno **TER_11 Giungla** *(Pessima Visibilità, −6 per chi non ha visore)* @ banda **2**, copertura **no**
 - **ARO:** nessuno
-- **Atteso:** il MOD del terreno **non** entra nel tiro, il −1 al Burst sì.
+- **Atteso:** il **−6 del terreno non entra nel tiro** — lo Speculativo non guarda, tira a parabola — mentre il **−1 al Burst della Saturazione sì**. Controprova: lo stesso Alguacil con un ATTACCO BS normale sullo stesso bersaglio prende **−6 e −1** (TER-02). I due numeri a confronto sono la prova.
 
 **TER-07 — Saturazione**
-- **Attivo:** **DA COMPLETARE** · attacco in Zona di Saturazione
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE** @ banda — , copertura **non detta**
+- **Attivo:** Alguacil (HMG) *(Nomadi #2)* · ATTACCO BS
+- **Con:** Heavy Machine Gun *(Burst 4)*
+- **Bersaglio:** **due** Fusiliers *(PanOceania #1 e #2)* · terreno **TER_10 Bosco** *(Zona di Saturazione)* @ banda **1**, copertura **no**
 - **ARO:** nessuno
-- **Atteso:** il Burst scende **prima** dell'allocazione.
+- **Atteso:** il Burst scende **prima** dell'allocazione: dai 4 dell'HMG a **3**, e sono **3** i dadi da dividere fra i due bersagli — non 4 divisi e poi ridotti. Se la schermata ti fa dividere 4 e poi mostra 3, l'ordine è sbagliato e un dado si perde senza che si veda dove.
 
 **TER-08 — Fumo contro MSV**
-- **Attivo:** **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** **DA COMPLETARE**, dietro una Sagoma di **Smoke**, poi di **Eclipse** @ banda — , copertura **non detta**
-- **ARO:** **DA COMPLETARE**
-- **Atteso:** Smoke → **TIRO NORMALE** con la nota; Eclipse → **F2F**.
+- **Attivo:** Intruder (HMG) *(Nomadi #24, **MSV L2**)* · ATTACCO BS
+- **Con:** Heavy Machine Gun
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)*, dietro una Sagoma di **Smoke**, poi di **Eclipse** @ banda **2**, copertura **no**
+- **ARO:** Fusilier (Combi Rifle) → **Schivata**
+- **Atteso:** col **Fumo** l'MSV L2 vede attraverso: esce **TIRO NORMALE** con la nota che il Fumo non lo ferma. Con l'**Eclipse** no: esce **FACCIA A FACCIA**, perché l'Eclipse ferma anche i visori. Sono le due zone che il campo `zona` distingue — e il motivo per cui Fumo ed Eclipse si escludono nella scelta del terreno (vedi il banco della tendina).
 
 ---
 
@@ -1706,12 +1974,14 @@ qualcuno non conta i colpi.
 - **ARO:** nessuno
 - **Atteso:** dopo il primo colpo **1 uso**, dopo il secondo **0**, e al terzo tentativo il Burst possibile è **0**: non si può più tirare. Se dopo due colpi ne restano ancora due, è tornato il difetto.
 
-**DIS-02 — Il (+1B) costa due usi, il (+1SD) uno**
-- **Attivo:** Triphammer · ATTACCO BS
-- **Con:** la stessa arma, Panzerfaust, nelle due notazioni: una volta **(+1B)**, una volta **(+1SD)**
-- **Bersaglio:** **DA COMPLETARE**
+**DIS-02 — Il (+1B) costa due usi, il (+1SD) uno** *(eseguibile dal 10 ottobre)*
+- **Attivo:** prima **Triphammer (Heavy Shotgun, Heavy Rocket Launcher, Panzerfaust)**, voce **30** *(TAG, BS 13)* · ATTACCO BS; poi **Spector (Parachutist, Combat Jump)**, voce **29** *(PH 13)* · FUOCO SPECULATIVO
+- **Con:** per il Triphammer **Panzerfaust (+1B)**, come sta scritto nel suo profilo; per lo Spector **Drop Bears (BS Mode) (+1SD)**
+- **Bersaglio:** `Fusilier (Combi Rifle)` voce 1 @ banda **0** (0-8"), senza copertura — il bersaglio non cambia il conto degli usi, serve solo un colpo da dichiarare
 - **ARO:** nessuno
-- **Atteso:** col **(+1B)** si tirano due dadi e si spendono **due** usi; col **(+1SD)** si tira un dado in più ma si spende **un** uso solo — il dado speciale non consuma.
+- **Atteso:** **Triphammer:** la scheda del bersaglio dice *«Burst dell'arma Panzerfaust · BS Attack (+1B): +1 Burst in Turno Attivo»* e assegna **2** dadi; sul tabellone **Successo al 10** (BS 13 −3 di gittata), **Dadi da lanciare: 2**. Dopo il colpo gli usi spesi del Panzerfaust sono **2 su 2**: è Disposable (2), un solo attacco lo svuota. **Spector:** i Drop Bears a Burst **1** più **un dado speciale** (`M.burstIniziale` → `valore 1`, `sd 1`), e si spende **un uso solo** su 3 (`M.usiDaConsumare` con Burst 1 → 1). I due costi devono essere **diversi**: è tutto il senso della prova.
+- **Come è misurato:** il Triphammer **dalla pagina**, fino al tabellone. Lo Spector **sul motore** (le due funzioni qui sopra) e fino alla scelta dell'arma dalla pagina — il bottone `Drop Bears` compare nel Fuoco Speculativo con *Burst 1* e le bande +3 / −3; il resto del giro in app è da fare al tavolo. `test_usi_disposable.js` confronta i due costi con la notazione costruita a mano.
+- **Corretto il 10 ottobre:** fino alla revisione 24 questa prova diceva che un Disposable con `(+1SD)` *non esiste in nessuno dei 765 profili*. Cercavo `Panzerfaust (+1SD)`. Esiste `Drop Bears (+1SD)`: Spector e Spector FTO, nelle due fazioni.
 
 **DIS-03 — Una Schivata non consuma niente**
 - **Attivo:** Triphammer · SCHIVATA
@@ -1725,11 +1995,13 @@ qualcuno non conta i colpi.
 - **Atteso:** esaurita la Shock Mine, la PARA Mine resta usabile: **3 usi** e Burst 1. Il messaggio nomina lo stato **Scarico** e dice come si toglie: Reload, Abilità Breve nella ZdC di un alleato con Baggage.
 
 **DIS-05 — Il dado speciale si vede** *(nuovo)*
-- **Attivo:** Triggermen (BS Attack [+1SD]) · ATTACCO BS; poi la controprova con un Alguacil
-- **Con:** BS Attack [+1SD] · arma **DA COMPLETARE**
-- **Bersaglio:** prima un bersaglio solo, poi due bersagli · unità, stato, banda e copertura **non detta**
+- **Attivo:** `Intruder (MULTI Sniper Rifle)` · ATTACCO BS — porta `MULTI Sniper Rifle (+1SD)`. *(I Triggermen hanno davvero la Skill `BS Attack (+1SD)`, ma nessuno dei 4 profili è nel roster: l'Intruder arriva allo stesso dado per l'altra strada, la notazione dell'arma.)*
+- **Con:** `MULTI Sniper Rifle (+1SD)`
+- **Bersaglio:** prima `Fusilier (Combi Rifle)` solo, poi `Fusilier (Combi Rifle)` + `Orc (Hacker, Hacking Device)` @ banda 3, senza copertura
 - **ARO:** nessuno
-- **Atteso:** fra i modificatori compare **"tira 1 dado in più, poi scartane 1"**, e il Burst **non** aumenta. Con due bersagli il dado va a **uno solo**: il primo con dadi assegnati, o quello che hai marcato. Controprova: un Alguacil non deve vedere quella frase.
+- **Atteso:** fra i modificatori compare **"tira 1 dado in più, poi scartane 1"**, e il Burst **resta 1** — `M.dadiSpeciali` dà 1 e `M.burstIniziale` torna `{valore: 1, sd: 1}`. Con due bersagli il dado va a **uno solo**: il primo con dadi assegnati, o quello che hai marcato.
+- **Controprove, due e di peso diverso:** (1) lo **stesso** Intruder con il `MULTI Sniper Rifle` **senza** la notazione → `sd: 0`, nessuna frase: cambia solo la notazione, non la truppa né l'arma; (2) `Alguacil (Combi Rifle)` → `sd: 0` con Burst 3, cioè un Burst alto non è un dado speciale. La prima è la controprova che conta: isola la notazione da tutto il resto.
+- **Terza strada, in mischia:** `Wolfgang Amadeus` con la `DA CC Weapon` ha **Martial Arts L3**, e il motore dà `sd: 1` con la nota *«Martial Arts L3: (+1 SD) — tira un dado in più e poi scartane uno. Non aumenta il Burst.»* Tre sorgenti dello stesso dado (notazione d'arma, Skill di profilo, Martial Arts) e una sola frase a schermo: se una delle tre non arriva, si vede qui.
 
 ---
 
@@ -1750,9 +2022,11 @@ qualcuno non conta i colpi.
 - **ARO:** un **CrazyKoala**, poi le **MadTraps** → DETONAZIONE, contro l'Alguacil, banda **non detta**
 - **Atteso:** **10** in entrambi i casi, PH pieno. Solo la mina, che è una Sagoma, toglie 3. Se vedi 7 contro il Koala, il −3 è stato dato a tutti i deployable.
 
-**DET-04 — Le tre domande dell'innesco**
-- **Attivo:** **DA COMPLETARE** · scegli DETONAZIONE per una mina
-- **Atteso:** **tre domande**, ciascuna bloccante — un nemico nell'area d'innesco; solo il movimento di una Schivata o di un Guts fallito; un alleato sotto la Sagoma, anche Incosciente. Se manca **anche una sola risposta**, la detonazione **non scatta** e l'app lo dice. Il Chest Mine e il Mine Dispenser **non** ricevono la voce DETONAZIONE.
+**DET-04 — Le tre domande dell'innesco** *(eseguibile dal 10 ottobre, con un difetto accanto)*
+- **Attivo:** `Puppet Masters (Minelayer)` voce 22 · scegli DETONAZIONE per la sua **Shock Mine**; poi **Krakot Renegade (Boarding Shotgun)** voce **31** e **Bambabot-1 (Chain Rifle (ps=6))** voce **32** · PIAZZARE EQUIPAGGIAMENTO
+- **Atteso:** **tre domande**, ciascuna bloccante — un nemico nell'area d'innesco; solo il movimento di una Schivata o di un Guts fallito; un alleato sotto la Sagoma, anche Incosciente. Se manca **anche una sola risposta**, la detonazione **non scatta** e l'app lo dice. **La metà negativa:** il `Chest Mine` del Krakot e il `Mine Dispenser (AP)` del Bambabot **non si piazzano** — `M.armiPiazzabili` risponde con zero armi per entrambi, perché nessuno dei due ha il Tratto Deployable — quindi non diventano mai un segnalino e la voce DETONAZIONE non può arrivare a loro. A schermo: *«Questa unità non ha equipaggiamento da piazzare.»*, e nessun bottone d'arma.
+- 🔴 **DIFETTO APERTO, MISURATO DALLA PAGINA IL 10 OTTOBRE — la voce è offerta lo stesso, e costa l'Ordine.** `PIAZZARE EQUIPAGGIAMENTO` compare nel menu del Krakot e del Bambabot, perché `puoFareAzione` in `app.html` decide dal **nome** (cerca `MINE` fra le armi) e non chiede al motore. Toccandola parte l'allarme (azione `IDLE`: Piazzare dichiarato per primo vale Idle + Piazzare), il reattivo ha il suo ARO, e sulla schermata non c'è niente da piazzare. È la famiglia dell'ordine offerto e non eseguibile, già corretta per Speculativo, Intuitivo e Guidato, che chiedono al motore con `armiPerAzione`: qui basterebbe `M.armiPiazzabili`. → **INTERFACCIA**
+- **Corretto il 10 ottobre:** fino alla revisione 24 questa prova diceva che `Chest Mines` *non è nell'armamento di nessuno dei 765 profili*. Al singolare, `Chest Mine`, lo portano **8** profili: i quattro Krakot Renegade, nelle due fazioni. Il `Mine Dispenser` è in **7**.
 
 **DET-05 — Il token esce dal tavolo**
 - **Attivo:** dopo l'innesco di una mina, guarda il tabellone e riapri l'app; poi passa alla Fase Stati
@@ -1784,23 +2058,32 @@ qualcuno non conta i colpi.
 
 Tre voci con la stessa struttura: **Abilità Lunga, nessun tiro, un requisito che
 l'app non può vedere** — la linea di tiro la sa solo chi guarda il tavolo — e un
-effetto che cambia lo stato di chi agisce, non di un avversario. Due sono da
-costruire; la terza esiste già ed è il modello.
+effetto che cambia lo stato di chi agisce, non di un avversario. **Esistono
+tutte e tre**: Cybermask e Rientrare in CAMO sono state costruite fra il 5 e il
+6 ottobre, e fino alla revisione 24 il piano le dava ancora "da costruire".
 
 **ORD-01 — Piazzare equipaggiamento** *(esiste)*
-- **Attivo:** PIAZZARE EQUIPAGGIAMENTO · unità, stato e Abilità **DA COMPLETARE**
+- **Attivo:** `Moran (Surprise Attack, Camouflage)` (stato Normale) · PIAZZARE EQUIPAGGIAMENTO · **CrazyKoalas**
 - **Atteso:** le domande sono bloccanti: se manca una risposta non si esegue. È il modello della famiglia. Vedi DEP-10 e DET-04.
 
-**ORD-02 — Cybermask** *(da costruire)*
-- **Attivo:** un hacker con **Hacking Device Plus**, poi uno con **Killer Hacking Device**, poi uno con Hacking Device normale · CYBERMASK · Abilità Lunga, Ordine intero — unità **DA COMPLETARE**
+**ORD-02 — Cybermask** *(esiste; riscritta il 10 ottobre sull'app vera)*
+- **Attivo:** tre hacker del roster, in quest'ordine · CYBERMASK · Abilità Lunga, Ordine intero:
+  1. `Interventor (Hacker Plus)` voce 8 — **Hacking Device Plus**, 6 programmi (Carbonite, Cybermask, Oblivion, Spotlight, Total Control, White Noise)
+  2. `Zero (Hacker, Killer Hacking Device)` voce 9 — **Killer Hacking Device**, 2 programmi (Cybermask, Trinity). Nasce **Marker CAMO**: la voce c'è lo stesso
+  3. `Orc (Hacker, Hacking Device)` voce 4 di PanOceania — **Hacking Device** normale, 4 programmi e **nessun Cybermask**. È l'unica voce del roster che ha il dispositivo semplice **e nient'altro**: `Mary Problems (Hacker)` ne ha due (KHD + HD) e la voce ce l'ha.
+  Quarta, fuori dai tre: `Alguacil (Combi Rifle)` — non è un hacker. Serve a separare "il programma non c'è" da "la schermata è vuota".
 - **Con:** CYBERMASK
 - **ARO:** nessuno
-- **Atteso:** il programma compare su Hacking Device Plus e Killer Hacking Device; un Hacking Device normale NON deve mostrarlo. Abilità Lunga, **NFB**, nessun tiro. Una domanda sola — *"Nessun nemico ha LoF verso di te?"* — e tre esiti: **no** non si può dichiarare, col motivo; **sì** l'hacker diventa Marker **IMP-2** senza tirare, Ordine intero speso; **non risposto** non si esegue. In IMP-2 vale l'NFB: nessun'altra Skill o Equipaggiamento, le altre voci del menu devono sparire. Requisito di regola: l'utente dev'essere **fuori dalla LoF di Modelli e Marker nemici** (riga 5150).
+- **Atteso:** la voce `CYBERMASK` è nel menu di **Interventor** e **Zero**; **non** è nel menu dell'**Orc** né dell'**Alguacil**, e chiedendolo al motore il motivo è lo stesso per tutti e due: *«Serve il programma Cybermask: Hacking Device Plus o Killer Hacking Device.»* Toccandola: **una domanda sola**, bloccante — *«L'Hacker è FUORI dalla Linea di Tiro di ogni Modello e di ogni Marker nemico?»* — e tre esiti: **SÌ** → l'Hacker entra in **IMP-2** senza tirare, Ordine intero speso; **NO** → *«Il Requisito del Cybermask non è soddisfatto…: l'Hacker NON entra in IMP-2 ed esegue invece un Idle»* — **l'Ordine è speso lo stesso**; **non risposto** → non si esegue. Due casi in cui la voce sparisce a un hacker che l'avrebbe: **Isolato** (*«Stato Isolato: CYBERMASK non è permessa.»*) e **già in Impersonation** (*«È già in Impersonation.»*).
+- **Corretto il 10 ottobre:** fino alla revisione 24 l'esito del NO era scritto *"non si può dichiarare"*. La regola (riga 5150) fa della Linea di Tiro un **Requisito**: chi lo dichiara e non lo soddisfa esegue un Idle. È la differenza fra un Ordine tenuto e un Ordine perso. Misurato in `test_voce_cybermask.js` e `test_camo_cybermask.js`; vedi anche C-01.
 
-**ORD-03 — Rientrare in Camuffato** *(da costruire)*
-- **Attivo:** una truppa con Camouflage, e per il caso **Camouflage (1 Use)** l'Heckler · RIENTRARE IN CAMUFFATO · Abilità Lunga, Ordine intero
+**ORD-03 — Rientrare in CAMO** *(esiste; riscritta il 10 ottobre sull'app vera)*
+- **Attivo:** `Intruder (HMG)` voce 24 — Camouflage senza limite — **dopo che è stato rivelato**; poi `Moran (Surprise Attack, Camouflage)` voce 19 — **Camouflage (1 Use)**, nel roster da sempre · RIENTRARE IN CAMO · Abilità Lunga, Ordine intero
 - **ARO:** nessuno
-- **Atteso:** una domanda sola — *"Nessun nemico ha LoF verso di te?"* — e tre esiti: **no** non si può dichiarare, col motivo; **sì** la truppa rientra in Camuffato senza tirare, Ordine intero speso; **non risposto** non si esegue. In più: la truppa deve **avere Camouflage**, e con **Camouflage (1 Use)** l'uso dev'essere ancora disponibile (FAQ F07). Una truppa rivelata che **rientra** in Camuffato **non conta come lo stesso Marker**: chi aveva fallito uno Scoprire contro di lei può ritentare subito, senza aspettare il turno dopo (riga 13605). Regola (riga 13597): *"During the Active Turn, Troopers may only return to this state by spending a Long Skill, while outside the LoF of enemy Markers or Troopers."*
+- **Atteso:** la voce si chiama **`RIENTRARE IN CAMO`**. **Intruder rivelato:** la voce c'è. Toccandola, una domanda sola e bloccante — *«La truppa è FUORI dalla Linea di Tiro di ogni Modello e di ogni Marker nemico? (Non contano i nemici Incoscienti o Disconnessi, né quelli in Schieramento Nascosto finché non si rivelano.)»* — e tre esiti: **SÌ** → torna Marker CAMO senza tirare, Ordine intero speso; **NO** → *«…la truppa NON rientra in CAMO ed esegue invece un Idle. L'Ordine è speso.»*; **non risposto** → non si esegue. **Intruder ancora Marker:** la voce **non** c'è, motivo *«È già in forma di Marker.»* **Moran:** schierato com'è nel database nasce **Marker CAMO**, e con Camouflage (1 Use) l'uso è l'**entrata** nello Stato, schieramento compreso (FAQ F07): una volta rivelato la voce **non** c'è, motivo *«Camouflage (1 Use): lo stato CAMO è già stato usato in questa partita (F07).»* I due "no" hanno **motivi diversi** e vanno letti distinti. **Alguacil (Combi Rifle):** niente voce, *«Serve l'Abilità Camouflage.»*
+- **Il caso che al tavolo richiede una scelta:** per vedere il Moran **rientrare** una volta bisogna schierarlo come **Modello** (non in CAMO): allora l'uso è libero, la voce c'è, e dopo il rientro non c'è più. Misurato in `test_camouflage_un_uso.js` sezione 6.
+- **Regola** (riga 13597): *"During the Active Turn, Troopers may only return to this state by spending a Long Skill, while outside the LoF of enemy Markers or Troopers."* Una truppa che **rientra** non conta come lo stesso Marker: chi aveva fallito uno Scoprire contro di lei può ritentare subito (riga 13605).
+- **Corretto il 10 ottobre:** l'atteso di prima nominava l'**Heckler** per il caso (1 Use) — che nel roster non c'è, mentre il Moran sì — chiamava la voce "RIENTRARE IN CAMUFFATO" e dava il NO come *"non si può dichiarare"*.
 
 ---
 
@@ -1989,23 +2272,54 @@ una prova che guarda il posto sbagliato sembra un difetto dell'app.
 ## Difetti trovati al tavolo, non ancora chiusi
 
 **D-02 — Il Burst della Soppressione in reazione (BS-12).**
-- **Attivo:** un attacco attivo contro il reattivo in Fuoco di Soppressione · unità — unità **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
-- **Bersaglio:** il reattivo in Fuoco di Soppressione · unità, banda e copertura **non detta**
-- **ARO:** il reattivo in Fuoco di Soppressione → ARO dichiarato e arma **DA COMPLETARE**
+- **Attivo:** `Fusilier (Combi Rifle)` · ATTACCO BS contro la Mobile Brigada in Soppressione
+- **Con:** Combi Rifle
+- **Bersaglio:** `Mobile Brigada (HMG)` in **Fuoco di Soppressione** @ banda 2, senza copertura
+- **ARO:** la Mobile Brigada → ATTACCO BS con la **Heavy Machine Gun**
 - **Atteso:** oggi si legge questo: con un attacco attivo il reattivo in Fuoco di Soppressione scende a **Burst 1**; senza attacco resta **3**. La regola generale dell'ARO sta scavalcando la Soppressione. La regola (riga 14649) dice 3 sempre. → MOTORE
+- **Dove guardare, misurato il 9 ottobre sera:** il motore **sa** già dare il 3. `M.armaReattivaEffettiva(Mobile Brigada in Soppressione, 'Heavy Machine Gun')` torna `Heavy Machine Gun (SF Mode)` con `sfMode: true` e `burst: 3`, e `M.burstARO` con quel profilo dà **3** con la voce «Fuoco di Soppressione: Burst 3 col profilo SF Mode». Con il profilo d'arma **nudo** la stessa funzione dà **1**: `burstARO` alza il Burst solo se vede `arma.sfMode`. Quindi il difetto non è nella regola ma in **chi chiama**: da qualche parte passa l'arma nuda invece di quella effettiva. Non è una riga che posso indicare — i banchi non possono entrare dove l'app costruisce la chiamata — ma il punto da guardare è quello.
+
+## Difetti aperti e segnalati, alla revisione 25
+
+Fino alla revisione 24 l'introduzione diceva "resta aperto un difetto solo". Non
+era vero da giorni: gli altri stavano scritti dentro le prove che li avevano
+trovati. Qui stanno tutti insieme, e per ognuno è detto **quanto è fresca la
+misura**: "inchiodato" vuol dire che un banco fissa il comportamento di oggi e
+diventa rosso il giorno della correzione — con la suite verde sul motore
+2026-10-09.6, quelli **ci sono ancora**. Gli altri vanno riletti prima di
+contarci.
+
+| Difetto | Dove è scritto | Stato della misura | A chi |
+|---|---|---|---|
+| Il Burst reattivo in Soppressione esce 1 invece di 3 | D-02 qui sopra, BS-12 | del 9 ottobre; non inchiodato (è nella chiamata, non nella regola) | MOTORE |
+| L'Attacco BS attivo non offre le armi scritte in `equip` (pistole): 629 profili su 765 | MU-21 | **misurato il 10 ottobre** dalla pagina e sul motore; non ancora inchiodato | MOTORE |
+| PIAZZARE EQUIPAGGIAMENTO offerto a chi non ha niente da piazzare, e costa l'Ordine | DET-04 | **misurato il 10 ottobre** dalla pagina; non ancora inchiodato | INTERFACCIA |
+| Deployable Cover (Cutting Foam) e (Vitroferro) disegnano lo stesso bottone | — | **inchiodato** in `test_bottone_arma.js` sezione 11 | MOTORE |
+| `M.esitoTerreni` ha due implementazioni che non danno lo stesso esito | blocco T | **inchiodato** in `test_terreni_combinati.js` sezione 8 | MOTORE |
+| Con un MSV3 la nota del terreno dice ancora "MSV2" | blocco T | **inchiodato** in `test_terreni_combinati.js` | MOTORE |
+| Un refuso nella chiave delle opzioni di `esitoTerreni` va in console e non negli avvisi | — | **inchiodato** in `test_terreni_combinati.js` | MOTORE |
+| `profiloArma` trasforma `ammo: null` in `"N"`: la Deployable Cover ha il bottone etichettato N | — | **rimisurato il 10 ottobre** (database `null`, profilo `"N"`); non inchiodato | MOTORE |
+| Il +1 SD del Fireteam di Livello 2 non arriva né al Burst né allo scontro | FT-03 | del 9 ottobre; non rimisurato in questa revisione | MOTORE |
+| Il filtro dei bersagli del Supporto ignora VITA contro STR | SUP-05 | del 9 ottobre; non rimisurato in questa revisione | MOTORE |
+| Il Leader di un Fireteam gregario di un Coordinato va a Burst 1 | CO-03 | della revisione 19; non rimisurato in questa revisione | MOTORE |
+| A58 nomina lo strumento ignoto ma non elenca gli identificativi attesi | SUP-06 | del 9 ottobre; non rimisurato in questa revisione | MOTORE |
+
+**Chiuso il 9 ottobre sera:** `M.haGuidato` leggeva l'`ECM (Guided -6)` — la
+difesa contro i Guidati — come la capacità di farli (27 profili capaci dove
+erano 2). Corretto col motore 2026-10-09.5 e 2026-10-09.6; le prove sono in
+`test_modulo_guidato.js` sezioni 12 e 13, e GUI-01, GUI-02 e GUI-04 sono rifatte.
 
 ## Chiusi il 6 ottobre
 
 **D-01 — L'anello della scelta dell'arma (BS-06). NON ERA UN DIFETTO.**
-- **Attivo:** ATTACCO BS contro il Croc Man · unità attiva — unità **DA COMPLETARE**
-- **Con:** **DA COMPLETARE**
+- **Attivo:** `Alguacil (Combi Rifle)` · ATTACCO BS contro il Croc Man
+- **Con:** Combi Rifle
 - **Bersaglio:** Croc Man, prima come nasce (Marker) e poi rivelato (Modello) · banda e copertura **non detta**
 - **ARO:** nessuno
 - **Atteso:** oggi si legge questo: contro il Croc Man come nasce, Marker, l'Attacco BS è rifiutato con il motivo giusto — l'app torna alla scelta dell'arma perché è quello che deve fare; rivelato, dà **5** e salvezza **ARM VS 11**. Fissato in `test_modulo_bs.js` sezione 10.
 
 **D-03 — Gli ordini senza tiro che non avvisano (A-13). CHIUSO per PIAZZARE EQUIPAGGIAMENTO.**
-- **Attivo:** PIAZZARE EQUIPAGGIAMENTO; poi Allerta; poi un piazzamento bloccato; poi IDLE da solo; poi MOVIMENTO e IDLE come seconda metà; poi IDLE e IDLE — unità **DA COMPLETARE**
+- **Attivo:** `Moran (Surprise Attack, Camouflage)` — porta le CrazyKoalas, quindi ha davvero qualcosa da piazzare — · PIAZZARE EQUIPAGGIAMENTO; poi Allerta; poi un piazzamento bloccato; poi IDLE da solo; poi MOVIMENTO e IDLE come seconda metà; poi IDLE e IDLE
 - **Atteso:** oggi si legge questo: l'allarme parte **una volta per Ordine, alla prima Abilità**. PIAZZARE EQUIPAGGIAMENTO chiama `M.allarmeOrdine` e manda `aroAtteso: true`; Allerta non alza l'allarme; un piazzamento bloccato non lo alza. IDLE da solo → un allarme, azione `IDLE`; MOVIMENTO poi IDLE come seconda metà → un allarme, azione `MOVIMENTO`, identificativo conservato; IDLE poi IDLE → un allarme. La busta di chiusura di un Ordine in due metà porta `aroAtteso: false`, ed è voluto: l'allarme è partito con la prima metà. Il guardiano è `ordine_movimento.js` riga 84: se qualcuno riscrive `eseguiMovimentoAutomatico`, è quella la riga da non perdere. Misurato in `test_modulo_piazzamento.js` sezione 12 e in `test_allarme_una_volta.js`.
 
 **Il giro a tre dispositivi è coperto.** `test_giro_aggiornamento.js` esegue
@@ -2019,11 +2333,11 @@ agisce cambia e **l'Hub resta allo stato vecchio**.
 ## Divergenze note, che restano aperte per una ragione
 
 **T-01 — Le mine non sanno se detonano.**
-- **Attivo:** innesco di una mina · unità, mina e stato **DA COMPLETARE**
+- **Attivo:** `Puppet Masters (Minelayer)` · innesco della sua **Shock Mine** (Disposable (3), Concealed, Direct Template) · stato Normale
 - **Atteso:** oggi si legge questo: nel database le mine non hanno un modo di risoluzione; all'innesco il motore risponde `null` — *non lo so* — e l'app dice che la mina **resta sul tavolo**, invitando a toglierla a mano. È corretto così: un "no" sarebbe falso. → DATABASE, quando la fonte darà il dato.
 
 **T-02 — "Un pilota, un segnalino" è una lettura, non una regola.**
-- **Attivo:** il secondo segnalino di pilota sullo stesso REM · unità e schermata **DA COMPLETARE**
+- **Attivo:** `Zondmate (REM)` · il secondo segnalino di pilota sullo stesso REM · schermata degli Stati
 - **Atteso:** oggi si legge questo: "un pilota, un segnalino" è una lettura, non una regola. La wiki vieta esplicitamente solo il secondo segnalino sullo stesso REM. → REGOLE
 
 **T-03 — Il recupero parziale non esiste.**
@@ -2034,19 +2348,19 @@ agisce cambia e **l'Hub resta allo stato vecchio**.
 - **Attivo:** apri il Monstrucker e Shona Carano
 - **Atteso:** oggi si legge questo: `?219` sul Monstrucker e `?227` su Shona Carano. Le tabelle di decodifica sono ridotte per fazione e questi non stanno in nessuna delle due. → DATABASE
 
-## Da costruire, deciso ma non fatto
+## Costruito dopo la revisione 6: da confermare al tavolo
 
-**C-01 — Cybermask**
-- **Attivo:** la voce di menu Cybermask · unità e schermata **DA COMPLETARE**
-- **Atteso:** oggi si legge questo: da costruire. Una voce di menu con la stessa forma del piazzamento; la prova per intero sta nel blocco ORD. → MOTORE per la regola e la domanda, INTERFACCIA per il menu
+**C-01 — Cybermask** *(eseguibile, e misurata)*
+- **Attivo:** `Intruder (Hacker, Killer Hacking Device)` — nasce **Marker CAMO** — · schermata del **menu degli Ordini** (`procediAlleAzioni`)
+- **Atteso:** la voce `CYBERMASK` c'è anche da Marker CAMO. **Non** c'è per `Alguacil (Combi Rifle)` (non Hacker), **non** c'è per chi ha un Hacking Device normale, **non** c'è se l'Hacker è Isolato, e **non c'è più** quando è già in Impersonation. Toccandola: la domanda sulla LoF a schermo, poi SÌ ed ESEGUI → IMP-2 nel roster e `IMP-2` fra le icone dell'elenco truppe. Misurato in `test_voce_cybermask.js` (chat INTERFACCIA). La regola e la domanda sono in ORD-02.
 
-**C-02 — Rientrare in Camuffato**
-- **Attivo:** la voce di menu Rientrare in Camuffato · unità e schermata **DA COMPLETARE**
-- **Atteso:** oggi si legge questo: da costruire. Una voce di menu con la stessa forma del piazzamento; la prova per intero sta nel blocco ORD. → MOTORE per la regola e la domanda, INTERFACCIA per il menu
+**C-02 — Rientrare in Camuffato** *(eseguibile, e misurata)*
+- **Attivo:** `Intruder (HMG)` dopo MOVIMENTO con **requisito dichiarato fallito** · schermata del **menu degli Ordini**
+- **Atteso:** la voce esiste e si chiama **`RIENTRARE IN CAMO`** — come l'identificativo e come il catalogo, **non** "RIENTRARE IN CAMUFFATO". Il nome conta: il menu e il router si cercano per identificativo, e due grafie sono un ordine che non si instrada. Misurato in `test_voce_rientro_camo.js` (chat INTERFACCIA).
 
-**C-03 — Le due zone temporanee.**
-- **Attivo:** il menu del calcolo, voci Fumo ed Eclipse
-- **Atteso:** oggi si legge questo: da costruire. Fumo ed Eclipse non sono terreni dello scenario: nascono da un'azione e durano un turno. Vanno **sempre** disponibili nel menu del calcolo, indipendentemente dallo schieramento, e si dichiarano al momento del tiro come la copertura. Servono entrambe, perché un MSV L2 attraversa il Fumo ma non l'Eclipse: con una voce sola il giocatore col visore sceglierebbe quella sbagliata. → INTERFACCIA per il menu, MOTORE per il MOD
+**C-03 — Le due zone temporanee** *(costruita, e misurata)*
+- **Attivo:** una scheda di bersaglio dell'ATTACCO BS, e la schermata dei modificatori di un ARO · tocca la riga **Terreno**
+- **Atteso:** la riga chiusa dice *«Terreno: nessuno»*; toccandola si apre il riquadro *«Cosa c'è sulla linea di tiro?»* con una casella per ogni terreno dichiarato sul tavolo e, sotto, **Fumo** ed **Eclipse** — **sempre**, anche senza nessun terreno in schieramento. Le due caselle si **escludono**: toccare l'una spegne l'altra, e la nota dice *«Fumo ed Eclipse insieme: vale l'Eclipse, scegli quella.»* **OK** applica, **ANNULLA** no. Nella busta restano due campi: `terrain` (un elenco) e `zona` (`FUMO`, `ECLIPSE` o niente). Servono tutte e due perché un MSV L2 attraversa il Fumo e non l'Eclipse. Misurato in `test_elenchi_e_tabellone.js` sezione 2 e in `test_tendina_terreno.js` (chat INTERFACCIA).
 
 **C-04 — Le icone dei due pulsanti.**
 - **Attivo:** i due pulsanti Copertura e linea di tiro
@@ -2056,239 +2370,121 @@ agisce cambia e **l'Hub resta allo stato vecchio**.
 RemDriver col rifiuto nel motore, l'Albedo col valore del profilo, gli usi
 Disposable, il dado speciale, la Schivata contro le mine, la ripresa di app e Hub.
 
-# 25. Blocco W — Sweep in console
+# 25. Blocco W — Le cinque spazzate (ora misurate, non da incollare)
 
-**SW-01 — Tutte le armi si risolvono**
-- **Attivo:** da incollare in console:
-```js
-Object.keys(RULES_WEAPONS).forEach(n => {
-  const a = MotoreN5.profiloArma(n);
-  const av = (a.avvisi||[]).map(x=>x.codice).join(',');
-  if (a.nonTrovata || av) console.log(n, '->', av || 'NON TROVATA');
-});
-```
-- **Atteso:** solo **A51b** sui 21 contenitori di modalità e **A47** su Jammer e D-Charges (Demolition Mode), che sono modi dedotti. Ogni altro codice è una segnalazione.
+**Erano cinque frammenti da incollare in console.** Dal 9 ottobre sera girano dentro
+`test_coerenza_dati.js` **sezioni 8-12**, a ogni passata del banco. Lo
+spostamento non e` un abbellimento: una spazzata che gira solo quando qualcuno
+se la ricorda misura il database del giorno in cui l'ha incollata. La prova e`
+che tre delle cinque attese scritte qui erano **false**, e nessuno lo sapeva:
 
-**SW-02 — Bande anomale** *(corretto: va escluso anche `senzaGittata`)*
-- **Attivo:** da incollare in console:
-```js
-Object.keys(RULES_WEAPONS).forEach(n => {
-  const a = MotoreN5.profiloArma(n);
-  if (a.isTemplate || a.isCC || a.modalita || a.senzaGittata) return;
-  if (!a.bands || !a.bands.length) console.log('SENZA BANDE:', n);
-  if (a.bands && a.bands.every(b => b.mod === 0)) console.log('TUTTE A ZERO:', n);
-});
-```
-- **Atteso:** nessuna riga. Senza il filtro `senzaGittata` escono otto falsi positivi — i deployable, che hanno la banda finta con l'etichetta del modo.
-
-**SW-03 — Salvezze complete**
-- **Attivo:** da incollare in console:
-```js
-const b = DB_PANOCEANIA.find(u=>u.nome==='Fusilier (Combi Rifle)');
-Object.keys(RULES_WEAPONS).forEach(n => {
-  const a = MotoreN5.profiloArma(n);
-  if (a.modalita) return;
-  const s = MotoreN5.tiroSalvezza(b, {arma:a, ammo:a.ammo});
-  if (s.offensivo !== false && (!s.attributo || !s.tiri)) console.log('INCOMPLETA:', n);
-});
-```
-- **Atteso:** **DA COMPLETARE**
-
-**SW-04 — Notazioni sconosciute nei profili**
-- **Attivo:** da incollare in console:
-```js
-[...DB_NOMADI, ...DB_PANOCEANIA].forEach(u =>
-  MotoreN5.tutteLeNotazioni(u).forEach(x => { if (x.sconosciuta) console.log(u.nome, x.raw); }));
-```
-- **Atteso:** nessuna.
-
-**SW-05 — Deployable collegati**
-- **Attivo:** da incollare in console:
-```js
-DB_DEPLOYABLES.forEach(d => {
-  if (!d.chiaveArma) return console.log(d.id, '-> nessuna arma (voluto?)');
-  const a = MotoreN5.profiloArma(d.chiaveArma);
-  if (a.nonTrovata) console.log('SCOLLEGATO:', d.id, '->', d.chiaveArma);
-});
-```
-- **Atteso:** solo `deployable_repeater` e `dazer`, che hanno `chiaveArma: null` di proposito.
-
----
-
-# 27. Blocco DC — Quello che resta da completare
-
-Non sono difetti dell'app: sono **buchi del piano**. Queste 118 prove su 296
-hanno un campo che il piano non dice e che nessuna convenzione può coprire —
-quale unità usare, quale arma, quale banda. Le ho lasciate marcate
-**DA COMPLETARE** dentro la prova, invece di riempirle con una supposizione:
-un numero inventato ti farebbe credere che l'app sia rotta quando non lo è,
-oppure il contrario.
-
-Dove il buco è il solo attaccante e la prova misura una **salvezza** o una
-**difesa**, l'attaccante non cambia il risultato: usa la prima unità del
-roster che porta l'arma indicata. Dove invece manca l'arma, la banda o il
-bersaglio, il numero atteso **dipende** da quella scelta e va deciso prima.
-
-| Prova | Campi da completare |
+| Diceva il piano | Dice la misura del 9 ottobre |
 |---|---|
-| **A-02** | Bersaglio, Con |
-| **BS-02** | ARO |
-| **BS-04** | Bersaglio |
-| **BS-05** | Bersaglio |
-| **BS-08** | Bersaglio |
-| **BS-09** | Bersaglio |
-| **BS-11** | Bersaglio |
-| **BS-12** | Bersaglio |
-| **BS-13** | Bersaglio |
-| **BS-14** | Attivo |
-| **BS-15** | ARO, Attivo, Bersaglio, Con |
-| **BS-16** | ARO, Bersaglio |
-| **BS-17** | Bersaglio |
-| **BS-18** | Bersaglio |
-| **BS-19** | ARO, Bersaglio |
-| **BS-20** | Attivo, Bersaglio, Con |
-| **BS-24** | ARO, Bersaglio, Con |
-| **BS-25** | ARO, Bersaglio |
-| **MU-01** | Attivo |
-| **MU-02** | Attivo |
-| **MU-03** | Attivo |
-| **MU-04** | Attivo |
-| **MU-05** | Attivo |
-| **MU-06** | Attivo |
-| **MU-07** | Attivo |
-| **MU-08** | Attivo |
-| **MU-09** | Attivo |
-| **MU-10** | Attivo |
-| **MU-11** | Attivo |
-| **MU-12** | Attivo |
-| **MU-13** | Attivo |
-| **MU-14** | Attivo |
-| **MU-15** | Attivo |
-| **MU-16** | Attivo |
-| **MU-17** | Attivo, Bersaglio, Con |
-| **MU-18** | Attivo, Bersaglio, Con |
-| **MU-19** | Attivo, Bersaglio, Con |
-| **MU-20** | Attivo, Bersaglio |
-| **MU-21** | Attivo, Bersaglio |
-| **MU-22** | Attivo |
-| **MU-23** | Attivo, Bersaglio |
-| **TPL-05** | Bersaglio |
-| **TPL-08** | Bersaglio |
-| **SPEC-04** | Bersaglio |
-| **SPEC-05** | Attivo, Bersaglio, Con |
-| **GUI-01** | Bersaglio |
-| **GUI-03** | Bersaglio |
-| **GUI-05** | ARO, Bersaglio |
-| **CC-01** | ARO |
-| **CC-02** | ARO, Con |
-| **CC-03** | Attivo, Bersaglio, Con |
-| **CC-05** | ARO, Attivo, Bersaglio, Con |
-| **CC-06** | Attivo |
-| **CC-07** | Attivo, Bersaglio, Con |
-| **HK-01** | Attivo |
-| **HK-02** | Attivo |
-| **HK-03** | Attivo |
-| **HK-04** | Attivo |
-| **HK-05** | Attivo |
-| **HK-06** | Attivo, Con |
-| **HK-07** | Attivo, Bersaglio, Con |
-| **HK-08** | Attivo, Con |
-| **HK-09** | Attivo, Con |
-| **HK-10** | Attivo, Bersaglio |
-| **HK-11** | Attivo, Bersaglio, Con |
-| **HK-12** | Attivo, Bersaglio, Con |
-| **SCO-01** / **DIS-01** | Attivo, Bersaglio |
-| **SCO-02** / **DIS-02** | Attivo, Bersaglio |
-| **SCO-03** / **DIS-03** | Attivo, Bersaglio |
-| **SCO-04** / **DIS-04** | Attivo, Bersaglio |
-| **SCO-05** / **DIS-05** | Attivo, Bersaglio, Con |
-| **OSS-01** | Bersaglio |
-| **OSS-03** | Con |
-| **SUP-01** | Bersaglio |
-| **SUP-02** | Bersaglio |
-| **SUP-04** | Attivo, Bersaglio |
-| **SUP-05** | Attivo |
-| **SUP-06** | Attivo |
-| **SUP-07** | Attivo, Bersaglio |
-| **DIF-01** | ARO, Attivo |
-| **DIF-02** | ARO, Attivo |
-| **DIF-03** | Attivo |
-| **DIF-04** | ARO, Attivo |
-| **DIF-05** | ARO, Attivo |
-| **DIF-06** | ARO, Attivo |
-| **DIF-07** | ARO, Attivo |
-| **DIF-08** | ARO, Attivo |
-| **DIF-09** | Attivo |
-| **DIF-10** | Attivo, Con |
-| **DIF-11** | Con |
-| **DIF-12** | ARO, Attivo |
-| **DIF-13** | Attivo |
-| **DEP-08** | Con |
-| **DEP-09** | Bersaglio |
-| **LOG-01** | Attivo |
-| **LOG-02** | Attivo |
-| **LOG-03** | Attivo |
-| **FT-03** | Attivo, Bersaglio, Con |
-| **FT-04** | Attivo, Bersaglio, Con |
-| **FT-05** | Attivo |
-| **FT-06** | Attivo, Bersaglio, Con |
-| **CO-01** | Attivo |
-| **CO-02** | Attivo, Con |
-| **CO-03** | Attivo, Con |
-| **CO-04** | Attivo |
-| **CO-06** | Attivo |
-| **CO-07** | Attivo |
-| **CO-08** | Attivo |
-| **CO-09** | Attivo |
-| **CO-10** | Attivo, Bersaglio, Con |
-| **CO-11** | Attivo, Bersaglio, Con |
-| **CO-12** | ARO, Attivo |
-| **CO-13** | Attivo |
-| **TER-01** | Attivo, Bersaglio, Con |
-| **TER-02** | Attivo, Bersaglio, Con |
-| **TER-03** | Attivo, Bersaglio, Con |
-| **TER-04** | Attivo, Bersaglio, Con |
-| **TER-05** | Attivo, Bersaglio, Con |
-| **TER-06** | Attivo, Bersaglio, Con |
-| **TER-07** | Attivo, Bersaglio, Con |
-| **TER-08** | ARO, Attivo, Bersaglio, Con |
-| **DET-01** | ARO |
-| **DET-02** | ARO |
-| **DET-03** | ARO |
-| **DET-04** | Attivo |
-| **ORD-01** | Attivo |
-| **ORD-02** | Attivo |
-| **D-02** | ARO, Attivo, Bersaglio, Con |
-| **D-01** | Attivo, Bersaglio, Con |
-| **D-03** | Attivo |
-| **T-01** | Attivo |
-| **T-02** | Attivo |
-| **C-01** | Attivo |
-| **C-02** | Attivo |
-| **SW-03** | Atteso |
+| SW-01: A51b su **21** contenitori | sono **23** (il piano era fermo a giorni prima) |
+| SW-01: A47 su **Jammer e D-Charges (Demolition Mode)** | solo su **D-Charges (Demolition Mode)**; il Jammer non da` piu` nessun avviso |
+| SW-02: quattro filtri, **nessuna riga** | ne servono **cinque**: senza `armaDalProfilo` esce `Armed Turret` |
+| SW-04: `if (x.sconosciuta)` | **il campo `sconosciuta` non esiste su nessuna notazione.** Quella spazzata non poteva stampare niente: il suo "nessuna" era vero per il motivo sbagliato |
 
-**Due prove hanno un buco che le rende non eseguibili così come sono:**
+Nessuna delle quattro era un difetto dell'app. Tutte e quattro erano difetti
+**delle prove** — tre numeri invecchiati e un controllo cieco.
 
-- **SW-03** non dice cosa deve stampare il comando: manca l'Atteso.
-- **TPL-04** dà il valore dell'attivo (14 B1) ma **nessun valore al reattivo**,
-  che fa un ATTACCO BS in ARO: il Faccia a Faccia non si chiude.
+**SW-01 — Ogni arma si risolve, e gli avvisi sono quelli previsti** *(sezione 8)*
+- **Attivo:** le 188 voci di `RULES_WEAPONS`, una per una, con `M.profiloArma`.
+- **Atteso:** 0 armi che il motore non trova. **A51b va a tutti i contenitori di modalita` e a nessun altro** — l'attesa e` l'invariante, non il numero: oggi sono 23, e un numero che *scende* vuol dire che un MULTI Rifle ha perso i suoi modi e tira sempre col primo. **A47** (modo dedotto, cioe` dato che manca alla fonte) **solo su `D-Charges (Demolition Mode)`**, confronto nominato nei due versi: un A47 nuovo e` esattamente la cosa da vedere. Nessun altro codice di avviso.
 
-**Quattro contraddizioni interne, da decidere:**
+**SW-02 — Nessuna arma a gittata senza bande** *(sezione 9)*
+- **Attivo:** le armi a gittata, cioe` tolte **cinque** categorie: `isTemplate`, `isCC`, `modalita`, `senzaGittata`, `armaDalProfilo`. Oggi sono 101.
+- **Atteso:** 0 senza bande, 0 con tutte le bande a zero. **E i due filtri meno ovvi devono escludere qualcosa**, nominato: gli 8 `senzaGittata` (CrazyKoalas, Madtraps, Jammer, D-Charges (Demolition Mode), le due Deployable Cover, FastPanda, Disco Ball) e la sola `Armed Turret` per `armaDalProfilo` — la torretta non ha un'arma propria, la prende dalla scheda di chi la piazza, quindi bande vuote e` il dato giusto. Un filtro che non esclude niente e` un filtro che non serve, e allora la prova passa per il motivo sbagliato.
 
-- **ST-16** attende **Mimetizzato** sul tabellone, **ST-20** attende **CAMO**
-  in tutti e due i posti e dice che "Mimetizzato" era il nome vecchio.
-- **ST-14** chiede IMM-A + Bersagliato + **Prono** visibili insieme, ma
-  **ST-19** dichiara che dal 23 settembre il Prono non è più uno stato.
-- **ER-22** sta sotto l'intestazione "l'invio deve essere **bloccato**", ed è
-  l'unica riga del blocco U in cui l'invio **deve passare**.
-- ~~Il codice **DIS-01…DIS-05** usato due volte~~ — **risolto**: le cinque
-  prove dello Scoprire (blocco J) sono ora **SCO-01…SCO-05**; **DIS-01…DIS-05**
-  resta al solo blocco 23-bis (Disposable).
+**SW-03 — Ogni arma offensiva sa dire la sua salvezza** *(sezione 10)*
+- **Attivo:** `M.tiroSalvezza(Fusilier (Combi Rifle), {arma, ammo})` su tutte le armi non contenitore. Il bersaglio non cambia l'esito della spazzata: serve solo perche` il calcolo abbia un ARM e un BTS da cui partire.
+- **Atteso:** **0 armi offensive senza attributo o senza dadi.** E le due righe che rendono quello zero leggibile: **159 armi offensive davvero esaminate** (se il numero crolla la spazzata sta passando perche` non guarda piu` niente), e ogni salvezza su un attributo noto — oggi ARM 120, BTS 28, ARM+BTS 4, PH 7. Le **6 non offensive** sono nominate: Smoke Grenades, Eclipse Grenades, Smoke Grenade Launcher, Eclipse Grenade Launcher, FastPanda, Disco Ball. Un'arma che diventa non offensiva esce dalla spazzata senza dirlo: per questo l'elenco e` nominato nei due versi.
 
-**Una prova aveva il valore atteso sbagliato, ed è corretta:** SPEC-02
-chiedeva 18 applicando la regola N4; il valore misurato è **12**.
+**SW-04 — Le notazioni dei profili** *(sezione 11, riscritta da zero)*
+- **Attivo:** `M.tutteLeNotazioni` su tutti i 765 profili — 2317 notazioni.
+- **Atteso:** ogni notazione porta `etichetta`, `tipo`, `raw`; nessun `tipo` fuori dai 10 noti; **ogni notazione meccanica porta un valore numerico** (una MOD senza numero non sposta nessun tiro). E al posto del campo inesistente: il bucket vero di *"non l'ho saputa tradurre in una regola"* e` **`tipo: 'TESTO'`**, e le stringhe che ci finiscono sono **esattamente 38**, elencate nel banco. Una nuova e` una notazione scritta in un profilo che nessun calcolo legge; una sparita e` diventata meccanica. **Controprova:** una notazione inventata (`ZZQQ`) deve finire fra le non tradotte — se non ci finisce, il confronto non guarda niente.
+
+**SW-05 — Ogni deployable e` collegato alla sua arma** *(sezione 12)*
+- **Attivo:** i 17 `DB_DEPLOYABLES`, uno per uno.
+- **Atteso:** 0 che puntino a un'arma inesistente — un token che nasce senza profilo d'arma non si risolve. Senza arma **di proposito, e solo loro**, nominati nei due versi: `dazer` e `deployable_repeater`.
 
 ---
+
+# 27. Blocco DC — I campi che il piano non diceva: **0 prove su 297**
+
+**Il blocco e` chiuso.** Era nato con 135 prove che avevano un campo muto —
+quale unita` usare, quale arma, quale banda — e le avevo lasciate marcate
+invece di riempirle con una supposizione: un numero inventato fa credere che
+l'app sia rotta quando non lo e`, oppure il contrario. Il 9 ottobre sera
+l'ultima e` stata riempita. Nessuna e` stata chiusa con una scelta comoda:
+ogni soggetto e` una voce vera del roster, verificata esistente nel database
+con il requisito che la prova chiede, e ogni numero atteso e` stato **misurato
+sul motore di oggi**, non ricordato.
+
+## Cosa e` venuto fuori riempiendoli
+
+Riempire un campo e` sembrato lavoro di segreteria e non lo era: per sapere
+quale truppa mettere bisogna chiedere al motore chi puo` farlo, e la risposta
+ha trovato cose che nessuna prova guardava.
+
+**Quattro attese del piano erano sbagliate**, tutte mie, nessuna dell'app:
+
+| Prova | Diceva | Dice la misura |
+|---|---|---|
+| **TPL-05** | «nessun −3» schivando una Sagoma senza LoF | il −3 **si applica** (PH 10 → 7). Confondevo *Schivata concessa* con *Schivata senza malus*: il catalogo dice esplicitamente «stesso -3 schivando un'arma a Sagoma senza LoF» |
+| **SW-01** | A51b su **21** contenitori, A47 su **Jammer e D-Charges** | 23 contenitori; A47 **solo** su D-Charges (Demolition Mode) |
+| **SW-02** | quattro filtri bastano | ne servono **cinque**: senza `armaDalProfilo` esce `Armed Turret` |
+| **SW-04** | `if (x.sconosciuta)` | **il campo non esiste**: quella spazzata non poteva stampare niente |
+
+**Un difetto dell'app trovato allora, e chiuso il 9 ottobre sera:** `M.haGuidato`
+cercava la sottostringa `GUIDED` in skills + equip e prendeva per buono
+l'`ECM (Guided -6)`, che è la **difesa** contro i Guidati: **27** profili
+risultavano capaci di un Attacco Guidato, **2** lo sono. MOTORE l'ha corretto
+in due passi (motore 2026-10-09.5: si legge solo la Skill, con le tonde o con
+le quadre; 2026-10-09.6: senza Skill `armiGuidate` non restituisce armi) e ne
+ha trovato un secondo verificando il primo: il modulo scriveva l'avviso A95 e
+disegnava lo stesso i bottoni. Le prove sono in `test_modulo_guidato.js`
+sezioni 12 e 13.
+
+## Le prove che nessun roster può far girare
+
+Alla revisione 24 erano sette. Tre aspettavano una voce di roster e l'hanno
+avuta (LOG-02, DIS-02, DET-04); per due delle altre quattro **il dato c'era**,
+cercato col nome sbagliato (vedi DIS-02 e DET-04). Ne restano **quattro**, e
+per nessuna basta una riga in più:
+
+| Prova | Cosa manca | Misura |
+|---|---|---|
+| **SUP-07** (metà Cubo) | un profilo con `Cube` | **0** su 765 |
+| **LOG-01** | un profilo con `Sapper` / `Foxhole` | **0** su 765 |
+| **HK-07** | un bersaglio con **due** Firewall insieme | il TinBot del roster è uno; `FAIRY DUST` nel catalogo è solo *"Supportware su alleati (EVO)"*, senza un Firewall che l'app possa assegnare |
+| **CO-09** (E44) | un profilo con la Skill `IRREGULAR` | **0** su 765, nelle due fazioni |
+
+Per tutte e quattro la **regola è provata nei banchi** con un soggetto
+costruito a mano, perché deve valere il giorno che il dato arriva. Quello che
+manca è qualcosa da cliccare in app. → **DATABASE**: sono Abilità ed
+equipaggiamenti che mancano ai profili, o che N5 non prevede?
+
+**Una prova non è riproducibile, e la notizia è buona:** **SPEC-05** cercava
+un'arma con i Tratti dedotti (avvisi A80 o A49). Oggi **0 delle 188 armi** è
+senza il campo `traits`, e la spazzata su tutti i 765 profili emette **0**
+avvisi da `armiSpeculative`, `armiIntuitive`, `armiSoppressione`, `armiCC` e
+`armiARO`. Da prova a mano è diventata una **guardia** in
+`test_coerenza_dati.js`: il giorno che un'arma entra senza `traits`, A49 torna
+e il banco lo dice.
+
+**12 prove portano l'etichetta "risolto, da confermare".** Non hanno
+niente da completare: il difetto che le aveva fatte nascere è corretto e
+provato nei banchi, e aspettano solo di essere viste una volta in app. Si
+tolgono l'etichetta al tavolo, non qui.
+
+## Dove sono finite le cinque spazzate
+
+Il blocco SW era cinque frammenti da incollare in console. Ora girano dentro
+`test_coerenza_dati.js` sezioni 8-12 a ogni passata. Tre delle quattro attese
+sbagliate della tabella di sopra sono uscite proprio da quello spostamento: una
+spazzata che gira solo quando qualcuno se la ricorda misura il database del
+giorno in cui l'ha incollata, non quello di oggi.
 
 # 28. Blocco SP — Scoprire + Piazzare, e il Coordinato con lo Scoprire
 

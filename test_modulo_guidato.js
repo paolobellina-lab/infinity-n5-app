@@ -1,4 +1,26 @@
-// @versione 2026-10-08.1 | test_modulo_guidato.js | proprieta`: chat TEST
+// @versione 2026-10-09.3 | test_modulo_guidato.js | proprieta`: chat TEST
+// .3 (9 ott, sera): motore 2026-10-09.6. Senza la Skill `armiGuidate().armi` e`
+//    VUOTA e le armi che qualificherebbero stanno in `escluse` col motivo
+//    'manca la Skill'. Tre prove della .2 cercavano i tre profili con
+//    `armi.length > 0` e sono diventate rosse, come dovevano: ora li
+//    riconoscono dal motivo dell esclusione. Tre prove nuove: armi vuota per
+//    loro, armi vuota per TUTTI i profili senza la Skill, e la controprova su
+//    chi la Skill ce l ha. Da 71 a 74 prove.
+// .2 (9 ott, sera): MOTORE ha corretto `M.haGuidato` (motore 2026-10-09.5: si
+//    legge solo la Skill, tonde o quadre) e il modulo (ordine_attacco_guidato
+//    2026-10-09.2: con A95 nessun bottone d arma). Sezione 12 riscritta: le
+//    prove inchiodate sul difetto sono cancellate, al loro posto la regola
+//    giusta con insiemi nominati e la controprova dei 25 portatori di ECM.
+//    Sezione 13 NUOVA: senza la Skill nessun bottone declareGuidatoAttack —
+//    prima nessun banco contava i bottoni.
+// .1 (9 ott, sera): sezione 12 — chi puo` davvero dichiarare un Guidato.
+//    `M.haGuidato` cerca la sottostringa 'GUIDED' in skills + equip e prende
+//    per buono l'`ECM (Guided -6)`, che e` la DIFESA contro i Guidati: 27
+//    profili risultano capaci, 2 lo sono. Difetto aperto, segnalato a MOTORE.
+//    Inchiodato per caratterizzazione (non con 25 nomi) e rotto in tre modi
+//    in rompi_gui.sh: haGuidato corretto -> 25 va a 0 e la sezione chiede di
+//    essere cancellata; un TAG nuovo con lo stesso ECM -> 26; il Vertigo Zond
+//    che perde la Skill -> 1, con la nota che GUI-01/03/05 cambiano soggetto.
 // Test end-to-end del modulo Guidato — node test_modulo_guidato.js
 // .2 (7 ott): il colore del tasto si prova contro M.COLORE_TASTO E si pretende
 //    non vuoto e diverso dal giallo dell IDLE — alla .1 era una tautologia.
@@ -292,6 +314,133 @@ ok(!!pistola && pistola.isTemplate !== true,
 ok(codiciDi(attNoSag).indexOf('E21') >= 0,
    `CONTROPROVA: senza Sagoma i dadi si SOMMANO, e ${pistola.burst}+${pistola.burst} oltre ${pistola.burst} da` + ` E21 (${JSON.stringify(codiciDi(attNoSag))})`);
 M._rosterProprio = null; M._rosterNemico = null;
+
+
+console.log('\n=== 12. Chi puo` davvero dichiarare un Attacco Guidato ===');
+// CORRETTO DA MOTORE IL 9 OTTOBRE SERA (motore 2026-10-09.5).
+// Fino alla .09.4 `M.haGuidato` cercava la SOTTOSTRINGA 'GUIDED' in skills +
+// equip e prendeva per buono `ECM (Guided -6)`, che e` la DIFESA contro i
+// Guidati: 27 profili capaci dove erano 2. La sezione inchiodava quel
+// comportamento (25 falsi positivi, 3 con l'ordine concesso) ed e` diventata
+// rossa col motore corretto, come doveva. Le prove inchiodate sono cancellate;
+// queste dicono la regola giusta.
+// I due database di fazione servono solo a questa sezione e alla 13: si
+// caricano qui. Col guardiano, perche` un banco che muore all'avvio perde le
+// sue prove in silenzio invece di fallire (lezione del 6 ottobre).
+try { require('./database_nomad.js'); require('./database_panoceania.js'); } catch (e) { /* detto sotto */ }
+const TUTTI_G = [].concat(window.DB_NOMADI || [], window.DB_PANOCEANIA || []);
+ok(TUTTI_G.length > 700,
+   `i due database di fazione si caricano: ${TUTTI_G.length} profili`,
+   'senza di loro le prove qui sotto non guardano niente');
+const pulito = (u) => Object.assign({}, u, { states: {} });
+const due = (trovati, attesi) => {
+    const t = trovati.slice().sort(), a = attesi.slice().sort();
+    return { comparsi: t.filter(n => a.indexOf(n) < 0), spariti: a.filter(n => t.indexOf(n) < 0) };
+};
+
+// Insieme NOMINATO, nei due versi: un conteggio "sono 2" resterebbe verde se
+// un profilo ne sostituisse un altro.
+const GUIDATI_ATTESI = ['Clipper Dronbot (BS Attack [Guided])', 'Vertigo Zond (Missile Launcher)'];
+const dGuid = due(TUTTI_G.filter(u => M.haGuidato(pulito(u))).map(u => u.nome), GUIDATI_ATTESI);
+ok(dGuid.comparsi.length === 0 && dGuid.spariti.length === 0,
+   `haGuidato e vero per i ${GUIDATI_ATTESI.length} profili con la Skill, e solo per loro`,
+   `comparsi: ${JSON.stringify(dGuid.comparsi)} — spariti: ${JSON.stringify(dGuid.spariti)} — se cambiano, GUI-01/03/05 del piano cambiano soggetto`);
+
+// CONTROPROVA: "nessun falso positivo" vale solo se i portatori di ECM (Guided)
+// ci sono ancora e sono stati guardati. Se questo numero crolla a 0 la prova
+// sopra resta verde per il motivo sbagliato.
+const conEcmGuid = TUTTI_G.filter(u => /ECM\s*[\(\[]\s*Guided/i.test(String(u.equip || '')));
+ok(conEcmGuid.length === 25,
+   `controprova: i portatori di ECM (Guided -6) esaminati sono 25 (${conEcmGuid.length})`,
+   'se cambia il numero va rimisurato a mano; a 0 la prova sopra non guarda piu niente');
+const ecmCreduti = conEcmGuid.filter(u => M.haGuidato(pulito(u))).map(u => u.nome);
+ok(ecmCreduti.length === 0,
+   'e per nessuno di loro l ECM difensivo viene letto come la Skill',
+   `creduti capaci: ${JSON.stringify(ecmCreduti)}`);
+
+// I TRE che facevano danno: hanno anche un'arma che qualifica. Dal motore
+// .09.6 `armiGuidate` NON la restituisce piu` in `armi`: la mette in `escluse`
+// col motivo 'manca la Skill', cosi` chi legge `.armi` senza guardare `.avvisi`
+// non puo` saltare il rifiuto. Li si riconosce da quel motivo.
+const CON_ARMA = ['Scarface Loadout Alpha', 'Scarface Loadout Alpha (Mk12 (+1B))',
+                  'Squalo Mk-II (Heavy Machine Gun, Grenade Launcher)'];
+const MANCA_SKILL = /manca la Skill/;
+const esclusePerSkill = (u) => (M.armiGuidate(pulito(u)).escluse || []).filter(x => MANCA_SKILL.test(String(x.motivo)));
+const conArma = conEcmGuid.filter(u => esclusePerSkill(u).length > 0);
+const dArma = due(conArma.map(u => u.nome), CON_ARMA);
+ok(dArma.comparsi.length === 0 && dArma.spariti.length === 0,
+   `fra loro, quelli con un arma esclusa perche manca la Skill sono i ${CON_ARMA.length} nominati, nei due versi`,
+   `comparsi: ${JSON.stringify(dArma.comparsi)} — spariti: ${JSON.stringify(dArma.spariti)}`);
+const codiciAvviso = (u) => (M.armiGuidate(pulito(u)).avvisi || []).map(a => String(a.codice));
+const senzaA95 = conArma.filter(u => codiciAvviso(u).indexOf('A95') < 0).map(u => u.nome);
+ok(conArma.length > 0 && senzaA95.length === 0,
+   'e a tutti armiGuidate da l avviso A95: l arma c e, la Skill no',
+   `senza A95: ${JSON.stringify(senzaA95)}`);
+const conArmi = conArma.filter(u => (M.armiGuidate(pulito(u)).armi || []).length > 0).map(u => u.nome);
+ok(conArma.length > 0 && conArmi.length === 0,
+   'e per loro la lista `armi` e VUOTA: l arma che qualificherebbe sta solo fra le escluse',
+   `con armi: ${JSON.stringify(conArmi)}`);
+// Su TUTTI i profili, non solo sui tre: senza la Skill nessuna arma in `armi`.
+const senzaSkillG = TUTTI_G.filter(u => !M.haGuidato(pulito(u)));
+const senzaSkillConArmi = senzaSkillG.filter(u => (M.armiGuidate(pulito(u)).armi || []).length > 0).map(u => u.nome);
+ok(senzaSkillG.length > 700 && senzaSkillConArmi.length === 0,
+   `nessuno dei ${senzaSkillG.length} profili senza la Skill riceve un arma in armi`,
+   `con armi: ${JSON.stringify(senzaSkillConArmi.slice(0, 5))} (${senzaSkillConArmi.length})`);
+// CONTROPROVA: lo zero vale solo se a chi ha la Skill le armi arrivano, e
+// nessuna gli viene esclusa per quel motivo.
+const conSkillG = TUTTI_G.filter(u => M.haGuidato(pulito(u)));
+ok(conSkillG.length === GUIDATI_ATTESI.length && conSkillG.every(u => (M.armiGuidate(pulito(u)).armi || []).length >= 1 && esclusePerSkill(u).length === 0),
+   'CONTROPROVA: chi ha la Skill riceve almeno un arma, e nessuna esclusa perche manca la Skill',
+   `${JSON.stringify(conSkillG.map(u => u.nome + ': ' + (M.armiGuidate(pulito(u)).armi || []).length + ' armi, ' + esclusePerSkill(u).length + ' escluse per Skill'))}`);
+const vertigoG = TUTTI_G.find(u => u.nome === 'Vertigo Zond (Missile Launcher)');
+ok(!!vertigoG && codiciAvviso(vertigoG).length === 0,
+   `CONTROPROVA: chi ha la Skill non riceve nessun avviso (${JSON.stringify(vertigoG ? codiciAvviso(vertigoG) : 'profilo assente')})`);
+
+// La forma della Skill, su soggetti costruiti a mano: tonde, quadre, e l'ECM
+// accanto alla Skill vera che non deve toglierla.
+const finto = (skills, equip) => ({ id: 'f', alias: 'Finto', bs: 12, weapon: 'Missile Launcher', skills: skills, equip: equip || '', states: {} });
+ok(M.haGuidato(finto('BS Attack (Guided)')) === true, 'Skill con le tonde: vero');
+ok(M.haGuidato(finto('BS Attack [Guided]')) === true, 'Skill con le quadre: vero');
+ok(M.haGuidato(finto('BS Attack [Guided]', 'ECM (Guided -6)')) === true, 'Skill piu ECM: vero, l ECM non la toglie');
+ok(M.haGuidato(finto('', 'ECM (Guided -6)')) === false, 'solo ECM (Guided -6): falso');
+ok(M.haGuidato(finto('BS Attack (SR-1), Courage')) === false, 'un altro BS Attack (…) non basta: falso');
+
+
+console.log('\n=== 13. Senza la Skill nessun bottone d arma (dalla porta del giocatore) ===');
+// SCOPERTO il 9 ottobre sera, trovato da MOTORE verificando la sezione 12:
+// fino al modulo 2026-10-09.1 con A95 la schermata scriveva l'avviso e poi
+// disegnava LO STESSO i bottoni delle armi qualificanti. Il giocatore poteva
+// toccare l'arma e dichiarare. Nessun banco contava i bottoni: la sezione 2
+// guarda solo che l'avviso ci sia.
+// Si conta `declareGuidatoAttack` nell'HTML della schermata, cioe` quello che
+// il giocatore puo` toccare.
+const schermataG = (u) => { nuovo(u); nodo('weapon-buttons-container').innerHTML = ''; window.startUnitGuidatoLoop(); return nodo('weapon-buttons-container').innerHTML; };
+const bottoniG = (html) => (html.match(/declareGuidatoAttack\(/g) || []).length;
+const avvisoG = (html) => html.includes('non ha "BS Attack (Guided)"');
+
+let hG = schermataG(finto('', 'ECM (Guided -6)'));
+ok(avvisoG(hG) && bottoniG(hG) === 0,
+   `solo ECM, con un Missile Launcher in mano: avviso e 0 bottoni (avviso ${avvisoG(hG)}, bottoni ${bottoniG(hG)})`);
+ok(hG.includes('Non utilizzabili per il Guidato'), 'e l elenco delle escluse resta a schermo');
+hG = schermataG(finto('', ''));
+ok(avvisoG(hG) && bottoniG(hG) === 0,
+   `niente Skill e niente ECM: avviso e 0 bottoni (avviso ${avvisoG(hG)}, bottoni ${bottoniG(hG)})`);
+// CONTROPROVA: lo zero vale solo se con la Skill il bottone si conta davvero.
+hG = schermataG(finto('BS Attack (Guided)'));
+ok(!avvisoG(hG) && bottoniG(hG) === 1,
+   `CONTROPROVA: con la Skill il bottone c e ed e uno, senza avviso (avviso ${avvisoG(hG)}, bottoni ${bottoniG(hG)})`);
+hG = schermataG(finto('BS Attack [Guided]', 'ECM (Guided -6)'));
+ok(!avvisoG(hG) && bottoniG(hG) === 1,
+   `Skill con le quadre piu ECM: bottone, nessun avviso (avviso ${avvisoG(hG)}, bottoni ${bottoniG(hG)})`);
+// E sui profili VERI del database: i tre che l'arma ce l'hanno.
+const ancoraBottoni = conArma.filter(u => { const x = schermataG(pulito(u)); return bottoniG(x) > 0 || !avvisoG(x); }).map(u => u.nome);
+ok(conArma.length === CON_ARMA.length && ancoraBottoni.length === 0,
+   `i ${CON_ARMA.length} profili veri con ECM e arma che qualifica: avviso e 0 bottoni per tutti`,
+   `con bottoni o senza avviso: ${JSON.stringify(ancoraBottoni)}`);
+hG = vertigoG ? schermataG(pulito(vertigoG)) : '';
+ok(!avvisoG(hG) && bottoniG(hG) === 1,
+   `e il Vertigo Zond vero ha il suo bottone (avviso ${avvisoG(hG)}, bottoni ${bottoniG(hG)})`);
+
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

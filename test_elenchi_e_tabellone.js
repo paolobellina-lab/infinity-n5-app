@@ -1,4 +1,4 @@
-// @versione 2026-10-08.2 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-09.7 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -7,9 +7,12 @@
 //  COSA PROVA
 //   1. step-modifiers: niente tasto giallo "REQUISITO NON SODDISFATTO",
 //      e il riquadro dell'esito vuoto non resta acceso (la "barra verde").
-//   2. La tendina del terreno e` il solo <select>: sulla scheda del
-//      bersaglio dell'Attacco BS sta alla stessa altezza delle munizioni.
-//      In ARO la scritta e la nota del Fumo restano.
+//   2. Terreni a scelta multipla (Paolo, 9 ottobre): una riga chiusa che
+//      apre le caselle dei terreni del tavolo piu` Fumo ed Eclipse; OK
+//      applica, ANNULLA no; nella busta `terrain` e` un ELENCO e `zona`
+//      resta a parte.
+//      Fino alla 2026-10-08.2 questa sezione provava la tendina unica: era
+//      la regola di prima, e cambiarla e` la richiesta, non un difetto.
 //   3. Foto e carattere uguali nei tre elenchi: truppe da attivare, chi
 //      risponde in ARO, bersagli (window.rigaUnitaConFoto).
 //  3b. Le foto: una per miniatura, assegnata nello schieramento, senza
@@ -32,6 +35,11 @@
 //      Ordine Coordinato; la nota di uno scontro senza tiro si legge.
 //  15. Senza allarme l'Hub non aspetta (Movimento Cauto fuori da LoF e
 //      ZdC); controprova: con l'allarme aspetta.
+//  16. Il tasto NESSUN ARO sulla barra dell'avviso (Paolo, 9 ottobre).
+//  17. La riga dell'unita` nuova, dentro app.html (approvata da Paolo il
+//      9 ottobre): elenco proprio, Coordinato, bersagli, ARO.
+//  18. I programmi di hacking in ARO col bottone dell'arma del motore:
+//      contorno azzurro e icona dello stato che provocano.
 //
 //  NON PROVA: l'aspetto vero nel browser (altezze, colori, immagini che
 //  esistono o no). Il DOM qui e` finto: si guarda l'HTML prodotto.
@@ -111,8 +119,9 @@ function creaTavolo(DIR, opz) {
     dispositivi.push(d);
     return d;
   }
-  const nomadi = avvia('NOMADI', 'NOMADS', 'app.html', '?fazione=nomadi');
-  const pano = avvia('PANOCEANIA', 'PANOCEANIA', 'app.html', '?fazione=panoceania');
+  const pagina = opz.pagina || 'app.html';
+  const nomadi = avvia('NOMADI', 'NOMADS', pagina, '?fazione=nomadi');
+  const pano = avvia('PANOCEANIA', 'PANOCEANIA', pagina, '?fazione=panoceania');
   const hub = avvia('HUB', 'HUB', 'calcolatore_hub.html', '');
   hub.g.hubPronto = true;
   const T = { server, nomadi, pano, hub, problemi };
@@ -144,6 +153,14 @@ const piazza = (T) => { const N = T.nomadi.g; T.apriMenu(T.nomadi, 0); N.selectA
     N.scegliArmaDaPiazzare(m[1]); (N.deployableDomande || []).forEach(d => N.rispondiDeployable(d.id, false)); return N; };
 const risoluzione = (T) => T.hub.el('step-resolution').style.display === 'block';
 const tabellone = (T) => testo(T.hub.el('clash-container').innerHTML);
+// Un tocco vero: l'onclick scritto nell'HTML, eseguito nella pagina.
+const vmTocco = (d, codice) => vm.runInContext(codice, d.g);
+// La scelta del terreno: la riga chiusa (il suo onclick e il testo) e le
+// caselle del riquadro che apre (voce, spuntata, onclick).
+const rigaTerreno = (h) => { const m = String(h).match(/<button[^>]*class="huge-btn scelta-terreno"[^>]*onclick="([^"]*)">\s*<span[^>]*>([\s\S]*?)<\/span>/); return m ? { clic: m[1], testo: testo(m[2]) } : null; };
+const caselle = (d) => [...String(d.el('pannello-terreno').innerHTML).matchAll(/class="voce-terreno" data-voce="([^"]*)" aria-pressed="([^"]*)" onclick="([^"]*)"/g)]
+    .map(x => ({ voce: x[1], acceso: x[2] === 'true', clic: x[3] }));
+const TERRENI_PROVA = ['TER_10', 'TER_11', 'TER_15'];
 
 // ---------------------------------------------------------------------------
 sezione('1. step-modifiers: un tasto solo, e niente riquadro vuoto acceso', () => {
@@ -164,26 +181,65 @@ sezione('1. step-modifiers: un tasto solo, e niente riquadro vuoto acceso', () =
        'chiuso l Ordine il riquadro e` vuoto E spento (display: ' + T.nomadi.el('calc-result').style.display + ')');
 });
 
-sezione('2. La tendina del terreno: sola in riga, con la scritta in ARO', () => {
+sezione('2. Terreni a scelta multipla: riga chiusa, caselle, OK', () => {
     const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
-    T.schiera([truppa(profilo(T, /^Intruder \(HMG/), { id: 'n1', alias: 'Spara' })], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
-    const sola = N.sceltaTerreno('NESSUNO', null, 'window.setTargetTerrenoBS', 0).trim();
-    ok(/^<select[\s\S]*<\/select>$/.test(sola), 'sceltaTerreno consegna il solo <select>');
-    ok(!/margin-top:\s*20px/.test(sola) && !/sulla linea di tiro:<\/div>/.test(sola), 'senza margine sopra e senza scritta sopra');
-    ok(/Fumo/.test(sola) && /Eclipse/.test(sola), 'Fumo ed Eclipse ci sono sempre');
-    ok(/Zero/.test(N.notaZona('FUMO')) && N.notaZona(null) === '', 'la nota del Fumo si chiede a parte (window.notaZona)');
-    // Dalla porta del giocatore: la scheda del bersaglio dell'Attacco BS.
+    [N, P].forEach(g => { g.activeTerrains = TERRENI_PROVA.map(id => g.DB_TERRENI.find(t => t.id === id)); });
+    T.schiera([truppa(profilo(T, /^Alguacil \(HMG/), { id: 'n1', alias: 'Spara' })], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+    const chiusa = N.sceltaTerreno('NESSUNO', null, 'window.setTargetTerrenoBS', 0);
+    ok(!/<select/.test(chiusa) && (chiusa.match(/<button/g) || []).length === 1, 'chiusa e` UNA riga sola, non una tendina');
+    ok(rigaTerreno(chiusa) && rigaTerreno(chiusa).testo === 'Terreno: nessuno', 'e dice cosa c e: ' + J(rigaTerreno(chiusa) && rigaTerreno(chiusa).testo));
+    ok(rigaTerreno(N.sceltaTerreno(['TER_10', 'TER_15'], 'FUMO', 'window.setTargetTerrenoBS', 0)).testo === 'Terreno: Bosco + Tempesta + Fumo', 'con piu voci le elenca tutte');
+    // I valori composti di prima si leggono ancora; quelli nuovi sono elenchi.
+    const sep = (x) => J(N.separaTerrenoEZona(x));
+    ok(sep('TER_10+FUMO') === J({ terrain: ['TER_10'], zona: 'FUMO' }), 'un vecchio valore composto si legge ancora (' + sep('TER_10+FUMO') + ')');
+    ok(sep('TER_10,TER_11') === J({ terrain: ['TER_10', 'TER_11'], zona: null }), 'due terreni: un elenco, zona null');
+    ok(sep('NESSUNO') === J({ terrain: 'NESSUNO', zona: null }) && sep('NESSUNO+ECLIPSE') === J({ terrain: 'NESSUNO', zona: 'ECLIPSE' }), 'niente terreno: NESSUNO, come prima');
+    ok(sep('TER_10+FUMO+ECLIPSE') === J({ terrain: ['TER_10'], zona: 'ECLIPSE' }), 'Fumo ed Eclipse insieme: vale l Eclipse');
+    // Dalla porta del giocatore, in ARO.
     T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Heavy Machine Gun');
     N.toggleTargetSelection('p1'); N.confirmMultiAro(false); T.giro();
     P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro(); P.selezionaAzioneAro('BS_ATTACK'); P.selezionaArmaAro('Combi Rifle');
     P.selezionaBersaglioAro('Spara');
-    const aro = Object.values(T.pano.elementi).map(e => e.innerHTML).find(h => /setAroTerreno/.test(h)) || '';
-    ok(/sulla linea di tiro:<\/div>\s*<select/.test(aro), 'in ARO la scritta sopra la tendina resta');
-    P.salvaAroCorrente(); T.giro();
-    N.goToModifiersBS('IDLE');
-    const scheda = T.nomadi.el('targets-allocation-container').innerHTML;
-    const riga = (scheda.match(/<div class="bs-terreno"[^>]*>([\s\S]*?)<\/select>/) || ['', ''])[1].trim();
-    ok(riga.indexOf('<select') === 0, 'sulla scheda del bersaglio, accanto alle munizioni, c e subito il <select> (inizia con: ' + J(riga.slice(0, 30)) + ')');
+    const aroH = () => T.pano.el('aro-modifiers-content').innerHTML;
+    ok(/sulla linea di tiro/.test(testo(aroH())) && !!rigaTerreno(aroH()), 'in ARO: la scritta sopra e la riga chiusa');
+    vmTocco(T.pano, rigaTerreno(aroH()).clic);
+    ok(J(caselle(T.pano).map(x => x.voce)) === J(TERRENI_PROVA.concat(['FUMO', 'ECLIPSE'])), 'il tocco apre le caselle: i terreni del tavolo, Fumo ed Eclipse (' + caselle(T.pano).map(x => x.voce).join(',') + ')');
+    vmTocco(T.pano, caselle(T.pano).find(x => x.voce === 'TER_10').clic);
+    vmTocco(T.pano, caselle(T.pano).find(x => x.voce === 'TER_15').clic);
+    ok(P.aroCurrentConfig.terrain === undefined || P.aroCurrentConfig.terrain === 'NESSUNO', 'finche` non si tocca OK il campo non cambia (' + J(P.aroCurrentConfig.terrain) + ')');
+    vmTocco(T.pano, 'window.confermaSceltaTerreno()');
+    ok(J(P.aroCurrentConfig.terrain) === J(['TER_10', 'TER_15']), 'OK: Bosco e Tempesta insieme nel campo (' + J(P.aroCurrentConfig.terrain) + ')');
+    ok(T.pano.el('pannello-terreno').style.display === 'none', 'e il riquadro si chiude');
+    P.salvaAroCorrente(); P.inviaAro(); T.giro();
+    { const m = T.nomadi.el('second-half-buttons-container').innerHTML.match(/window\.selectAction\('([^']+)', true\)/); N.selectAction(m[1], true); }
+    // Dalla porta del giocatore, sulla scheda del bersaglio.
+    const H = () => T.nomadi.el('targets-allocation-container').innerHTML;
+    const apri = () => vmTocco(T.nomadi, rigaTerreno(H()).clic);
+    const tocca = (voce) => vmTocco(T.nomadi, caselle(T.nomadi).find(x => x.voce === voce).clic);
+    const okk = () => vmTocco(T.nomadi, 'window.confermaSceltaTerreno()');
+    const tgt = () => J({ terrain: N.combatTargets[0].terrain, zona: N.combatTargets[0].zona || null });
+    ok(/class="bs-terreno"/.test(H()) && !!rigaTerreno(H()), 'sulla scheda del bersaglio c e la riga chiusa, accanto alle munizioni');
+    apri(); tocca('TER_10'); tocca('TER_11'); okk();
+    ok(tgt() === J({ terrain: ['TER_10', 'TER_11'], zona: null }), 'Bosco poi Giungla, OK: tutti e due nel campo (' + tgt() + ')');
+    ok(rigaTerreno(H()).testo === 'Terreno: Bosco + Giungla', 'e la riga chiusa lo dice (' + rigaTerreno(H()).testo + ')');
+    apri();
+    ok(J(caselle(T.nomadi).filter(x => x.acceso).map(x => x.voce)) === J(['TER_10', 'TER_11']), 'riaprendo, le caselle spuntate sono quelle scelte');
+    tocca('TER_10'); vmTocco(T.nomadi, 'window.chiudiSceltaTerreno()');
+    ok(tgt() === J({ terrain: ['TER_10', 'TER_11'], zona: null }), 'ANNULLA: la casella tolta non conta, il campo resta com era');
+    apri(); tocca('TER_10'); okk();
+    ok(tgt() === J({ terrain: ['TER_11'], zona: null }), 'un secondo tocco su Bosco e OK lo tolgono (' + tgt() + ')');
+    apri(); tocca('FUMO'); tocca('ECLIPSE');
+    ok(!caselle(T.nomadi).find(x => x.voce === 'FUMO').acceso && caselle(T.nomadi).find(x => x.voce === 'ECLIPSE').acceso, 'Fumo poi Eclipse: resta spuntata solo l Eclipse');
+    okk();
+    ok(tgt() === J({ terrain: ['TER_11'], zona: 'ECLIPSE' }), 'e nel campo zona c e l Eclipse (' + tgt() + ')');
+    apri(); tocca('TER_11'); tocca('ECLIPSE'); okk();
+    ok(tgt() === J({ terrain: 'NESSUNO', zona: null }), 'tolte tutte: niente sulla linea di tiro (' + tgt() + ')');
+    apri(); tocca('TER_10'); tocca('TER_11'); okk();
+    let busta = null; { const M5 = N.MotoreN5, o = M5.inviaCalcolo; M5.inviaCalcolo = function (pl) { busta = pl[0].bersagli[0]; return o.apply(this, arguments); }; }
+    N.eseguiCalcoloBS(); T.giro();
+    ok(busta && J(busta.terrain) === J(['TER_10', 'TER_11']), 'nella busta parte l elenco dei due terreni (' + J(busta && busta.terrain) + ')');
+    const t = tabellone(T);
+    ok(/Pessima Visibilit/.test(t) && /Dadi da lanciare: 3/.test(t), 'e il tabellone li combina: Pessima Visibilita e un dado in meno per la Saturazione');
 });
 
 sezione('3. Foto e carattere uguali nei tre elenchi', () => {
@@ -198,12 +254,14 @@ sezione('3. Foto e carattere uguali nei tre elenchi', () => {
     N.toggleTargetSelection('p1'); N.confirmMultiAro(false); T.giro();
     P.apriSelezioneAro();
     const aro = T.pano.el('aro-selection-list').innerHTML;
-    const NOME = /font-size:22px; line-height:1; color:#fff; font-weight:bold;/, ALIAS = /font-size:15px; font-style:italic;/;
-    ok(/<img src="img\/intruder\.png"/.test(attivo) && NOME.test(attivo), 'elenco delle truppe da attivare: foto e nome a 22');
-    ok(/<img src="img\/fucilieri_2\.png"/.test(bersagli), 'elenco dei bersagli: la foto che l AVVERSARIO ha dato alla sua unita (' + ((bersagli.match(/<img src="[^"]*"/) || ['nessuna foto'])[0]) + ')');
+    // 9 ottobre: la riga e` quella nuova (nome nella riga alta, soprannome
+    // nella bassa); "stesso carattere" vuol dire stesse classi in tutti e tre.
+    const NOME = /<div class="rup-nome">/, ALIAS = /<div class="rup-alias">/;
+    ok(/<img class="rup-foto" src="img\/intruder\.png"/.test(attivo) && NOME.test(attivo), 'elenco delle truppe da attivare: foto e nome nella riga alta');
+    ok(/<img class="rup-foto" src="img\/fucilieri_2\.png"/.test(bersagli), 'elenco dei bersagli: la foto che l AVVERSARIO ha dato alla sua unita (' + ((bersagli.match(/<img class="rup-foto" src="[^"]*"/) || ['nessuna foto'])[0]) + ')');
     ok(NOME.test(bersagli) && ALIAS.test(bersagli), 'elenco dei bersagli: stesso carattere, nome e alias');
     ok(/toggleTargetSelection\('p1'\)/.test(bersagli), 'e il tocco sceglie ancora il bersaglio');
-    ok(/<img src="img\/fucilieri_2\.png"/.test(aro), 'elenco di chi risponde in ARO: la foto della propria unita (' + ((aro.match(/<img src="[^"]*"/) || ['nessuna foto'])[0]) + ')');
+    ok(/<img class="rup-foto" src="img\/fucilieri_2\.png"/.test(aro), 'elenco di chi risponde in ARO: la foto della propria unita (' + ((aro.match(/<img class="rup-foto" src="[^"]*"/) || ['nessuna foto'])[0]) + ')');
     ok(NOME.test(aro) && ALIAS.test(aro) && /id="aro-btn-p1"/.test(aro), 'elenco ARO: stesso carattere, e il pulsante ha ancora il suo id');
     P.toggleAroUnit('p1');
     ok(J(P.selectedAroUnits) === J(['p1']), 'e il tocco sceglie ancora chi reagisce');
@@ -213,14 +271,16 @@ sezione('3. Foto e carattere uguali nei tre elenchi', () => {
     const visto = J(T.pano.g.enemyRoster || JSON.parse(T.server.global_game_state).nomads);
     ok(!/intruder\.png/.test(visto), 'di un Marker la foto della miniatura NON arriva all avversario');
     // Il colore della fazione del bersaglio (Paolo, 7 ottobre).
+    // 9 ottobre: i colori stanno nelle variabili --rup-* della riga nuova.
     const rigaB = (h) => (h.match(/<button[^>]*riga-unita[^>]*>/) || [''])[0];
-    ok(/border:2px solid #00ccff/.test(rigaB(bersagli)) && /background:#001a33/.test(rigaB(bersagli)), 'il Nomade vede i bersagli di PanOceania in BLU (' + ((rigaB(bersagli).match(/background:[^;]*; border:[^;]*/) || ['?'])[0]) + ')');
+    ok(/data-fazione="PANOCEANIA"/.test(rigaB(bersagli)) && /--rup-a-n:#005f94/.test(rigaB(bersagli)), 'il Nomade vede i bersagli di PanOceania in BLU (' + ((rigaB(bersagli).match(/--rup-a-n:[^;]*/) || ['?'])[0]) + ')');
     N.pendingTargets = [N.validTargets[0]]; N.renderTargetButtons();
-    ok(/border:2px solid #66ddff/.test(rigaB(T.nomadi.el('enemy-target-buttons').innerHTML)) && !/#8b0000|#ff0000/.test(rigaB(T.nomadi.el('enemy-target-buttons').innerHTML)), 'scelto, resta blu piu` acceso: non diventa rosso');
+    const sceltoB = rigaB(T.nomadi.el('enemy-target-buttons').innerHTML);
+    ok(/data-scelta="si"/.test(sceltoB) && /--rup-a-s:#168fcf/.test(sceltoB) && !/#a80000|#e02424/.test(sceltoB), 'scelto, resta blu piu` acceso: non diventa rosso');
     P.validTargets = [N.roster[0]]; P.pendingTargets = []; P.renderTargetButtons();
-    ok(/border:2px solid #cc0000/.test(rigaB(T.pano.el('enemy-target-buttons').innerHTML)), 'e chi gioca PanOceania vede i bersagli nomadi in ROSSO');
+    ok(/data-fazione="NOMADI"/.test(rigaB(T.pano.el('enemy-target-buttons').innerHTML)) && /--rup-a-n:#a80000/.test(rigaB(T.pano.el('enemy-target-buttons').innerHTML)), 'e chi gioca PanOceania vede i bersagli nomadi in ROSSO');
     const r = N.rigaUnitaConFoto(N.roster[0], { attributi: 'onclick="window.prova()"', id: 'riga-x', dopoNome: ' [X]', sotto: '<i>sotto</i>' });
-    ok(/^\s*<button id="riga-x"/.test(r) && /onclick="window\.prova\(\)"/.test(r) && /\[X\]/.test(r) && /<i>sotto<\/i>/.test(r) && /<\/button>\s*$/.test(r),
+    ok(/^\s*<button [^>]*id="riga-x"/.test(r) && /onclick="window\.prova\(\)"/.test(r) && /\[X\]/.test(r) && /<i>sotto<\/i>/.test(r) && /<\/button>\s*$/.test(r),
        'rigaUnitaConFoto(unita, opzioni): un <button> con id, gestori, coda al nome e riga sotto');
 });
 
@@ -569,6 +629,131 @@ sezione('15. Senza allarme l Hub NON aspetta: Movimento Cauto fuori da LoF e ZdC
     ok(!risoluzione(b.T), 'e l Hub aspetta la risposta');
     b.T.pano.g.annullaAro(); b.T.giro();
     ok(risoluzione(b.T), 'finche` il reattivo non risponde (qui: PASSA)');
+});
+
+sezione('16. Il tasto NESSUN ARO sulla barra dell avviso', () => {
+    const pagina = fs.readFileSync(DIR + 'app.html', 'utf8');
+    const barra = (pagina.match(/<div id="aro-alert-banner"[\s\S]*?<div class="grid-buttons" id="reactive-roster-list"/) || [''])[0];
+    const tasto = (barra.match(/<button[^>]*onclick="(window\.annullaAro\(\))"[^>]*>\s*NESSUN ARO\s*<\/button>/) || [])[1];
+    ok(!!tasto, 'sulla barra dell avviso c e NESSUN ARO, e chiama window.annullaAro()');
+    ok(/apriSelezioneAro\(\)/.test(barra), 'accanto resta GESTISCI ARO');
+    const giro = (risposta) => {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+        T.schiera([truppa(profilo(T, /^Alguacil \(HMG/), { id: 'n1', alias: 'Spara' })], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Heavy Machine Gun');
+        N.toggleTargetSelection('p1'); N.confirmMultiAro(false); T.giro();
+        const acceso = T.pano.el('aro-alert-banner').style.display === 'block';
+        const domande = []; P.confirm = (m) => { domande.push(m); return risposta; };
+        vmTocco(T.pano, tasto || 'void 0'); T.giro();
+        return { T, N, P, acceso, domande };
+    };
+    const si = giro(true);
+    ok(si.acceso, 'all allarme la barra si accende');
+    ok(si.domande.length === 1, 'il tocco chiede conferma, come il tasto nella schermata degli ARO');
+    ok(si.T.pano.el('aro-alert-banner').style.display === 'none' && !!si.T.server.hub_sblocco_attivo, 'confermato: la barra si spegne e l Hub sblocca l attivo');
+    { const m = si.T.nomadi.el('second-half-buttons-container').innerHTML.match(/window\.selectAction\('([^']+)', true\)/); si.N.selectAction(m[1], true); si.N.eseguiCalcoloBS(); si.T.giro(); }
+    ok(/Nessun ARO/.test(tabellone(si.T)), 'e sul tabellone il reattivo e` "Nessun ARO"');
+    const no = giro(false);
+    ok(no.T.pano.el('aro-alert-banner').style.display === 'block' && !no.T.server.hub_sblocco_attivo, 'annullata la conferma: niente parte, la barra resta');
+});
+
+sezione('17. La riga dell unita` nuova, dentro app.html (Paolo, 9 ottobre)', () => {
+    // Approvata la prova: la riga e` in app.html e la pagina di prova non
+    // serve piu`. Si guarda dalla porta del giocatore: gli elenchi veri.
+    const vera = fs.readFileSync(DIR + 'app.html', 'utf8');
+    ok(!/prova_estetica/.test(vera), 'app.html non carica file di prova');
+    ok(/\.riga-unita-foto \.rup-foto \{/.test(vera), 'il foglio di stile della riga e` nella pagina, non iniettato');
+    // Pomeriggio del 9 (Paolo): niente tondo, forma squadrata come le armi, icone grandi sopra le due righe.
+    ok(!/rup-tondo/.test(vera) && !/border-radius:50%/.test((vera.match(/\.riga-unita-foto \.rup-foto \{[^}]*\}/) || [''])[0]), 'la foto non ha piu` il tondo intorno: e` un png senza sfondo');
+    // Pomeriggio del 9 (Paolo, tramite MOTORE): la STESSA forma del bottone dell'arma.
+    // Dalla 2026-10-09.5 la forma la DISEGNA il motore (M.formaBottone, motore
+    // 2026-10-09.4), la stessa di M.bottoneArma: in app.html non ce n'e` piu`
+    // una copia. Si confronta la riga vera con il bottone dell'arma vero.
+    { const T0 = creaTavolo(DIR); const G0 = T0.nomadi.g, M0 = G0.MotoreN5;
+      const arma = M0.bottoneArma(M0.profiloArma('Combi Rifle'), {});
+      const riga = G0.rigaUnitaConFoto({ nome: 'Alguacil', alias: 'Prova', tipo: 'LI', states: {} }, {});
+      ok(typeof M0.formaBottone === 'function', 'il motore ha M.formaBottone');
+      ok(!/clip-path:polygon\(15px 0/.test(vera), 'app.html non ha piu` una sua copia della forma (nessun ottagono scritto nella pagina)');
+      const ott = (arma.match(/clip-path:(polygon\(15px 0[^;]*\))/) || [])[1];
+      ok(!!ott && riga.indexOf('clip-path:' + ott) >= 0, 'la banda del nome ha lo stesso ottagono del bottone dell arma (angoli a 15)');
+      ok(/margin-right:20px; min-height:66px; padding:10px 16px 34px 92px/.test(arma) && /margin-right:20px; min-height:66px; padding:10px 16px 34px 92px/.test(riga), 'stesso margine, altezza e spazio interno della banda alta (20, 66, 10/16/34/92)');
+      ok(/margin:-28px 0 0 72px; padding:6px 10px 6px 12px/.test(riga) && /border-radius:0 8px 8px 8px/.test(riga), 'la banda bassa risale di 28, rientra di 72, angoli 0 8 8 8: come l arma');
+      const pieghe = (h) => (h.match(/width:15px; height:15px; background:[^;]*; clip-path:polygon/g) || []).length;
+      // Misurato in Chromium: senza border-box la banda del soprannome era alta 44 invece di 30.
+      // Dal motore 2026-10-09.6 il border-box lo mette M.formaBottone: qui non si ripete.
+      const bassaStile = (riga.match(/<div style="position:relative; margin:-28px[^"]*"/) || [''])[0];
+      ok(/box-sizing:border-box/.test(bassaStile) && /min-height:30px;/.test(bassaStile), 'la banda del soprannome conta lo spazio interno nell altezza minima (30, non 44)');
+      ok((bassaStile.match(/box-sizing/g) || []).length === 1, 'il box-sizing lo dichiara solo il motore, una volta (' + (bassaStile.match(/box-sizing/g) || []).length + ')');
+      ok(pieghe(riga) === 3 && pieghe(arma) === 3, 'tre pieghe negli angoli, come l arma (' + pieghe(riga) + ')'); }
+    ok(/\.riga-unita-foto \.rup-icone img \{ width:64px !important; height:64px !important/.test(vera) && /\.riga-unita-foto \.rup-icone \{ position:absolute;/.test(vera), 'le icone degli stati: 64px, sopra le due righe (non piu` 30px dentro la bassa)');
+    const T = creaTavolo(DIR); const N = T.nomadi.g;
+    ok(T.problemi.length === 0, 'la pagina si carica senza errori (' + J(T.problemi) + ')');
+    ok(N.rigaUnitaConFoto && N.rigaUnitaConFoto.originale === undefined, 'una sola riga: nessuna funzione sostituita sopra un altra');
+    T.schiera([truppa(profilo(T, /^Alguacil \(HMG/), { id: 'n1', alias: 'Rosso', imgVariant: 'alguaciles_2.png' }),
+               truppa(profilo(T, /^Alguacil \(HMG/), { id: 'n2', alias: 'Verde' })],
+              [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Primo', states: { engaged: true } }), truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p2', alias: 'Secondo' })], 'NOMADI');
+    N.currentGroup = 1; N.aggiornaGraficaRoster();
+    const mia = T.nomadi.el('unit-buttons-container').innerHTML;
+    ok(/class="huge-btn riga-unita riga-unita-foto"/.test(mia) && /data-fazione="NOMADI" data-scelta="no"/.test(mia) && /--rup-a-n:#a80000/.test(mia), 'l elenco delle proprie truppe usa la riga nuova, nei colori dei Nomadi');
+    ok(/<img class="rup-foto" src="img\/alguaciles_2\.png"/.test(mia) && !/rup-tondo/.test(mia), 'la foto della miniatura c e, libera, senza tondo');
+    ok(/<span class="rup-sigla">/.test(mia), 'senza foto, al suo posto la sigla del tipo');
+    ok(/<div class="rup-nome">Alguacil<\/div>/.test(mia) && /<div class="rup-alias">"Rosso"<\/div>/.test(mia), 'banda alta il nome, banda bassa il soprannome');
+    ok(/<div class="rup-alias">"Rosso"<\/div>/.test(mia), 'il soprannome nella banda bassa');
+    // Il Coordinato accendeva la riga con un fondo rosso fisso: ora con data-scelta.
+    N.selectedCoordinatedUnits = [N.roster.find(u => u.id === 'n2')]; N.aggiornaGraficaRoster();
+    const coord = T.nomadi.el('unit-buttons-container').innerHTML;
+    ok(!/#440000/.test(coord), 'niente piu` fondo rosso fisso per la scelta del Coordinato');
+    ok((coord.match(/data-scelta="si"/g) || []).length === 1, 'la truppa scelta per il Coordinato e` accesa, solo lei');
+    ok(/style="[^"]*--rup-c-n:#ff9900;[^"]*"[^>]*data-scelta="si"/.test(coord), 'e il suo contorno e` arancio: bordo delle bande e pieghe (dice: scelta per il Coordinato)');
+    N.selectedCoordinatedUnits = [];
+    T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Heavy Machine Gun'); N.toggleTargetSelection('p1');
+    const bers = T.nomadi.el('enemy-target-buttons').innerHTML;
+    const riga = (id) => (bers.match(new RegExp('<button[^>]*data-scelta="(si|no)"[^>]*onclick="window\\.toggleTargetSelection\\(\'' + id + '\'\\)"[\\s\\S]*?</button>')) || []);
+    ok(/data-fazione="PANOCEANIA"/.test(bers), 'i bersagli nei colori di PanOceania');
+    ok(riga('p1')[1] === 'si' && riga('p2')[1] === 'no', 'il bersaglio scelto e` acceso, l altro no (' + riga('p1')[1] + '/' + riga('p2')[1] + ')');
+    ok(/<div class="rup-icone">[\s\S]*icon_engaged/.test(riga('p1')[0] || ''), 'le icone degli stati stanno a destra, nel loro riquadro sopra le righe');
+    ok(/padding:10px 72px 34px 92px/.test(riga('p1')[0] || '') && /padding:10px 16px 34px 92px/.test(riga('p2')[0] || ''), 'con un icona il nome lascia 72px a destra; senza icone nessuno spazio');
+    // L'elenco degli ARO: la scelta si accende con data-scelta, non col fondo.
+    const P = T.pano.g; P.selectedAroUnits = ['p2'];
+    const btn = { className: 'huge-btn riga-unita riga-unita-foto', style: {}, attr: {}, setAttribute(k, v) { this.attr[k] = v; } };
+    const prima = P.document.getElementById; P.document.getElementById = (id) => id === 'aro-btn-p1' ? btn : prima.call(P.document, id);
+    P.toggleAroUnit('p1');
+    ok(btn.attr['data-scelta'] === 'si' && btn.style.background === undefined, 'toccata in ARO: la riga si accende (data-scelta), il fondo resta quello della fazione');
+    P.toggleAroUnit('p1');
+    ok(btn.attr['data-scelta'] === 'no' && J(P.selectedAroUnits) === J(['p2']), 'ritoccata si spegne e torna fuori dalla scelta');
+    P.document.getElementById = prima;
+});
+
+sezione('18. I programmi di hacking in ARO: il bottone dell arma, azzurro, con l icona dello stato', () => {
+    // Paolo, 9 ottobre: i programmi hanno l'estetica dell'arma col contorno
+    // azzurro fluo e, come immagine, l'icona dello stato che provocano. Il
+    // disegno e` del motore (M.bottoneArma, motore 2026-10-09.2): qui si guarda
+    // la schermata degli ARO, che e` di logica_aro.js.
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+    const hacker = [].concat(P.DB_PANOCEANIA).find(u => /\bHacking Device\b/.test(u.equip || '') && /Hacker/.test(u.skills || ''));
+    ok(!!hacker, 'premessa: un Hacker PanOceania col Hacking Device (' + (hacker && hacker.nome) + ')');
+    T.schiera([truppa(profilo(T, /^Alguacil \(HMG/), { id: 'n1', alias: 'Spara' })], [truppa(JSON.parse(J(hacker)), { id: 'p1', alias: 'Hax' })], 'NOMADI');
+    T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Heavy Machine Gun');
+    N.toggleTargetSelection('p1'); N.confirmMultiAro(false); T.giro();
+    P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro(); P.selezionaAzioneAro('HACKING');
+    const lista = T.pano.el('aro-weapon-list').innerHTML;
+    const bottoni = lista.match(/<button type="button" class="bottone-arma"[\s\S]*?<\/button>/g) || [];
+    ok(bottoni.length >= 3, 'i programmi in ARO sono bottoni dell arma (' + bottoni.length + ')');
+    ok(!/<button class="huge-btn"[^>]*selezionaArmaAro/.test(lista), 'nessun programma resta col bottone semplice di prima');
+    const carb = bottoni.find(b => /selezionaArmaAro\('CARBONITE'\)/.test(b)) || '';
+    ok(/border:1px solid #00e5ff/.test(carb), 'contorno azzurro fluo (#00e5ff)');
+    ok(/<img src="img\/icon_immb\.png"/.test(carb), 'Carbonite porta l icona dell Immobilizzato-B, lo stato che provoca');
+    ok(/B2 · PS 7 · BTS pieno/.test(carb), 'sotto: Burst e Tiro Salvezza (' + testo((carb.match(/font-size:13px[^>]*>([^<]*)</) || ['', '?'])[1]) + ')');
+    // Dalla porta del giocatore: il tocco sceglie ancora il programma.
+    vmTocco(T.pano, (carb.match(/onclick="([^"]*)"/) || [])[1] || 'void 0');
+    ok(P.aroCurrentConfig.arma === 'CARBONITE', 'toccato, il programma e` scelto (' + P.aroCurrentConfig.arma + ')');
+    // CONTROPROVA: un BS Attack in ARO NON passa da qui (le armi restano come prima).
+    P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro();
+    const az = T.pano.el('aro-action-list').innerHTML;
+    if (/selezionaAzioneAro\('BS_ATTACK'\)/.test(az)) {
+        P.selezionaAzioneAro('BS_ATTACK');
+        ok(!/class="bottone-arma"/.test(T.pano.el('aro-weapon-list').innerHTML), 'CONTROPROVA: le armi in ARO restano col bottone di prima (non richiesto)');
+    } else ok(true, 'CONTROPROVA saltata: questo Hacker non ha BS in ARO');
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

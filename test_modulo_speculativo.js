@@ -1,4 +1,8 @@
-// @versione 2026-10-07.2 | test_modulo_speculativo.js | proprieta`: chat TEST
+// @versione 2026-10-09.1 | test_modulo_speculativo.js | proprieta`: chat TEST
+// .1 del 9 ott (pomeriggio): "Tira su PH" non e` piu` sul bottone (decisione
+//    di Paolo). La prova non e` stata cancellata: spezzata in due — qui il
+//    motore PRODUCE la frase e il bottone NON la porta, in sezione 5 la frase
+//    ARRIVA a schermo con le parole del motore.
 // Test end-to-end del modulo Speculativo — node test_modulo_speculativo.js
 // .2 (7 ott): il colore del tasto si prova contro M.COLORE_TASTO E si pretende
 //    non vuoto e diverso dal giallo dell IDLE — alla .1 era una tautologia.
@@ -54,8 +58,22 @@ ok(h.includes('Combi Rifle') && h.includes('non ha il Tratto'),
    'Combi Rifle esclusa perché il database dice che non ha il Tratto Speculative Attack');
 
 console.log('\n=== 2. ERRORE CORRETTO: le Granate tirano su PH ===');
-ok(h.includes('Tira su PH'), 'sul bottone c è scritto che si tira su PH, non su BS');
+// 🔴 GIRATA IL 9 OTTOBRE. Sotto il nome, sul bottone, Paolo non vuole piu`
+// NIENTE: ne` Burst, ne` modalita`, ne` "Tira su PH" (motore 2026-10-09.4).
+// La prova cercava quella scritta sul bottone e andava rossa: il difetto era
+// nella prova. Ma l'informazione non e` sparita, si e` SPOSTATA — resta nel
+// calcolo, in noteAttributo, e il giocatore la legge sulla schermata dei
+// modificatori. Quindi la prova non si cancella: si spezza in due, e la
+// catena resta coperta per intero.
+//   qui      il motore PRODUCE la frase, e il bottone NON la porta
+//   sez. 5   la frase ARRIVA a schermo, con le parole del motore
+// Senza il secondo pezzo questa sarebbe la solita cosa prodotta che non
+// raggiunge il suo lettore.
 const attr = M.attributoArma(M.profiloArma('Grenades'), M.AZIONI.SPECULATIVO);
+ok(!/Tira su PH/.test(h),
+   'sotto il nome il bottone non scrive piu` "Tira su PH": e` la decisione di Paolo del 9 ottobre');
+ok(/\bPH\b/.test(String(attr.motivo || '')) && /non su BS/.test(String(attr.motivo || '')),
+   `e il motore consegna la frase da mostrare: ${JSON.stringify(attr.motivo)}`);
 ok(attr.attributo === 'PH', 'attributoArma: Grenades -> PH');
 ok(M.attributoArma(M.profiloArma('Combi Rifle'), M.AZIONI.SPECULATIVO).attributo === 'BS',
    'un fucile resta su BS');
@@ -84,6 +102,12 @@ window.combatTargets = [{ id: 'p1', name: 'Fusilier', burst: 3, cover: true }];
 window.preparaModificatoriSpeculativo();
 h = nodo('targets-allocation-container').innerHTML;
 ok(h.includes('TIRO SU PH 12'), 'mostra PH 12, non BS 11');
+// L'altra metà della prova spostata dalla sezione 2: la frase del motore
+// arriva davvero a schermo, non resta nel risultato. Si confronta col testo
+// che il motore consegna ADESSO, non con una copia scritta qui: cambiando le
+// parole nel motore questa prova segue, cambiandole a meta` strada no.
+ok(h.includes(M.regoleSpeculativo(M.profiloArma('Grenades'), { rangeIndex: 0 }).noteAttributo),
+   'e sotto c è la frase del motore sul perché si tira su PH (noteAttributo, parola per parola)');
 ok(h.includes('range-seg'), 'il selettore di gittata c è (a differenza dell Intuitivo)');
 ok(!h.includes('IN COPERTURA'), 'nessun interruttore Copertura: è ignorata per regola');
 ok(h.includes('MOD totale'), 'mostra il MOD totale scomposto');

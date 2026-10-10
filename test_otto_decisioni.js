@@ -1,6 +1,40 @@
-// @versione 2026-09-23.1 | test_otto_decisioni.js | proprieta`: chat TEST
+// @versione 2026-10-09.1 | test_otto_decisioni.js | proprieta`: chat TEST
+// 2026-10-09.1: REGOLE_N5_v5_1_1.txt non e` piu` nel Project. Senza il file le
+//    otto citazioni della sezione 11 sono NON ESEGUITE, contate e nominate.
+//    Prima al loro posto c'era un ok(true, ...) solo: 86 prove invece di 93, con
+//    un verde che non guardava niente. Con il regolamento in cartella: 93.
 // Le otto decisioni — node test_otto_decisioni.js
 global.window = global;
+// ---------------------------------------------------------------------------
+// FONTI FUORI DAL PROJECT — convenzione del 9 ottobre sera (chat TEST).
+// I file della fonte (REGOLE_N5_v5_1_1.txt) non stanno piu` nel Project: Paolo
+// li allega quando servono. Senza di loro le prove che li leggono non sono
+// ROSSE (un rosso che e` lo stato normale smette di essere letto) e non sono
+// VERDI (una prova che passa senza guardare niente e` peggio): sono NON
+// ESEGUITE, contate a parte e nominate, una riga per prova e nel riepilogo:
+//     N passati, 0 falliti, K non eseguite (fonte assente: ...)
+// Tre guardie perche` "non eseguita" non diventi un posto dove nascondersi:
+//  - vale SOLO per i file nominati qui, e solo se il file NON C'E`. Un file
+//    presente ma illeggibile, o un altro file che manca, resta un rosso;
+//  - eseguite + non eseguite deve fare PROVE_ATTESE: una prova che sparisce
+//    senza essere dichiarata e` un rosso;
+//  - con la fonte in cartella la riga di riepilogo e` quella di sempre.
+let nonEseguite = 0; const fontiAssenti = [];
+const fonteAssente = (file) => {
+    const nome = String(file).split('/').pop();
+    const manca = !require('fs').existsSync(file);
+    if (manca && fontiAssenti.indexOf(nome) < 0) fontiAssenti.push(nome);
+    return manca;
+};
+const nonEseguita = (m, n) => { nonEseguite += (n || 1); console.log('  ⏸ NON ESEGUITA (fonte assente: ' + fontiAssenti.join(', ') + '): ' + m); };
+const rigaFinale = (attese) => {
+    const viste = passati + falliti + nonEseguite;
+    if (viste !== attese) { falliti++; console.log('  ❌ prove eseguite + non eseguite: ' + viste + ', attese ' + attese + ' — una prova e` sparita o ne e` nata una: se e` voluto, aggiorna PROVE_ATTESE'); }
+    console.log('\n──────────────\n' + passati + ' passati, ' + falliti + ' falliti' +
+        (nonEseguite ? ', ' + nonEseguite + ' non eseguite (fonte assente: ' + fontiAssenti.join(', ') + ')' : '') + '\n');
+};
+// ---------------------------------------------------------------------------
+const PROVE_ATTESE = 93;
 global.document = { title: 'NOMADS TACTICAL TERMINAL' };
 require('./catalogo_n5.js'); require('./database_comune.js');
 require('./database_nomad.js'); require('./database_panoceania.js');
@@ -160,7 +194,9 @@ if (testo) {
         ok(testo.indexOf(c[0]) >= 0, `${c[1]}: citazione presente nella fonte completa`);
     });
 } else {
-    ok(true, 'fonte completa non presente in questo ambiente: citazioni non riverificate');
+    fonteAssente('./REGOLE_N5_v5_1_1.txt');
+    if (fontiAssenti.length) nonEseguita('le 8 citazioni sulla fonte completa: No Cover, Limited Cover, Combat Instinct, Neurocinetics, Sixth Sense, Hidden Deployment, Minelayer, Foxhole', 8);
+    else ok(false, 'REGOLE_N5_v5_1_1.txt e` in cartella ma non si legge');
 }
 
 console.log('\n=== 12. Minelayer: i due requisiti ===');
@@ -255,5 +291,5 @@ ok(conv.regole.mutazioni.length === 3, 'con le mutazioni da applicare');
 ok(conv.regole.unitaAggiornata, 'e l unità già aggiornata, pronta da sostituire');
 ok(/Spazio insufficiente/.test(conv.regole.motivo), 'col motivo che il giocatore ha dato');
 
-console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
+rigaFinale(PROVE_ATTESE);
 process.exit(falliti ? 1 : 0);

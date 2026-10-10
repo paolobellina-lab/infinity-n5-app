@@ -1,4 +1,4 @@
-<!-- @versione 2026-10-08.6 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-10-10.3 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
 
 # PRONTUARIO ORDINI N5 — richiamo rapido durante la partita
 
@@ -1113,13 +1113,82 @@ Dispositivi: `Hacking Device` = Carbonite, Spotlight, Total Control, Oblivion ·
 Noise, Cybermask · `Killer` = Trinity, Cybermask · `EVO` = Assisted Fire, Enhanced Reaction, Fairy
 Dust, Controlled Jump (supporto).
 
+#### Chi è un bersaglio valido — `Hackable`, `Hacker`, `Non Hackable`
+
+**`Hackable` è una Caratteristica, righe 598–605.** «This Characteristic identifies those
+Troopers technologically advanced enough to suffer attacks from or be aided by infowar and
+hacking systems… **HI, REM, TAG, and VH** Troopers are Hackable **unless otherwise stated**.
+**Hackers, regardless of Troop Type, are also Hackable**» (righe 604–605). Quindi ci sono
+**due vie indipendenti** per essere Hackable: il **Tipo di Truppa** e la **skill Hacker**.
+Una MI, una LI, una TAG-less qualunque: se ha `Hacker`, è Hackable.
+
+**`Non Hackable` non è una Caratteristica: è una Special Skill, righe 9404–9418.** `AUTOMATIC
+SKILL`, `Obligatory`, e ha **un solo** effetto operativo (righe 9415–9417):
+
+> «The user of this Special Skill cannot be the target of Hacking Attacks **whose Requirements
+> require the target have a specific Unit Type (HI, REM, TAG, etc.)**.»
+
+Più «This Special Skill remains active even when its owner is in a **Null State**» (righe
+9418–9419).
+
+⚠️ **È una protezione mirata, non un'immunità.** Non dice "non può essere hackerato": dice che
+non può essere bersaglio degli attacchi **il cui requisito chiede un Tipo di Truppa**. Ogni
+altro requisito passa. Quindi:
+
+| Programma | REQUIREMENTS | Chiede un Tipo di Truppa? | `Non Hackable` lo blocca? | Righe |
+|---|---|---|---|---|
+| **Carbonite** | «enemy Trooper with the Hackable Characteristic (HI, REM, TAG, VH…) **or an enemy Hacker**» | la **prima** via sì, la **seconda no** | **no**, se il bersaglio è Hacker: passa dalla via "Hacker" | 5093–5094 |
+| **Oblivion** | identico a Carbonite | idem | **no**, se il bersaglio è Hacker | 5235–5236 |
+| **Trinity** | «The target must be an enemy **Hacker**» | **no** | **no** | 5310 |
+| **Total Control** | «an enemy **TAG**, or a TAG in Possessed State» | **sì** | **sì** | 5286 |
+| **Spotlight** | nessun REQUIREMENTS; IMPORTANT: «The target of this Hacking Program **does not need** to have the Hackable Characteristic» | **no** | **no** | 5269–5271 |
+| **Zero Pain** | solo chi lo usa (attivo, o ARO lecito) | **no** | n/a: è difensivo | 5361–5364 |
+| **White Noise** | solo «the Hacker must be the Active Trooper» | **no** | n/a: colpisce una zona | 5332–5334 |
+| **Controlled Jump** | — ; IMPORTANT: «This Program **affects Troopers even if they don't have the Hackable Characteristic**» | **no** | **no** | 5144–5145 |
+| **Assisted Fire / Enhanced Reaction** | «must be a **REM**…» | sì | n/a: **Supportware su alleato**, non un Hacking **Attack** | 5074–5076 · 5183–5185 |
+| **Fairy Dust** | «HI, REM, TAG, or VH…» | sì | n/a: Supportware su alleato | 5198–5200 |
+
+**La regola che vince.** `Non Hackable` interviene **sul requisito**, non sul bersaglio. Se il
+programma offre una via d'ingresso che **non** nomina un Tipo di Truppa — «or an enemy Hacker»,
+«must be an enemy Hacker», oppure nessun requisito affatto — quella via resta **aperta** e
+l'attacco è legale. Quindi un Trooper con `Non Hackable` **e** la skill `Hacker` **è un
+bersaglio valido** per Carbonite, Oblivion, Trinity e Spotlight. Vince la **Skill Hacker**.
+
+> **Perché allora `Non Hackable` compare su profili MI (Coyotes, Vigilantes)?** Perché serve
+> altrove, non sui programmi. La MI **non è** nella lista HI/REM/TAG/VH, quindi di suo non
+> sarebbe mai Hackable per Tipo; l'etichetta lavora sul **Movimento Cauto**, righe **2703–2712**:
+> un Trooper **Hackable** in forma di Modello genera AROs se il Movimento Cauto comincia o
+> finisce dentro l'Hacking Area di un Hacker nemico, mentre «If a **non-Hackable** Trooper is in
+> Model form and its Cautious Movement begins or ends inside the Hacking Area of any enemy
+> Hackers, this **does not** cause the Trooper to generate AROs». Lì la distinzione pesa davvero.
+> ⚠️ Ma sui 5 profili Hacker la cosa si incrocia: sono Hackable **per la skill** (righe 604–605),
+> e il `Non Hackable` tocca solo i requisiti con Tipo di Truppa — non la Caratteristica in sé.
+> **LETTURA**: per il Movimento Cauto li tratterei come **Hackable** (la skill Hacker dà la
+> Caratteristica; il `Non Hackable` non la toglie, limita solo i bersagliamenti per Tipo). È il
+> punto meno scritto di tutta la risposta: segnalato come LETTURA, non come regola.
+
+> **Il `Cube` non c'entra con l'hacking.** È `AUTOMATIC EQUIPMENT` (righe 10555–10566) e serve a
+> due cose: ri-tiro del WIP del Dottore spendendo Command Token, e recupero fra partite. Rende
+> però bersaglio valido del **Sepsitor**, che richiede «a Trooper with a Cube» (righe 6411–6413)
+> — un Attacco BS a Sagoma Diretta, non un Attacco Comms. Nessun legame con `Hackable`.
+
+> **Cybermine (righe 6239–6243).** Non è un requisito di bersagliamento: la Cybermine colpisce
+> chi finisce sotto la Sagoma, e quelle righe decidono soltanto **quale stato** si subisce.
+> «Any Troopers with the Hackable Characteristic (HI, REM, TAG, VH…) **and Hackers** who fail
+> either Saving Roll enter **Immobilized-B** State instead of **Stunned** State». Quindi un
+> Hacker con `Non Hackable` prende **IMM-B**, non Stordito: la clausola nomina i Hacker a parte,
+> e `Non Hackable` non si applica perché qui non c'è alcun requisito di Tipo di Truppa.
+
+**Resta valido il filtro generale** (riga **4785**): «Only Troopers in **Model form** may be
+targeted by Hacking Programs». Un Marker non è bersaglio, qualunque sia la sua Caratteristica.
+
 | Voce | MOD | Si applica? |
 |---|---|---|
 | Attack MOD del programma | vedi tabella | ✅ |
 | Bersaglio in Stato Bersagliato | **+3** | ✅ (vale anche per gli Attacchi Comms) |
-| Firewall del bersaglio (−3 / −6) | −3 / −6 | ✅ **uno solo**, e lo **sceglie il giocatore del bersaglio**, non l'app: righe 4761–4763 «If a Trooper can benefit from more than one Firewall, **their player will decide which one to apply**». In pratica sceglierà il più alto, ma è una scelta, non un massimo automatico. Il Ripetitore nemico conta come Firewall (−3): col proprio `Firewall (−6)` il bersaglio ne ha due e ne applica uno |
+| Firewall del bersaglio (−3 / −6) | −3 / −6 | ✅ **uno solo**, e lo **sceglie il giocatore del bersaglio**, non l'app: righe 4761–4763 «If a Trooper can benefit from more than one Firewall, **their player will decide which one to apply**». In pratica sceglierà il più alto, ma è una scelta, non un massimo automatico. **Quattro fonti, un solo MOD applicato**: il `Firewall (−X)` del profilo, il `TinBot: Firewall (−X)`, la via del **Ripetitore nemico** (−3, righe 4837–4839) e il **Fairy Dust** (−3 a un intero tipo di truppa — §1.6 H). Non si sommano mai fra loro |
 | ECM (Hacking −N) del bersaglio | −N | ✅ e **si somma** al Firewall: l'ECM è *Automatic Equipment* a sé (riga 10730), **non** un Firewall, quindi la regola «uno solo» non lo tocca. Notazione corretta: `ECM (Hacking −3)` — riga 6655 e wiki *Template:Modifiers-explained* (PDF 5.3, set 2026). Fra parentesi c'è il **tipo di attacco**, non una skill. Non dà alcun +3 alla salvezza |
-| `TinBot: Firewall (−X)` del bersaglio | −X | ✅ **ma è un Firewall**: righe 11162–11164, «the Enemy applies a −3 **Firewall** MOD». Quindi entra nella regola «uno solo» insieme al Firewall del profilo e a quello della via del Ripetitore nemico. Tre fonti, un solo MOD applicato |
+| `TinBot: Firewall (−X)` del bersaglio | −X | ✅ **ma è un Firewall**: righe 11162–11164, «the Enemy applies a −3 **Firewall** MOD». Quindi entra nella regola «uno solo» insieme al Firewall del profilo e a quello della via del Ripetitore nemico. Quattro fonti (col Fairy Dust, §1.6 H), un solo MOD applicato |
 | `TinBot: Guided (−X)` del bersaglio | — | ❌ sull'Hacking: le righe 11166–11169 lo legano al **Guided Attack**, non all'Attacco Comms. E non è un Firewall: dà solo «a −6 MOD», senza il +3 alla salvezza |
 | Opponent MOD del programma avversario (Zero Pain) | −3 | ✅ solo nel F2F |
 | Surprise Attack proprio | −3/−6 al nemico | ✅ se venivi da Marker |
@@ -1188,6 +1257,108 @@ regolamento lo stesso effetto compare anche scritto al rovescio, come MOD al PS 
 (righe 4944–4945): è la stessa cosa, perché SV salvezza = BTS − PS. L'**ECM non dà nulla** alla
 salvezza. **AP dimezza il BTS, DA no** (DA = due salvezze contro BTS pieno). Critico = +1
 salvezza (con AP, ancora dimezzato). Immunity: non vale contro Comms, tranne Immunity (State).
+
+### H. SUPPORTWARE (Fairy Dust · Enhanced Reaction · Assisted Fire · Controlled Jump)
+
+Sono programmi a **durata estesa** che non attaccano nessuno: danno bonus agli alleati.
+Righe **4721–4726**. Tutti e quattro sono **LONG SKILL** (chart riga 16629 per Fairy Dust,
+colonna LONG SKILLS) e **No Roll**: non c'è tiro, non c'è F2F, non c'è salvezza. Essendo
+Long Skill valgono **solo in Turno Attivo** (riga 6732) e **non sono AROs** (non compaiono
+nella colonna AROS, righe 16635–16661).
+
+**Le quattro regole di struttura — righe 4728–4738.** Valgono per tutti i Supportware:
+
+| Regola | Testo | Riga |
+|---|---|---|
+| Uno per truppa | «A Trooper can benefit from the effects of **only one** Program with the Supportware Label at a time» | 4729–4730 |
+| Uno per hacker | «Each Hacker can only sustain **one** active Supportware Program at a time» | 4731–4732 |
+| Cancellazione volontaria | l'hacker lo cancella dichiarandone un altro e spendendo l'Ordine o l'ARO | 4733–4734 |
+| Cancellazione automatica | se il **bersaglio** è bersagliato da un **nuovo** Supportware, **oppure** se **l'hacker** che lo sostiene entra in **Isolato** o in **qualsiasi stato Null** | 4735–4738 · ripetuto a 5223–5225 |
+
+#### FAIRY DUST — righe 5192–5209
+
+`LONG SKILL` · `Supportware, No roll`.
+
+- **REQUIREMENTS** (righe 5198–5200): «Only **HIs, REMs, TAGs, or VHs** from the same Army
+  List as the user may be chosen as targets». Nessun requisito di Hacking Area — a
+  differenza di Enhanced Reaction, che invece pretende «inside the user's Hacking Area»
+  (righe 5183–5185).
+- **EFFETTO** (righe 5203–5206): «Fairy Dust allows the Player to choose a **single Troop
+  Type** (HI, REM, TAG, or VH) that will benefit from **Firewall (-3)**. **Every Trooper**
+  of the Hacker's Army List that belongs to the chosen Troop Type applies the corresponding
+  MODs every time they suffer a Comms Attack».
+- **Token** (righe 5207–5208): `SUP: FAIRYDUST` accanto **all'hacker**, non ai beneficiari.
+- **Portata** (riga 5209): «This Program's range covers the **entire game table**».
+
+Quindi: **non è un Firewall al singolo alleato, è un Firewall (−3) a un'intera categoria di
+truppe della propria lista, su tutto il tavolo, senza tiro.** Si sceglie il **tipo** (HI, REM,
+TAG o VH), non il modello.
+
+**Cosa dà esattamente al beneficiario.** `Firewall (-3)`, e il Firewall è una regola a sé
+(righe 4749–4763), quindi il beneficiario prende **entrambi** gli effetti del Firewall:
+- **−3** al WIP di chi gli dichiara un Attacco Comms (righe 4755–4758);
+- **+3 alla propria salvezza** contro Attacchi Comms (righe 4759–4760), e il +3 è **fisso**,
+  non scalato sul −3 (righe 4771–4774).
+
+**Chi può portarlo.** Di base è un programma da **EVO Hacking Device** (riga 5062). Compare
+anche su un `Hacking Device Plus` quando il profilo lo elenca come **UPGRADE** fra parentesi —
+righe **4714–4718**: «Custom-made software… If available, they will be listed in the Unit
+Profile, in round brackets next to the name of the Hacker or the Device». Quindi
+`Hacking Device Plus (UPGRADE: Fairy Dust)` è legittimo: l'UPGRADE **aggiunge** il programma a
+quel dispositivo, non sostituisce il tipo di dispositivo.
+
+#### Il punto che rompe tutto: NON si somma, si SCEGLIE
+
+Righe **4761–4763**: «Troopers can only benefit from **one Firewall at a time**. If a Trooper
+can benefit from more than one Firewall, **their player will decide which one to apply**».
+Ripetuto nel REMEMBER a righe **4844–4846**: «Only the MODs of a **single** Firewall can be
+applied, even if the Trooper benefits from more than one».
+
+| Il beneficiario ha… | Risultato |
+|---|---|
+| solo Fairy Dust | **−3** (e +3 alla sua salvezza) |
+| Fairy Dust **+** `Firewall (-6)` sul profilo | **uno solo**, scelto dal giocatore del bersaglio → in pratica −6. **Non −9** |
+| Fairy Dust **+** `TinBot: Firewall (-3)` | **−3**, uno solo. Il TinBot è un Firewall: righe **11162–11164**, «the Enemy applies a −3 **Firewall** MOD» |
+| Fairy Dust **+** via del **Ripetitore nemico** (−3) | **−3**, uno solo: anche quella via è un Firewall (righe 4837–4839) |
+| Fairy Dust **+** `ECM (Hacking -3)` | **−6**: l'ECM **si somma**, perché non è un Firewall ma *Automatic Equipment* a sé (riga 10730). E l'ECM non dà il +3 alla salvezza |
+
+Quindi la risposta alla domanda «è un secondo Firewall?» è **no**: è **un'altra fonte dello
+stesso, unico Firewall**. Nel calcolo entra come **una voce sola** in concorrenza con le
+altre fonti di Firewall, mai in somma con esse. L'unica cosa che si somma al Firewall resta
+l'ECM.
+
+#### Cosa lo annulla
+
+| Causa | Effetto | Riga |
+|---|---|---|
+| **L'hacker** entra in **Isolato** | il programma è cancellato (il token va via) | 4735–4738 · 5223–5225 · più riga 14413: «all their Hacking Programs are disabled» |
+| **L'hacker** entra in **qualsiasi stato Null** (Incosciente, Morto, Sepsitorizzato, Posseduto…) | cancellato | 4735–4738 · 5223–5225 |
+| **L'hacker** dichiara un **altro** Supportware | cancellato: un hacker ne sostiene **uno** alla volta | 4731–4734 |
+| **Un beneficiario** riceve un **nuovo** Supportware | ⚠️ cancella **l'intero** Fairy Dust, non solo su quel modello — vedi il box qui sotto | 4735–4737 · esempio 5211–5220 |
+| Il beneficiario entra in Isolato o Null | ❌ **non** cancella il programma: l'elenco delle cancellazioni (4735–4738) è **chiuso** e parla solo dell'**hacker**. Il modello Null semplicemente non viene più attaccato; se torna in piedi, il Firewall c'è ancora | — |
+
+> ⚠️ **La trappola dell'esempio ufficiale (righe 5211–5220).** Fairy Dust su REM; poi un
+> secondo hacker EVO dichiara **Enhanced Reaction** su **un** REM che stava beneficiando del
+> Fairy Dust. Testo: «By designating a REM that was already benefitting from Fairy Dust, the
+> new Supportware Program **deactivates the Fairy Dust Program** and the corresponding Token
+> **is removed from the table**». Non si perde il Fairy Dust solo su quel REM: **cade tutto il
+> programma**, per tutti i REM della lista. È la regola 4735–4737 applicata a un programma il
+> cui "bersaglio" è una **categoria**.
+
+> **Differenza da tenere a mente con il Firewall del Dispositivo di Hacking.** La FAQ **F01**
+> (0.1, set 2026, wiki *Firewall*) dice che il Firewall **del dispositivo** non vale se il
+> dispositivo è disabilitato, «for example by being in Isolated State or any Null State» — e lì
+> conta lo stato **del portatore**. Per il Fairy Dust conta invece lo stato **dell'hacker che
+> lo sostiene**: il beneficiario può essere Isolato e conservare il −3, perché quel Firewall
+> non viene da un suo dispositivo. Due regole diverse, due soggetti diversi. Lo stesso vale
+> per il `TinBot: Firewall`, che cade con **l'Isolato o il Null del proprio portatore** (righe
+> 11130–11131).
+
+**Wiki.** Pagine *Fairy Dust* (oldid 4005, nessuna marca di versione: **non toccata** da N5.2
+né N5.3), *Template:Supportware* (oldid 3701, nessuna marca di versione) e *Firewall* (PDF 5.3,
+set 2026 + FAQ 0.1): il testo coincide parola per parola con il .txt su tutti i punti sopra.
+L'unica novità N5.3 sul Firewall è che diventa **Automatic Equipment** (prima: Equipment) — vedi
+§3.1 e §9 — e questo **non** cambia la regola «uno solo».
 
 ### I. Controllo dell'app
 Voci attese: `programma`, `bersagliato +3`, `firewall`, `ecm`.
@@ -1384,6 +1555,15 @@ bersaglio. Il punto da controllare subito: **chi tira** cambia da uno strumento 
 - Kit a distanza: **LoF** ed entro gittata (bande **+3 a 0–8" · 0 a 8–16" · −6 a 16–24"**)
 - **Vietato** curare un alleato in contatto con un nemico (Engaged): lì si possono dichiarare solo CC Attack, Schivata e skill da CC
 - Attivo: IMM-A/IMM-B ❌ · Stordito ✅ con −3 · Isolato ✅ (non sono skill Comms) · Retreat! ❌ (non sono Basic Short Skill)
+
+> ⚠️ **MediKit e GizmoKit non sono armi d'attacco e non sono AROs.** Il bersaglio
+> **alleato** è un REQUIREMENTS (righe **10896–10897** per il MediKit, **10795–10796** per il
+> GizmoKit): puntarli su un nemico non è un Attacco BS a MOD peggiori, è un'azione illegale
+> (§0, righe 1236–1247 → **Idle**, Ordine speso). E nel chart ufficiale stanno nella colonna
+> **SHORT SKILLS** (16650 e 16649), **non** in **AROS**: solo Turno Attivo. Che il catalogo le
+> metta in `weapon` anziché in `equip` non cambia nulla. Stessa famiglia del **Deactivator**
+> (§1.16 e §7.1): vedi la tabella «Equipaggiamenti che SONO armi BS ma hanno il bersaglio
+> vincolato» in **§7.1**.
 
 ### C. Formule
 - Dottore / Ingegnere: `SV = WIP ± stati propri (Stordito −3)`
@@ -1898,8 +2078,32 @@ non ha affatto la skill Impersonation.
 | **Engaged** | in Engaged solo Berserk/CC/Schivata/Idle/Reset |
 | **Isolato — solo il Cybermask** | righe **14412–14413**: in Isolato tutti i programmi di Hacking sono disabilitati. Il rientro CAMO/IMP **resta** possibile (è una skill Automatica, riga 14413–14414) |
 | **Morto / Incosciente / Disconnesso** | stati Null |
-| **`Camouflage (1 Use)` già consumato** | FAQ **F07** |
+| **`Camouflage (1 Use)` già consumato** | FAQ **F07**, e vedi il riquadro sotto: **schierarsi come Marker È già l'uso** |
 | **Già in forma di Marker** | per il rientro nello *stesso* stato: non c'è nulla in cui rientrare |
+
+> 🔴 **`Camouflage (1 Use)`: che cosa conta come uso.** La FAQ **F07** (0.0.0, ott 2025, pagina
+> wiki *Camouflaged State*, riletta l'8 ottobre) copre due casi su tre:
+> - schierato come **Modello** → «Yes, the Trooper can **enter Camouflaged State later in the
+>   game**»: l'uso è intatto;
+> - tentato lo schieramento **come Marker** e **fallita** l'Infiltrazione → «**it has already
+>   used its Camouflaged State** and cannot enter it later in the game»: l'uso è bruciato,
+>   anche se la truppa non è mai stata un Marker (finisce Modello nella propria Zona).
+>
+> Il terzo caso — schieramento come Marker **riuscito** — la FAQ non lo nomina. ⚠️ **LETTURA, ma
+> a senso unico: è l'uso.** Se un tentativo *fallito* consuma l'uso, uno *riuscito* non può
+> costare meno, e la frase della FAQ dice che quello che si consuma è l'**entrata nello stato**,
+> non il suo esito. La lettura contraria produce una scala incoerente:
+>
+> | Schieramento | Lettura contraria | Lettura nostra |
+> |---|---|---|
+> | come Modello | 1 CAMO (più tardi) | 1 CAMO |
+> | come Marker, Infiltrazione **fallita** | **0** CAMO | 0 CAMO |
+> | come Marker, Infiltrazione **riuscita** | **2** CAMO (lo schieramento + un rientro) | 1 CAMO |
+>
+> Riuscire darebbe il doppio di chi non ha nemmeno provato, e il quadruplo di chi ha fallito.
+> Quindi: `(1 Use)` conta le **entrate in stato Camuffato**, e lo schieramento in quello stato è
+> un'entrata. **Una sola, comunque la si spenda.**
+> ⚠️ Conseguenza sul motore: un **Moran** schierato in CAMO e poi rivelato **non può rientrare**.
 
 ### G. Reazioni
 Il Marker protegge **dall'Ordine dopo**, non da questo. Alla dichiarazione la truppa è
@@ -1989,6 +2193,104 @@ casella vale la scheda dell'ordine (§1).
 - **Sesto Senso**: annulla quel −6 in tutti e tre i casi — Zona Zero, Rumore Bianco, Eclipse —
   perché i divieti nominano solo il visore. ⚠️ Per Rumore Bianco ed Eclipse è una lettura, non una riga.
 - Più zone, o zona più terreno: vale **solo il MOD più restrittivo**, mai la somma.
+
+## 2.1 🔴 PIÙ TERRENI SULLA STESSA LINEA DI TIRO
+
+La domanda "si sommano o vale il peggiore?" ha una risposta che dipende dal **tipo** di MOD, e il
+regolamento la dà due volte, in due righe simmetriche.
+
+**Dentro lo stesso tipo: solo il più restrittivo.** Righe **12688–12695** (IMPORTANT):
+> «Visibility Zone MODs **never stack** with other Visibility Zone MODs. If any Roll would be
+> affected by **two or more Visibility Zones of whatever type**, players will apply **only one
+> MOD, that must be always the most restrictive one**. For example, if a BS Attack's LoF passes
+> through a Low Visibility Zone (−3 MOD) and a Poor Visibility Zone (−6 MOD), apply only one
+> single −6 MOD.»
+
+E la stessa cosa per la Saturazione, righe **12645–12648**:
+> «The Burst MODs for Saturation Zones **never stack with MODs for other Saturation Zones**. For
+> example, if the LoF of a BS Attack is drawn through several Saturation Zones, the player will
+> apply **only a −1 Burst MOD**.»
+
+**Fra tipi diversi: si sommano.** Righe **12667–12669**:
+> «This MOD for Visibility **stacks** with other MODs for Special Skills, Equipment, Partial
+> Cover, Range… but **never with other Zone of Visibility MODs**.»
+
+Quindi la regola in una riga: **Visibilità contro Visibilità → il peggiore. Saturazione contro
+Saturazione → una sola. Visibilità contro Saturazione → entrambe**, perché una tocca
+l'**attributo** e l'altra il **Burst**, e non si incontrano mai.
+
+### Un terreno non è un MOD: è un pacchetto di zone
+È il punto che cambia la forma del campo. Nelle regole non esistono "Bosco" e "Giungla" come
+modificatori: esistono **cinque Tipi di Terreno** (Aquatic, Desert, Mountain, Jungle, Zero-G —
+riga 10214) e, separatamente, **tre proprietà** che un'area può avere: Terreno Difficile,
+Condizione di Visibilità, Zona di Saturazione. La tabella ufficiale delle righe **12703–12785**,
+riverificata l'8 ottobre sulla wiki *Special Terrain* (oldid 4062, N5.3) **riga per riga**:
+
+| Esempio | Tipo | Terreno Difficile | Visibilità | Saturazione |
+|---|---|---|---|---|
+| Spiaggia | Aquatic | sì | — | no |
+| Mare aperto | Aquatic | sì | — | no |
+| Palude | Aquatic | sì | — | **sì** |
+| Terreno roccioso | Desert | opzionale | — | **sì** |
+| Dune di sabbia | Desert | sì | — | no |
+| Bassa montagna o colline ripide | Mountain | — | — | no |
+| Piane artiche | Mountain | opzionale | — | no |
+| Media montagna | Mountain | sì | **Bassa** | no |
+| Alta montagna | Mountain | sì | **Bassa** | **sì** |
+| **Bosco** | **Jungle** | opzionale | **Bassa** | **sì** |
+| **Giungla** | **Jungle** | sì | **Pessima** | **sì** |
+| Giungla densa | Jungle | sì | **Pessima** | **sì** |
+| Foresta primordiale | Jungle | sì | **Zero** | **sì** |
+| Zero-G | Zero-G | sì | — | no |
+| **Tempesta** | tutti tranne Zero-G | — | **alza di un livello** la Visibilità presente | — |
+| Sala macchine | Zero-G opz. | sì se Zero-G | **Bassa** | **sì** |
+| Sala generatori | Zero-G opz. | sì se Zero-G | **Rumore Bianco** | **sì** |
+| Sala del nucleo | Zero-G opz. | sì se Zero-G | **Bassa + Rumore Bianco** | — |
+
+Tre cose che questa tabella dice e che la domanda non prevedeva:
+1. **Bosco e Giungla sono lo stesso Tipo** (Jungle). Non sono due terreni: sono due aree dello
+   stesso Tipo con proprietà diverse.
+2. La **Tempesta** non è una zona: **alza di un livello** la Visibilità già presente. Bosco +
+   Tempesta = Bassa → Pessima. Non è un MOD da sommare né da confrontare: trasforma.
+3. La **Sala del nucleo** porta **due** Condizioni di Visibilità da sola (Bassa + Rumore Bianco):
+   la regola del "più restrittivo" va risolta anche **dentro** un singolo terreno.
+
+### Il caso che ha chiesto Paolo, risolto
+**Bosco + Giungla sulla stessa LoF**, bersaglio senza visore:
+
+| Voce | Bosco | Giungla | Che cosa si applica |
+|---|---|---|---|
+| Visibilità | Bassa (−3) | Pessima (−6) | **−6**, uno solo, il peggiore (12688–12695) |
+| Saturazione | sì | sì | **−1 al Burst**, una sola volta (12645–12648), dopo la divisione del Burst e con pavimento a 1 (12642–12644) |
+| Terreno Difficile | opz. | sì | solo **movimento**: non tocca il tiro |
+
+Totale sull'attacco: **−6 all'attributo e −1 al Burst**. Non −9, e non solo −6.
+
+### Fumo ed Eclipse insieme a un terreno
+Il Fumo **è** una Zona Zero (riga 5784, che rimanda proprio a *Special Terrain, Visibility
+Conditions*), e l'Eclipse è «exactly the same way as Smoke» (riga 5612). Quindi **non sono una
+categoria a parte**: entrano nel confronto delle Visibilità e, essendo Zero, **vincono sempre**
+sul terreno.
+🔴 **Ma portano solo una Visibilità, non una Saturazione.** Se il terreno sotto ha la Saturazione,
+il Fumo **non la cancella**: il −1 al Burst resta. ⚠️ È la conseguenza che il campo combinato
+"terreno + Fumo" nascondeva: applicando "solo il più restrittivo" fra un terreno e una zona si
+perdeva la Saturazione del terreno. Separare le voci non è solo più comodo, **corregge**.
+
+### Chi ignora che cosa
+| Skill | Che cosa ignora davvero |
+|---|---|
+| **Terrain (Tipo)** righe 10198–10214 | **solo il movimento**: +1" al primo valore di MOV dentro l'area, e passa senza le restrizioni di movimento di quel Tipo. **Non tocca né Visibilità né Saturazione.** Se il profilo elenca più Tipi fra parentesi, se ne sceglie uno **al piazzamento**. `Terrain (Total)` vale per tutti e cinque i Tipi, e ignora anche il **Dazer** (riga 10584) |
+| **MSV** | riduce i MOD **di Visibilità** (e il Mimetismo). Ma dopo le righe 12688–12695 di MOD di Visibilità ne resta **uno solo**: la domanda "ne ignora uno o tutti" non si pone, ce n'è uno. **Non tocca la Saturazione.** Eccezioni: l'**Eclipse** lo blocca a ogni livello (5613–5615), e in **Rumore Bianco** l'area è Zona Zero per lui (12680–12683) e il −6 risultante **non è riducibile** (12684–12686) |
+
+Quindi la quarta domanda si scioglie: **con due terreni la skill Terrain non "ignora" nessuno dei
+due ai fini del tiro**, perché non ha mai agito sul tiro; e il visore agisce sull'unico MOD di
+Visibilità sopravvissuto, qualunque terreno l'abbia generato. E nel caso Bosco + Giungla
+`Terrain (Jungle)` copre **entrambi**, perché sono lo stesso Tipo.
+
+> ⚠️ **Una regola collegata che non avevamo** — righe **12755–12758**: «You cannot use **Combat
+> Jump** inside of, or in contact with, an area with Low, Poor, or Zero Visibility Conditions».
+> Vale per la scheda §1.17: un Ingresso in campo non si può dichiarare dentro o a contatto di
+> un'area con una Condizione di Visibilità, Fumo ed Eclipse compresi.
 
 ---
 
@@ -2150,6 +2452,7 @@ Teardrop Template would affect an ally, even if that ally is Unconscious».
 | **ECM (Tipo −X)** | Automatic, **senza** etichetta Comms (confermato su wiki) | −X a chi lo attacca col tipo indicato (Guided, Hacking) | Disconnesso, Morto, Incosciente — **non** l'Isolato |
 | **TinBot: …** | **Automatic, Comms Equipment** | dà il MOD indicato (Firewall, Guided, Discover +3) al portatore e al Fireteam | **qualsiasi stato Null e l'Isolato**: il TinBot non dà nulla (righe 11130–11131) |
 | **Hacking Device (tutti)** | **Automatic, Comms Equipment (5.3)** | abilitano i programmi (1.6) | Isolato, Null |
+| **Fairy Dust** (Supportware) | **LONG SKILL**, No Roll, mai ARO | `Firewall (−3)` a **tutte** le truppe di **un tipo** (HI/REM/TAG/VH) della propria lista, su tutto il tavolo. È una **fonte** del Firewall, non un Firewall in più: non si somma alle altre (§1.6 H) | Isolato o qualsiasi Null **dell'hacker**; un altro Supportware su un beneficiario; un altro Supportware dichiarato dallo stesso hacker (righe 4729–4738, 5223–5225) |
 | **MediKit / GizmoKit** | BS Weapon Non-Lethal | vedi 1.8 (Kit: +3 / 0 / −6 a 8/16/24") | — |
 | **Deactivator** | BS Weapon (WIP) | +6 / +3 / −6 a 8/16/24"; solo Deployable nemici | — |
 | **Repeater** | Comms Equipment | estende l'Hacking Area | Isolato |
@@ -2232,6 +2535,52 @@ Si leggono incrociando le colonne. Le cose da ricordare:
   cercare `Alert!` nella chart dà nulla e sembra un buco.
 - **Fuori chart ma Long Skill per il testo dello stato**: `RIENTRARE IN CAMO` (riga 13603,
   «by spending a Long Skill») e il rientro in Impersonation (riga 14202). Vedi §1.18.
+
+### Equipaggiamenti che SONO armi BS ma hanno il bersaglio vincolato
+
+C'è una famiglia di equipaggiamenti che nel chart delle armi compare con tutti i connotati
+di un'arma a distanza — Burst, fasce di tiro, MOD di Portata — e che però **non può essere
+usata per un Attacco BS contro un nemico**, perché il REQUIREMENTS della sua Skill fissa chi
+può essere il bersaglio. Sono tre, e vanno tenute fuori da due liste: quella delle armi
+offerte per l'Attacco BS in Turno Attivo e quella delle armi offerte per la reazione BS in
+ARO.
+
+| Equip. | Classe | Bersaglio IMPOSTO dal REQUIREMENTS | Nel chart ARO? | Righe |
+|---|---|---|---|---|
+| **MediKit** | SHORT SKILL | «must be an **Allied Model with the VITA Attribute and in Unconscious State**» | **no** (16650 è in SHORT SKILLS) | 10886–10919 · 4249–4257 |
+| **GizmoKit** | SHORT SKILL | «must be an **Allied Model with the STR Attribute**» | **no** (16649) | 10790–10831 |
+| **Deactivator** | SHORT SKILL, etichetta Attacco | «can only target **enemy Deployable Weapons and Deployable pieces of Equipment that have been deployed** on the game table, **but never Camouflage Markers**» | **no** (16644) | 10603–10648 |
+
+**Perché sembrano armi.** MediKit e GizmoKit, usati a distanza, lo sono davvero nella
+*forma* del tiro: riga **10907** «Used remotely, a MediKit **is a Non-Lethal BS Weapon**. If
+the user passes a **BS Attack Roll**, applying the corresponding MODs (for Range, Cover,
+etc.), the target performs a single PH Roll». Il Deactivator è ancora più esplicito: nel suo
+chart (righe 10641–10648) è `BS WEAPON (WIP) [***]`, B1, fasce **+6 / +3 / −6**. Quindi il
+tiro c'è, i MOD ci sono, e l'app fa bene a calcolarli — ma il bersaglio **non è mai un
+nemico vivo**.
+
+**Perché non sono un Attacco BS.** Il REQUIREMENTS è un Requisito a tutti gli effetti
+(§0, righe 1236–1247): se il bersaglio non è quello prescritto l'azione **non si può
+dichiarare come quella Skill**, e se viene dichiarata e il requisito cade al momento della
+Risoluzione si risolve in **Idle** con l'Ordine speso. Non esiste una versione "offensiva"
+di MediKit o GizmoKit: puntarli su un nemico non è un Attacco BS a MOD peggiori, è
+un'azione illegale. Il Deactivator, allo stesso modo, non spara a una miniatura: fa un
+**Tiro Normale di WIP** contro un Deployable nemico già schierato, e riga **10625** limita
+i MOD a quelli di **Portata** («The WIP Roll **only applies MODs for Range**, but not those
+from Special Skills (for example Mimetism), or Cover»).
+
+**Perché non sono AROs.** Il chart ufficiale (righe 16619–16661) le mette tutte e tre nella
+colonna **SHORT SKILLS** — Deactivator a 16644, GizmoKit a 16649, MediKit a 16650 — e
+**nessuna** compare nella colonna **AROS**, che si chiude a Zero Pain (riga 16654). Sono
+quindi nel gruppo «SHORT ma NON ARO» del punto precedente: **solo Turno Attivo**.
+
+**Regola operativa per l'app.** Un equipaggiamento che espone fasce di tiro non è per questo
+candidato all'Attacco BS: il filtro giusto è la Skill che lo usa. Se la Skill ha un
+REQUIREMENTS che impone la natura del bersaglio (alleato, Deployable, stato specifico),
+l'equipaggiamento appartiene **solo** alla sua azione dedicata — Supporto per MediKit e
+GizmoKit, azione su WIP per il Deactivator — e non va mai elencato né fra le armi dell'
+Attacco BS né fra quelle della reazione BS in ARO. Il fatto che stia nel campo `weapon`
+anziché in `equip` non cambia nulla: è un dato di catalogazione, non una regola.
 
 ### Etichetta Movimento — quali abilità ce l'hanno
 Righe **12620–12621** («a Skill with the Movement Label such as Move, Cautious Movement,
@@ -2657,3 +3006,23 @@ stringa vecchia oltre a ECM e Doctor.
 | `PARA`: nessuna forma `PARA (-X)` nuda, e spaziatura non uniforme | ✅ coerente con la ritrattazione del 23 settembre (i valori −3/−6/−9 sono per profilo, non per versione). ⚠️ La spaziatura disuniforme è ora annotata in §0: è il difetto della sottostringa `HACKER` visto dall'altro lato |
 | `Combat Jump (PH=11)` e `Infiltration` nuda | ✅ già nella forma nuova, nessuna conversione |
 | **«Continous Damage»** senza la u nella fonte | 🔴 **avviso accolto e scritto in §0.** Il progetto usa la grafia corretta da entrambi i lati e `M.haTratto` trova 9 armi su 9; allinearne uno solo all'ufficiale spegne il tratto in silenzio su 9 armi. **Non va toccato.** Il punto è di MOTORE (`catalogo_n5.js`), che DATABASE ha già messo in c.c. |
+
+---
+
+**Terreni multipli e `Camouflage (1 Use)` — verifica dell'8 ottobre, sera.** Wiki riletta:
+*Special Terrain* (oldid 4062, N5.3), *Camouflaged State*, *Camouflage* (oldid 3062),
+*Terrain* (oldid 3146).
+
+| Caso | Esito |
+|---|---|
+| Due o più **Zone di Visibilità**: si sommano? | ❌ **no, solo il più restrittivo**, righe **12688–12695**, «two or more Visibility Zones **of whatever type**… only one MOD, that must be always the most restrictive one» |
+| Due o più **Saturazioni** | ❌ **una sola**, righe 12645–12648: «never stack with MODs for other Saturation Zones… only a −1 Burst MOD» |
+| **Saturazione + Visibilità** | ✅ **si sommano**, perché non sono dello stesso tipo: righe 12667–12669, la Visibilità «stacks with other MODs… **but never with other Zone of Visibility** MODs». Una tocca l'attributo, l'altra il Burst |
+| **Fumo/Eclipse + terreno** | ✅ resta "il più restrittivo", **ma per la ragione giusta**: il Fumo *è* una Zona Zero (riga 5784) e l'Eclipse è identico (5612), quindi entrano nel confronto delle Visibilità e vincono. 🔴 **Non cancellano la Saturazione del terreno**: il −1 al Burst resta. Era quello che il campo combinato perdeva |
+| **Terrain (Tipo)** con due terreni | ⚠️ la domanda si scioglie: la skill Terrain agisce **solo sul movimento** (righe 10198–10214), non ha mai toccato il tiro. E nel caso Bosco + Giungla ne copre **due su due**, perché sono **lo stesso Tipo** (Jungle) |
+| **MSV** con due terreni | ⚠️ idem: di MOD di Visibilità ne sopravvive **uno**, quindi riduce quello. Non tocca la Saturazione. Eccezioni: Eclipse lo blocca (5613–5615), Rumore Bianco lo porta a −6 non riducibile (12684–12686) |
+| **Bosco e Giungla sono due terreni?** | ⚠️ **no, sono lo stesso Tipo di Terreno** (Jungle), con proprietà diverse: tabella in §2.1, verificata riga per riga sulla wiki |
+| **Tempesta** | ⚠️ non è una zona: **alza di un livello** la Visibilità presente. Non si somma e non si confronta: trasforma |
+| Un solo terreno con **due** Visibilità | ⚠️ esiste (Sala del nucleo: Bassa + Rumore Bianco): il "più restrittivo" va risolto anche dentro un terreno |
+| **Combat Jump** e Visibilità | ⚠️ regola nuova per noi, righe **12755–12758**: non si può usare **dentro o a contatto** di un'area con Visibilità Bassa, Pessima o Zero. Va in §1.17 |
+| `Camouflage (1 Use)`: lo schieramento come Marker è l'uso? | ✅ **sì**. La FAQ F07 non lo dice di quel caso, ma dice che un tentativo **fallito** «has already used its Camouflaged State». Un riuscito non può costare meno. **LETTURA**, con la tabella dell'incoerenza in §1.18. ⚠️ Un Moran schierato in CAMO e rivelato **non rientra** |

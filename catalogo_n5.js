@@ -1,4 +1,4 @@
-// @versione 2026-10-07.3 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-10-09.3 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -1408,6 +1408,36 @@ window.CATALOGO_N5.TRATTI_CONDIZIONALI = {
 //  spending a Long Skill, while outside the LoF of enemy Markers or
 //  Troopers."
 // ------------------------------------------------------------------
+// ============================================================================
+// ASPETTO DEI BOTTONI DELLE ARMI E DEI PROGRAMMI (Paolo, 8-9 ottobre)
+// Dati, non regole: li legge M.bottoneArma. Un fatto, un campo.
+// ============================================================================
+// Il colore dell'etichetta di ogni munizione. Chiave in maiuscolo, senza
+// spazi; una munizione che non c'e` prende il grigio di N.
+window.CATALOGO_N5.COLORI_MUNIZIONE = {
+    N: '#b0b8c6', AP: '#ff6600', DA: '#ff0055', EXP: '#ff3333', SHOCK: '#ffcc00',
+    'E/M': '#33aaff', T2: '#cc66ff', FIRE: '#ff7733', PARA: '#33ccaa', STUN: '#3399ff',
+    VIRAL: '#33bb33', PLASMA: '#ff66ff', K1: '#888888', ADH: '#bbbb33', SMOKE: '#999999',
+    ECLIPSE: '#7777aa', NANOTECH: '#33bbbb', BREAKER: '#ffaa00'
+};
+// L'icona dello STATO che un programma di hacking provoca (campo `effetto`
+// di CATALOGO_N5.HACKING). Le icone sono quelle che l'app usa gia` per gli
+// stati; '1_FERITA' (Trinity) usa l'icona della ferita (Paolo, 9 ottobre).
+window.CATALOGO_N5.ICONE_EFFETTO = {
+    'BERSAGLIATO': 'img/icon_targeted.png',
+    'IMM-A': 'img/icon_imma.png',
+    'IMM-B': 'img/icon_immb.png',
+    'ISOLATO': 'img/icon_isolated.png',
+    'POSSEDUTO': 'img/icon_possessed.png',
+    'STORDITO': 'img/icon_stunned.png',
+    'DISCONNESSO': 'img/icon_disconnected.png',
+    'SEPSITORIZZATO': 'img/icon_sepsitorized.png',
+    '1_FERITA': 'img/icon_wound.png'
+};
+// Il contorno dei bottoni: armi bianco, programmi azzurro fluo (Paolo).
+// 2026-10-09.3 (Paolo): contorno delle armi grigio chiaro, non piu` bianco.
+window.CATALOGO_N5.CONTORNO_BOTTONI = { ARMA: '#b4b8bf', PROGRAMMA: '#00e5ff' };
+
 window.CATALOGO_N5.RIENTRO_CAMO = {
 
     skillRichiesta: 'Camouflage',
@@ -1605,9 +1635,13 @@ window.CATALOGO_N5.INGRESSO_IN_CAMPO = {
         'Non a contatto di Silhouette con Modelli, Marker o Token nemici e neutrali.',
         'Non a contatto con un obiettivo di scenario.',
         'Solo su una superficie orizzontale grande almeno quanto la base della truppa.',
-        'Vietato dentro edifici o pezzi di scenografia chiusi, anche col tetto o le porte aperte.'
+        'Vietato dentro edifici o pezzi di scenografia chiusi, anche col tetto o le porte aperte.',
+        // 9 ottobre, chat REGOLE: "You cannot use COMBAT JUMP inside of, or
+        // in contact with, an area with Low, Poor, or Zero Visibility
+        // Conditions" (righe 12755-12758). Fumo ed Eclipse sono Zone Zero.
+        'Combat Jump: non dentro ne` a contatto di un\'area con Visibilita` Bassa, Pessima o Zero, Fumo ed Eclipse compresi (righe 12755-12758).'
     ],
-    domanda: 'Il punto di atterraggio rispetta tutti i divieti (niente contatto con nemici, obiettivi o interni di edifici)?',
+    domanda: 'Il punto di atterraggio rispetta tutti i divieti (niente contatto con nemici, obiettivi o interni di edifici; col Combat Jump, niente aree con Visibilita` Bassa, Pessima o Zero, Fumo ed Eclipse compresi)?',
 
     // 🔴 Fallire NON significa "non entra": entra lo stesso, ma nella
     // propria Zona di Schieramento, a contatto col bordo del tavolo.
@@ -2776,7 +2810,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-10-07.3', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-10-09.3', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

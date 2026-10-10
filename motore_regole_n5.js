@@ -1,4 +1,4 @@
-// @versione 2026-10-08.9 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-10.4 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-08.9';
+    M.VERSIONE = '2026-10-10.4';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -1503,8 +1503,32 @@
         return s.indexOf('MULTISPECTRAL VISOR L3') >= 0 || s.indexOf('MSV L3') >= 0 || s.indexOf('MSV3') >= 0;
     };
 
+    // 2026-10-10.2: le CARATTERISTICHE del profilo (campo `chars`, dalla
+    // fonte: Cube, Regular, Irregular, Hackable, Non Hackable, Peripheral...).
+    // Si leggono per ELEMENTO ESATTO, non per sottostringa e non dentro
+    // skillsDi: "Non Hackable" contiene "Hackable", ed e` il difetto dell'ECM
+    // in anticipo (DATABASE, 10 ottobre). Campo assente: false, cioe`
+    // "non dichiarato", e chi chiama decide cosa vale in sua assenza.
+    M.caratteristicheDi = function (u) {
+        const c = u && u.chars;
+        const lista = Array.isArray(c) ? c : M.dividiLista(c || '');
+        return lista.map(function (x) { return String(x).replace(/\u00a0/g, ' ').trim().toUpperCase(); }).filter(Boolean);
+    };
+    M.haCaratteristica = function (u, nome) {
+        return M.caratteristicheDi(u).indexOf(String(nome).toUpperCase()) >= 0;
+    };
+
+    // La Caratteristica HACKABLE (righe 598-605): HI, REM, TAG e VH, piu`
+    // gli Hacker di qualunque tipo, piu` chi la dichiara. NON tiene conto di
+    // Non Hackable: quella e` una Special Skill (righe 9404-9419) che vieta
+    // solo i BERSAGLIAMENTI il cui requisito chiede un Tipo di Truppa, e la
+    // applica M.nonHackableBlocca. Per esempio la Cybermine (righe
+    // 6242-6243) non ha requisito di bersaglio: un Non Hackable Hackable
+    // prende IMM-B come gli altri (REGOLE, 10 ottobre).
     function hackabile(u) {
-        const s = skillsDi(u);
+        if (M.haCaratteristica(u, 'Hackable')) return true;
+        // "Non-Hackable" scritto fra le skill non deve far scattare HACKABLE.
+        const s = skillsDi(u).replace(/NON[\s-]HACKABLE/g, '');
         const t = String((u && u.tipo) || 'LI').toUpperCase();
         return s.indexOf('HACKABLE') >= 0 || M.eHacker(u) ||
                t === 'HI' || t === 'TAG' || t === 'REM' || t === 'VH';
@@ -1513,6 +1537,33 @@
     // lo stato della Cybermine (HI, REM, TAG, VH, Hackable, Hacker — righe
     // 6239-6243). Il VH mancava: aggiunto il 28 settembre (chat REGOLE).
     M.eHackerabile = hackabile;
+
+    // NON-HACKABLE (righe 9404-9419, Automatic, Obligatory, attiva anche in
+    // Stato Null): "cannot be the target of Hacking Attacks whose
+    // Requirements require the target have a specific Unit Type". Quindi NON
+    // e` un "non hackerabile" generale: blocca la via del Tipo di Truppa, non
+    // le altre. Tabella di REGOLE, 10 ottobre:
+    //   Carbonite, Oblivion (5093-5094, 5235-5236): "Hackable (HI, REM, TAG,
+    //     VH...) or an enemy Hacker" -> blocca, SALVO se il bersaglio e` Hacker
+    //   Trinity (5310): "an enemy Hacker"            -> non blocca
+    //   Total Control (5286): "an enemy TAG..."      -> blocca sempre
+    //   Spotlight (5269-5271), Controlled Jump (5144-5145): nessun Tipo -> no
+    // Un programma non in tabella si tratta come Carbonite (requisito
+    // Hackable-o-Hacker), che e` il requisito comune degli Attacchi Comms.
+    // Restituisce il motivo del divieto, o null.
+    M.haNonHackable = function (u) {
+        return M.haCaratteristica(u, 'Non Hackable') || M.haCaratteristica(u, 'Non-Hackable') ||
+               /NON[\s-]HACKABLE/.test(skillsDi(u));
+    };
+    M.nonHackableBlocca = function (u, programma) {
+        if (!M.haNonHackable(u)) return null;
+        const p = String(programma || '').toUpperCase();
+        if (p === 'TRINITY' || p === 'SPOTLIGHT' || p === 'CONTROLLED JUMP') return null;
+        if (p === 'TOTAL CONTROL')
+            return 'Non Hackable: Total Control chiede un TAG, e un requisito di Tipo di Truppa non lo puo` bersagliare (righe 9415-9417).';
+        if (M.eHacker(u)) return null;
+        return 'Non Hackable: il requisito del programma lo raggiunge solo per Tipo di Truppa, e non e` un Hacker (righe 9415-9417).';
+    };
 
     // ------------------------------------------------------------------
     // bersagliValidi() — NON restituisce la lista già filtrata.
@@ -1703,6 +1754,10 @@
                     if (!hackabile(u) && programma !== 'SPOTLIGHT') {
                         nega(`Non è hackerabile (tipo ${s.tipo}, nessun tratto Hackable/Hacker).`);
                         break;
+                    }
+                    {
+                        const nh = M.nonHackableBlocca(u, programma);
+                        if (nh) { nega(nh); break; }
                     }
                     if (programma === 'TRINITY' && !M.eHacker(u)) nega('Trinity colpisce solo Hacker nemici.');
                     else if (programma === 'TOTAL CONTROL' && s.tipo !== 'TAG') nega('Total Control funziona solo contro i TAG.');
@@ -3265,9 +3320,13 @@
     // ha una, o una modalità col Tratto Impact Template.
     // ==================================================================
 
+    // 2026-10-09.5 (TEST): si legge SOLO la Skill "BS Attack (Guided)", con
+    // tonde o quadre. Prima bastava la parola GUIDED, e l'ECM (Guided -6),
+    // che e` la DIFESA contro i Guidati, la dava a 25 profili che non ce
+    // l'hanno (3 potevano dichiarare l'ordine).
+    const SKILL_GUIDATO = /BS\s*ATTACK\s*[\(\[]\s*GUIDED\s*[\)\]]/;
     M.haGuidato = function (unita) {
-        const s = skillsDi(unita);
-        return s.indexOf('BS ATTACK (GUIDED)') >= 0 || s.indexOf('GUIDED') >= 0;
+        return SKILL_GUIDATO.test(skillsDi(unita));
     };
 
     // Armi utilizzabili: solo modalità Blast / Impact Template.
@@ -3301,6 +3360,11 @@
             avvisi.push(err('A95',
                 `${M.nomeUnita(unita)} non ha "BS Attack (Guided)" nel profilo.`,
                 'L\'Attacco Guidato richiede quella Skill.'));
+            // 2026-10-09.6 (nota di TEST): senza la Skill nessuna arma e`
+            // utilizzabile. Prima `armi` restava piena accanto ad A95 e il
+            // rifiuto lo faceva solo il modulo: chi leggeva .armi lo saltava.
+            dentro.forEach(function (p) { escluse.push({ nome: p.nome, motivo: 'manca la Skill "BS Attack (Guided)"' }); });
+            dentro.length = 0;
         }
         return { armi: dentro, escluse: escluse, avvisi: avvisi };
     };
@@ -3858,6 +3922,23 @@
 
     // Armi utilizzabili in ARO. Se la truppa è in Fuoco di Soppressione e
     // reagisce con un BS Attack, il profilo diventa quello SF Mode.
+    // 2026-10-10 (REGOLE): equipaggiamenti catalogati come BS Weapon ma col
+    // BERSAGLIO VINCOLATO dal Requisito della loro Skill. Non sono mai armi di
+    // un Attacco BS contro un nemico, ne` di una reazione in ARO: si usano solo
+    // con la loro azione.
+    //   MediKit  (righe 10896-10897: alleato con VITA, Incosciente)  -> Supporto
+    //   GizmoKit (righe 10795-10796: alleato con STR)               -> Supporto
+    //   Deactivator (righe 10613-10617: solo Deployable nemici; tiro di WIP,
+    //                riga 10625)                                     -> Deactivator
+    // Nessuna delle tre sta nella colonna AROS della chart degli Ordini
+    // (righe 16619-16661). Il criterio e` la Skill, non il campo weapon/equip
+    // ne` l'avere fasce di gittata.
+    M.ARMI_AZIONE_DEDICATA = { 'MediKit': 'SUPPORTO', 'GizmoKit': 'SUPPORTO', 'Deactivator': 'DEACTIVATOR' };
+    M.azioneDedicataArma = function (nome) {
+        const base = String(nome || '').replace(/\s*\(.*$/, '').trim();
+        return M.ARMI_AZIONE_DEDICATA[base] || null;
+    };
+
     M.armiARO = function (unita, idAro) {
         const st = M.statoBersaglio(unita);
         const avvisi = [];
@@ -3884,6 +3965,11 @@
                 // Mode)" come arma BS di reazione. Nessuno leggeva il campo.
                 // (Chat REGOLE, 21 settembre; campo di DATABASE, .20.3.)
                 const voceAro = (G.RULES_WEAPONS || {})[p.nome] || p;
+                const dedicata = M.azioneDedicataArma(p.nome);
+                if (dedicata) {
+                    escluse.push({ nome: p.nome, motivo: 'si usa solo con la sua azione (' + dedicata + '), non e` un\'ARO.' });
+                    return;
+                }
                 if (voceAro.vietatoInAro) {
                     escluse.push({ nome: p.nome, motivo: 'Non utilizzabile in ARO.' });
                     return;
@@ -5215,7 +5301,8 @@
 
             // Terreno e Zone di Visibilità
             const terr = ctx.terrain || 'NESSUNO';
-            if (terr && terr !== 'NESSUNO' && typeof G.applicaModTerreno === 'function') {
+            const ciSonoTerreni = Array.isArray(terr) ? terr.some(function (x) { return x && x !== 'NESSUNO'; }) : (terr && terr !== 'NESSUNO');
+            if (ciSonoTerreni && typeof G.applicaModTerreno === 'function') {
                 // hasMSV3 e` il QUINTO parametro e non lo passavo. NON era un
                 // bug: applicaModTerreno lo usa solo per la riga
                 // `if (hasMSV3) hasMSV2 = true`, e M.trattiTiro gia` calcola
@@ -5233,11 +5320,15 @@
                 // sta scritto nella chiamata. Con sei booleani posizionali
                 // un'inversione bersaglio / msv3 cambiava il risultato — -6
                 // contro LoF bloccata — senza che nessun controllo lo vedesse.
-                const e = G.applicaModTerreno(terr, {
+                // 🔴 9 ottobre: `terrain` puo` essere un ELENCO (Paolo vuole
+                // piu` terreni sulla stessa LoF). La combinazione la fa
+                // M.esitoTerreni, con le regole di REGOLE.
+                const e = M.esitoTerreni(terr, {
                     msv1: tA.msv1, msv2: tA.msv2, msv3: tA.msv3,
                     marksmanship: tA.marksmanship,
                     bersaglio: !!ctx.bersaglioDellAttacco
                 });
+                (e.avvisi || []).forEach(function (a) { note.push(a); });
                 if (e.modB < 0) { burstMod += e.modB; note.push(`Zona di Saturazione: ${e.modB} al Burst.`); }
                 if (azione !== M.AZIONI.SPECULATIVO) {
                     if (e.modBS) aggiungi('terreno', e.modBS, e.note || `Terreno ${terr}: ${e.modBS}`);
@@ -5627,6 +5718,130 @@
         if (M.ALLEATI_IN_MISCHIA_AMMESSI.indexOf(n) < 0) return false;
         bersaglio.alleatiInMischia = n;
         return true;
+    };
+
+    // ==================================================================
+    // IL BOTTONE DI UN'ARMA O DI UN PROGRAMMA (Paolo, 8-9 ottobre).
+    // Dal fac simile di Paolo, con le sue correzioni del 9 ottobre:
+    //   - banda alta GRIGIO SCURO (Paolo, .09.3), angoli tagliati: il NOME a sinistra (nient'altro
+    //     sotto: ne` Burst ne` modalita`), le MUNIZIONI a destra;
+    //   - banda bassa BIANCA, rientrata: la striscia delle GITTATE (celle
+    //     raggruppate dove il MOD non cambia); Sagoma Diretta: la scritta,
+    //     in nero; Corpo a Corpo: la scritta; un programma: `o.sotto`;
+    //   - contorno e pieghe: GRIGIO CHIARO per le armi (.09.3), AZZURRO per i programmi
+    //     (CATALOGO_N5.CONTORNO_BOTTONI);
+    //   - a sinistra l'immagine: dell'arma, una per TIPO
+    //     (img/armi/<M.nomeImmagineArma>.png), o di un programma l'icona
+    //     dello stato che provoca (CATALOGO_N5.ICONE_EFFETTO). Se il file
+    //     manca, sparisce.
+    // La forma (bande, ottagono, pieghe) sta in M.formaBottone, qui sotto.
+    // Solo stili in linea: il motore restituisce testo e non tocca il DOM.
+    // `p`: un profilo d'arma (M.profiloArma) o un programma
+    // (M.programmiAttacco / M.armaDaProgrammaDi). `o.attributi`: gli
+    // attributi del <button> (onclick...).
+    // ==================================================================
+    const PREFISSI_MUNIZIONE = /^(AP|BREAKER|K1|SHOCK|T2|VIRAL|PARA|E\/M|SMOKE|ECLIPSE)\s+/i;
+    M.nomeImmagineArma = function (nome) {
+        let n = String(nome || '').replace(/\([^)]*\)/g, ' ').trim();
+        while (PREFISSI_MUNIZIONE.test(n)) n = n.replace(PREFISSI_MUNIZIONE, '');
+        return n.toLowerCase().replace(/mines\b/, 'mine').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    };
+    M.gittateRaggruppate = function (bande) {
+        const out = [];
+        (bande || []).forEach(function (b) {
+            const m = /(\d+)\s*-\s*(\d+)/.exec(String(b.label || ''));
+            if (!m) return;
+            const fino = parseInt(m[2], 10);
+            if (out.length && out[out.length - 1].mod === b.mod) out[out.length - 1].fino = fino;
+            else out.push({ fino: fino, mod: b.mod });
+        });
+        return out;
+    };
+    M.bottoneArma = function (p, o) {
+        o = o || {};
+        p = p || {};
+        const CB = catalogo('CONTORNO_BOTTONI') || {};
+        const programma = !!(p.tipo === 'ATTACCO' || p.effetto && !p.bands);
+        const colore = o.colore || (programma ? CB.PROGRAMMA : CB.ARMA) || '#b4b8bf';
+        const CM = catalogo('COLORI_MUNIZIONE') || {};
+        const munizioni = String((p.ammoOpzioni && p.ammoOpzioni.length) ? p.ammoOpzioni.join(',') : (p.ammo || ''))
+            .split(/[,+]/).map(function (s) { return s.trim(); }).filter(Boolean);
+        const tag = munizioni.map(function (a) {
+            const c = CM[a.toUpperCase().replace(/\s+/g, '')] || CM.N || '#b0b8c6';
+            return `<span style="font-size:19px; font-weight:700; padding:0 7px; border-radius:3px; line-height:1.15; letter-spacing:1px; border:1px solid ${c}; color:${c}; background:${c}26;">${a}</span>`;
+        }).join('');
+        const nome = String(p.scelta || p.nome || '').replace(/\s*\([^)]*\)/g, '').trim();
+        const tpl = (!programma && p.isTemplate) ? M.regoleTemplate(p) : null;
+        const scritta = function (t, piccola) {
+            return `<div style="color:#000; font-size:${piccola ? 15 : 19}px; letter-spacing:1px; text-align:center; padding:2px 0;">${t}</div>`;
+        };
+        let bassa;
+        if (o.sotto != null) bassa = `<div style="color:#000; font-family:'Share Tech Mono',monospace; font-size:13px; text-align:center; padding:2px 0;">${o.sotto}</div>`;
+        else if (tpl && tpl.tipo === 'DIRETTO') bassa = scritta('SAGOMA DIRETTA' + (p.template ? ' · ' + String(p.template).replace(/([a-z])([A-Z])/g, '$1 $2').toUpperCase() : ''));
+        else if (p.isCC) bassa = scritta('CORPO A CORPO');
+        else {
+            const celle = M.gittateRaggruppate(p.bands);
+            bassa = celle.length ? `<div style="display:grid; gap:4px; text-align:center; grid-template-columns:repeat(${celle.length}, minmax(0,1fr));">` +
+                celle.map(function (c) {
+                    const k = c.mod > 0 ? ['#3f9a44', '#fff'] : c.mod === 0 ? ['#5a6475', '#fff'] : c.mod === -3 ? ['#ffb300', '#000'] : ['#e53935', '#fff'];
+                    return `<div style="display:flex; flex-direction:column; border-radius:3px; overflow:hidden; border:1px solid rgba(0,0,0,.3);"><span style="background:#1f242d; color:#b0b8a6; font-family:'Share Tech Mono',monospace; font-size:11px; padding:1px 0;">${c.fino}"</span><span style="font-size:17px; font-weight:700; padding:1px 0; background:${k[0]}; color:${k[1]};">${c.mod > 0 ? '+' + c.mod : c.mod}</span></div>`;
+                }).join('') + `</div>` : scritta('&nbsp;');
+            if (tpl) bassa += scritta('+ SAGOMA CIRCOLARE', true);
+        }
+        const icone = catalogo('ICONE_EFFETTO') || {};
+        const img = o.immagine || (programma ? (icone[String(p.effetto || '').toUpperCase()] || '') : ('img/armi/' + M.nomeImmagineArma(p.nome) + '.png'));
+        return M.formaBottone({
+            classe: 'bottone-arma',
+            contorno: colore,
+            attributi: o.attributi,
+            sopra: img ? `<img src="${img}" alt="" style="position:absolute; left:-4px; top:6px; width:86px; height:52px; object-fit:contain; filter:drop-shadow(0 4px 8px rgba(0,0,0,.9)); z-index:5;" onerror="this.style.display='none';">` : '',
+            alta: `<div style="flex:1 1 auto; min-width:0; overflow-wrap:anywhere; font-size:26px; font-weight:700; color:#fff; text-transform:uppercase; line-height:.95; letter-spacing:1px;">${nome}</div>
+                <div style="flex:0 0 auto; display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; max-width:40%;">${tag}</div>`,
+            bassa: bassa
+        });
+    };
+
+    // ==================================================================
+    // LA FORMA DEI BOTTONI (2026-10-09.4, richiesta di INTERFACCIA per
+    // Paolo): una sola sorgente per la forma del bottone dell'arma e della
+    // riga dell'unita`. Disegna SOLO la forma: le due bande, l'ottagono a
+    // 15 px, le tre pieghe, il contorno, le ombre. Il CONTENUTO lo da` chi
+    // chiama (testo delle bande, immagine, icone), e i colori pure.
+    //   o.contorno     colore del bordo e delle pieghe   (#b4b8bf)
+    //   o.fondoAlta    fondo della banda alta            (#2a2d33)
+    //   o.fondoBassa   fondo della banda bassa           (#fff)
+    //   o.alta         HTML dentro la banda alta (e` un flex, spazio fra)
+    //   o.bassa        HTML dentro la banda bassa
+    //   o.sopra        HTML posato sopra le bande, in posizione assoluta
+    //                  rispetto al bottone (l'immagine, le icone degli stati)
+    //   o.spazioSinistra  spazio a sinistra nella banda alta (92), per
+    //                  l'immagine; o.rientroBassa rientro della bassa (72)
+    //   o.spazioDestra spazio a destra nella banda alta (16), per le icone
+    //   o.margineDestro margine destro della banda alta (20)
+    //   o.classe       la classe del <button>              ('bottone-forma')
+    //   o.attributi    attributi del <button> (onclick...)
+    //   o.stile, o.stileAlta, o.stileBassa  stili AGGIUNTI in coda al
+    //                  bottone e alle due bande (lo stato scelto, l'alone)
+    // Le misure di default sono quelle del fac simile di Paolo: con i
+    // default l'uscita di M.bottoneArma e` identica a quella della .09.3.
+    // ==================================================================
+    M.formaBottone = function (o) {
+        o = o || {};
+        const colore = o.contorno || '#b4b8bf';
+        const num = function (v, d) { return (typeof v === 'number' && isFinite(v)) ? v : d; };
+        const sx = num(o.spazioSinistra, 92), dx = num(o.spazioDestra, 16), md = num(o.margineDestro, 20), rb = num(o.rientroBassa, 72);
+        const coda = function (s) { return s ? ' ' + String(s).trim() : ''; };
+        const piega = function (pos, poli) {
+            return `<span style="position:absolute; ${pos} width:15px; height:15px; background:${colore}; clip-path:polygon(${poli});"></span>`;
+        };
+        return `<button type="button" class="${o.classe || 'bottone-forma'}" style="position:relative; display:block; width:100%; margin:0 0 18px; padding:0; background:none; border:0; cursor:pointer; text-align:left; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.6)); font-family:'Teko',sans-serif;${coda(o.stile)}" ${o.attributi || ''}>
+            ${o.sopra || ''}
+            <div style="position:relative; margin-right:${md}px; min-height:66px; padding:10px ${dx}px 34px ${sx}px; box-sizing:border-box; display:flex; justify-content:space-between; align-items:flex-start; gap:8px; background:${o.fondoAlta || '#2a2d33'}; border:1px solid ${colore}; clip-path:polygon(15px 0,calc(100% - 15px) 0,100% 15px,100% calc(100% - 15px),calc(100% - 15px) 100%,15px 100%,0 calc(100% - 15px),0 15px);${coda(o.stileAlta)}">
+                ${piega('top:0; left:0;', '0 15px,15px 0,15px 15px')}${piega('top:0; right:0;', '0 0,15px 15px,0 15px')}${piega('bottom:0; right:0;', '0 15px,15px 0,0 0')}
+                ${o.alta || ''}
+            </div>
+            <div style="position:relative; margin:-28px 0 0 ${rb}px; padding:6px 10px 6px 12px; box-sizing:border-box; background:${o.fondoBassa || '#fff'}; border:1px solid ${colore}; border-radius:0 8px 8px 8px; box-shadow:0 4px 10px rgba(0,0,0,.4);${coda(o.stileBassa)}">${o.bassa || ''}</div>
+        </button>`;
     };
 
     // La riga di interruttori per la scheda di un bersaglio. `comando` e` il
@@ -6884,6 +7099,10 @@
             if (unColpo && annullante && delAttacco.some(function (s) { return s && s.attivo && !s.attivo.colpoAnnullato; })) {
                 sagomaAnnullataDa = (annullante.reattivo && annullante.reattivo.nome) || 'un bersaglio';
                 scontri.splice(inizioScontri);
+                // Si rifanno i bersagli da capo: anche le reazioni segnate come gia`
+                // opposte al primo giro (usate) tornano a come erano prima di questo
+                // attacco, se no il secondo giro le salterebbe. Oggi nessun caso
+                // cambia l'uscita (TEST, 8 ottobre): e` una cautela, non un rimedio.
                 usate.length = inizioUsate;
                 bersagli.forEach(perBersaglio);
             }
@@ -8420,6 +8639,14 @@
         'REGOLE_N5_v5_1_1.txt': '5ea7581f.904498'
     };
 
+    // 2026-10-09.6 (domanda di TEST): fonti immutabili che possono MANCARE PER
+    // SCELTA. Il regolamento non sta piu` nel Project (spazio): Paolo lo
+    // allega quando serve. Se il file C'E`, l'impronta si controlla come
+    // sempre; se NON c'e`, non e` un problema ma nemmeno una verifica: va in
+    // `fontiAssenti`, e il riepilogo lo dice ("non verificato").
+    // Un file presente ma diverso resta un problema.
+    M.FONTI_FUORI_PROGETTO = ['REGOLE_N5_v5_1_1.txt'];
+
     // Retrocompatibilita`: chi leggeva M.FILE_ATTESI continua a funzionare.
     Object.defineProperty(M, 'FILE_ATTESI', { get: function () { return M.fileAttesi(); } });
 
@@ -8468,7 +8695,12 @@
             });
         })).then(function (letti) {
             const problemi = [];
+            const fontiAssenti = [];
             letti.forEach(function (r) {
+                if (r.errore && (M.FONTI_FUORI_PROGETTO || []).indexOf(r.nome) >= 0) {
+                    fontiAssenti.push(r.nome);
+                    return;
+                }
                 if (r.errore) {
                     problemi.push(`${r.nome}: ${r.errore} — atteso ma non presente?`);
                     return;
@@ -8534,6 +8766,9 @@
             if (dichiaratiNonLetti.length) {
                 console.warn('⚠️ Dichiarati ma non riletti dal sorgente: ' + dichiaratiNonLetti.join(', '));
             }
+            if (fontiAssenti.length) {
+                console.log('ℹ️ fuori dal progetto per scelta, NON verificati: ' + fontiAssenti.join(', '));
+            }
 
             if (problemi.length) {
                 console.warn('⚠️ ' + problemi.length + ' problemi:');
@@ -8547,8 +8782,19 @@
             return {
                 sorgenti: M._sorgenti,
                 problemi: problemi,
+                // `sorgenti` e` la tabella VIVA M._sorgenti, non una copia: una
+                // verifica successiva la cambia anche qui. Chi la vuole ferma
+                // la copia subito (TEST, 10 ottobre).
+                // `letti` vuol dire CHIESTI: contiene anche i file assenti o non
+                // leggibili. Toglierli li farebbe finire anche in `nonLetti` e
+                // contare due volte. I file letti davvero sono quelli in
+                // `sorgenti`, con l'impronta.
                 letti: lettiNomi,
                 nonLetti: nonLetti,
+                fontiAssenti: fontiAssenti,
+                // `completa` non conta le fonti fuori dal progetto: sono
+                // assenti per scelta. Chi vuole sapere se sono state
+                // verificate guarda `fontiAssenti`.
                 completa: nonLetti.length === 0 && problemi.length === 0
             };
         });
@@ -9094,6 +9340,51 @@
         return { superato: true,
                  testo: `${nome} non è più un Marker: si è rivelato da solo (ha dichiarato un ARO). Lo Scoprire non si tira` +
                         (opzioni.poiAttacco ? '; si passa direttamente all\'Attacco.' : '; l\'Ordine prosegue.') };
+    };
+
+    // ------------------------------------------------------------------
+    // PIU` TERRENI SULLA STESSA LINEA DI TIRO (9 ottobre, chat REGOLE).
+    //   - Visibilita` contro Visibilita`: UNA sola, la piu` restrittiva
+    //     (righe 12688-12695), anche dentro uno stesso terreno;
+    //   - Saturazione contro Saturazione: UNA sola, -1 al Burst
+    //     (righe 12645-12648);
+    //   - Visibilita` e Saturazione insieme: ENTRAMBE (righe 12667-12669).
+    // `terreni`: un id ('TER_10'), un elenco (['TER_10','TER_11']), o
+    // 'NESSUNO'. Il calcolo di OGNI terreno (tratti, visori, Rumore Bianco)
+    // e` di DATABASE: G.applicaModTerreno. Se quella funzione dichiara di
+    // accettare un elenco (G.applicaModTerreno.accettaElenco), riceve
+    // l'elenco intero e combina lei; altrimenti si chiama una volta per
+    // terreno e si combina qui.
+    // 🔴 LA TEMPESTA NON E` UNA ZONA: "increases Visibility Conditions by
+    // one level" (REGOLE). Con un altro terreno di Visibilita` non si puo`
+    // combinare per confronto: si dice, invece di dare un numero plausibile.
+    // -> { modBS, modB, lofBloccata, note, avvisi }
+    M.TERRENO_TEMPESTA = 'TER_15';
+    M.esitoTerreni = function (terreni, opzioni) {
+        const lista = (Array.isArray(terreni) ? terreni : [terreni])
+            .filter(function (x) { return x && x !== 'NESSUNO'; })
+            .filter(function (x, i, a) { return a.indexOf(x) === i; });
+        const esito = { modBS: 0, modB: 0, lofBloccata: false, note: '', avvisi: [] };
+        if (!lista.length || typeof G.applicaModTerreno !== 'function') return esito;
+        if (G.applicaModTerreno.accettaElenco) {
+            const r = G.applicaModTerreno(lista.length === 1 ? lista[0] : lista, opzioni) || {};
+            return Object.assign(esito, r, { avvisi: r.avvisi || [] });
+        }
+        const parziali = lista.map(function (id) { return Object.assign({ id: id }, G.applicaModTerreno(id, opzioni) || {}); });
+        // Saturazione: una sola.
+        esito.modB = parziali.some(function (p) { return p.modB < 0; }) ? -1 : 0;
+        // Visibilita`: la piu` restrittiva. La LoF bloccata vince su ogni MOD.
+        const bloccante = parziali.find(function (p) { return p.lofBloccata; });
+        if (bloccante) { esito.lofBloccata = true; esito.modBS = 0; }
+        else esito.modBS = parziali.reduce(function (m, p) { return Math.min(m, p.modBS || 0); }, 0);
+        esito.note = parziali.map(function (p) { return p.note; }).filter(Boolean).join(' ');
+        if (lista.length > 1) {
+            esito.note += ' Più terreni sulla stessa LoF: Visibilità solo la più restrittiva, Saturazione una sola (righe 12645-12648, 12688-12695).';
+            if (lista.indexOf(M.TERRENO_TEMPESTA) >= 0 && parziali.some(function (p) { return p.id !== M.TERRENO_TEMPESTA && (p.modBS || p.lofBloccata); })) {
+                esito.avvisi.push('Tempesta insieme a un altro terreno con Visibilità: la Tempesta ALZA DI UN LIVELLO la Visibilità già presente (Bassa -> Pessima -> Zero), non si confronta. Il calcolo qui sotto NON lo fa ancora: aggiusta il MOD al tavolo.');
+            }
+        }
+        return esito;
     };
 
     M.riprendiOrdineDaFinestra = function (azione, isSecondHalf) {

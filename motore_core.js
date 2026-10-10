@@ -1,4 +1,4 @@
-// @versione 2026-10-07.1 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-09.1 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -309,7 +309,16 @@ window.sostituisciUnita = function (unita, aggiornata, perche, opzioni) {
     const M = window.MotoreN5;
     const nelRoster = (window.roster || []).find(x => x && unita.id && x.id === unita.id);
     const prima = String(unita.deployState || 'NORMAL');
+    const eraCamo = !!(M && M.statoBersaglio && M.statoBersaglio(unita).camo);
     [unita, nelRoster].filter(Boolean).forEach(x => Object.assign(x, aggiornata));
+    // 🔴 9 ottobre (chat REGOLE, F07): con Camouflage (1 Use) l'uso e`
+    // l'ENTRATA nello Stato CAMO, schieramento compreso. Chi ESCE dal CAMO lo
+    // ha speso, comunque ci fosse entrato: un Marker schierato dal database
+    // nasce in CAMO senza che nessuno chiami consumaCamo. Tutte le uscite
+    // (Abilita` dichiarata, ARO, Scoperta) passano di qui.
+    if (eraCamo && M && M.camoUnUso && M.camoUnUso(unita) && !M.statoBersaglio(unita).camo && !unita.camoUsato) {
+        [unita, nelRoster].filter(Boolean).forEach(x => { x.camoUsato = true; });
+    }
     console.log(`🎭 ${M ? M.nomeUnita(unita) : (unita.alias || unita.id)}: ${prima} -> ${unita.deployState} (${perche || 'aggiornamento'}).`);
     if (typeof window.aggiornaGraficaRoster === 'function') window.aggiornaGraficaRoster();
     if (opzioni && opzioni.senzaInvio) return false;
@@ -722,7 +731,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-07.1', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-09.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

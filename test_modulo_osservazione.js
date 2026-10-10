@@ -1,4 +1,13 @@
-// @versione 2026-10-07.2 | test_modulo_osservazione.js | proprieta`: chat TEST
+// @versione 2026-10-09.1 | test_modulo_osservazione.js | proprieta`: chat TEST
+// .1 (9 ott, sera): sezione 5 — la PORTA D'INGRESSO del Triangulated Fire.
+//    Chiedendo il numero a `M.modAttacco` con l'azione TRIANGULATED si legge
+//    1 invece di 13, e per qualche minuto ho creduto a un difetto grosso. Non
+//    lo era: la regola sta in `M.regoleTriangulated`, e modAttacco e` chiamato
+//    di proposito con BS_ATTACK solo per sapere quali MOD mostrare barrati.
+//    Ora la differenza e` inchiodata, insieme al soggetto VERO di OSS-03
+//    (Zulu-Cobra del database, BS 13, e i tre MOD barrati nominati).
+//    Rotture in rompi_oss.sh: regoleTriangulated che applica i MOD; il flag
+//    `ignoraTuttiIMod` via dal catalogo; il BS del Zulu-Cobra cambiato.
 // Le tre skill di osservazione — node test_modulo_osservazione.js
 // .2 (7 ott): il colore del tasto si prova contro M.COLORE_TASTO E si pretende
 //    non vuoto e diverso dal giallo dell IDLE — alla .1 era una tautologia.
@@ -18,6 +27,9 @@ let inviato = null; global.inviaCalcoloAllHub = (p) => { inviato = p; };
 global.goToStep = () => {}; global.mostraTitoloUnitaCorrente = () => {};
 
 require('./catalogo_n5.js'); require('./database_comune.js');
+// PanOceania serve alla sezione 5 per il soggetto vero di OSS-03. Col
+// guardiano: un banco che muore all'avvio perde le sue prove in silenzio.
+try { require('./database_panoceania.js'); } catch (e) { /* detto nella sezione 5 */ }
 const M = require('./motore_regole_n5.js');
 require('./ordine_osservazione.js');
 
@@ -92,6 +104,48 @@ const oltre = M.regoleTriangulated(tri, croc, combi, { rangeIndex: 99 });
 ok(oltre.oltreGittata === true, 'oltre la Gittata Massima: segnalato');
 ok(oltre.avvisi.some(a => a.codice === 'A74'), 'con A74');
 ok(/Gittata Massima/i.test(oltre.note.join(' ')), 'e la nota cita la regola');
+
+// ------------------------------------------------------------------
+// LA PORTA D'INGRESSO, e perche` sta scritta in una prova.
+// Il 9 ottobre sera ho chiesto il numero a `M.modAttacco` passandogli
+// l'azione 'TRIANGULATED FIRE', ho letto 1 invece di 13 e ho creduto per
+// qualche minuto di avere trovato un difetto grosso. Non lo era: la regola
+// sta in `M.regoleTriangulated`, e `modAttacco` viene chiamato di proposito
+// con BS_ATTACK, solo per sapere quali MOD mostrare barrati. `M.SPEC` non
+// porta `ignoraTuttiIMod` perche` non e` lui a doverlo leggere.
+// La prova inchioda la differenza: se un domani qualcuno "aggiusta"
+// modAttacco per rispondere anche a questa azione, le due righe lo dicono
+// e si decide da che parte sta la regola — invece di scoprirlo al tavolo.
+const nudoBS = M.modAttacco(tri, croc, combi, M.AZIONI.TRIANGULATED, { rangeIndex: 4, cover: true });
+ok(nudoBS.valore === e3.valoreConMod,
+   `modAttacco con l azione TRIANGULATED da` + ` il tiro CON i MOD (${nudoBS.valore}), non il BS nudo: non e` + ` lui a conoscere la regola`,
+   `modAttacco: ${nudoBS.valore} — regoleTriangulated: ${e3.valore}. Se diventano uguali, la regola e in due posti.`);
+ok(e3.valore !== e3.valoreConMod,
+   `e i due numeri sono davvero diversi (${e3.valore} contro ${e3.valoreConMod}): la prova di sopra non e` + ` una tautologia`);
+ok(((window.CATALOGO_N5.OSSERVAZIONE || {})['TRIANGULATED FIRE'] || {}).ignoraTuttiIMod === true,
+   'il flag `ignoraTuttiIMod` sta nel catalogo, dove regoleTriangulated lo legge',
+   'se sparisce dal catalogo, regoleTriangulated resta giusto per caso e nessuno sa piu` perche`');
+
+// E con una truppa VERA del roster di collaudo, non costruita a mano: e` il
+// soggetto che OSS-03 del piano nomina, e i suoi numeri stanno scritti la`.
+const zuluV = (window.DB_PANOCEANIA || []).find(u => u.nome === 'Zulu-Cobra (Triangulated Fire, Sensor)');
+const crocV = (window.DB_PANOCEANIA || []).find(u => u.nome === 'Croc Man (MULTI Sniper Rifle)');
+if (zuluV && crocV) {
+    const r = M.regoleTriangulated(Object.assign({}, zuluV, { states: {} }),
+                                   Object.assign({}, crocV, { states: {} }), combi, { rangeIndex: 2, cover: true });
+    ok(r.valido && r.valore === 13 && r.mod === 0,
+       `Zulu-Cobra (Triangulated Fire, Sensor) del database: BS 13 pieno (${r.valore}, mod ${r.mod})`,
+       'e` il numero che OSS-03 del piano dichiara: se cambia, cambia il piano');
+    ok(r.valoreConMod === 1,
+       `e senza l Abilita` + ` sarebbe 1: dodici punti di differenza (${r.valoreConMod})`);
+    const fonti = (r.modIgnorati || []).map(v => v.fonte).sort();
+    ok(JSON.stringify(fonti) === JSON.stringify(['copertura', 'gittata', 'mimetismo']),
+       'e i MOD barrati sono esattamente tre, nominati: gittata, copertura, mimetismo',
+       `trovati: ${JSON.stringify(fonti)}`);
+} else {
+    ok(false, 'i profili PanOceania del roster non si caricano: Zulu-Cobra e Croc Man non trovati',
+       'senza di loro le tre prove di sopra non guardano niente');
+}
 
 console.log('\n=== 6. Il modulo si dirama subito ===');
 function nuovo(u, azione) {

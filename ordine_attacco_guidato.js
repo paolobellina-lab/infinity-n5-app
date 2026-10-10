@@ -1,4 +1,4 @@
-// @versione 2026-10-08.2 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
+// @versione 2026-10-09.2 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
 // ==========================================
 // 🚀 ATTACCO GUIDATO (N5) - ordine_attacco_guidato.js
 // ------------------------------------------
@@ -94,7 +94,12 @@
                 ⛔ ${esito.avvisi[0].messaggio}<br><span style="color:#cc8888;">${esito.avvisi[0].dettaglio || ''}</span></div>`;
         }
 
-        if (esito.armi.length === 0) {
+        // 2026-10-09.2 (TEST): il commento qui sopra lo prometteva, ma i
+        // bottoni si disegnavano lo stesso sotto l'avviso. Senza la Skill
+        // nessun bottone d'arma: l'avviso e l'elenco delle escluse restano.
+        if (esito.avvisi.length > 0) {
+            // niente bottoni
+        } else if (esito.armi.length === 0) {
             container.innerHTML += `<p style="color:#ff3333; text-align:center; font-size:18px;">
                 ❌ Nessuna Blast Mode disponibile. L'Attacco Guidato richiede la modalità Blast dell'arma, o una modalità col Tratto Impact Template.</p>`;
         } else {
@@ -107,9 +112,8 @@
                 // VS 9 invece di VS 7. Nei due database sono 227 notazioni
                 // d'arma che passano da qui.
                 const nomeEsc = (p.nomeRichiesto || p.nome).replace(/'/g, "\\'");
-                container.innerHTML += `<button class="huge-btn" style="border-color:${COL.bordo};" onclick="window.declareGuidatoAttack('${nomeEsc}')">
-                    ${p.nome}<br><span style="color:${COL.bordo}; font-size:14px;">B${p.burst} | ${p.ammo} | Sagoma ${p.template || 'Circolare'} | ${gittata}</span>
-                </button>`;
+                // 9 ottobre: il bottone e` quello approvato da Paolo (M.bottoneArma).
+                container.innerHTML += M.bottoneArma(p, { attributi: `onclick="window.declareGuidatoAttack('${nomeEsc}')"` });
             });
         }
 
@@ -439,7 +443,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-10-08.2', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-10-09.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

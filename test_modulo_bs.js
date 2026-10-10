@@ -1,4 +1,6 @@
-// @versione 2026-10-07.1 | test_modulo_bs.js | proprieta`: chat TEST
+// @versione 2026-10-09.1 | test_modulo_bs.js | proprieta`: chat TEST
+// .1 (9 ott, pomeriggio): stessa correzione di test_integrazione.js sulle
+//    bande del Combi — celle riespanse, e due confronti invece di uno.
 // Test end-to-end del modulo BS riscritto — node test_modulo_bs.js
 // Simula il minimo DOM che il modulo tocca, così si può collaudare senza browser.
 global.window = global;
@@ -77,8 +79,71 @@ nuovoOrdine(alguacil);
 window.avviaFaseAttaccoBS('ATTACCO BS', false);
 let htmlArmi = nodo('weapon-buttons-container').innerHTML;
 ok(htmlArmi.includes('Combi Rifle') && htmlArmi.includes('Pistol'), 'Alguacil: Combi Rifle e Pistol offerte');
-ok(htmlArmi.includes('+3 / +3 / -3 / -3 / -6 / -6'),
-   'le bande ufficiali del Combi sono mostrate sul bottone');
+// 🔴 GIRATA IL 9 OTTOBRE (motore 2026-10-09.4, bottone di Paolo). Il bottone
+// non mostra piu` la stringa "+3 / +3 / -3 / -3 / -6 / -6": le bande sono
+// CELLE raggruppate dove il MOD non cambia (16" +3, 32" -3, 48" -6). La prova
+// cercava quella stringa e andava rossa: il difetto era nella prova, non
+// nell'app. Non si e` abbassata — si e` alzata: adesso le celle si
+// RIESPANDONO in bande da 8" e si confrontano UNA PER UNA con quelle che il
+// motore legge dal database. La stringa di prima controllava i sei MOD e non
+// i pollici; questa controlla anche quelli, e nomina la banda che non torna.
+function bandeDalBottone(html) {
+    const celle = [...String(html).matchAll(/font-size:11px; padding:1px 0;">(\d+)"<\/span><span style="font-size:17px[^"]*">([+-]?\d+)</g)]
+        .map(x => ({ fino: Number(x[1]), mod: Number(x[2]) }));
+    const bande = []; let da = 0;
+    celle.forEach(c => { for (; da < c.fino; da += 8) bande.push({ mod: c.mod, label: `${da}-${da + 8}"` }); });
+    return bande;
+}
+const bottoneDi = (html, nome) => String(html).split('<button type="button" class="bottone-arma"')
+    .find(b => b.indexOf('>' + nome + '</div>') >= 0) || '';
+const unaRiga = (b) => b.map(x => `${x.mod > 0 ? '+' : ''}${x.mod} (${x.label})`).join('  ');
+// `chi` nomina il secondo lato del confronto: il messaggio deve dire CONTRO
+// COSA il bottone non torna, o chi legge non sa dove cercare.
+function scartiBande(lette, attese, chi) {
+    const n = Math.max(lette.length, attese.length), fuori = [];
+    const dire = (x) => `${x.mod > 0 ? '+' : ''}${x.mod} a ${x.label}`;
+    for (let i = 0; i < n; i++) {
+        const x = lette[i], y = attese[i];
+        if (!x) fuori.push(`banda ${i + 1} SPARITA dal bottone (${chi}: ${dire(y)})`);
+        else if (!y) fuori.push(`banda ${i + 1} IN PIU sul bottone (${dire(x)}), ${chi} non la ha`);
+        else if (x.mod !== y.mod || x.label !== y.label) fuori.push(`banda ${i + 1}: il bottone dice ${dire(x)}, ${chi} ${dire(y)}`);
+    }
+    return fuori;
+}
+// 🔴 DUE AFFERMAZIONI, NON UNA — e la prima versione di questa correzione
+// (stamattina) ne aveva solo mezza. Avevo riespanso le celle e confrontate con
+// M.profiloArma('Combi Rifle').bands: ma le celle il bottone le disegna DA QUEL
+// PROFILO, quindi i due lati del confronto leggono lo stesso dato. Rompendo la
+// terza banda nel database il bottone e il profilo cambiavano INSIEME e la
+// prova restava verde: la tautologia di sempre, trovata rompendo. La stringa
+// di prima, "+3 / +3 / -3 / -3 / -6 / -6", era inchiodata ai valori UFFICIALI
+// e quel cambio lo vedeva. Quindi servono entrambe:
+//   (a) il bottone mostra FEDELMENTE le bande del profilo  -> rompi il bottone
+//   (b) le bande del Combi sono quelle del Weapon Chart     -> rompi il database
+const BANDE_COMBI_UFFICIALI = [
+    { mod:  3, label: '0-8"' },   { mod:  3, label: '8-16"' },
+    { mod: -3, label: '16-24"' }, { mod: -3, label: '24-32"' },
+    { mod: -6, label: '32-40"' }, { mod: -6, label: '40-48"' }
+];
+{
+    const lette = bandeDalBottone(bottoneDi(htmlArmi, 'Combi Rifle'));
+    const dalProfilo = M.profiloArma('Combi Rifle').bands.map(b => ({ mod: b.mod, label: b.label }));
+    // (a) fedelta` del disegno: il bottone contro il profilo che sta disegnando
+    const infedele = scartiBande(lette, dalProfilo, 'il profilo dell arma');
+    ok(lette.length > 0 && infedele.length === 0,
+       lette.length === 0
+         ? 'il bottone del Combi mostra le bande del profilo, come celle raggruppate'
+         : `il bottone del Combi mostra le bande del profilo, come celle raggruppate (${unaRiga(lette)})`,
+       lette.length === 0
+         ? 'NESSUNA CELLA DI GITTATA LETTA sul bottone del Combi: questa prova non sta guardando niente. Il motore ha cambiato il disegno del bottone?'
+         : infedele.join('\n       '));
+    // (b) i valori ufficiali, inchiodati qui: e` l unica meta` che vede un
+    //     cambio nel database, perche` non lo rilegge dal database.
+    const nonUfficiali = scartiBande(lette, BANDE_COMBI_UFFICIALI, 'il Weapon Chart');
+    ok(lette.length > 0 && nonUfficiali.length === 0,
+       'e sono quelle del Weapon Chart: +3 +3 / -3 -3 / -6 -6 su sei fasce da 8" fino a 48"',
+       lette.length === 0 ? 'nessuna cella letta: vedi la prova qui sopra' : nonUfficiali.join('\n       '));
+}
 
 nuovoOrdine(lince);
 window.startUnitAllocationLoopBS();
