@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<!-- @versione 2026-10-12.3 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>HUB CENTRALE - REGISTA N5</title>
+    <!-- UNO SOLO, IDENTICO in scegli_fazione.html e app.html: Chrome
+         riconosce una sola app per id, e con tre manifest diversi la
+         seconda installazione rispondeva "gia` installata". La favicon
+         dell'Hub resta la sua: si vede nella scheda, non decide
+         l'identita` dell'app. -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="img/icona_hub.png">
+    <link rel="apple-touch-icon" href="img/icona_infinity.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Teko:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #111; color: #00ff00; font-family: 'Share Tech Mono', monospace; padding: 20px; }
+        .turn-controller { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-bottom:10px; margin-bottom:20px; border-bottom:2px dashed #00ff00; }
+        .turno-centro { display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:center; flex:1; }
+        .btn-turn { background: #00ff00; color: #000; font-family: 'Teko', sans-serif; font-size: 22px; padding: 6px 18px; cursor: pointer; border: none; font-weight: bold; border-radius: 5px; }
+        .btn-riga { background:#222; color:#fff; border:2px solid #888; font-family:'Teko', sans-serif; font-size:20px; padding:6px 14px; cursor:pointer; font-weight:bold; border-radius:5px; }
+        .btn-reset { background:#8b0000; border-color:#ff0000; box-shadow:0 0 10px #ff0000; }
+        .active-label { font-size: 16px; color: #aaa; }
+        #current-active-text { font-family:'Teko', sans-serif; font-size:32px; line-height:1; text-shadow:0 0 10px currentColor; }
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .faction-panel { border: 1px solid #555; padding: 10px; background: #222; border-radius: 5px; }
+        .log-container { background: #000; border: 1px solid #444; height: 200px; overflow-y: scroll; padding: 10px; font-size: 12px; margin-top: 20px; color: #888; }
+        .state-tag { display:inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin: 2px 4px 2px 0; text-transform: uppercase; background: #444; color: #fff; white-space: nowrap; letter-spacing: 0.5px; }
+        .state-tags-row { display:flex; flex-wrap:wrap; margin-top:4px; }
+        /* L'ELENCO DELLE TRUPPE come la lista d'esercito (12 ottobre, Paolo).
+           Due fazioni affiancate, ognuna su due colonne: quattro colonne,
+           SEMPRE. 12 ottobre, sera (Paolo): l'Hub sta su tablet o PC, mai su
+           un telefono; le regole per lo schermo medio (una colonna per
+           fazione) e per il telefono (una colonna sola) sono state tolte.
+           Le schede si guardano e basta: nessuno stato scelto. */
+        .gruppo-hub { margin: 4px 0 14px; }
+        .gruppo-hub-titolo { font-family:'Teko', sans-serif; font-size:24px; font-weight:700; color:#eee; letter-spacing:1px;
+            border-bottom:2px solid #bbb; margin-bottom:10px; }
+        .gruppo-hub-schede { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+        /* Come la lista in PDF e il fac simile di Paolo: niente riquadro, una
+           linea a L blu-grigia che parte dalla miniatura e chiude la scheda. */
+        .scheda-truppa { position:relative; display:flex; gap:10px; min-height:96px; padding:6px 8px 10px 0; background:transparent;
+            border-left:2px solid #6f8a99; border-bottom:2px solid #6f8a99; border-bottom-left-radius:2px; }
+        .scheda-truppa .st-foto { width:70px; min-height:90px; align-self:stretch; object-fit:contain; object-position:center bottom;
+            flex:0 0 70px; filter:drop-shadow(0 3px 6px rgba(0,0,0,.8)); }
+        .scheda-truppa .st-sigla { flex:0 0 70px; display:flex; align-items:center; justify-content:center; color:#777;
+            font-family:'Teko', sans-serif; font-size:30px; }
+        .scheda-truppa .st-testo { flex:1; min-width:0; }
+        .scheda-truppa .st-nome { font-family:'Teko', sans-serif; font-size:24px; line-height:1; font-weight:700;
+            text-transform:uppercase; color:var(--st-colore); overflow-wrap:anywhere; }
+        .scheda-truppa .st-alias { text-transform:none; color:#bbb; font-weight:500; }
+        .scheda-truppa .st-stati .state-icona { border-radius:50%; overflow:hidden; }
+        .scheda-truppa .st-stati { gap:6px; margin:4px 0 2px; }
+        .scheda-truppa .st-stati .state-icona img { width:44px !important; height:44px !important; border-radius:50%;
+            box-shadow:0 0 0 3px #9a9a9a; background:#2a2a2a; }
+        .scheda-truppa .st-riga { color:#ccc; font-size:12px; line-height:1.35; margin-top:5px; overflow-wrap:anywhere; }
+        .scheda-truppa .st-riga b { color:#fff; }
+    </style>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+
+</head>
+<body>
+
+    <!-- Torna al menu. Sull'Hub la conferma si chiede SEMPRE, anche se non
+         c'e` niente a meta`: uscire da questa pagina significa smettere di
+         arbitrare, e i due telefoni continuano a mandare dati che nessuno
+         elabora. Non e` come uscire da una schermata qualsiasi. -->
+    <button id="btn-menu" onclick="window.tornaAlMenu()"
+        style="position:fixed; left:10px; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); z-index:9000;
+               background:rgba(0,0,0,.75); color:#888; border:1px solid #444; border-radius:6px;
+               padding:8px 12px; font-size:13px; letter-spacing:1px;">☰ MENU</button>
+
+    <!-- Avviso di stato dell'Hub. Lo riempie avvisoHub() nel controller:
+         serve a non lasciar credere che una pagina vuota sia la partita. -->
+    <!-- Il dettaglio di uno stato, aperto toccando la sua etichetta sul
+         tabellone. Esiste perche` l'Hub puo` stare su un tablet, dove il
+         suggerimento del browser non si vede: la stessa informazione
+         deve essere raggiungibile anche col dito. -->
+    <div id="dettaglio-stato" style="display:none; margin:10px; padding:12px; border:2px solid #555;
+         border-radius:6px; background:#111; font-size:15px;"></div>
+
+    <div id="avviso-hub" style="display:none; margin:10px; padding:12px; border:2px solid #ffaa00;
+         border-radius:6px; color:#ffdd88; font-weight:bold; text-align:center;"></div>
+    <script>
+    window.tornaAlMenu = function () {
+        if (!confirm('Chiudendo l\'Hub nessuno arbitra piu`.\n\nLe due app continueranno a mandare ordini e ARO, ma finche` l\'Hub non viene riaperto quei dati non vengono elaborati: il tabellone e i calcoli si fermano qui.\n\nTorni al menu?')) return;
+        location.href = 'scegli_fazione.html';
+    };
+    </script>
+
+    <!-- LA RIGA IN ALTO (7 ottobre, Paolo dal tavolo). Da sinistra:
+         INVERTI LATI, al centro la scritta del turno col tasto CAMBIO
+         TURNO, a destra RESET PARTITA.
+         Prima c'erano un titolo a tutta larghezza e sotto un riquadro
+         verde col turno scritto a 48 punti: due fasce di schermo per dire
+         una parola, e il tabellone cominciava a meta` pagina.
+         La classe turn-controller RESTA: il controller la nasconde durante
+         la risoluzione e la rimostra dopo. -->
+    <div class="turn-controller">
+        <button id="btn-inverti-lati" class="btn-riga" onclick="window.invertiLati()">⇄ INVERTI LATI</button>
+        <div class="turno-centro">
+            <span class="active-label">TURNO ATTIVO:</span>
+            <span id="current-active-text" style="color:#ff0000;">NOMADI</span>
+            <button class="btn-turn" onclick="window.toggleTurn()">🔄 CAMBIO TURNO</button>
+        </div>
+        <button class="btn-riga btn-reset" onclick="window.resetPartita()">⚠️ RESET PARTITA</button>
+    </div>
+
+    <div class="status-grid">
+        <!-- Il posto (sinistra o destra) lo da` window.applicaLati con
+             `order`: dipende da dove siedono i giocatori, non dall'ordine
+             di queste righe. I colori no: Nomads rossi, PanOceania blu. -->
+        <div class="faction-panel" id="pannello-nomads" style="order:1; border-color:#ff0000;">
+            <h2 style="color: #ff0000;">NOMADS</h2>
+            <div id="status-nomads">In attesa...</div>
+        </div>
+        <div class="faction-panel" id="pannello-pano" style="order:2; border-color:#00ccff;">
+            <h2 style="color: #00ccff;">PANOCEANIA</h2>
+            <div id="status-pano">In attesa...</div>
+        </div>
+    </div>
+
+    <div class="faction-panel" style="margin-top:20px;">
+        <h2 style="color: #aaaaaa;">TAVOLO: SCENOGRAFIA E TERRENO</h2>
+        <div id="status-scenario">Nessun elemento dichiarato.</div>
+    </div>
+
+    <div id="battle-log" class="log-container"></div>
+
+    <div id="step-resolution" style="display:none; padding-bottom:40px; margin-top: 20px;">
+        <h1 style="text-align:center; color:#00ff00; font-family:'Teko'; font-size:52px; text-shadow:0 0 15px #00ff00; margin-bottom: 5px;">RISOLUZIONE SCONTRI</h1>
+        <p style="text-align:center; color:#aaa; margin-top:0; margin-bottom:20px;">Elaborazione tiri Faccia a Faccia e Normali</p>
+        
+        <div id="clash-container"></div>
+        
+        <div style="text-align:center; margin-top:30px;">
+            <button class="btn-turn" style="background:#004400; border:2px solid #00ff00; color:#fff;" onclick="window.chiudiRisoluzione()">✅ APPLICA RISULTATI E TORNA AL RADAR</button>
+        </div>
+    </div>
+
+    <!-- ORDINE OBBLIGATO, non riordinare per estetica:
+         calcolatore_cloud.js legge M.CANALI appena caricato, quindi DEVE
+         stare dopo motore_regole_n5.js. E deve stare PRIMA di
+         calcolatore_controller.js, perche` il controller scrive sui canali
+         e l'intercettazione di localStorage dev'essere gia` attiva.
+         Caricato prima del motore, l'Hub muore all'avvio:
+         "Cannot read properties of undefined". -->
+    <script src="database_comune.js"></script>
+    <script src="catalogo_n5.js"></script>
+    <script src="motore_regole_n5.js"></script>
+    <script src="calcolatore_cloud.js"></script>
+    <script src="calcolatore_math.js"></script>
+    <script src="calcolatore_controller.js"></script>
+
+    <script>
+        // ==========================================
+        // 📌 DICHIARAZIONE DI VERSIONE
+        // ==========================================
+        // La riga @versione in testa al file e` un commento HTML: il browser la
+        // ignora e MotoreN5.versioni() non la vede. Senza questo blocco la pagina
+        // resta l'unico file del progetto che non si dichiara, cioe` proprio
+        // quello dove una copia vecchia (cache del telefono) e` piu` probabile.
+        (function () {
+            var g = (typeof window !== 'undefined') ? window : globalThis;
+            var v = { file: 'calcolatore_hub.html', versione: '2026-10-12.3', proprieta: 'INTERFACCIA' };
+            if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
+            else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
+        })();
+
+        // I lati scelti su questo dispositivo valgono dall'apertura.
+        if (typeof window.applicaLati === 'function') window.applicaLati();
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Error: ', err));
+            });
+        }
+
+        let wakeLock = null;
+        const requestWakeLock = async () => {
+            try {
+                if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+            } catch (err) {}
+        };
+        window.addEventListener('load', requestWakeLock);
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') requestWakeLock();
+        });
+        document.addEventListener('pointerdown', requestWakeLock, { once: true });
+    </script>
+</body>
+</html>

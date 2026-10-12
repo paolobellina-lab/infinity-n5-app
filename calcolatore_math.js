@@ -1,0 +1,324 @@
+// @versione 2026-10-07.4 | calcolatore_math.js | proprieta`: chat MOTORE
+// ==========================================
+// 🧮 CALCOLATORE N5 — adattatore sopra MotoreN5
+// ------------------------------------------
+// Questo file ERA 492 righe: calcolaSalvezza (10-134) e
+// generaRisoluzioneDaDati (135-492), dove ogni regola viveva dentro
+// l'HTML che la descriveva. Ora è un adattatore: legge lo stato di
+// gioco, chiama il motore, e trasforma i dati in HTML.
+//
+// Cosa è sparito con le 358 righe:
+//
+//  - I NOVE RAMI MORTI delle munizioni N3. VIRAL, BREAKER, NANOTECH,
+//    PLASMA, ADHESIVE, K1, BIOWEAPON, FLASH, MONOFILAMENT non sono più
+//    munizioni in N5. Restano come NOMI D'ARMA — "K1 Combi Rifle" spara
+//    munizione N — e il motore legge ammo/salvAttr/salvTiri dal Weapon
+//    Chart, mai dal nome.
+//
+//  - LA RIGA 282, che trattava OGNI Sagoma come colpo automatico che
+//    ignora Mimetismo e Copertura. Giusto per le Dirette, sbagliato per
+//    quelle a Impatto, che il tiro lo richiedono.
+//
+//  - IL -99 come segnaposto di "nessuna Linea di Tiro".
+//
+//  - IL NOME DEL PROGRAMMA di hacking preso da window.currentOrder, che
+//    sull'Hub non è mai impostato: tutte le salvezze da hacking cadevano
+//    sul messaggio generico. Ora il programma viaggia nel payload.
+//
+//  - LA RICERCA DEI VISORI per sigla "MSV", mentre i profili scrivono
+//    "Multispectral Visor Lx": nessun visore veniva riconosciuto.
+//
+// Il banco (banco_confronto.js) confronta questa versione con l'originale
+// su 5280+ scenari: ogni divergenza è classificata e spiegata.
+// ==========================================
+
+(function () {
+    'use strict';
+
+    function motore() {
+        if (!window.MotoreN5) {
+            console.error('⛔ motore_regole_n5.js non caricato: il calcolatore non può funzionare.');
+            return null;
+        }
+        return window.MotoreN5;
+    }
+
+    // ------------------------------------------------------------------
+    // Stato di gioco
+    // ------------------------------------------------------------------
+    function rosterDi(fazione) {
+        const gs = window.gameState || {};
+        return (fazione === 'NOMADI' ? gs.nomads : gs.panoceania) || [];
+    }
+
+    function cercaIn(roster, nome) {
+        const M = motore();
+        const n = String(nome || '').toUpperCase();
+        return roster.find(u => M.nomeUnita(u).toUpperCase() === n) || null;
+    }
+
+    // Membri attivi del Fireteam di un'unità.
+    function membriFireteam(unita, roster) {
+        if (!unita || !unita.states || !unita.states.fireteam) return [];
+        return roster.filter(u =>
+            u.combatGroup === unita.combatGroup &&
+            u.states && u.states.fireteam === unita.states.fireteam &&
+            u.state !== 'DEAD'
+        );
+    }
+
+    // 🔴 Il LIVELLO, non il numero di membri: e` il numero di truppe della
+    // stessa Unita`. Passare il conteggio significava dare tutti i bonus a
+    // qualunque Fireteam di 4-5 miniature, anche tutte di Unita` diverse.
+    function livelloFireteam(unita, roster) {
+        const M = motore(); if (!M) return 0;
+        const membri = membriFireteam(unita, roster);
+        return membri.length ? M.livelloFireteam(membri).livello : 0;
+    }
+
+    // ------------------------------------------------------------------
+    // Da dati a HTML
+    // ------------------------------------------------------------------
+    function colore(v) { return v >= 0 ? '#00ff00' : '#ff3333'; }
+
+    function rendiVoci(esito) {
+        if (!esito) return '';
+        let html = '';
+        if (esito.attributo && esito.base != null) {
+            html += `Statistica Base (${esito.attributo}): ${esito.base}<br>`;
+        }
+        // La voce 'base' ripete la riga sopra ("PH di X: 12 (+12)"): non e`
+        // un modificatore, e se la base e` gia` scritta si salta. (Visto dalla
+        // chat INTERFACCIA, 6 ottobre.)
+        (esito.voci || []).filter(v => !(v && v.fonte === 'base' && esito.attributo && esito.base != null)).forEach(function (v) {
+            const seg = v.valore > 0 ? '+' + v.valore : v.valore;
+            html += `<span style="color:${colore(v.valore)}">${v.motivo} (${seg})</span><br>`;
+        });
+        (esito.note || []).forEach(function (n) {
+            html += `<span style="color:#888; font-size:12px;">${n}</span><br>`;
+        });
+        if (esito.automatico) html += `<span style="color:#ff9900">🔥 Sagoma Diretta: colpo automatico</span><br>`;
+        if (esito.lofBloccata) html += `<span style="color:#ff0000">⚠️ Nessuna Linea di Tiro</span><br>`;
+        // Due motivi diversi per "non si tira": un Requisito fallito e` un
+        // Idle, non un valore sotto 1.
+        if (esito.impossibile) html += `<span style="color:#ff0000">⚠️ ${esito.requisitoFallito ? 'Requisito non soddisfatto: Idle, nessun tiro' : 'Valore di Successo sotto 1: il tiro fallisce automaticamente'}</span><br>`;
+        // Critici: il dado pari al Valore di Successo. Sopra il 20 se ne
+        // aggiungono di più, ed è un'informazione che il giocatore vuole.
+        if (esito.critici && !esito.critici.nessunTiro) {
+            const c = esito.critici;
+            html += `<span style="color:${c.riesceSempre ? '#00ff00' : '#ffcc00'}; font-size:12px;">🎯 ${c.testo}</span><br>`;
+        }
+        return html;
+    }
+
+    function rendiSalvezza(s) {
+        const M = motore();
+        if (!s || !s.offensivo) {
+            return `<span style="color:#555;">${(s && s.note && s.note[0]) || 'Nessun danno'}</span>`;
+        }
+        const rami = s.combinato ? s.rami : [{ attributo: s.attributo, valoreAttributo: s.valoreAttributo,
+                                               ps: s.ps, valoreSuccesso: s.valoreSuccesso, voci: s.voci }];
+        let html = `<span style="color:#00ccff; font-weight:bold;">Munizione: ${s.munizione}</span><br>`;
+        if (s.combinato) html += `<span style="color:#ff9900; font-size:12px;">Tiro Salvezza Combinato</span><br>`;
+
+        rami.forEach(function (r) {
+            const dadi = s.combinato ? 1 : s.tiri;
+            html += `Tira <b style="color:#ff3333;">${dadi} ${dadi === 1 ? 'Dado' : 'Dadi'}</b> su <b style="color:#00ffff;">${r.attributo}</b>.<br>`;
+            html += `<span style="color:#00ff00; font-size:22px; font-weight:bold;">${r.valoreSuccesso} o MENO</span>`;
+            // Il dettaglio dice DA DOVE viene il numero: "ARM 3 + 3 Copertura
+            // + PS 7", non "ARM 6 + PS 7" (BS-23 al tavolo di Paolo, 7 ottobre).
+            // Le voci le consegna il motore; qui si scrivono e basta. Si
+            // staccano i MOD (Copertura, Firewall, tetto del Vitroferro);
+            // quello che l'ARMA fa all'attributo (dimezza, azzera) resta nel
+            // numero: "ARM 0" per un K1 e` gia` la cosa da leggere.
+            const ETI = { copertura: 'Copertura', firewall: 'Firewall', limite: 'tetto 12' }, extra = (r.voci || []).filter(v => ETI[v.fonte] && v.valore);
+            if (r.ps != null) html += ` <span style="font-size:12px; color:#888;">(${r.attributo} ${r.valoreAttributo - extra.reduce((s, v) => s + v.valore, 0)}${extra.map(v => ` ${v.valore > 0 ? '+' : '−'} ${Math.abs(v.valore)} ${ETI[v.fonte]}`).join('')} + PS ${r.ps})</span>`;
+            html += '<br>';
+            if (r.critici && !r.critici.nessunTiro) {
+                html += `<span style="color:#ffcc00; font-size:11px;">${r.critici.testo}</span><br>`;
+            }
+        });
+
+        const eff = [];
+        (s.statiFallimento || []).forEach(x => eff.push(`Fallimento = ${x}`));
+        if (s.dannoPerFallimento > 1) eff.push(`<b style="color:#ff3333;">${s.dannoPerFallimento} Ferite per ogni fallimento</b>`);
+        // Le note sul Marker (M.notaMarkerSuSalvezza) NON vanno in coda in
+        // grigio: per decisione di Paolo sono l'UNICO avviso che un Marker
+        // costretto a un Tiro Salvezza va rivelato. Hanno un riquadro loro.
+        // (Osservazione della chat INTERFACCIA, 5 ottobre: cancellaMarker
+        // non lo leggeva nessuno.)
+        const noteMarker = (s.cancellaMarker && Array.isArray(s.noteMarker)) ? s.noteMarker : [];
+        (s.note || []).filter(n => noteMarker.indexOf(n) < 0).forEach(n => eff.push(n));
+        if (eff.length) html += `<span style="font-size:12px; color:#aaa;">${eff.join(' | ')}</span><br>`;
+        noteMarker.forEach(function (n) {
+            html += `<div style="margin:6px 0; padding:8px; background:#332200; border:2px solid #ffaa33; border-radius:4px; color:#ffcc66; font-size:13px; font-weight:bold;">${n}</div>`;
+        });
+        html += `<span style="font-size:11px; color:#888;">Nota: un Critico aggiunge ${s.critExtra || 1} Tiro Salvezza extra.</span>`;
+        return html;
+    }
+
+    // ------------------------------------------------------------------
+    // calcolaSalvezza: firma invariata, calcolo dal motore
+    // ------------------------------------------------------------------
+    window.calcolaSalvezza = function (ammo, danno, armBase, btsBase, phBase, cover, targetObj, isHacking, hackingProgram) {
+        const M = motore(); if (!M) return '';
+        const bersaglio = Object.assign({}, targetObj || {}, {
+            arm: parseInt(armBase, 10) || 0,
+            bts: parseInt(btsBase, 10) || 0,
+            ph: parseInt(phBase, 10) || 0
+        });
+
+        let arma;
+        if (isHacking && hackingProgram) {
+            arma = M.armaDaProgramma(hackingProgram);
+        } else {
+            arma = { nome: 'colpo', ammo: ammo || 'N', ammoOpzioni: [ammo || 'N'], dam: parseInt(danno, 10),
+                     bands: [], isTemplate: false, isCC: false, notazioni: [] };
+        }
+        const firewall = (typeof cover === 'number' && cover < 0) ? cover : 0;
+        const inCopertura = (cover === true);
+
+        return rendiSalvezza(M.tiroSalvezza(bersaglio, {
+            arma: arma, ammo: arma.ammo, cover: inCopertura, firewall: firewall
+        }));
+    };
+
+    // ------------------------------------------------------------------
+    // generaRisoluzioneDaDati: firma invariata, calcolo dal motore
+    // ------------------------------------------------------------------
+    // Le reazioni si possono passare come secondo argomento. Il ripiego su
+    // window.latestAroData resta per non rompere i chiamanti esistenti, ma
+    // una variabile globale letta di nascosto rende il calcolo impossibile
+    // da provare: chi puo`, la passi.
+    window.generaRisoluzioneDaDati = function (dati, reazioniEsplicite) {
+        const M = motore(); if (!M) return [];
+        const attacchi = (dati && dati.attacchi) || [];
+        const reazioni = reazioniEsplicite || (dati && dati.reazioni) || window.latestAroData || [];
+
+        const fazAttiva = (window.gameState && window.gameState.activeFaction) || 'NOMADI';
+        const fazReattiva = fazAttiva === 'NOMADI' ? 'PANOCEANIA' : 'NOMADI';
+        const rosterAtt = rosterDi(fazAttiva);
+        const rosterDif = rosterDi(fazReattiva);
+
+        // Si cerca prima per ID: due unità omonime sono la norma in un
+        // roster, e cercare per nome trova sempre la prima.
+        function cercaPerId(roster, id) {
+            return id ? (roster.find(u => String(u.id) === String(id)) || null) : null;
+        }
+        const ctx = {
+            trovaUnita: function (nome, id) {
+                return cercaPerId(rosterAtt, id) || cercaPerId(rosterDif, id) ||
+                       cercaIn(rosterAtt, nome) || cercaIn(rosterDif, nome) || { alias: nome, nonRisolto: true };
+            }
+        };
+
+        // 🔴 La busta passa INTERA, non solo gli attacchi. Prima si costruiva
+        // { attacchi } e si perdevano gli altri campi — azioniDichiarate (la
+        // Schivata dichiarata col solo Movimento contro una mina), attivo,
+        // aroAtteso. Un campo scritto dal modulo, letto dal motore, e perso
+        // nel mezzo. (Chat INTERFACCIA, 28 settembre.)
+        const scontri = M.risolviPayload(Object.assign({}, dati || {}, { attacchi: attacchi }), reazioni.map(function (r) {
+            return Object.assign({}, r, { difensore: cercaIn(rosterDif, r.nome) });
+        }), Object.assign(ctx, {
+            // I bonus di Fireteam ora arrivano al calcolo.
+            livelloFireteamAtt: (function () {
+                const a = attacchi[0] ? ctx.trovaUnita(attacchi[0].attaccante) : null;
+                return livelloFireteam(a, rosterAtt);
+            })(),
+            livelloFireteamDif: (function () {
+                const r = reazioni[0] ? cercaIn(rosterDif, reazioni[0].nome) : null;
+                return livelloFireteam(r, rosterDif);
+            })()
+        }));
+
+        // --- traduzione nella forma che l'interfaccia già legge ---
+        return scontri.map(function (s) {
+            // 🔴 A SINISTRA SEMPRE LA FAZIONE ATTIVA, A DESTRA LA REATTIVA.
+            // Nello scontro orfano ("io muovo, tu mi spari") il motore mette il
+            // reattivo nello slot `attivo` — e` lui che tira — e chi ha speso
+            // l'Ordine nello slot `reattivo`, senza tiro. Prima la fazione era
+            // corretta in un riquadro e fissa nell'altro: entrambi PANOCEANIA,
+            // e l'Alguacil a destra in azzurro. Qui si scambiano gli slot.
+            // (Collaudo al tavolo di Paolo, 26 settembre.)
+            const orfano = !!s.reattivoNonBersagliato;
+            // Anche la Schivata dell'attiva contro un'ARO: lo scontro e` Sparo
+            // contro Schivata, e l'attiva va comunque a sinistra.
+            const invertiti = orfano || !!s.latiInvertiti;
+            const sx = invertiti ? s.reattivo : s.attivo;   // fazione attiva
+            const dx = invertiti ? s.attivo : s.reattivo;   // fazione reattiva
+            const out = {
+                titolo: s.titolo,
+                tipo: s.tipo,
+                motivoConfronto: s.motivoConfronto,
+                attivo: (orfano ? {
+                    // Ha speso l'Ordine senza tirare; sotto di lui la salvezza
+                    // che deve fare se il tiro del reattivo lo colpisce.
+                    nome: sx ? sx.nome : '-',
+                    fazione: fazAttiva,
+                    azione: 'Nessun tiro',
+                    mod: '-', burst: 0, dettagliMod: '',
+                    salvezza: rendiSalvezza((sx && sx.salvezzaSubita) || (dx && dx.salvezzaInflitta)),
+                    dati: sx
+                } : {
+                    nome: sx.nome,
+                    fazione: fazAttiva,
+                    // l'etichetta leggibile anche a sinistra ("DODGE" -> Schivata)
+                    azione: (window.MotoreN5 && window.MotoreN5.aroAdAzione && window.MotoreN5.aroAdAzione(sx.azione)) || sx.azione,
+                    mod: sx.mod,
+                    burst: sx.burst,
+                    // 🎲 il Dado Speciale, sul SOLO scontro a cui il motore l'ha dato
+                    dettagliMod: rendiVoci(sx) + (sx.sd > 0 ? `<div style="color:#ffcc00;">🎲 +${sx.sd} Dado Speciale: tira ${sx.sd} dado in più, poi scartane ${sx.sd}</div>` : ''),
+                    sd: sx.sd || 0,
+                    // 🔴 Sotto la truppa attiva va la salvezza che LEI deve
+                    // superare se perde il confronto, non quella che infligge.
+                    salvezza: rendiSalvezza(sx.salvezzaSubita || sx.salvezzaInflitta),
+                    salvezzaInflitta: rendiSalvezza(sx.salvezzaInflitta),
+                    dati: sx
+                }),
+                reattivo: dx ? {
+                    nome: dx.nome,
+                    fazione: fazReattiva,
+                    // L'etichetta leggibile: dal 23 settembre le reazioni
+                    // viaggiano come id ('BS_ATTACK'), e il tabellone lo
+                    // mostrava cosi` al giocatore.
+                    azione: (window.MotoreN5 && window.MotoreN5.aroAdAzione && window.MotoreN5.aroAdAzione(dx.azione)) || dx.azione,
+                    mod: dx.mod,
+                    burst: dx.burst,
+                    dettagliMod: rendiVoci(dx),
+                    // Nell'orfano il reattivo non subisce nulla: tira da solo.
+                    salvezza: orfano ? '<span style="color:#555;">Nessun danno</span>'
+                                     : rendiSalvezza(dx.salvezzaSubita || dx.salvezzaInflitta),
+                    salvezzaInflitta: rendiSalvezza(dx.salvezzaInflitta),
+                    dati: dx
+                } : {
+                    nome: '-', fazione: fazReattiva, azione: 'Nessuna Reazione',
+                    mod: '-', burst: 0, dettagliMod: '', salvezza: '<span style="color:#555;">Nessun danno</span>'
+                }
+            };
+            // Gli avvisi del motore non si perdono: l'interfaccia può mostrarli.
+            if (s.avvisi && s.avvisi.length) out.avvisi = s.avvisi;
+            // 🔴 I campi DELLO SCONTRO (non di un lato) si perdevano qui:
+            // il motore scriveva s.coperturaNegata e s.note, e al tabellone
+            // arrivavano solo attivo/reattivo/titolo/motivoConfronto.
+            // (Chat INTERFACCIA, 6 ottobre: non poteva mostrarli.)
+            // bersaglioDiSagoma mancava dall'elenco (chat INTERFACCIA, 6 ottobre):
+            // un campo nuovo dello scontro va aggiunto QUI, o non arriva.
+            ['coperturaNegata', 'reattivoNonBersagliato', 'bersaglioDiSagoma', 'attaccanteNonRisolto', 'bersaglioNonRisolto', 'scoprirePoiAttacco', 'scoprireSuperato', 'dopoScoprire', 'condizionatoDaScoprire', 'scoprirePoiPiazzare'].forEach(k => { if (s[k]) out[k] = s[k]; });
+            if (s.note && s.note.length) out.note = s.note;
+            return out;
+        });
+    };
+
+    console.log('🧮 calcolatore_math.js: adattatore su MotoreN5 (le 358 righe del monolite sono state rimosse).');
+})();
+
+
+// Dichiarazione di versione per il controllo incrociato fra chat.
+// Funziona anche se questo file si carica PRIMA del motore: in quel
+// caso la versione resta in coda e il motore la raccoglie all'avvio.
+(function () {
+    var g = (typeof window !== 'undefined') ? window : globalThis;
+    var v = { file: 'calcolatore_math.js', versione: '2026-10-07.4', proprieta: 'MOTORE' };
+    if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
+    else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
+})();

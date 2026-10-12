@@ -1,0 +1,77 @@
+IMMAGINI DELLE ARMI per la prova dei bottoni
+Una per TIPO d'arma (non per munizione ne' per modalita'). PNG con sfondo trasparente, circa 170x100 px.
+Se un file manca, il bottone resta senza immagine: nessun errore.
+
+Nome del file                                 <- armi che la usano
+
+img/armi/adhesive_launcher_rifle.png          <- Adhesive Launcher Rifle
+img/armi/akrylat_kanone.png                   <- Akrylat-Kanone
+img/armi/armed_turret.png                     <- Armed Turret
+img/armi/assault_pistol.png                   <- Assault Pistol
+img/armi/blitzen.png                          <- Blitzen
+img/armi/boarding_shotgun.png                 <- Boarding Shotgun, T2 Boarding Shotgun
+img/armi/carbine.png                          <- E/M Carbine
+img/armi/chain_colt.png                       <- Chain-colt
+img/armi/chain_rifle.png                      <- Chain Rifle
+img/armi/chest_mine.png                       <- Chest Mines
+img/armi/combi_rifle.png                      <- Combi Rifle, Breaker Combi Rifle, K1 Combi Rifle
+img/armi/contender.png                        <- Contender
+img/armi/crazykoalas.png                      <- CrazyKoalas
+img/armi/cybermine.png                        <- Cybermine
+img/armi/d_charges.png                        <- D-Charges
+img/armi/deactivator.png                      <- Deactivator
+img/armi/deployable_cover.png                 <- Deployable Cover
+img/armi/disco_baller.png                     <- Disco Baller
+img/armi/drop_bears.png                       <- Drop Bears
+img/armi/e_marat.png                          <- E/Marat
+img/armi/e_mitter.png                         <- E/Mitter
+img/armi/feuerbach.png                        <- Feuerbach
+img/armi/flammenspeer.png                     <- Flammenspeer
+img/armi/flash_pulse.png                      <- Flash Pulse
+img/armi/gizmokit.png                         <- GizmoKit
+img/armi/grenade_launcher.png                 <- Smoke Grenade Launcher, Grenade Launcher, E/M Grenade Launcher
+img/armi/grenades.png                         <- Grenades, Smoke Grenades, Eclipse Grenades, E/M Grenades
+img/armi/heavy_flamethrower.png               <- Heavy Flamethrower
+img/armi/heavy_machine_gun.png                <- Heavy Machine Gun, AP Heavy Machine Gun
+img/armi/heavy_pistol.png                     <- Heavy Pistol
+img/armi/heavy_riotstopper.png                <- Heavy Riotstopper
+img/armi/heavy_rocket_launcher.png            <- Heavy Rocket Launcher
+img/armi/heavy_shotgun.png                    <- Heavy Shotgun
+img/armi/hyper_rapid_magnetic_cannon.png      <- Hyper-Rapid Magnetic Cannon
+img/armi/jammer.png                           <- Jammer
+img/armi/light_flamethrower.png               <- Light Flamethrower
+img/armi/light_riotstopper.png                <- Light Riotstopper
+img/armi/light_rocket_launcher.png            <- Light Rocket Launcher
+img/armi/light_shotgun.png                    <- Light Shotgun
+img/armi/madtraps.png                         <- Madtraps
+img/armi/marksman_rifle.png                   <- AP Marksman Rifle, Shock Marksman Rifle, Marksman Rifle, K1 Marksman Rifle
+img/armi/medikit.png                          <- MediKit
+img/armi/mine.png                             <- Shock Mine, PARA Mine, E/M Mine, AP Mine, Viral Mine
+img/armi/mine_dispenser.png                   <- Mine Dispenser
+img/armi/missile_launcher.png                 <- Missile Launcher
+img/armi/mk12.png                             <- Mk12
+img/armi/multi_heavy_machine_gun.png          <- MULTI Heavy Machine Gun
+img/armi/multi_marksman_rifle.png             <- MULTI Marksman Rifle
+img/armi/multi_pistol.png                     <- MULTI Pistol
+img/armi/multi_red_fury.png                   <- MULTI Red Fury
+img/armi/multi_rifle.png                      <- MULTI Rifle
+img/armi/multi_sniper_rifle.png               <- MULTI Sniper Rifle
+img/armi/nanopulser.png                       <- Nanopulser
+img/armi/panzerfaust.png                      <- Panzerfaust
+img/armi/pistol.png                           <- Pistol, Breaker Pistol
+img/armi/pitcher.png                          <- Pitcher
+img/armi/plasma_carbine.png                   <- Plasma Carbine
+img/armi/plasma_rifle.png                     <- Plasma Rifle
+img/armi/pulzar.png                           <- Pulzar
+img/armi/red_fury.png                         <- Red Fury, AP Red Fury
+img/armi/rifle.png                            <- Rifle, Breaker Rifle, Viral Rifle
+img/armi/sniper_rifle.png                     <- K1 Sniper Rifle, T2 Sniper Rifle, AP Sniper Rifle, Sniper Rifle, Viral Sniper Rifle
+img/armi/spitfire.png                         <- Spitfire, AP Spitfire
+img/armi/stun_pistol.png                      <- Stun Pistol
+img/armi/submachine_gun.png                   <- AP Submachine Gun, Submachine Gun
+img/armi/tactical_bow.png                     <- Tactical Bow
+img/armi/thunderbolt.png                      <- Thunderbolt, AP Thunderbolt
+img/armi/trench_hammer.png                    <- Trench-Hammer
+img/armi/vulkan_shotgun.png                   <- Vulkan Shotgun
+img/armi/wildparrot.png                       <- WildParrot
+img/armi/zapper.png                           <- Zapper
