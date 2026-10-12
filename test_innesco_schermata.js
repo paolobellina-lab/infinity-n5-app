@@ -1,4 +1,11 @@
-// @versione 2026-10-06.1 | test_innesco_schermata.js | proprieta`: chat TEST
+// @versione 2026-10-12.2 | test_innesco_schermata.js | proprieta`: chat TEST
+// 2026-10-12.2: premesse 765 -> 761 profili e 251 -> 250 nomi che si
+//    piazzano (database .12.3: l Evader MULTI TinBot portava le D-Charges).
+// 2026-10-12.1: sezione DET-04 — chi ha la voce PIAZZARE EQUIPAGGIAMENTO.
+//    app.html 2026-10-12.1 chiede al motore (M.armiPiazzabili): pagina e
+//    motore danno lo stesso insieme sui 765 profili, nei due versi. Con
+//    app.html 2026-10-09.6 erano 11 offerti senza niente da piazzare (Krakot,
+//    Bambabot...) e 27 portatori di D-Charges senza la voce.
 // ============================================================================
 //  Dalla chat INTERFACCIA, 5 ottobre 2026.
 //
@@ -160,6 +167,38 @@ ok(/guasto di prova/.test(t.el('dom-koala1').innerHTML), 'il motore solleva: il 
 ok(t.g.errori.some(e => /innescoDeployable ha sollevato/.test(e)), 'e in console');
 ok(t.detonati().length === 0, 'e niente detona');
 t.M.innescoDeployable = vero;
+
+
+console.log('\n--- DET-04: la voce PIAZZARE EQUIPAGGIAMENTO la decide il motore (app.html 2026-10-12.1) ---');
+{
+  // Difetto del 10 ottobre, misurato dalla pagina: puoFareAzione cercava
+  // "MINE" nel nome delle armi. Il Krakot (Chest Mine) e il Bambabot (Mine
+  // Dispenser) avevano la voce, toccarla spendeva l'Ordine e non c'era niente
+  // da piazzare. Qui l'insieme della pagina e quello del motore si confrontano
+  // nei due versi su tutti i profili delle due fazioni.
+  const d = dispositivo('NOMADS TACTICAL TERMINAL', 'nomadi'); carica('app.html', d.g);
+  const g = d.g, M = g.MotoreN5;
+  const pronti = [...(g.DB_NOMADI || []), ...(g.DB_PANOCEANIA || [])].map((p, i) =>
+    Object.assign(JSON.parse(JSON.stringify(p)), { id: 'pz' + i, states: {}, state: 'ACTIVE', deployState: 'NORMAL', combatGroup: 1 }));
+  ok(pronti.length === 761 &&   // 761 dal 12 ottobre sera (database .12.3): cancellati evader_multi_tb, triggermen_multi, hannibal_cmd, hannibal_strategic
+      typeof g.puoFareAzione === 'function' && typeof M.armiPiazzabili === 'function',
+     'premessa: 761 profili, puoFareAzione nella pagina e armiPiazzabili nel motore', [pronti.length, typeof g.puoFareAzione, typeof M.armiPiazzabili]);
+  const pagina = new Set(), motore = new Set();
+  pronti.forEach(u => {
+    if (g.puoFareAzione(u, 'PIAZZARE EQUIPAGGIAMENTO')) pagina.add(u.nome);
+    const r = M.armiPiazzabili(u); if (r && r.armi && r.armi.length) motore.add(u.nome);
+  });
+  const soloPagina = [...pagina].filter(n => !motore.has(n)), soloMotore = [...motore].filter(n => !pagina.has(n));
+  ok(soloPagina.length === 0, `nessuno ha la voce senza niente da piazzare (pagina ${pagina.size}, motore ${motore.size})`, soloPagina.slice(0, 6));
+  ok(soloMotore.length === 0, 'e nessuno che puo` piazzare resta senza la voce', soloMotore.slice(0, 6));
+  // 251 -> 250 col database .12.3: l Evader (MULTI Rifle, TinBot), cancellato, portava le D-Charges.
+  ok(motore.size === 250, `premessa: chi puo\` piazzare sono ${motore.size} profili — se 250 cambia, e\` cambiato il database o il motore: rimisura`, motore.size);
+  // Nominati: i due della prova, e due che la voce devono averla.
+  const NO = ['Krakot Renegade (Boarding Shotgun)', 'Bambabot-1 (Chain Rifle (ps=6))'];
+  const SI = ['Puppet Masters (Minelayer)', 'Moran (Surprise Attack, Camouflage)'];
+  ok(NO.every(n => !pagina.has(n)), 'Krakot (Chest Mine) e Bambabot-1 (Mine Dispenser): niente voce', NO.filter(n => pagina.has(n)));
+  ok(SI.every(n => pagina.has(n)), 'CONTROPROVA: Puppet Masters (Shock Mine) e Moran (D-Charges, CrazyKoalas): la voce c e`', SI.filter(n => !pagina.has(n)));
+}
 
 console.log('\n' + passati + ' passati, ' + falliti + ' falliti');
 process.exit(falliti ? 1 : 0);

@@ -1,4 +1,4 @@
-// @versione 2026-10-09.7 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-12.5 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -40,6 +40,10 @@
 //      9 ottobre): elenco proprio, Coordinato, bersagli, ARO.
 //  18. I programmi di hacking in ARO col bottone dell'arma del motore:
 //      contorno azzurro e icona dello stato che provocano.
+//  19. PIAZZARE EQUIPAGGIAMENTO nel menu solo se M.armiPiazzabili da` armi
+//      (difetto trovato da TEST il 10 ottobre).
+//  20. Hub: le truppe come la lista d'esercito, per Gruppo di
+//      Combattimento (Paolo, 12 ottobre).
 //
 //  NON PROVA: l'aspetto vero nel browser (altezze, colori, immagini che
 //  esistono o no). Il DOM qui e` finto: si guarda l'HTML prodotto.
@@ -754,6 +758,109 @@ sezione('18. I programmi di hacking in ARO: il bottone dell arma, azzurro, con l
         P.selezionaAzioneAro('BS_ATTACK');
         ok(!/class="bottone-arma"/.test(T.pano.el('aro-weapon-list').innerHTML), 'CONTROPROVA: le armi in ARO restano col bottone di prima (non richiesto)');
     } else ok(true, 'CONTROPROVA saltata: questo Hacker non ha BS in ARO');
+});
+
+sezione('19. PIAZZARE EQUIPAGGIAMENTO: la voce c e solo se il motore ha armi da piazzare', () => {
+    // TEST, 10 ottobre: Krakot Renegade (Chest Mine) e Bambabot-1 (Mine
+    // Dispenser) avevano la voce, ma M.armiPiazzabili non da` armi: tocco,
+    // allarme, Ordine speso, "nessun equipaggiamento da piazzare". La voce si
+    // decideva dal NOME; ora la decide il motore.
+    const T = creaTavolo(DIR); const N = T.nomadi.g, M = N.MotoreN5;
+    const tutti = [].concat(N.DB_NOMADI, N.DB_PANOCEANIA);
+    const prof = (re) => { const p = tutti.find(x => re.test(x.nome)); if (!p) throw new Error('profilo non trovato: ' + re); return JSON.parse(J(p)); };
+    const voci = (u) => { T.nomadi.g.roster = [u]; return (T.apriMenu(T.nomadi, 0).match(/selectAction\('[^']+', false\)/g) || []).map(x => x.match(/'([^']+)'/)[1]); };
+    const krakot = truppa(prof(/^Krakot Renegade/), { id: 'n1', alias: 'Krak' });
+    const bamba = truppa(prof(/^Bambabot-1/), { id: 'n2', alias: 'Bamba' });
+    const task = truppa(prof(/^Taskmaster \(Red Fury/), { id: 'n3', alias: 'Task' });
+    const puppet = truppa(prof(/^Puppet Masters/), { id: 'n4', alias: 'Posa' });
+    T.schiera([krakot, bamba, task, puppet], [truppa(prof(/^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+    ok(voci(krakot).indexOf('PIAZZARE EQUIPAGGIAMENTO') < 0, 'Krakot Renegade (Chest Mine): nel menu NON c e Piazzare (il motore: zero armi)');
+    ok(voci(bamba).indexOf('PIAZZARE EQUIPAGGIAMENTO') < 0, 'Bambabot-1 (Mine Dispenser): nel menu NON c e Piazzare');
+    ok(voci(task).indexOf('PIAZZARE EQUIPAGGIAMENTO') >= 0, 'Taskmaster col Crazykoala fra le ARMI: la voce c e (prima mancava)');
+    ok(voci(puppet).indexOf('PIAZZARE EQUIPAGGIAMENTO') >= 0, 'CONTROPROVA: Puppet Masters con le mine ha ancora la voce');
+    // Dalla porta del giocatore: il Taskmaster tocca la voce e trova il CrazyKoala.
+    N.roster = [task]; T.apriMenu(T.nomadi, 0); N.selectAction('PIAZZARE EQUIPAGGIAMENTO', false);
+    const schermo = Object.values(T.nomadi.elementi).map(e => e.innerHTML).join(' ');
+    ok(/scegliArmaDaPiazzare\('[^']*Koala[^']*'\)/i.test(schermo) && !/nessun equipaggiamento da piazzare/i.test(schermo), 'toccata, la schermata offre il CrazyKoala da piazzare');
+    // 12 ottobre (MOTORE, motore 2026-10-12.2): le D-Charges (Demolition Mode)
+    // SI piazzano (riga 6044). Il motore le aveva perse, e col menu legato a
+    // lui i portatori di D-Charges perdevano la voce: si guarda per nome.
+    const hell = truppa(prof(/^Hellcat \(Hacker/), { id: 'n5', alias: 'Hell' });
+    ok(/D-Charges/.test(hell.weapon) && voci(hell).indexOf('PIAZZARE EQUIPAGGIAMENTO') >= 0, 'Hellcat (Hacker) con le D-Charges: la voce Piazzare c e');
+    N.roster = [hell]; T.apriMenu(T.nomadi, 0); N.selectAction('PIAZZARE EQUIPAGGIAMENTO', false);
+    const schermoH = Object.values(T.nomadi.elementi).map(e => e.innerHTML).join(' ');
+    ok(/scegliArmaDaPiazzare\('D-Charges[^']*'\)/.test(schermoH), 'toccata, la schermata offre le D-Charges (' + ((schermoH.match(/scegliArmaDaPiazzare\('([^']*)'\)/) || [])[1]) + ')');
+    const conDC = tutti.filter(p => /D-Charges/i.test((p.weapon || '') + ' ' + (p.equip || '')));
+    const senzaVoce = conDC.filter(p => !N.puoFareAzione(Object.assign(JSON.parse(J(p)), { states: {}, deployState: 'NORMAL', state: 'ACTIVE' }), 'PIAZZARE EQUIPAGGIAMENTO'));
+    ok(conDC.length > 0 && senzaVoce.length === 0, 'tutti i ' + conDC.length + ' portatori di D-Charges hanno la voce (' + senzaVoce.length + ' senza)');
+    // 12 ottobre (motore 2026-10-12.5): le D-Charges esplodono nello stesso
+    // Ordine. Dalla porta del giocatore fino al tabellone dell'Hub.
+    { const T2 = creaTavolo(DIR); const N2 = T2.nomadi.g;
+      T2.schiera([truppa(prof(/^Hellcat \(Hacker/), { id: 'n1', alias: 'Hell' })],
+                 [truppa(prof(/^Fusilier \(Combi/), { id: 'p1', alias: 'Fus', states: { immobilizedA: true } })], 'NOMADI');
+      T2.apriMenu(T2.nomadi, 0); N2.selectAction('PIAZZARE EQUIPAGGIAMENTO', false);
+      N2.scegliArmaDaPiazzare('D-Charges (Demolition Mode)'); N2.scegliBersaglioPiazzamento('p1');
+      (N2.deployableDomande || []).forEach(d => N2.rispondiDeployable(d.id, false));
+      T2.nomadi.el('btn-esegui-calcolo').onclick(); T2.giro(); T2.pano.g.annullaAro(); T2.giro();
+      const t2 = tabellone(T2);
+      ok(risoluzione(T2) && /Fus: 3 Tiri Salvezza su ARM, riesce con 7 o meno/.test(t2), 'D-Charges su un nemico Immobilizzato: sul tabellone si legge la salvezza della detonazione');
+      ok(!N2.roster.some(u => u.deployable), 'e nessun segnalino entra nel roster'); }
+    // Su tutti i profili dei due database: la voce del menu e il motore dicono la stessa cosa.
+    const diversi = tutti.filter(p => { const u = Object.assign(JSON.parse(J(p)), { states: {}, deployState: 'NORMAL', state: 'ACTIVE' });
+        return N.puoFareAzione(u, 'PIAZZARE EQUIPAGGIAMENTO') !== (M.armiPiazzabili(u).armi.length > 0); });
+    ok(diversi.length === 0, 'su ' + tutti.length + ' profili la voce del menu e M.armiPiazzabili coincidono (' + diversi.length + ' diversi' + (diversi.length ? ': ' + diversi.slice(0, 3).map(p => p.nome).join(', ') : '') + ')');
+});
+
+sezione('20. Hub: le truppe come la lista d esercito, per Gruppo', () => {
+    // Paolo, 12 ottobre (tramite MOTORE): fuori dalla risoluzione l'Hub mostra
+    // le truppe come la lista d'esercito in PDF. Si guarda l'Hub dopo uno
+    // schieramento vero dei due giocatori.
+    const T = creaTavolo(DIR); const N = T.nomadi.g, H = T.hub.g;
+    const tutti = [].concat(N.DB_NOMADI, N.DB_PANOCEANIA);
+    const prof = (re) => { const p = tutti.find(x => re.test(x.nome)); if (!p) throw new Error('profilo non trovato: ' + re); return JSON.parse(J(p)); };
+    T.schiera([truppa(prof(/^Intruder \(Hacker, Killer/), { id: 'n1', alias: 'Ombra', imgVariant: 'intruder_2.png', states: { targeted: true } }),
+               truppa(prof(/^Mary Problems \(Hacker/), { id: 'n2', alias: 'Mary', combatGroup: 2 }),
+               truppa(prof(/^Hellcat \(Paramedic/), { id: 'n3', alias: 'Cura', combatGroup: 2 })],
+              [truppa(prof(/^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+    const nom = T.hub.el('status-nomads').innerHTML, pan = T.hub.el('status-pano').innerHTML;
+    const scheda = (h, alias) => (h.match(new RegExp('<div class="scheda-truppa"[\\s\\S]*?\\(' + alias + '\\)[\\s\\S]*?</div>\\s*</div>\\s*</div>')) || [''])[0];
+    // Gruppi
+    const g1 = nom.indexOf('>GROUP 1<'), g2 = nom.indexOf('>GROUP 2<');
+    ok(g1 >= 0 && g2 > g1, 'le truppe sono divise per Gruppo: GROUP 1 poi GROUP 2');
+    ok(nom.indexOf('(Ombra)') > g1 && nom.indexOf('(Ombra)') < g2 && nom.indexOf('(Mary)') > g2 && nom.indexOf('(Cura)') > g2, 'ogni truppa sta sotto il suo Gruppo');
+    ok(/>GROUP 1</.test(pan) && /\(Uno\)/.test(pan), 'anche PanOceania ha i suoi Gruppi');
+    // La scheda
+    const ombra = scheda(nom, 'Ombra');
+    ok(/<div class="st-nome">Intruder <span class="st-alias">\(Ombra\)<\/span><\/div>/.test(ombra), 'il nome dell unita` col soprannome fra parentesi');
+    ok(/--st-colore:#ff0000/.test(ombra) && /--st-colore:#00ccff/.test(scheda(pan, 'Uno')), 'il nome nel colore della fazione');
+    ok(/<img class="st-foto" src="img\/intruder_2\.png"/.test(ombra), 'a sinistra la miniatura (la foto assegnata)');
+    ok(/icon_targeted\.png/.test(ombra), 'sotto il nome le icone degli stati');
+    ok(/<b>Equipment:<\/b> Killer Hacking Device, Multispectral Visor L2</.test(ombra), 'Equipment: l equipaggiamento, senza le armi (niente CC Weapon)');
+    ok(/<b>Special Skills:<\/b> Hacker • Camouflage • Mimetism \(-3\) • Stealth • Surprise Attack \(-3\)</.test(ombra), 'Special Skills per intero, separate da •, senza Terrain e Infiltration');
+    const mary = scheda(nom, 'Mary');
+    ok(/Hacking Device \(UPGRADE: Oblivion \+1B\), Killer Hacking Device \(UPGRADE: Trinity AP\)</.test(mary), 'gli UPGRADE restano per intero');
+    ok(/Dodge \(\+3\)/.test(mary) && !/Forward Deployment/.test(mary) && !/Pistol/.test(mary), 'Dodge (+3) resta; Forward Deployment e la Pistol no');
+    const cura = scheda(nom, 'Cura');
+    ok(/<b>Equipment:<\/b> MediKit, Deployable Repeater</.test(cura), 'il MediKit e` equipaggiamento anche se ha un profilo d arma');
+    ok(/Super-Jump \(Jet Propulsion\)/.test(cura) && !/Courage|Parachutist|Combat Jump|Terrain/.test(cura), 'via Courage, Parachutist, Combat Jump, Terrain; Super-Jump resta');
+    // 12 ottobre (motore 2026-10-12.5): l'equipaggiamento lo dice M.eEquipaggiamentoInLista.
+    // Prima il Deployable Cover, che ha un profilo d'arma e non sta in CATALOGO_N5.EQUIP, spariva.
+    ok(/M\.eEquipaggiamentoInLista\(voce\)/.test(fs.readFileSync(DIR + 'calcolatore_controller.js', 'utf8')) && !/CATALOGO_N5 \|\| \{\}\)\.EQUIP/.test(fs.readFileSync(DIR + 'calcolatore_controller.js', 'utf8')), 'la riga Equipment chiede al motore (M.eEquipaggiamentoInLista), senza liste sue');
+    { const pc = tutti.find(x => /Deployable Cover/.test(x.equip || ''));
+      const ck = pc ? H.equipaggiamentoDi(JSON.parse(J(pc))) : [];
+      ok(ck.indexOf('Deployable Cover') >= 0 && ck.indexOf('Pistol') < 0, 'il Deployable Cover sta fra gli Equipment, la Pistol no (' + (pc && pc.nome) + ': ' + ck.join(', ') + ')'); }
+    // Niente di quello che Paolo ha tolto
+    ok(!/Combi Rifle|Heavy Machine Gun|MOV|>BS<|punti|SWC/i.test(nom + pan), 'niente armi, statistiche, punti');
+    ok(!/onclick="(?!window\.mostraDettaglioStato)/.test(ombra) && !/data-scelta/.test(nom), 'nessuna selezione: le schede non si scelgono (si toccano solo le icone degli stati)');
+    ok(J(H.SKILL_NASCOSTE_ELENCO_HUB) === J(['Forward Deployment', 'Hidden Deployment', 'Infiltration', 'Strategic Deployment', 'Parachutist', 'Combat Jump', 'Decoy', 'Courage', 'Religious Troop', 'Terrain']), 'l elenco delle skill tolte sta in un punto solo, ed e` quello di Paolo');
+    // La foto: la stessa regola dell'app dei giocatori.
+    const campioni = [{ imgVariant: 'alguaciles_2.png' }, { nome: 'MARKER' }, { imgVariant: '0' }, N.roster[0], { deployable: true, id: 'dep_' + ((N.DB_DEPLOYABLES || [])[0] || {}).id + '_1_1' }];
+    ok(campioni.every(u => H.fotoTruppaHub(u) === N.fotoUnita(u)), 'la foto nell Hub segue la stessa regola dell app (' + campioni.map(u => H.fotoTruppaHub(u) || '-').join(', ') + ')');
+    // Durante la risoluzione l'elenco non si vede (lo nasconde mostraSchermataRisoluzione).
+    const pagina = fs.readFileSync(DIR + 'calcolatore_hub.html', 'utf8');
+    // 12 ottobre, sera (Paolo): l'Hub sta su tablet o PC. Quattro colonne sempre,
+    // nessuna regola per il telefono. Prima la prova chiedeva le due @media.
+    ok(/\.gruppo-hub-schede \{ display:grid; grid-template-columns:repeat\(2, minmax\(0,1fr\)\)/.test(pagina) && /\.status-grid \{ display: grid; grid-template-columns: 1fr 1fr;/.test(pagina) && !/@media/.test(pagina), 'quattro colonne sempre: due fazioni, due colonne ciascuna; nessuna regola per il telefono');
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

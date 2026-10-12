@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-09.6 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-12.1 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -558,7 +558,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-09.6', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-10-12.1', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -860,10 +860,22 @@
                 case 'DEACTIVATOR':
                     return equip.includes('DEACTIVATOR');
 
+                // 🔴 12 ottobre, difetto di questa chat trovato da TEST (10
+                // ottobre). La voce si decideva dal NOME: MINE, KOALA,
+                // D-CHARGES... fra armi ed equipaggiamento. Misurato su 765
+                // profili, sbagliava in tutti e due i versi rispetto a
+                // M.armiPiazzabili, che e` quello che la schermata usa poi:
+                //  - 111 profili avevano la voce e ZERO armi da piazzare (97
+                //    con D-Charges, 8 con Chest Mine, 6 con Mine Dispenser).
+                //    Toccandola partiva l'allarme, l'Ordine era speso, e la
+                //    schermata diceva "nessun equipaggiamento da piazzare".
+                //  - 29 profili avevano armi piazzabili e NESSUNA voce:
+                //    Crazykoala e Madtraps stanno fra le ARMI, e qui si
+                //    cercavano solo nell'equipaggiamento.
+                // Ora decide il motore, come per Speculativo, Intuitivo e
+                // Guidato: la voce c'e` solo se c'e` almeno un'arma da piazzare.
                 case 'PIAZZARE EQUIPAGGIAMENTO':
-                    return weapons.includes('MINE') || equip.includes('MINE') || equip.includes('KOALA') || 
-                           equip.includes('PANDA') || equip.includes('PARROT') || equip.includes('DROPBEAR') || 
-                           weapons.includes('D-CHARGES') || equip.includes('DEPLOYABLE') || equip.includes('MADTRAPS');
+                    return window.armiPerAzione('armiPiazzabili', unit);
 
                 case 'RICARICARE':
                     // Leggeva anche state.unloaded, che dal 23 settembre nessuno

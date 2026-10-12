@@ -1,4 +1,8 @@
-// @versione 2026-10-09.1 | test_modulo_bs.js | proprieta`: chat TEST
+// @versione 2026-10-12.1 | test_modulo_bs.js | proprieta`: chat TEST
+// .1 (12 ott): sezione E — le armi scritte fra gli equipaggiamenti (modulo
+//    ordine_attacco_bs 2026-10-10.2) e le armi ad azione dedicata (MediKit,
+//    GizmoKit, Deactivator: mai un bottone dell Attacco BS). Profili veri,
+//    insiemi nominati nei due versi, controprova su tutti i 765. Da 52 a 64.
 // .1 (9 ott, pomeriggio): stessa correzione di test_integrazione.js sulle
 //    bande del Combi — celle riespanse, e due confronti invece di uno.
 // Test end-to-end del modulo BS riscritto — node test_modulo_bs.js
@@ -392,6 +396,89 @@ ok(/Bersaglio Ingaggiato/.test(noteDello(scontroDiMischia(combiD, 0))),
 // Senza, "le note arrivano" non si distingue da "arriva tutto sempre".
 ok(noteDello(scontroDiMischia(combiD, 2, 'p1')) === '',
    `CONTROPROVA: bersaglio libero, nessuna nota di mischia sullo scontro (${JSON.stringify(noteDello(scontroDiMischia(combiD, 2, 'p1')))})`);
+
+
+console.log('\n=== E. Le armi scritte fra gli equipaggiamenti (modulo 2026-10-10.2) ===');
+// Segnalato da TEST il 10 ottobre, corretto da MOTORE lo stesso giorno: il
+// modulo costruiva l'elenco dal solo campo `weapon`, e le pistole stanno in
+// `equip`. 629 profili su 765 avevano un'arma a distanza offerta in ARO e non
+// nell'Attacco BS attivo. Ora legge i due campi, come M.armiARO.
+// E dal 10 ottobre (REGOLE) MediKit, GizmoKit e Deactivator non sono MAI armi
+// dell'Attacco BS, ovunque stiano: si usano con la loro azione.
+// Profili VERI del database, e insiemi NOMINATI nei due versi: un conteggio
+// "3 bottoni" resterebbe verde se un'arma ne sostituisse un'altra.
+let caricatiE = true;
+try { require('./database_nomad.js'); require('./database_panoceania.js'); } catch (e) { caricatiE = false; }
+ok(caricatiE && (window.DB_NOMADI || []).length > 300 && (window.DB_PANOCEANIA || []).length > 300,
+   `i due database di fazione si caricano (${(window.DB_NOMADI || []).length} / ${(window.DB_PANOCEANIA || []).length})`);
+const veroE = (db, nome) => {
+    const p = (db || []).find(x => x.nome === nome);
+    return p ? Object.assign(JSON.parse(JSON.stringify(p)), { id: 'e1', alias: 'Prova E', states: {}, deployState: 'NORMAL', state: 'ACTIVE' }) : null;
+};
+const schermataBS = (u) => {
+    alertUltimo = null; nodo('weapon-buttons-container').innerHTML = '';
+    nuovoOrdine(u); window.avviaFaseAttaccoBS('ATTACCO BS', false);
+    return nodo('weapon-buttons-container').innerHTML;
+};
+const bottoniBS = (h) => (String(h).match(/declareAttackBS\('([^']+)'\)/g) || []).map(x => x.slice(17, -2));
+const esclusiBS = (h) => (String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').match(/Non utilizzabili qui:(.*)$/) || ['', ''])[1];
+const dueVersi = (visti, attesi) => ({ comparsi: visti.filter(x => attesi.indexOf(x) < 0), spariti: attesi.filter(x => visti.indexOf(x) < 0) });
+const salvaRosterE = M._rosterProprio;
+
+const morlock = veroE(window.DB_NOMADI, 'Morlock (Kobra Pistol, DA CC)');
+ok(!!morlock && /Kobra Pistol/.test(morlock.equip) && !/Kobra/.test(morlock.weapon),
+   `premessa: il Morlock (Kobra Pistol, DA CC) ha la Kobra Pistol in equip e non in weapon (${morlock && morlock.equip})`);
+M._rosterProprio = [morlock];
+let hE = schermataBS(morlock);
+let dE = dueVersi(bottoniBS(hE), ['Chain Rifle', 'Smoke Grenades', 'Kobra Pistol (BS Mode)']);
+ok(dE.comparsi.length === 0 && dE.spariti.length === 0,
+   'Morlock: Chain Rifle, Smoke Grenades e Kobra Pistol (BS Mode), nei due versi',
+   `comparsi: ${JSON.stringify(dE.comparsi)} — spariti: ${JSON.stringify(dE.spariti)}`);
+ok(/Kobra Pistol \(CC Mode\) \(arma da Corpo a Corpo\)/.test(esclusiBS(hE)),
+   `e la CC Mode della stessa arma e\` fra le escluse, col motivo (${esclusiBS(hE).slice(0, 90)})`);
+// Dichiararla: nessun avviso, e l arma dell Ordine e\` la BS Mode con la SUA munizione.
+window.declareAttackBS('Kobra Pistol (BS Mode)');
+ok(alertUltimo === null && window.currentOrder.weapon === 'Kobra Pistol (BS Mode)',
+   `dichiarata senza avvisi, e l Ordine porta quell arma (${JSON.stringify(window.currentOrder.weapon)}, alert ${JSON.stringify(alertUltimo)})`);
+ok(M.profiloArma(window.currentOrder.weapon).ammo === 'SHOCK',
+   `con la munizione della BS Mode, non quella della CC (${M.profiloArma(window.currentOrder.weapon).ammo})`);
+
+const clock = veroE(window.DB_NOMADI, 'Clockmaker (Engineer)');
+M._rosterProprio = [clock];
+hE = schermataBS(clock);
+dE = dueVersi(bottoniBS(hE), ['Combi Rifle', 'D-Charges (Demolition Mode)', 'Pistol']);
+ok(dE.comparsi.length === 0 && dE.spariti.length === 0,
+   'Clockmaker: la Pistol (da equip) c e`, il GizmoKit e il Deactivator no — nei due versi',
+   `comparsi: ${JSON.stringify(dE.comparsi)} — spariti: ${JSON.stringify(dE.spariti)}`);
+ok(/GizmoKit \(si usa solo con la sua azione \(SUPPORTO\)\)/.test(esclusiBS(hE)) && /Deactivator \(si usa solo con la sua azione \(DEACTIVATOR\)\)/.test(esclusiBS(hE)),
+   'e GizmoKit e Deactivator sono fra le escluse, ognuno con la sua azione');
+
+const machinist = veroE(window.DB_PANOCEANIA, 'Machinist (Combi Rifle)');
+M._rosterProprio = [machinist];
+hE = schermataBS(machinist);
+ok(/Deployable Cover \(Cutting Foam\) \(si piazza, non si spara\)/.test(esclusiBS(hE)) && /Deployable Cover \(Vitroferro\) \(si piazza, non si spara\)/.test(esclusiBS(hE)),
+   'Machinist: le due Deployable Cover escluse, "si piazza, non si spara"');
+ok(bottoniBS(hE).every(n => !/Deployable Cover|GizmoKit|Deactivator|MediKit/.test(n)),
+   `e nessuna fra i bottoni (${JSON.stringify(bottoniBS(hE))})`);
+
+// CONTROPROVA, su tutti i 765: MediKit, GizmoKit e Deactivator non sono MAI
+// un bottone dell Attacco BS. Senza la controprova sopra (la Pistol c e`),
+// "mai" non distinguerebbe la regola da un elenco vuoto.
+const tuttiE = [].concat(window.DB_NOMADI || [], window.DB_PANOCEANIA || []);
+let conPistolaE = 0, dedicateComparse = [];
+tuttiE.forEach(p => {
+    const u = Object.assign(JSON.parse(JSON.stringify(p)), { id: 'z', alias: 'Z', states: {}, deployState: 'NORMAL', state: 'ACTIVE' });
+    M._rosterProprio = [u];
+    const b = bottoniBS(schermataBS(u));
+    if (b.some(n => /Pistol/.test(n)) && !/Pistol/.test(String(p.weapon || ''))) conPistolaE++;
+    if (b.some(n => /^(MediKit|GizmoKit|Deactivator)/.test(n))) dedicateComparse.push(p.nome);
+});
+ok(dedicateComparse.length === 0,
+   `su tutti i ${tuttiE.length} profili, MediKit, GizmoKit e Deactivator non sono mai un bottone dell Attacco BS`,
+   `comparsi su: ${JSON.stringify(dedicateComparse.slice(0, 5))} (${dedicateComparse.length})`);
+ok(conPistolaE > 300,
+   `CONTROPROVA: una pistola scritta SOLO in equip e\` offerta su ${conPistolaE} profili (prima del 10 ottobre: 0)`);
+M._rosterProprio = salvaRosterE;
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

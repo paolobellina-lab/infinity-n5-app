@@ -1,4 +1,4 @@
-// @versione 2026-10-07.1 | ordine_osservazione.js | proprieta`: chat MOTORE
+// @versione 2026-10-12.1 | ordine_osservazione.js | proprieta`: chat MOTORE
 // ==========================================
 // 👁️ OSSERVAZIONE (N5) - ordine_osservazione.js
 // ------------------------------------------
@@ -75,7 +75,13 @@
         const unita = window.coordUnits[window.coordIndex];
         if (window.mostraTitoloUnitaCorrente) window.mostraTitoloUnitaCorrente();
 
-        const e = M.armiDisponibili(unita, M.AZIONI.BS_ATTACK);
+        // 2026-10-12: armiDisponibili restituisce un ARRAY, non { armi, escluse }.
+        // Leggere e.armi dava undefined e il Triangulated non offriva nessuna
+        // arma (il test guardava solo che la pagina non fosse vuota, e la
+        // intestazione bastava). Le voci senza scheda vanno fra gli scarti.
+        const lista = M.armiDisponibili(unita, M.AZIONI.BS_ATTACK) || [];
+        const e = { armi: lista.filter(a => !a.nonTrovata),
+                    escluse: lista.filter(a => a.nonTrovata).map(a => ({ nome: a.nomeRichiesto || a.nome, motivo: 'non presente nel database armi' })) };
         window.targetsScartati = (e.escluse || []).map(x => ({ nome: x.nome || x, motivo: x.motivo || '' }));
 
         const container = document.getElementById('weapon-buttons-container');
@@ -348,7 +354,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_osservazione.js', versione: '2026-10-07.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_osservazione.js', versione: '2026-10-12.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

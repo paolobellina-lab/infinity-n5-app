@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-07.1 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-12.3 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -28,6 +28,34 @@
         .log-container { background: #000; border: 1px solid #444; height: 200px; overflow-y: scroll; padding: 10px; font-size: 12px; margin-top: 20px; color: #888; }
         .state-tag { display:inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin: 2px 4px 2px 0; text-transform: uppercase; background: #444; color: #fff; white-space: nowrap; letter-spacing: 0.5px; }
         .state-tags-row { display:flex; flex-wrap:wrap; margin-top:4px; }
+        /* L'ELENCO DELLE TRUPPE come la lista d'esercito (12 ottobre, Paolo).
+           Due fazioni affiancate, ognuna su due colonne: quattro colonne,
+           SEMPRE. 12 ottobre, sera (Paolo): l'Hub sta su tablet o PC, mai su
+           un telefono; le regole per lo schermo medio (una colonna per
+           fazione) e per il telefono (una colonna sola) sono state tolte.
+           Le schede si guardano e basta: nessuno stato scelto. */
+        .gruppo-hub { margin: 4px 0 14px; }
+        .gruppo-hub-titolo { font-family:'Teko', sans-serif; font-size:24px; font-weight:700; color:#eee; letter-spacing:1px;
+            border-bottom:2px solid #bbb; margin-bottom:10px; }
+        .gruppo-hub-schede { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+        /* Come la lista in PDF e il fac simile di Paolo: niente riquadro, una
+           linea a L blu-grigia che parte dalla miniatura e chiude la scheda. */
+        .scheda-truppa { position:relative; display:flex; gap:10px; min-height:96px; padding:6px 8px 10px 0; background:transparent;
+            border-left:2px solid #6f8a99; border-bottom:2px solid #6f8a99; border-bottom-left-radius:2px; }
+        .scheda-truppa .st-foto { width:70px; min-height:90px; align-self:stretch; object-fit:contain; object-position:center bottom;
+            flex:0 0 70px; filter:drop-shadow(0 3px 6px rgba(0,0,0,.8)); }
+        .scheda-truppa .st-sigla { flex:0 0 70px; display:flex; align-items:center; justify-content:center; color:#777;
+            font-family:'Teko', sans-serif; font-size:30px; }
+        .scheda-truppa .st-testo { flex:1; min-width:0; }
+        .scheda-truppa .st-nome { font-family:'Teko', sans-serif; font-size:24px; line-height:1; font-weight:700;
+            text-transform:uppercase; color:var(--st-colore); overflow-wrap:anywhere; }
+        .scheda-truppa .st-alias { text-transform:none; color:#bbb; font-weight:500; }
+        .scheda-truppa .st-stati .state-icona { border-radius:50%; overflow:hidden; }
+        .scheda-truppa .st-stati { gap:6px; margin:4px 0 2px; }
+        .scheda-truppa .st-stati .state-icona img { width:44px !important; height:44px !important; border-radius:50%;
+            box-shadow:0 0 0 3px #9a9a9a; background:#2a2a2a; }
+        .scheda-truppa .st-riga { color:#ccc; font-size:12px; line-height:1.35; margin-top:5px; overflow-wrap:anywhere; }
+        .scheda-truppa .st-riga b { color:#fff; }
     </style>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
@@ -137,7 +165,7 @@
         // quello dove una copia vecchia (cache del telefono) e` piu` probabile.
         (function () {
             var g = (typeof window !== 'undefined') ? window : globalThis;
-            var v = { file: 'calcolatore_hub.html', versione: '2026-10-07.1', proprieta: 'INTERFACCIA' };
+            var v = { file: 'calcolatore_hub.html', versione: '2026-10-12.3', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();

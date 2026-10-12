@@ -1,4 +1,4 @@
-// @versione 2026-10-10.4 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-12.9 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-10.4';
+    M.VERSIONE = '2026-10-12.9';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -75,6 +75,7 @@
         TRINCERARSI:  'TRINCERARSI',
         RIENTRO_CAMO: 'RIENTRARE IN CAMO',
         CYBERMASK:    'CYBERMASK',
+        FAIRY_DUST:   'FAIRY DUST',
         FORWARD_OBSERVER: 'FORWARD OBSERVER',
         SENSOR:       'SENSOR',
         TRIANGULATED: 'TRIANGULATED FIRE',
@@ -149,6 +150,7 @@
         'TRINCERARSI': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Trincerarsi' },
         'RIENTRARE IN CAMO': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Rientrare in CAMO' },
         'CYBERMASK': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Cybermask' },
+        'FAIRY DUST': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Fairy Dust' },
         'PIAZZARE EQUIPAGGIAMENTO': { schieramento: 'nessuno', attributo: null, arma: 'obbligatoria', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Piazza Deployable' },
         'SCHIVATA':          { attributo: 'PH',  arma: 'nessuna',      bersagli: 'segnaposto',  burst: 'fisso1',     gittata: false },
         'RESET':             { attributo: 'WIP', arma: 'nessuna',      bersagli: 'segnaposto',  burst: 'fisso1',     gittata: false },
@@ -384,9 +386,11 @@
         if (azione === M.AZIONI.PIAZZA_DEPLOYABLE) {
             const nomeA = (typeof arma === 'string') ? arma : (arma && arma.nome);
             const p = (typeof arma === 'string') ? M.profiloArma(arma) : arma;
-            const tratti = String((p && p.traits) || '').toUpperCase();
-            const piazzabile = /DEPLOYABLE/.test(tratti) ||
-                               /PERIPHERAL \(ANCILLARY\)/.test(tratti);
+            // 2026-10-12: la regola e` UNA, M.ePiazzabile. Qui ne viveva una
+            // copia (solo i Tratti) e le D-Charges in Demolition Mode — che si
+            // piazzano per riga 6044 ma non hanno il Tratto — venivano offerte
+            // dalla pagina e poi BLOCCATE all'invio con E16.
+            const piazzabile = !!(p && M.ePiazzabile(p));
             if (!p || p.nonTrovata) {
                 errori.push(err('E16', `Nessuna arma da piazzare.`,
                     'Piazzare un Deployable richiede di scegliere quale.'));
@@ -395,7 +399,13 @@
                     'Serve il Tratto Deployable, o Peripheral (Ancillary).'));
             } else {
                 const usi = M.usiResidui ? M.usiResidui(input.attaccante, p) : null;
-                if (usi && usi.residui <= 0) {
+                // 🔴 usoGiaScalato: la pagina manda il portatore DOPO aver
+                // contato l'uso (creaDeployable / detonazioneAContatto). Con
+                // "residui <= 0" l'ULTIMO uso — la terza Shock Mine, la terza
+                // D-Charge — veniva respinto con E17 all'invio. Misurato il
+                // 12 ottobre. Con l'uso gia` contato si blocca solo l'eccesso.
+                const giaScalato = !!(input.regole && input.regole.usoGiaScalato);
+                if (usi && (giaScalato ? usi.spesi > usi.totali : usi.residui <= 0)) {
                     errori.push(err('E17', `"${p.nome}": usi esauriti.`,
                         `Disposable (${usi.totali}): ne sono già stati spesi ${usi.spesi}.`));
                 }
@@ -1148,10 +1158,32 @@
     };
 
     // Elenco delle armi utilizzabili di un'unità, filtrate per tipo di azione.
+    // 2026-10-12 (DATABASE, misura su 765 profili): qui arrivavano anche le
+    // voci di `equip` che NON sono armi. 39 stringhe senza scheda (X Visor,
+    // 360 Visor, Repeater, ECM (Hacking -3), TinBot: Firewall (-3), Albedo...)
+    // passavano come `nonTrovata` e venivano offerte come arma. Ora si
+    // scartano con le stesse tre regole dell'Attacco BS:
+    //   - equipaggiamento (M.eEquipaggiamento, per parola contenuta);
+    //   - strumenti con un'azione loro (MediKit, GizmoKit, Deactivator), fuori dal CC;
+    //   - voci che si piazzano e non si sparano (COPERTURA, RIPETITORE, PIAZZATO:
+    //     FastPanda, Deployable Cover).
+    // Resta un ARRAY: lo leggono cosi` test_correzioni_regole e ordine_osservazione.
+    const SI_PIAZZA_DISP = ['COPERTURA', 'RIPETITORE', 'PIAZZATO'];
+    function siPiazzaSoltanto(nome, p) {
+        if (p && SI_PIAZZA_DISP.indexOf(p.risoluzione) >= 0) return true;
+        const v = M.variantiArma ? (M.variantiArma(nome) || []) : [];
+        return v.length > 0 && v.every(x => SI_PIAZZA_DISP.indexOf(x.risoluzione) >= 0);
+    }
     M.armiDisponibili = function (unita, azione) {
         const nomi = M.dividiLista(((unita && unita.weapon) || '') + ',' + ((unita && unita.equip) || ''));
         const spec = M.SPEC[azione] || {};
-        return nomi.map(n => M.profiloArma(n)).filter(a => {
+        const cc = spec.attributo === 'CC';
+        return nomi.filter(function (n) {
+            if (!cc && M.azioneDedicataArma && M.azioneDedicataArma(n)) return false;
+            const p = M.profiloArma(n);
+            if (p.nonTrovata) return !M.eEquipaggiamento(n);
+            return cc || !siPiazzaSoltanto(n, p);
+        }).map(n => M.profiloArma(n)).filter(a => {
             if (a.nonTrovata) return true;              // la mostriamo, il contratto la bloccherà
             if (spec.attributo === 'CC') return a.isCC;
             // 🔴 Il requisito e` il TRATTO, non la forma dell'arma.
@@ -3195,23 +3227,116 @@
     // il motivo lo dice. Firewall (-6) via Repeater nemico: -6, NON -9.
     // Il -3 del Repeater nemico E` un Firewall (righe 4837-4839): vale anche
     // se il bersaglio non ne ha uno suo, o se il suo e` spento.
+    // 2026-10-12 — FAIRY DUST (righe 5192-5209): terza fonte dello STESSO
+    // unico Firewall. Un hacker della lista del bersaglio lo sostiene sul
+    // Tipo di Truppa del bersaglio -> Firewall (-3), su tutto il tavolo.
+    // Non si somma: compete col Firewall proprio e con quello del Repeater
+    // nemico (righe 4761-4763). ctx.fairyDust: il valore gia` calcolato da
+    // chi chiama (0 per escluderlo); se manca lo cerca M.fairyDustSu.
     M.firewallApplicato = function (bersaglio, ctx) {
         ctx = ctx || {};
         const R = catalogo('REPEATER_NEMICO') || {};
         const proprio = (ctx.proprio != null) ? (parseInt(ctx.proprio, 10) || 0) : M.valoreFirewall(bersaglio);
         const rep = ctx.repeaterNemico ? (parseInt(R.firewall, 10) || -3) : 0;
+        const fdInfo = (ctx.fairyDust != null) ? null : M.fairyDustSu(bersaglio, ctx);
+        const fd = (ctx.fairyDust != null) ? (parseInt(ctx.fairyDust, 10) || 0) : (fdInfo ? fdInfo.valore : 0);
         const note = [];
-        let valore = proprio, fonte = proprio < 0 ? 'PROPRIO' : null;
-        if (rep < 0 && rep < proprio) { valore = rep; fonte = 'REPEATER_NEMICO'; }
-        else if (rep < 0 && proprio === 0) { valore = rep; fonte = 'REPEATER_NEMICO'; }
-        if (rep < 0 && proprio < 0) note.push(R.unSoloFirewall || 'Si applica un solo Firewall.');
-        const due = (rep < 0 && proprio < 0);
+        const fonti = [];
+        if (proprio < 0) fonti.push({ fonte: 'PROPRIO', valore: proprio });
+        if (rep < 0) fonti.push({ fonte: 'REPEATER_NEMICO', valore: rep });
+        if (fd < 0) fonti.push({ fonte: 'FAIRY_DUST', valore: fd });
+        // Il piu` negativo per default (il +3 alla salvezza e` fisso in ogni
+        // ramo); a parita` resta la fonte elencata prima.
+        let scelta = null;
+        fonti.forEach(function (f) { if (!scelta || f.valore < scelta.valore) scelta = f; });
+        const valore = scelta ? scelta.valore : proprio;
+        const fonte = scelta ? scelta.fonte : null;
+        const due = fonti.length > 1;
+        // La frase nomina le fonti VERE (TEST, 12 ottobre: TinBot + Fairy
+        // Dust diceva "quello del Repeater nemico" senza Repeater).
+        if (due) {
+            const nomiFonte = { PROPRIO: `il suo (${proprio})`, REPEATER_NEMICO: `quello del Repeater nemico (${rep})`,
+                                FAIRY_DUST: `il Fairy Dust di ${M.nomeUnita(fdInfo && fdInfo.hacker) || 'un hacker alleato'} (${fd})` };
+            const elenco = fonti.map(f => nomiFonte[f.fonte]);
+            const testo = elenco.length > 1 ? elenco.slice(0, -1).join(', ') + ' e ' + elenco[elenco.length - 1] : elenco[0];
+            note.push(R.unSoloFirewallModello
+                ? R.unSoloFirewallModello.replace('{n}', fonti.length === 2 ? 'due' : String(fonti.length)).replace('{fonti}', testo)
+                : (R.unSoloFirewall || 'Si applica un solo Firewall.'));
+        }
+        if (fdInfo && fdInfo.nota) note.push(fdInfo.nota);
         const coda = due ? ' — uno solo si applica, e lo sceglie il giocatore del bersaglio' : '';
-        return { valore: valore, fonte: fonte, proprio: proprio, repeater: rep,
-                 sceltaDelBersaglio: due, alternative: due ? [proprio, rep] : [],
+        return { valore: valore, fonte: fonte, proprio: proprio, repeater: rep, fairyDust: fd,
+                 fairyDustDa: fdInfo ? fdInfo.hacker : null,
+                 sceltaDelBersaglio: due, alternative: due ? fonti.map(f => f.valore) : [],
                  motivo: fonte === 'REPEATER_NEMICO' ? ((R.voce || 'Repeater nemico: Firewall') + coda)
+                       : fonte === 'FAIRY_DUST' ? `Fairy Dust di ${M.nomeUnita(fdInfo && fdInfo.hacker)} sui ${fdInfo && fdInfo.tipo}: Firewall ${fd} WIP${coda}`
                        : (fonte ? `Firewall del bersaglio: ${valore} WIP${coda}` : null),
                  note: note };
+    };
+
+    // FAIRY DUST: chi lo sostiene sul Tipo di Truppa di questo bersaglio.
+    // Lo stato sta sull'HACKER (token SUP: FAIRYDUST accanto a lui, righe
+    // 5207-5208): states.fairyDust = 'HI' | 'REM' | 'TAG' | 'VH'.
+    // Si cerca nella lista del BERSAGLIO: il roster che lo contiene (per
+    // oggetto; per id solo se nessun dubbio). Cade se l'hacker e` Isolato o
+    // in qualsiasi Stato Null (righe 4735-4738, 5223-5225): non serve
+    // cancellarlo, si guarda lo stato ogni volta.
+    M.TIPI_FAIRY_DUST = ['HI', 'REM', 'TAG', 'VH'];
+    M.fairyDustSu = function (bersaglio, ctx) {
+        ctx = ctx || {};
+        if (!bersaglio || typeof bersaglio !== 'object') return null;
+        const tipo = String(bersaglio.tipo || '').toUpperCase();
+        if (M.TIPI_FAIRY_DUST.indexOf(tipo) < 0) return null;
+        const gs = G.gameState || {};
+        const candidati = [ctx.rosterBersaglio, M._rosterNemico, G.roster, gs.nomads, gs.panoceania].filter(Array.isArray);
+        let lista = candidati.find(r => r.indexOf(bersaglio) >= 0) || null;
+        if (!lista && bersaglio.id != null) {
+            const conId = candidati.filter(r => r.some(u => u && String(u.id) === String(bersaglio.id)));
+            // stesso id in due liste diverse: non si indovina di chi e`.
+            if (conId.length === 1 || (conId.length > 1 && conId.every(r => r === conId[0]))) lista = conId[0];
+        }
+        if (!lista) return null;
+        const h = lista.find(function (u) {
+            const st = (u && u.states) || {};
+            return u && String(st.fairyDust || '').toUpperCase() === tipo;
+        });
+        if (!h) return null;
+        const sth = M.statoBersaglio(h);
+        if (sth.isolato || M.eNullo(h)) {
+            return { valore: 0, hacker: h, tipo: tipo,
+                     nota: `Fairy Dust di ${M.nomeUnita(h)} cancellato: l'hacker e\` ${sth.isolato ? 'Isolato' : 'in uno Stato Nullo'} (righe 4735-4738). Resta cancellato anche se l'hacker si riprende: va dichiarato di nuovo.` };
+        }
+        return { valore: -3, hacker: h, tipo: tipo, nota: null };
+    };
+
+    // Puo` dichiararlo? Programma Supportware, Long Skill, No Roll.
+    M.fairyDustDichiarabile = function (unita, ctx) {
+        ctx = ctx || {};
+        const blocchi = [];
+        if (!M.haProgramma(unita, 'FAIRY DUST')) blocchi.push('Serve il programma Fairy Dust: EVO Hacking Device, o un dispositivo con UPGRADE: Fairy Dust.');
+        const st = M.statoBersaglio(unita);
+        if (st.isolato) blocchi.push('L\'hacker e\` Isolato: i programmi sono disabilitati (riga 14413).');
+        if (M.eNullo(unita)) blocchi.push('L\'hacker e\` in uno Stato Nullo.');
+        if (ctx.secondaMeta) blocchi.push('Fairy Dust e\` un\'Abilita\` Lunga: occupa l\'Ordine intero, non si dichiara come seconda meta\`.');
+        return { puo: blocchi.length === 0, blocchi: blocchi, motivo: blocchi[0] || null };
+    };
+
+    // L'hacker con il programma attivo sul tipo scelto. Un hacker sostiene un
+    // solo Supportware (righe 4731-4732): dichiararlo di nuovo sostituisce il tipo.
+    M.dichiaraFairyDust = function (unita, tipo) {
+        const T = String(tipo || '').toUpperCase();
+        const errori = [], note = [];
+        const d = M.fairyDustDichiarabile(unita);
+        if (!d.puo) errori.push(err('E57', d.motivo));
+        if (M.TIPI_FAIRY_DUST.indexOf(T) < 0) errori.push(err('E58', `Tipo di Truppa "${tipo}" non ammesso: solo HI, REM, TAG o VH (righe 5198-5200).`));
+        if (errori.length) return { unitaAggiornata: unita, errori, note };
+        const prima = ((unita && unita.states) || {}).fairyDust;
+        const unitaAggiornata = Object.assign({}, unita, { states: Object.assign({}, (unita && unita.states) || {}, { fairyDust: T }) });
+        note.push(`💻 ${M.nomeUnita(unita)}: Fairy Dust sui ${T} della sua lista, su tutto il tavolo — Firewall (-3): -3 al WIP di chi li hackera, +3 alla loro salvezza contro Attacchi Comms (righe 5203-5209).`);
+        note.push('Non si somma ad altri Firewall: ne vale uno solo, lo sceglie il giocatore del bersaglio. L\'ECM invece si somma (righe 4761-4763).');
+        note.push('Cade se l\'hacker diventa Isolato o Nullo, o se una truppa protetta riceve un altro Supportware (righe 4735-4738, esempio 5211-5220).');
+        if (prima && String(prima).toUpperCase() !== T) note.push(`Sostituisce il Fairy Dust precedente sui ${prima}: un hacker sostiene un solo Supportware (righe 4731-4732).`);
+        return { unitaAggiornata, errori, note };
     };
 
 
@@ -4433,6 +4558,16 @@
             const t = e.toLowerCase();
             return base === t || base.indexOf(t) >= 0;
         });
+    };
+
+    // 2026-10-12 (INTERFACCIA, elenco dell'Hub): UNA risposta a "questa voce
+    // del profilo va fra gli Equipment della lista d'esercito?". Si` per
+    // l'equipaggiamento (M.eEquipaggiamento: visori, Hacking Device, TinBot,
+    // Repeater, FastPanda, Deployable Cover...) E per gli strumenti con
+    // un'azione loro, che sono armi BS nel chart ma Equipment nella lista
+    // (MediKit, GizmoKit, Deactivator: M.ARMI_AZIONE_DEDICATA).
+    M.eEquipaggiamentoInLista = function (nome) {
+        return !!(M.eEquipaggiamento(nome) || (M.azioneDedicataArma && M.azioneDedicataArma(nome)));
     };
 
     // Classifica una voce di profilo: arma utilizzabile, equipaggiamento,
@@ -6845,6 +6980,8 @@
                                      attributo: R.attributo || spec.attributo,
                                      impossibile: vs != null && vs < 1 };
                         })();
+                const Rd = att.regole || {};
+                const detonazione = !!(Rd.detonazioneAContatto && Rd.bersaglioDetonazione);
                 scontri.push({
                     tipo: M.CONFRONTO.NESSUNO,
                     titolo: e.requisitoFallito ? 'IDLE (REQUISITO FALLITO)'
@@ -6860,11 +6997,23 @@
                               // perdevano: il risultato del calcolatore non le
                               // mostrava. (Misurato il 5 ottobre.)
                               voci: e.voci, note: (e.note || []).concat((spec.tiro === false && att.regole && Array.isArray(att.regole.note)) ? att.regole.note : []),
-                              salvezzaInflitta: { offensivo: false, note: ['Tiro non offensivo.'] } },
+                              salvezzaInflitta: (detonazione ? Rd.salvezzaDetonazione : null) || { offensivo: false, note: ['Tiro non offensivo.'] },
+                              salvezzaSubita: detonazione ? { offensivo: false, note: ['Non subisce nulla: l\'esplosione colpisce il bersaglio.'] } : undefined },
                     // `noteScontro`: quello che deve leggersi A VISTA sul
                     // tabellone, non dentro i dettagli (il piazzamento
                     // condizionato dallo Scoprire).
-                    reattivo: null, note: (att.regole && Array.isArray(att.regole.noteScontro)) ? att.regole.noteScontro.slice() : [], avvisi: [],
+                    // 🔴 D-Charges (Demolition Mode): il lato reattivo e` chi
+                    // SUBISCE l'esplosione. Prima era vuoto ("-", Nessuna
+                    // Reazione, Nessun danno) accanto alla nota dei 3 Tiri
+                    // Salvezza: due cose opposte sulla stessa scheda.
+                    // (Misurato dalla chat INTERFACCIA, 12 ottobre.)
+                    reattivo: detonazione ? {
+                        nome: M.nomeUnita(Rd.bersaglioDetonazione), azione: 'SUBISCE L\'ESPLOSIONE',
+                        attributo: null, base: null, mod: null, burst: 0, senzaTiro: true,
+                        voci: [], note: ['Nessun tiro per colpire: solo i Tiri Salvezza (righe 6043-6047).'],
+                        salvezzaSubita: Rd.salvezzaDetonazione,
+                        salvezzaInflitta: { offensivo: false, note: ['Non reagisce contro l\'esplosione.'] }
+                    } : null, note: (att.regole && Array.isArray(att.regole.noteScontro)) ? att.regole.noteScontro.slice() : [], avvisi: [],
                     condizionatoDaScoprire: !!(att.regole && att.regole.condizionatoDaScoprire) || undefined
                 });
                 return;
@@ -7427,7 +7576,24 @@
     M.puoEssereAttivata = function (unita) { return M.puoRicevereOrdine(unita); };
 
     // Un gruppo puo` formare un Ordine Coordinato?
-    M.validaCoordinato = function (unita, puntaDiLancia) {
+    // INSPIRING LEADERSHIP (righe 8817-8836, REGOLE 12 ottobre): se il
+    // Luogotenente dell'esercito ha la skill, e` sul tavolo e non e` in uno
+    // Stato Null, tutte le truppe della lista che danno Ordini hanno il
+    // Training REGOLARE (8830-8831). Restituisce quel Luogotenente, o null.
+    // `rosterAlleato` e` la lista dell'esercito: senza, non si puo` sapere.
+    M.luogotenenteIspiratore = function (rosterAlleato) {
+        return (rosterAlleato || []).find(function (u) {
+            if (!u) return false;
+            const s = skillsDi(u);
+            if (s.indexOf('LIEUTENANT') < 0 || s.indexOf('INSPIRING LEADERSHIP') < 0) return false;
+            if (M.eNullo(u)) return false;
+            const dep = String(u.deployState || '').toUpperCase();
+            return dep !== 'RESERVE';
+        }) || null;
+    };
+
+    M.validaCoordinato = function (unita, puntaDiLancia, opzioni) {
+        opzioni = opzioni || {};
         const C = catalogo('ORDINE_COORDINATO');
         const errori = [];
         const note = [];
@@ -7447,6 +7613,35 @@
             if (a.annullaSoppressione) note.push(`${M.nomeUnita(u)}: attivandolo si annulla il Fuoco di Soppressione.`);
         });
 
+        // 🔴 12 ottobre (REGOLE; Paolo: "procedi come proposto"). Chi NON
+        // partecipa a un Coordinato, oltre a Training e Gruppo:
+        //   Periferiche (righe 9531 e 11384)            -> E47
+        //   Decoy (righe 13806-13807)                    -> E48
+        //   membri di un Fireteam                        -> E49
+        //   Isolato (riga 14423): gia` E42, non riceve Ordini dal Pool.
+        //   Dispiegamento Nascosto (riga 13907): AMMESSO, ma perde il
+        //   proprio Ordine -> solo una nota.
+        // Il CONTROLLORE di una Periferica non si riconosce: nei dati nessun
+        // campo dice quale truppa controlla quale Periferica. Non lo si
+        // indovina dal nome.
+        unita.forEach(function (u) {
+            const st = M.statoBersaglio(u);
+            const nome = M.nomeUnita(u);
+            if (M.haCaratteristica(u, 'Peripheral') || /PERIPHERAL\s*\(/.test(skillsDi(u))) {
+                errori.push(err('E47', `${nome}: e\` una Periferica, non partecipa a un Ordine Coordinato.`, 'Righe 9531 e 11384.'));
+            }
+            if (st.decoy) {
+                errori.push(err('E48', `${nome}: e\` in stato Decoy, non partecipa a un Ordine Coordinato.`, 'Righe 13806-13807.'));
+            }
+            const ft = (u.states || {}).fireteam;
+            if (ft && String(ft).trim()) {
+                errori.push(err('E49', `${nome}: fa parte del Fireteam ${String(ft).trim()}, non partecipa a un Ordine Coordinato.`, 'Un Fireteam si attiva come Fireteam, non in un Coordinato.'));
+            }
+            if (String(u.deployState || '').toUpperCase() === 'HIDDEN' || (u.states || {}).hidden) {
+                note.push(`${nome}: in Dispiegamento Nascosto puo\` partecipare, ma perde il proprio Ordine (riga 13907).`);
+            }
+        });
+
         // Stesso Gruppo di Combattimento
         const gruppi = [];
         unita.forEach(function (u) { if (gruppi.indexOf(u.combatGroup) < 0) gruppi.push(u.combatGroup); });
@@ -7457,13 +7652,28 @@
 
         // 🔴 Stesso Addestramento: Regolari con Regolari. Il modulo non lo
         // controllava affatto.
+        // 2026-10-12.3 (TEST): "Irregular" sta in `chars`, come nella fonte
+        // (82 profili). Leggendo solo skills+equip l'E44 non scattava mai.
+        // Si leggono tutti e due, chars per elemento esatto. Paolo: l'E44
+        // resta nell'app (12 ottobre).
         function addestramento(u) {
+            if (M.haCaratteristica(u, 'Irregular')) return 'IRREGOLARE';
             const s = skillsDi(u);
             return s.indexOf('IRREGULAR') >= 0 || s.indexOf('IRREGOLARE') >= 0 ? 'IRREGOLARE' : 'REGOLARE';
         }
         const addestramenti = [];
         unita.forEach(function (u) { const a = addestramento(u); if (addestramenti.indexOf(a) < 0) addestramenti.push(a); });
-        if (addestramenti.length > 1) {
+        // Righe 11360-11361: "Only Troopers with the same Training
+        // (Regular/Irregular) and in the same Combat Group can participate".
+        // Due o piu` Irregolari fra loro sono leciti; il misto no.
+        const ispiratore = M.luogotenenteIspiratore(opzioni.rosterAlleato);
+        if (ispiratore && addestramenti.length > 1) {
+            note.push(`${M.nomeUnita(ispiratore)} (Luogotenente, Inspiring Leadership) e\` sul tavolo: tutte le truppe che danno Ordini hanno Training Regolare (righe 8830-8831).`);
+        }
+        if (ispiratore && unita.indexOf(ispiratore) >= 0) {
+            note.push('Il Luogotenente con Inspiring Leadership partecipa: il Coordinato si dichiara spendendo solo l\'Ordine Speciale del Luogotenente, senza Command Token ne` Ordini in piu` (righe 8834-8836).');
+        }
+        if (addestramenti.length > 1 && !ispiratore) {
             errori.push(err('E44', 'Le unità hanno Addestramento diverso: Regolari e Irregolari non possono coordinarsi.',
                 addestramenti.join(' e ')));
         }
@@ -9856,9 +10066,15 @@
         if (Array.isArray(voce.modalita)) {
             const cont = Object.keys(W).some(function (k) { return W[k] && W[k].armaDalProfilo && n.toUpperCase().indexOf(k.toUpperCase()) === 0; });
             if (!cont) {
+                // 2026-10-12.2 (REGOLE): il filtro sulle modalita` usa
+                // M.ePiazzabile, non il solo Tratto Deployable. Le D-Charges
+                // (Demolition Mode) si piazzano per la riga 6044 senza avere il
+                // Tratto (il [*] del chart rimanda al testo dell'arma): col
+                // filtro sul Tratto la voce "D-Charges" non arrivava mai a
+                // ePiazzabile, e il Piazzare non le offriva (regressione).
                 return voce.modalita
-                    .filter(function (m) { return /DEPLOYABLE/i.test(String((W[m] || {}).traits || '')); })
-                    .map(function (m) { return M.profiloArma(m); });
+                    .map(function (m) { return M.profiloArma(m); })
+                    .filter(function (p) { return p && !p.nonTrovata && M.ePiazzabile(p); });
             }
         }
         const uno = M.piazzabileDaVoce(nome);
@@ -9886,7 +10102,8 @@
         if (!p || p.nonTrovata) return null;
         const voce = W[p.nome] || {};
         if (Array.isArray(voce.modalita)) {
-            const dep = voce.modalita.find(function (m) { return /DEPLOYABLE/i.test(String((W[m] || {}).traits || '')); });
+            // Stesso criterio di piazzabiliDaVoce (vedi sopra, 2026-10-12.2).
+            const dep = voce.modalita.find(function (m) { const q = M.profiloArma(m); return q && !q.nonTrovata && M.ePiazzabile(q); });
             return dep ? M.profiloArma(dep) : null;
         }
         return M.ePiazzabile(p) ? p : null;
@@ -9906,6 +10123,16 @@
         });
     };
 
+    // Perche` una voce che ha l'aria di un equipaggiamento piazzabile NON lo e`.
+    // Il criterio del motore resta il Tratto Deployable (piazzabiliDaVoce):
+    // qui si spiega soltanto il "no", con le righe quando esistono.
+    M.motivoNonPiazzabile = function (nome) {
+        const n = String(nome || '');
+        if (/chest\s*mines?/i.test(n)) return 'Chest Mine: non segue la regola delle Mine e non si piazza (righe 6246-6247); si usa in CC o a Sagoma.';
+        if (/mine\s*dispenser/i.test(n)) return 'Mine Dispenser: e` l\'arma che lancia le mine con un Attacco Speculativo, non una mina da piazzare.';
+        return null;
+    };
+
     // Le armi che una truppa puo` piazzare, con gli usi residui.
     M.armiPiazzabili = function (unita) {
         const dentro = [], escluse = [], avvisi = [];
@@ -9913,7 +10140,15 @@
             .forEach(function (nome) {
                 const cl = M.classificaVoceProfilo(nome);
                 if (cl.tipo === 'VUOTA') return;
-                M.piazzabiliDaVoce(nome).forEach(function (p) {
+                const piazzabili = M.piazzabiliDaVoce(nome);
+                // 2026-10-12 (INTERFACCIA): le voci che SEMBRANO piazzabili ma
+                // non lo sono finiscono in escluse col motivo, invece di sparire.
+                if (!piazzabili.length) {
+                    const motivo = M.motivoNonPiazzabile(nome);
+                    if (motivo && !escluse.some(function (x) { return x.nome === nome; })) escluse.push({ nome: nome, motivo: motivo });
+                    return;
+                }
+                piazzabili.forEach(function (p) {
                     if (dentro.some(function (x) { return x.nome === p.nome; })) return;
                     const usi = M.usiResidui(unita, p);
                     if (usi && usi.residui <= 0) {
@@ -10544,9 +10779,66 @@
 
     let _contatoreDeployable = 0;
 
+    // 🔴 D-CHARGES IN DEMOLITION MODE: SI PIAZZANO E DETONANO NELLO STESSO
+    // ORDINE (REGOLE_N5_v5_1_1.txt righe 6043-6047: "Are placed using the
+    // Place Deployable Short Skill [...] Detonate during the Resolution step
+    // of the Order, without requiring a Roll"). Non restano in tavola: nel
+    // Weapon Chart non hanno il profilo del gettone (ARM/BTS/STR/S) che hanno
+    // CrazyKoala, Dazer, Repeater, Disco Ball e FastPanda. Quindi NIENTE
+    // DB_DEPLOYABLES e niente token: chiederlo dava E20 e accusava il
+    // database di una voce che non deve esistere. (Chat DATABASE, 12 ottobre.)
+    // "Place Deployable" e` il nome della Short Skill con cui si dichiara.
+    M.eDetonazioneAContatto = function (arma) {
+        return !!(arma && arma.risoluzione === 'CONTATTO_STRUTTURA');
+    };
+
+    // Cosa succede alla detonazione. Nessun tiro dell'attaccante; il
+    // bersaglio, se e` una truppa (Immobilizzata o Nulla, filtro di
+    // bersagliDaPiazzamento), fa i Tiri Salvezza dell'arma. Se e` una
+    // struttura, l'app non ha i suoi valori e lo dice. L'uso si scala
+    // come per il piazzamento: Disposable (3) condiviso fra le modalita`.
+    M.detonazioneAContatto = function (portatore, arma, bersaglio) {
+        const avvisi = [], errori = [], note = [];
+        if (!M.eDetonazioneAContatto(arma)) {
+            errori.push(err('E23', 'Non è un\'arma che detona a contatto.'));
+            return { portatoreAggiornato: portatore, salvezza: null, note, avvisi, errori };
+        }
+        const usi = M.usiResidui(portatore, arma);
+        if (usi && usi.residui <= 0) {
+            errori.push(err('E17', M.messaggioScarico(portatore, arma)));
+            return { portatoreAggiornato: portatore, salvezza: null, note, avvisi, errori };
+        }
+        let portatoreAggiornato = portatore;
+        if (usi) {
+            const chiave = usi.chiaveUsi || arma.nome;
+            portatoreAggiornato = Object.assign({}, portatore, {
+                usiSpesi: Object.assign({}, (portatore && portatore.usiSpesi) || {},
+                    { [chiave]: (((portatore && portatore.usiSpesi) || {})[chiave] || 0) + 1 })
+            });
+        }
+        note.push(`💥 ${arma.nome}: detona nella Risoluzione di questo Ordine, SENZA tiro, e non resta sul tavolo (righe 6043-6047).`);
+        let salvezza = null;
+        if (bersaglio) {
+            salvezza = M.tiroSalvezza(bersaglio, { arma: arma });
+            if (salvezza && salvezza.tiri) {
+                note.push(`${M.nomeUnita(bersaglio)}: ${salvezza.tiri} Tiri Salvezza su ${salvezza.attributo}, riesce con ${salvezza.valoreSuccesso} o meno` +
+                          ` (${(salvezza.voci || []).map(v => v.motivo).join('; ')}).`);
+            }
+            (salvezza && salvezza.note || []).forEach(n => note.push(n));
+        } else {
+            note.push('Bersaglio: una struttura o un elemento di scenario. I suoi valori non sono nell\'app: Tiri Salvezza a carico del tavolo.');
+        }
+        return { portatoreAggiornato, salvezza, note, avvisi, errori };
+    };
+
     M.creaDeployable = function (portatore, arma, ctx) {
         ctx = ctx || {};
         const avvisi = [], errori = [];
+        if (M.eDetonazioneAContatto(arma)) {
+            errori.push(err('E23', `"${arma.nome}" detona nello stesso Ordine: non diventa un segnalino.`,
+                'Va risolta con M.detonazioneAContatto (righe 6043-6047).'));
+            return { token: null, portatoreAggiornato: portatore, avvisi, errori };
+        }
 
         // Oggetti, non nomi: il contratto lo dice, così non si sbagliano firme.
         if (typeof arma === 'string') {
@@ -12136,6 +12428,12 @@
         const armi = testo.split(',').map(function (x) { return normalizza(x); }).filter(Boolean)
             .map(function (n) { return M.piazzabileDaVoce(n); })
             .filter(function (a) { return !!a; })
+            // 2026-10-12.2: le D-Charges (Demolition Mode) si piazzano con Place
+            // Deployable ma detonano nella Risoluzione e non lasciano nulla sul
+            // tavolo (righe 6046-6047; riga 16198 vuota nella chart dei
+            // deployable): con Minelayer, in schieramento, non c'e` niente da
+            // piazzare. Fuori le armi che si piazzano solo A CONTATTO.
+            .filter(function (a) { return a.risoluzione !== 'CONTATTO_STRUTTURA'; })
             .filter(function (a, i, arr) { return arr.findIndex(function (b) { return b.nome === a.nome; }) === i; })
             .map(function (a) {
                 const u = M.usiResidui ? M.usiResidui(unita, a) : null;

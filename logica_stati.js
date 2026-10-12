@@ -1,4 +1,4 @@
-// @versione 2026-10-09.1 | logica_stati.js | proprieta`: chat MOTORE
+// @versione 2026-10-12.1 | logica_stati.js | proprieta`: chat MOTORE
 // ==========================================
 // NOTA: le regole di questo file passano da MotoreN5.
 //  - la cancellazione degli stati Marker (Ritirata!, Ingaggiato, Stati Nulli)
@@ -112,6 +112,9 @@ window.apriPaginaStati = (index) => {
     // Inseriamo prima tutti gli stati COMUNI (accessibili a tutti)
     let html = `
         <div style="background:#111; padding:15px; border:1px solid #444; border-radius:8px; height: 60vh; overflow-y: auto;">
+            ${s.fairyDust ? `<label style="display:block; margin:6px 0; padding:8px; background:#111; border:1px solid #66aaff; border-radius:5px; color:#ccc; font-size:14px;">
+                <input type="checkbox" id="st-fairydust" checked> 💻 Fairy Dust attivo sui <b>${s.fairyDust}</b>
+                <span style="color:#888; font-size:12px;">— togli la spunta se è caduto (es. una truppa protetta ha ricevuto un altro Supportware, righe 4735-4737)</span></label>` : ''}
             <div class="state-grid" id="main-state-grid">
                 <label class="state-label" title="Morto">
                     <input type="checkbox" id="st-dead" class="state-checkbox" ${isDead ? 'checked' : ''}>
@@ -369,6 +372,16 @@ window.salvaStatiUnita = () => {
     if(isHolo) { s.holoecho = true; s.holomask = true; } else { s.holoecho = false; s.holomask = false; }
     
     s.decoy = document.getElementById('st-decoy') ? document.getElementById('st-decoy').checked : false;
+    // FAIRY DUST (12 ottobre): lo si toglie a mano, e cade DA SOLO se l'hacker
+    // diventa Isolato o Nullo (righe 4735-4738). Cancellato resta cancellato:
+    // uscire dall'Isolato non lo riaccende, va dichiarato di nuovo.
+    if (s.fairyDust) {
+        const casella = document.getElementById('st-fairydust');
+        if ((casella && !casella.checked) || s.isolated || s.unconscious || isDead) {
+            console.log('💻 Fairy Dust cancellato (' + ((casella && !casella.checked) ? 'a mano' : 'hacker Isolato o Nullo') + ').');
+            delete s.fairyDust;
+        }
+    }
     s.foxhole = document.getElementById('st-foxhole') ? document.getElementById('st-foxhole').checked : false;
 
     // 3. LOGICA ESCLUSIVITÀ E RISOLUZIONE CONFLITTI N5
@@ -513,7 +526,7 @@ window.salvaStatiUnita = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_stati.js', versione: '2026-10-09.1', proprieta: 'MOTORE' };
+    var v = { file: 'logica_stati.js', versione: '2026-10-12.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-06.2 | test_hacking_firewall.js | proprieta`: chat MOTORE
+// @versione 2026-10-12.1 | test_hacking_firewall.js | proprieta`: chat MOTORE
 // ============================================================================
 //  HACKER, FIREWALL, ECM E REPEATER NEMICO — DAL LATO MOTORE.
 //
@@ -73,7 +73,10 @@ ok(!!TRINITY && TRINITY.ps === 6 && TRINITY.modAttacco === 3,
    `TRINITY: PS 6 e +3 WIP (${TRINITY && TRINITY.ps}, ${TRINITY && TRINITY.modAttacco})`);
 
 console.log('\n=== 1. Punto 10: M.eHacker guarda la VOCE, non il testo ===');
-ok(TUTTI.length === 765, `profili nei due database: 765 (${TUTTI.length})`);
+// 12 ottobre: il conteggio fisso (765) cadeva a ogni pulizia del database
+// (761 dopo i quattro doppioni cancellati, nessuno Hacker). Il punto di questa
+// sezione e` il conto degli Hacker, qui sotto: qui basta che i dati ci siano.
+ok(TUTTI.length >= 700 && NOM.length > 0 && PAN.length > 0, `profili nei due database caricati (${TUTTI.length})`);
 const quantiHacker = TUTTI.filter(u => M.eHacker(u)).length;
 ok(quantiHacker === 86, `M.eHacker vero su 86 profili (${quantiHacker})`);
 // CONTROPROVA, ed e` il cuore del punto: "ECM (Hacker -3)" CONTIENE la

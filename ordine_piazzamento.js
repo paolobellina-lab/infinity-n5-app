@@ -1,4 +1,4 @@
-// @versione 2026-10-07.7 | ordine_piazzamento.js | proprieta`: chat MOTORE
+// @versione 2026-10-12.1 | ordine_piazzamento.js | proprieta`: chat MOTORE
 // ==========================================
 // 📦 PIAZZARE EQUIPAGGIAMENTO (N5) - ordine_piazzamento.js
 // ------------------------------------------
@@ -318,6 +318,13 @@
                          `ord_${Date.now()}`;
         window.currentOrder.id = ordineId;
 
+        // 🔴 D-Charges (Demolition Mode): si piazzano e DETONANO in questo
+        // Ordine, senza tiro, e non restano in tavola (righe 6043-6047).
+        // Niente token e niente DB_DEPLOYABLES: prima qui nasceva E20.
+        if (M.eDetonazioneAContatto && M.eDetonazioneAContatto(arma)) {
+            return window.eseguiDetonazione(M, unita, arma, ordineId);
+        }
+
         const e = M.creaDeployable(unita, arma, { ordineId: ordineId, viaEsito: false });
 
         if (e.errori.length > 0) {
@@ -326,8 +333,13 @@
 
         // Il portatore con l'uso scalato: va tenuto, altrimenti le due app
         // contano usi diversi.
+        // 🔴 12 ottobre: qui si chiamava window.aggiornaUnitaRoster, che NON
+        // ESISTE in nessun file. L'uso scalato restava in coordUnits e moriva
+        // con l'ordine: la quarta Shock Mine si piazzava come la prima.
+        // L'unico posto che aggiorna l'unita` nel roster e` sostituisciUnita
+        // (motore_core). Senza invio: il roster parte qui sotto, col token.
+        if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(unita, e.portatoreAggiornato, 'uso Disposable', { senzaInvio: true });
         window.coordUnits[window.coordIndex] = e.portatoreAggiornato;
-        if (window.aggiornaUnitaRoster) window.aggiornaUnitaRoster(e.portatoreAggiornato);
 
         // Nel ROSTER, come le unita`: e` li` che stanno i token dello
         // schieramento, e un solo elenco dice cosa c'e` sul tavolo. Non puo`
@@ -365,6 +377,7 @@
                 noteScontro: [`PIAZZAMENTO CONDIZIONATO: ${e.token.nome} resta sul tavolo SOLO SE lo Scoprire contro ${scP.bersaglio.name} è riuscito (o se il Marker si è rivelato con un ARO). Se lo Scoprire è fallito il segnalino NON si piazza: toglilo mettendolo in stato Morto. L'uso dichiarato è consumato comunque.`]
             } : {}, {
                 senzaTiro: true,
+                usoGiaScalato: true,
                 token: e.token,
                 portatoreAggiornato: e.portatoreAggiornato,
                 ordineDiPiazzamento: ordineId,
@@ -373,6 +386,47 @@
             })
         });
 
+        return concludiPiazzamento(M, function () { window.mostraEsitoPiazzamento(e.token, e.avvisi); });
+    };
+
+    window.eseguiDetonazione = function (M, unita, arma, ordineId) {
+        const bersaglio = window.deployableBersaglio || null;
+        const d = M.detonazioneAContatto(unita, arma, bersaglio);
+        if (d.errori.length > 0) {
+            return alert('⛔ ' + d.errori.map(x => x.messaggio + (x.dettaglio ? '\n   ' + x.dettaglio : '')).join('\n\n'));
+        }
+        // Qui nessun token parte col roster: l'aggiornamento avvisa l'Hub da se`.
+        if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(unita, d.portatoreAggiornato, 'uso Disposable');
+        window.coordUnits[window.coordIndex] = d.portatoreAggiornato;
+
+        const scP = (!window.coordMode && M.scoprireInCorso) ? M.scoprireInCorso() : null;
+        if (scP && scP.busta && window.coordPayloads.indexOf(scP.busta) < 0) window.coordPayloads.push(scP.busta);
+
+        window.coordPayloads.push({
+            attaccante: d.portatoreAggiornato,
+            azione: M.AZIONI.PIAZZA_DEPLOYABLE,
+            arma: arma,
+            // Il bersaglio NON tira e non e` un bersaglio di un tiro: subisce
+            // l'esplosione. Sta in `regole`, non in `bersagli`, cosi` il
+            // calcolatore non gli costruisce un Faccia a Faccia che non c'e`.
+            bersagli: [],
+            burstDisponibile: 0,
+            regole: {
+                senzaTiro: true,
+                usoGiaScalato: true,
+                detonazioneAContatto: true,
+                bersaglioDetonazione: bersaglio,
+                salvezzaDetonazione: d.salvezza,
+                noteScontro: d.note,
+                portatoreAggiornato: d.portatoreAggiornato,
+                ordineDiPiazzamento: ordineId,
+                avvisi: d.avvisi
+            }
+        });
+        return concludiPiazzamento(M, function () { window.mostraEsitoDetonazione(arma, d.note, d.avvisi); });
+    };
+
+    function concludiPiazzamento(M, mostra) {
         window.coordIndex++;
         if (window.coordIndex < window.coordUnits.length) {
             window.deployableRisposte = {};
@@ -396,7 +450,20 @@
                                                                aroAtteso: !!window.currentOrder.aroDaIdleImplicito });
         if (!spedito) { window.coordIndex--; window.coordPayloads.pop(); return; }
 
-        window.mostraEsitoPiazzamento(e.token, e.avvisi);
+        mostra();
+    }
+
+    window.mostraEsitoDetonazione = function (arma, note, avvisi) {
+        const div = document.getElementById('calc-result');
+        if (!div) return;
+        div.innerHTML = `
+            <div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; background:rgba(204,136,255,0.1); margin-top:20px;">
+                <h2 style="color:${COL.bordo}; margin:0;">${arma.nome} DETONATA</h2>
+                <p style="font-size:13px; color:#ccc; margin:8px 0;">${(note || []).join('<br>')}</p>
+                ${(avvisi || []).length ? `<div style="margin-top:10px; color:#cc9955; font-size:12px;">` +
+                    avvisi.map(a => `⚠️ ${a.messaggio}`).join('<br>') + `</div>` : ''}
+            </div>`;
+        div.style.display = 'block';
     };
 
     window.mostraEsitoPiazzamento = function (token, avvisi) {
@@ -424,7 +491,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-07.7', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-12.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

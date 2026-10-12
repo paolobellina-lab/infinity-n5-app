@@ -1,4 +1,4 @@
-// @versione 2026-10-07.1 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-12.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -623,6 +623,155 @@ window.rigaUnita = (u) => {
         </div>`;
 };
 
+// ==========================================
+// 📋 L'ELENCO DELLE TRUPPE NELL'HUB, COME LA LISTA D'ESERCITO
+// ==========================================
+// 12 ottobre, richiesta di Paolo (tramite MOTORE): fuori dalla risoluzione
+// le truppe dell'Hub si leggono come nella lista d'esercito ufficiale in
+// PDF: divise per GRUPPO DI COMBATTIMENTO, una scheda per truppa con la
+// miniatura, il nome nel colore della fazione col soprannome, le icone degli
+// stati, l'equipaggiamento e le Special Skills. Niente armi, statistiche,
+// punti, tipo o classificazione. Le schede non si scelgono.
+// Prima ogni truppa era una riga con il solo soprannome e le etichette
+// degli stati: chi guardava l'Hub non vedeva che truppa fosse, ne` in che
+// Gruppo stesse, ne` cosa portasse.
+// Solo qui: la scelta del bersaglio, lo schieramento e app.html tengono la
+// riga dell'unita` (rigaUnitaConFoto + M.formaBottone).
+
+// LE SPECIAL SKILLS CHE L'ELENCO NON MOSTRA — scelta di Paolo (12 ottobre),
+// non una regola di gioco: servono prima della partita o non cambiano la
+// lettura del tavolo. Un posto solo, cosi` TEST lo legge da qui.
+// Il confronto e` sul NOME della skill, senza quello che sta fra parentesi:
+// "Terrain (Total)" e "Terrain (Zero-G)" cadono entrambe sotto "Terrain".
+window.SKILL_NASCOSTE_ELENCO_HUB = [
+    // schieramento
+    'Forward Deployment', 'Hidden Deployment', 'Infiltration', 'Strategic Deployment',
+    'Parachutist', 'Combat Jump', 'Decoy',
+    // ritirata
+    'Courage', 'Religious Troop',
+    // terreni
+    'Terrain'
+];
+
+// Spezza "a, b (c, d), e" in voci, senza tagliare dentro le parentesi:
+// "Hacking Device Plus (UPGRADE: Fairy Dust)" e "Dodge (+3)" restano interi.
+window.vociDiProfilo = (testo) => {
+    const out = []; let livello = 0, cur = '';
+    for (const ch of String(testo || '')) {
+        if (ch === '(' || ch === '[') livello++;
+        if (ch === ')' || ch === ']') livello = Math.max(0, livello - 1);
+        if (ch === ',' && livello === 0) { out.push(cur.trim()); cur = ''; } else cur += ch;
+    }
+    out.push(cur.trim());
+    return out.filter(x => x && x !== '-');
+};
+
+// L'EQUIPAGGIAMENTO: le voci del campo equip che vanno nella riga
+// "Equipment:". Nel database equip porta anche pistole e armi da Corpo a
+// Corpo. Quale voce sia equipaggiamento lo dice il motore, con UNA risposta:
+// M.eEquipaggiamentoInLista (motore 2026-10-12.5): vero per visori, Hacking
+// Device, TinBot, Repeater, FastPanda, Deployable Cover... e per gli
+// strumenti con un'azione loro (MediKit, GizmoKit, Deactivator).
+// Fino alla 2026-10-12.1 qui si combinavano M.profiloArma e i nomi di
+// CATALOGO_N5.EQUIP: il Deployable Cover, che ha un profilo d'arma e non sta
+// nel catalogo, finiva fra le armi e spariva dalla scheda.
+// Senza la funzione del motore NON si indovina: si dice che manca e la riga
+// mostra tutto il campo equip, armi comprese (meglio troppo che una voce
+// persa in silenzio).
+window.eEquipaggiamento = (voce) => {
+    const M = window.MotoreN5;
+    if (!M || typeof M.eEquipaggiamentoInLista !== 'function') {
+        if (!window._avvisoEquipLista) {
+            window._avvisoEquipLista = true;
+            console.error('⛔ M.eEquipaggiamentoInLista manca (serve motore_regole_n5.js dalla 2026-10-12.5): la riga Equipment mostra anche le armi.');
+        }
+        return true;
+    }
+    try { return M.eEquipaggiamentoInLista(voce) === true; }
+    catch (e) { window.ultimaEccezione = e; console.error('⛔ M.eEquipaggiamentoInLista ha sollevato su', voce, e); return true; }
+};
+window.equipaggiamentoDi = (u) => window.vociDiProfilo(u && u.equip).filter(window.eEquipaggiamento);
+
+window.skillVisibiliDi = (u) => window.vociDiProfilo(u && u.skills).filter(sk => {
+    const radice = String(sk).replace(/\s*[\(\[].*$/, '').trim().toLowerCase();
+    return !window.SKILL_NASCOSTE_ELENCO_HUB.some(n => n.toLowerCase() === radice);
+});
+
+// La FOTO della miniatura: la STESSA regola di window.fotoUnita in app.html
+// (l'Hub non carica app.html). La foto assegnata nello schieramento
+// (imgVariant), l'immagine propria di un segnalino piazzato, il segnalino
+// di un Marker. Il banco controlla che le due diano lo stesso file.
+window.fotoTruppaHub = (u) => {
+    if (!u) return '';
+    if (u.deployable) {
+        const el = window.DB_DEPLOYABLES || [];
+        const voce = el.find(d => u.modelId && d.id === u.modelId) || el.find(d => u.chiaveArma && d.chiaveArma === u.chiaveArma) ||
+                     el.find(d => String(u.id || '').indexOf('dep_' + d.id + '_') === 0);
+        if (voce) return 'img/' + voce.id + '.png';
+    }
+    const v = u.imgVariant;
+    if (typeof v === 'string' && /\.(png|jpe?g|webp)$/i.test(v)) return 'img/' + v;
+    if (String(u.nome || u.name || '') === 'MARKER') return 'img/MARKER.png';
+    return '';
+};
+
+// Il Gruppo di Combattimento: come window.gruppoDi in app.html. Un
+// segnalino piazzato sta nel Gruppo di chi l'ha piazzato.
+window.gruppoTruppaHub = (u, lista) => {
+    const g = parseInt(u && u.combatGroup, 10);
+    if (g) return g;
+    if (u && u.proprietario != null) {
+        const p = (lista || []).find(x => x && x !== u && (x.id === u.proprietario || x.alias === u.proprietario));
+        const gp = parseInt(p && p.combatGroup, 10);
+        if (gp) return gp;
+    }
+    return 1;
+};
+
+window.schedaTruppa = (u, fazione) => {
+    const colore = window.COLORE_FAZIONE[fazione] || '#ffffff';
+    const nomePuro = String((u && (u.nome || u.name)) || '?').split('(')[0].trim();
+    const alias = (u && u.alias && u.alias !== nomePuro) ? ` <span class="st-alias">(${u.alias})</span>` : '';
+    let tags;
+    try { tags = window.generateStateTags(u); }
+    catch (errore) {
+        console.error('🚨 Stati illeggibili per', (u && (u.alias || u.nome)) || '(unita` senza nome)', errore);
+        window.ultimaEccezione = errore;
+        tags = window.etichettaStato('🚨', 'STATI ILLEGGIBILI', '#ff0000', '#ffffff', errore.message);
+    }
+    const equip = window.equipaggiamentoDi(u);
+    const skill = window.skillVisibiliDi(u);
+    const foto = window.fotoTruppaHub(u);
+    const sigla = String((u && u.tipo) || '').slice(0, 3) || '?';
+    const immagine = foto
+        ? `<img class="st-foto" src="${foto}" alt="" onerror="this.outerHTML='<div class=&quot;st-sigla&quot;>${sigla}</div>';">`
+        : `<div class="st-sigla">${sigla}</div>`;
+    return `<div class="scheda-truppa" data-fazione="${fazione}" style="--st-colore:${colore};">
+            ${immagine}
+            <div class="st-testo">
+                <div class="st-nome">${nomePuro}${alias}</div>
+                ${tags ? `<div class="state-tags-row st-stati">${tags}</div>` : ''}
+                ${equip.length ? `<div class="st-riga"><b>Equipment:</b> ${equip.join(', ')}</div>` : ''}
+                ${skill.length ? `<div class="st-riga"><b>Special Skills:</b> ${skill.join(' • ')}</div>` : ''}
+            </div>
+        </div>`;
+};
+
+// L'elenco di una fazione: un'intestazione per Gruppo ("GROUP 1"), dentro le
+// schede su due colonne (una sul telefono: lo decide il foglio di stile).
+window.elencoFazioneHub = (lista, fazione) => {
+    lista = (lista || []).filter(Boolean);
+    if (!lista.length) return '<div style="color:#666;">Nessuna truppa.</div>';
+    const gruppi = [...new Set(lista.map(u => window.gruppoTruppaHub(u, lista)))].sort((a, b) => a - b);
+    return gruppi.map(g => {
+        const del = lista.filter(u => window.gruppoTruppaHub(u, lista) === g);
+        return `<div class="gruppo-hub">
+                <div class="gruppo-hub-titolo">GROUP ${g}</div>
+                <div class="gruppo-hub-schede">${del.map(u => window.schedaTruppa(u, fazione)).join('')}</div>
+            </div>`;
+    }).join('');
+};
+
 window.rigaScenario = (u, fonte) => {
     const tags = window.generateStateTags(u);
     return `<div style="padding: 8px 0; border-bottom: 1px dashed #333;">
@@ -670,8 +819,10 @@ window.refreshUI = () => {
     const statNomads = document.getElementById('status-nomads');
     const statPano = document.getElementById('status-pano');
 
-    if(statNomads) statNomads.innerHTML = window.gameState.nomads.map(window.rigaUnita).join('');
-    if(statPano) statPano.innerHTML = window.gameState.panoceania.map(window.rigaUnita).join('');
+    // 12 ottobre: l'elenco come la lista d'esercito (window.elencoFazioneHub).
+    // window.rigaUnita resta: la usa chi vuole la riga corta.
+    if(statNomads) statNomads.innerHTML = window.elencoFazioneHub(window.gameState.nomads, 'NOMADI');
+    if(statPano) statPano.innerHTML = window.elencoFazioneHub(window.gameState.panoceania, 'PANOCEANIA');
 
     window.aggiornaScenario();
 };
@@ -927,7 +1078,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-10-07.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-10-12.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

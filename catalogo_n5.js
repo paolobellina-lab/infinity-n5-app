@@ -1,4 +1,4 @@
-// @versione 2026-10-09.3 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-10-12.2 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -710,6 +710,11 @@ window.CATALOGO_N5.MOVIMENTO = {
                               note: 'Ordine Intero, nessun tiro. Requisito: fuori dalla LoF di Modelli e Marker nemici. L\'Hacker entra in IMP-2.' },
         'RIENTRARE IN CAMO': { nome: 'Rientrare in CAMO', tipo: 'LONG_SKILL', generaAro: true, soloDaModello: true,
                               note: 'Ordine Intero, nessun tiro. Solo fuori dalla LoF di Modelli e Marker nemici.' },
+        // FAIRY DUST (righe 5192-5209, Paolo 12 ottobre: "e` un programma
+        // hacking e quindi va li`"): si dichiara dalla schermata Hacking.
+        // Long Skill, Supportware, No Roll: Ordine intero, nessun bersaglio.
+        'FAIRY DUST': { nome: 'Fairy Dust', tipo: 'LONG_SKILL', generaAro: true,
+                              note: 'Ordine Intero, nessun tiro. L\'hacker sceglie un Tipo di Truppa (HI, REM, TAG o VH) della sua lista: Firewall (-3) su tutto il tavolo.' },
         'PIAZZARE EQUIPAGGIAMENTO': { nome: 'Place Deployable', tipo: 'SHORT_SKILL', generaAro: true,
                               note: 'Se c\'e` un Marker Mimetico nemico nell\'Area d\'Innesco, va invece dichiarato un Attacco Intuitivo.' }
     },
@@ -1876,6 +1881,10 @@ window.CATALOGO_N5.REPEATER_NEMICO = {
     voce: 'Attacco attraverso un Repeater nemico: Firewall -3 WIP',
     salvezza: 'Attraverso un Repeater nemico il bersaglio ha il Firewall: +3 al Tiro Salvezza.',
     unSoloFirewall: 'Il bersaglio beneficia di due Firewall (il suo e quello del Repeater nemico): se ne applica UNO solo, e lo sceglie il giocatore del bersaglio. Il calcolatore prende il piu` negativo; il +3 al Tiro Salvezza e` lo stesso in ogni caso.',
+    // 12 ottobre (TEST): con il Fairy Dust le fonti possono essere altre, e
+    // la frase fissa nominava il Repeater anche quando non c'era. Il motore
+    // riempie {n} e {fonti} con le fonti vere (M.firewallApplicato).
+    unSoloFirewallModello: 'Il bersaglio beneficia di {n} Firewall ({fonti}): se ne applica UNO solo, e lo sceglie il giocatore del bersaglio. Il calcolatore prende il piu` negativo; il +3 al Tiro Salvezza e` lo stesso in ogni caso.',
     seNonHacker: 'Attraverso un Repeater nemico si possono colpire SOLO gli Hacker nemici: contro questo bersaglio il Programma fallisce i Requisiti e l\'Hacker esegue un Idle.',
     // "Sceglie il giocatore del bersaglio" (righe 4761-4763, 4844-4846): e`
     // una scelta, non un calcolo. Il piu` negativo e` il default.
@@ -2639,7 +2648,8 @@ window.CATALOGO_N5.HACKING = {
     'ZERO PAIN':         { fonte: 'wiki', tipo: 'NON_ATTACCO',  note: 'Non gestito dal modulo attacco.' },
     'ASSISTED FIRE':     { fonte: 'wiki', tipo: 'SUPPORTWARE', bersaglioAlleato: true, note: 'Supportware su alleati (EVO).' },
     'ENHANCED REACTION': { fonte: 'wiki', tipo: 'SUPPORTWARE', bersaglioAlleato: true, note: 'Da` B2 in ARO a un REM alleato (EVO).' },
-    'FAIRY DUST':        { fonte: 'wiki', tipo: 'SUPPORTWARE', bersaglioAlleato: true, note: 'Supportware su alleati (EVO).' },
+    'FAIRY DUST':        { fonte: 'regolamento, righe 5192-5209', tipo: 'SUPPORTWARE', bersaglioAlleato: true, gestito: true,
+                           note: 'Firewall (-3) a un Tipo di Truppa (HI, REM, TAG, VH) della propria lista, su tutto il tavolo. Si dichiara dalla schermata Hacking.' },
     'CONTROLLED JUMP':   { fonte: 'wiki', tipo: 'SUPPORTWARE', bersaglioAlleato: true, note: 'Supportware su alleati (EVO).' }
 };
 
@@ -2810,7 +2820,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-10-09.3', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-10-12.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

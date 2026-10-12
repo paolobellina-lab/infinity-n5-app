@@ -1,4 +1,4 @@
-// @versione 2026-10-10.1 | database_nomad.js | proprieta`: chat DATABASE
+// @versione 2026-10-12.3 | database_nomad.js | proprieta`: chat DATABASE
 // 2026-10-06: "ECM (Hacker -3)" -> "ECM (Hacking -3)" su tutti i profili.
 // La parentesi di ECM contiene il TIPO DI ATTACCO a cui si applica il MOD,
 // non una skill: lo conferma la voce gemella "ECM (Guided -6)", perche`
@@ -18,6 +18,45 @@
 
 // `punti` = costo in punti di arruolamento, `swc` = Support Weapons Cost.
 // Fonte: JSON ufficiale api.corvusbelli.com, version 7.26246.158.
+// ==========================================
+// `chars` — LE CARATTERISTICHE, aggiunto il 2026-10-10 su richiesta di MOTORE.
+// Stringa separata da virgole, come skills/weapon/equip, coi nomi della
+// fonte: Cube, Cube 2.0, No Cube, Regular, Irregular, Impetuous,
+// Not Impetuous, Hackable, Non Hackable, Peripheral. Dieci valori, nessun
+// altro. Gli spazi non separabili della fonte (U+00A0) sono normalizzati a
+// spazio semplice, come per gli UPGRADE.
+//
+// ⚠️ "Non Hackable" NON E` UNA CARATTERISTICA: e` una Special Skill
+// (regolamento righe 9404-9419, chat REGOLE 2026-10-10). Sta qui perche` e`
+// qui che la mette la FONTE ufficiale, fra le `chars`, e il motore la legge
+// in questo campo (e anche fra le skills, se un domani ci finisse).
+// NON spostarla in `skills` per "sistemarla": si spegnerebbe la lettura che
+// funziona oggi. Effetto reale: vieta solo i programmi il cui requisito
+// chiede un Tipo di Truppa; i cinque Hacker Non Hackable (Coyote,
+// Vigilante) restano bersaglio di Carbonite, Oblivion e Trinity per la via
+// "Hacker".
+// Il motore legge questo campo per ELEMENTO ESATTO, non per sottostringa:
+// e` quello che impedisce a "Non Hackable" di contare come "Hackable".
+// Se un domani qualcuno lo leggesse con indexOf, quei 24 profili
+// diventerebbero hackerabili — lo stesso difetto dell'ECM.
+//
+// Il `Cube` oggi non lo legge nessuno: serve a Sepsitor e Dottore, e il
+// dato sta qui in attesa. E` una scelta consapevole, non una dimenticanza.
+//
+// 59 PROFILI SU 765 NON HANNO QUESTO CAMPO, ed e` ASSENTE, non vuoto: per
+// il motore assente vuol dire "come prima della riga chars", quindi non
+// cambia nessun esito. Non sono un errore da riempire:
+//   51 non hanno corrispondenza sicura con la fonte (35 sono profili
+//      secondari — Battle-Ravaged, Inactive Symbiont Armor, Enhanced
+//      Profile — il resto mercenari e periferiche col nome diverso)
+//    8 sono ambigui: Marvin Specbot e Blueberry Specbot, dove lo stesso
+//      nome di opzione esiste in due gruppi con caratteristiche diverse.
+// Riempirli richiederebbe un abbinamento a somiglianza, ed e` cosi` che a
+// settembre sono nati 32 duplicati mascherati. Meglio un buco dichiarato.
+// Regola di corrispondenza usata: la stessa di test_fonte_ufficiale.js, coi
+// nomi di opzione validi per il loro gruppo e l'ISC solo per il primo.
+// ==========================================
+
 // `swc` e` un numero quando l'arma CONSUMA SWC, ed e` la stringa "+1" sui
 // Tenenti, che invece ne REGALANO: sono due cose opposte nel conto lista.
 // (prima erano trascritti a mano dall'elenco esercito ufficiale "all nomad" (pagine 1-18).
@@ -122,7 +161,7 @@ window.DB_NOMADI = [
     { id: "daktari", chars: "Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Daktari (Doctor)", tipo: "LI", mov: "4-4", cc: 14, bs: 11, ph: 10, wip: 13, arm: 1, bts: 0, w: 1, s: 2, punti: 14, swc: 0, skills: "Doctor", weapon: "Combi Rifle", equip: "MediKit, Pistol, CC Weapon" },
     { id: "clockmaker", chars: "Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Clockmaker (Engineer)", tipo: "LI", mov: "4-4", cc: 14, bs: 11, ph: 10, wip: 15, arm: 1, bts: 3, w: 1, s: 2, punti: 18, swc: 0, skills: "Engineer", weapon: "Combi Rifle, D-Charges", equip: "Deactivator, GizmoKit(+1B), Pistol, CC Weapon" },
     { id: "clockmaker_turret", chars: "Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Clockmaker (Armed Turret)", tipo: "LI", mov: "4-4", cc: 14, bs: 11, ph: 10, wip: 15, arm: 1, bts: 3, w: 1, s: 2, punti: 21, swc: 0, skills: "Engineer", weapon: "Combi Rifle, D-Charges, Armed Turret (Combi R.)", equip: "Deactivator, GizmoKit(+1B), Pistol, CC Weapon" },
-    { id: "clockmaker_cover", chars: "Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Clockmaker (Deployable Cover)", tipo: "LI", mov: "4-4", cc: 14, bs: 11, ph: 10, wip: 15, arm: 1, bts: 3, w: 1, s: 2, punti: 19, swc: 0, skills: "Engineer", weapon: "Combi Rifle, D-Charges, Deployable Cover", equip: "Deactivator, GizmoKit(+1B), Pistol, CC Weapon" },
+    { id: "clockmaker_cover", chars: "Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Clockmaker (Deployable Cover)", tipo: "LI", mov: "4-4", cc: 14, bs: 11, ph: 10, wip: 15, arm: 1, bts: 3, w: 1, s: 2, punti: 19, swc: 0, skills: "Engineer", weapon: "Combi Rifle, D-Charges", equip: "Deployable Cover, Deactivator, GizmoKit(+1B), Pistol, CC Weapon" },
     { id: "mobilebrigada_multi", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Mobile Brigada (MULTI Rifle)", tipo: "HI", mov: "6-2", cc: 18, bs: 13, ph: 13, wip: 13, arm: 5, bts: 3, w: 2, s: 2, punti: 33, swc: 0, skills: "Courage, Jump (3\")", weapon: "MULTI Rifle", equip: "TinBot: Firewall (-6), Boarding Pistol(+1B), CC Weapon, 360 Visor" },
     { id: "mobilebrigada_hmg", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Mobile Brigada (HMG)", tipo: "HI", mov: "6-2", cc: 18, bs: 13, ph: 13, wip: 13, arm: 5, bts: 3, w: 2, s: 2, punti: 38, swc: 1.5, skills: "Courage, Jump (3\")", weapon: "Heavy Machine Gun", equip: "Boarding Pistol(+1B), CC Weapon, 360 Visor" },
     { id: "mobilebrigada_ml", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Mobile Brigada (Missile Launcher)", tipo: "HI", mov: "6-2", cc: 18, bs: 13, ph: 13, wip: 13, arm: 5, bts: 3, w: 2, s: 2, punti: 35, swc: 1.5, skills: "Courage, Jump (3\")", weapon: "Missile Launcher", equip: "Boarding Pistol(+1B), CC Weapon, 360 Visor" },
@@ -193,8 +232,7 @@ window.DB_NOMADI = [
     { id: "krizaborac_lt", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Kriza Borac (Lieutenant)", tipo: "HI", mov: "4-4", cc: 19, bs: 13, ph: 13, wip: 13, arm: 5, bts: 6, w: 2, s: 5, punti: 45, swc: 1.5, skills: "Lieutenant, BS Attack (+1B), BS Attack (-3), Courage, Terrain (Total)", weapon: "Heavy Machine Gun", equip: "Heavy Pistol, CC Weapon" },
     // ===== GROUP 14: Kriza Borac, Evader =====
     { id: "evader_multi", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Evader (MULTI Rifle)", tipo: "HI", mov: "4-4", cc: 15, bs: 13, ph: 12, wip: 13, arm: 3, bts: 3, w: 1, s: 2, punti: 29, swc: 0, skills: "Climbing Plus, Courage, Immunity (Shock), No Wound Incapacitation, Terrain (Zero-G), Engineer", weapon: "MULTI Rifle, Panzerfaust, D-Charges, GizmoKit", equip: "Deactivator (ReRoll), Pistol, CC Weapon, Albedo (-3)" },
-    { id: "evader_spitfire", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Evader (AP Spitfire)", tipo: "HI", mov: "4-4", cc: 15, bs: 13, ph: 12, wip: 13, arm: 3, bts: 3, w: 1, s: 2, punti: 31, swc: 1, skills: "Climbing Plus, Courage, Immunity (Shock), No Wound Incapacitation, Specialist Operative, Terrain (Zero-G), TinBot: Firewall (-3)", weapon: "AP Spitfire, D-Charges", equip: "Deactivator (ReRoll), Pistol, CC Weapon, Albedo (-3)" },
-    { id: "evader_multi_tb", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Evader (MULTI Rifle, TinBot)", tipo: "HI", mov: "4-4", cc: 15, bs: 13, ph: 12, wip: 13, arm: 3, bts: 3, w: 1, s: 2, punti: 29, swc: 0, skills: "Climbing Plus, Courage, Immunity (Shock), No Wound Incapacitation, Terrain (Zero-G), Engineer", weapon: "MULTI Rifle, Panzerfaust, D-Charges, GizmoKit", equip: "Deactivator (ReRoll), Pistol, CC Weapon, Albedo (-3)" },
+    { id: "evader_spitfire", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Evader (AP Spitfire)", tipo: "HI", mov: "4-4", cc: 15, bs: 13, ph: 12, wip: 13, arm: 3, bts: 3, w: 1, s: 2, punti: 31, swc: 1, skills: "Climbing Plus, Courage, Immunity (Shock), No Wound Incapacitation, Specialist Operative, Terrain (Zero-G)", weapon: "AP Spitfire, D-Charges", equip: "TinBot: Firewall (-3), Deactivator (ReRoll), Pistol, CC Weapon, Albedo (-3)" },
     { id: "evader_bsg", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Evader (Boarding Shotgun)", tipo: "HI", mov: "4-4", cc: 15, bs: 13, ph: 12, wip: 13, arm: 3, bts: 3, w: 1, s: 2, punti: 23, swc: 0, skills: "Climbing Plus, Courage, Immunity (Shock), No Wound Incapacitation, Specialist Operative, Terrain (Zero-G)", weapon: "Boarding Shotgun (+1SD), D-Charges, AP Mine", equip: "TinBot: Firewall (-3), Deactivator (ReRoll), Pistol, CC Weapon, Albedo (-3)" },
     { id: "evader_feuerbach", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Evader (Feuerbach)", tipo: "HI", mov: "4-4", cc: 15, bs: 13, ph: 12, wip: 13, arm: 3, bts: 3, w: 1, s: 2, punti: 32, swc: 1.5, skills: "Climbing Plus, Courage, Immunity (Shock), No Wound Incapacitation, Specialist Operative, Terrain (Zero-G)", weapon: "Feuerbach, D-Charges", equip: "TinBot: Firewall (-3), Deactivator (ReRoll), Pistol, CC Weapon, Albedo (-3)" },
     { id: "evader_multi_gizmo", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Evader (Engineer, GizmoKit)", tipo: "HI", mov: "4-4", cc: 15, bs: 13, ph: 12, wip: 13, arm: 3, bts: 3, w: 1, s: 2, punti: 24, swc: 0, skills: "Engineer, Climbing Plus, Courage, Immunity (Shock), No Wound Incapacitation, Terrain (Zero-G)", weapon: "Boarding Shotgun, D-Charges, AP Mine", equip: "GizmoKit, Deactivator (ReRoll), Pistol, CC Weapon, Albedo (-3)" },
@@ -241,12 +279,15 @@ window.DB_NOMADI = [
     { id: "gecko_pilot", chars: "Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Gecko Pilot (Terrain [Zero-G])", tipo: "LI", mov: "4-4", cc: 13, bs: 11, ph: 10, wip: 13, arm: 1, bts: 0, w: 1, s: 2, punti: 12, swc: 0, skills: "Specialist Operative, TAGCom (Dodge (PH+3), GizmoKit (PH+1)), Terrain (Zero-G)", weapon: "Combi Rifle", equip: "GizmoKit, Assault Pistol(+1B), CC Weapon" },
     { id: "szalamandra_pilot", chars: "Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Szalamandra Pilot (Hacker, Killer Hacking Device)", tipo: "LI", mov: "4-4", cc: 13, bs: 11, ph: 10, wip: 13, arm: 1, bts: 0, w: 1, s: 2, punti: 10, swc: 0, skills: "Hacker, Specialist Operative, TAGCom (Dodge (PH+3), GizmoKit (PH+1))", weapon: "Light Shotgun, Cybermine", equip: "Killer Hacking Device, Pistol, CC Weapon" },
     { id: "gator_pilot", chars: "Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Gator Pilot (CC Attack [+9])", tipo: "LI", mov: "4-4", cc: 13, bs: 11, ph: 10, wip: 13, arm: 1, bts: 0, w: 1, s: 2, punti: 11, swc: 0, skills: "Specialist Operative, TAGCom (Dodge (PH+3), GizmoKit (PH+1)), CC Attack (+9)", weapon: "Boarding Shotgun, D-Charges", equip: "Kobra Pistol, PARA CC Weapon(-6)" },
-    { id: "gopod_hrl", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Go-Pod (BS Attack [SR-1])", tipo: "VH", mov: "8-2", cc: "-", bs: 13, ph: 13, wip: 13, arm: 2, bts: 6, str: 2, s: 7, punti: 32, swc: 1.5, skills: "Aerial, BS Attack (-3), BS Attack (+1B), Courage, Dodge (-3), Mimetism (-3), No Cover, Super-Jump (Jet Propulsion), Super-Jump (3\"), Terrain (Total), Tech-Recovery", weapon: "Heavy Rocket Launcher, AP Submachine Gun", equip: "-" },
-    { id: "gopod_multi", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Go-Pod (MULTI Rifle)", tipo: "VH", mov: "8-2", cc: "-", bs: 13, ph: 13, wip: 13, arm: 2, bts: 6, str: 2, s: 7, punti: 33, swc: 0, skills: "Aerial, BS Attack (-3), BS Attack (+1B), Courage, Dodge (-3), Mimetism (-3), No Cover, Super-Jump (Jet Propulsion), Super-Jump (3\"), Terrain (Total), Tech-Recovery", weapon: "MULTI Rifle, E/Mitter", equip: "-" },
-    { id: "gobot", chars: "Hackable, Peripheral", profiloSecondario: false, nome: "Go-Bot (REM)", tipo: "REM", mov: "8-2", cc: "-", bs: 5, ph: 11, wip: 13, arm: 1, bts: 3, str: 1, s: 2, punti: 7, swc: 0, skills: "Aerial, BS Attack (-3), Courage, Dodge (-3), Mimetism (-3), No Cover, Peripheral (Synchronized), Super-Jump (Jet Propulsion), Super-Jump (3\"), Terrain (Total), Tech-Recovery", weapon: "Flash Pulse, Chain-colt", equip: "-" },
+    { id: "gopod_hrl", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Go-Pod (BS Attack [SR-1])", tipo: "VH", mov: "8-2", cc: "-", bs: 13, ph: 13, wip: 13, arm: 2, bts: 6, str: 2, s: 7, punti: 32, swc: 1.5, skills: "Aerial, BS Attack (-3), BS Attack (+1B), Courage, Dodge (-3), Mimetism (-3), No Cover, Super-Jump (Jet Propulsion), Super-Jump (3\"), Terrain (Total), Tech-recovery", weapon: "Heavy Rocket Launcher, AP Submachine Gun", equip: "-" },
+    { id: "gopod_multi", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Go-Pod (MULTI Rifle)", tipo: "VH", mov: "8-2", cc: "-", bs: 13, ph: 13, wip: 13, arm: 2, bts: 6, str: 2, s: 7, punti: 33, swc: 0, skills: "Aerial, BS Attack (-3), BS Attack (+1B), Courage, Dodge (-3), Mimetism (-3), No Cover, Super-Jump (Jet Propulsion), Super-Jump (3\"), Terrain (Total), Tech-recovery", weapon: "MULTI Rifle, E/Mitter", equip: "-" },
+    { id: "gobot", chars: "Hackable, Peripheral", profiloSecondario: false, nome: "Go-Bot (REM)", tipo: "REM", mov: "8-2", cc: "-", bs: 5, ph: 11, wip: 13, arm: 1, bts: 3, str: 1, s: 2, punti: 7, swc: 0, skills: "Aerial, BS Attack (-3), Courage, Dodge (-3), Mimetism (-3), No Cover, Peripheral (Synchronized), Super-Jump (Jet Propulsion), Super-Jump (3\"), Terrain (Total), Tech-recovery", weapon: "Flash Pulse, Chain-colt", equip: "-" },
     { id: "triggermen_sniper", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Triggermen (BS Attack [+1B], MULTI Sniper Rifle)", tipo: "HI", mov: "6-2", cc: 17, bs: 13, ph: 12, wip: 13, arm: 4, bts: 6, w: 2, s: 4, punti: 44, swc: 1.5, skills: "CC Attack (+1B), Mimetism (-3), Regeneration (PH=14), Stealth, BS Attack (+1SD)", weapon: "MULTI Sniper Rifle, E/Marat (+1B), Pulzar (+1B)", equip: "360 Visor, MULTI Pistol, CC Weapon (-3)" },
-    { id: "triggermen_neuro", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Triggermen (Neurocinetics)", tipo: "HI", mov: "6-2", cc: 17, bs: 13, ph: 12, wip: 13, arm: 4, bts: 6, w: 2, s: 4, punti: 44, swc: 1.5, skills: "CC Attack (+1B), Mimetism (-3), Regeneration (PH=14), Stealth, BS Attack (+1SD)", weapon: "MULTI Sniper Rifle, E/Marat (+1B), Pulzar (+1B)", equip: "360 Visor, MULTI Pistol, CC Weapon (-3)" },
-    { id: "triggermen_multi", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Triggermen (BS Attack [+1B], MULTI Rifle)", tipo: "HI", mov: "6-2", cc: 17, bs: 13, ph: 12, wip: 13, arm: 4, bts: 6, w: 2, s: 4, punti: 44, swc: 1.5, skills: "CC Attack (+1B), Mimetism (-3), Regeneration (PH=14), Stealth, BS Attack (+1SD)", weapon: "E/Marat (+1B), MULTI Sniper Rifle, Pulzar (+1B)", equip: "360 Visor, MULTI Pistol, CC Weapon (-3)" },
+    // Ricostruita il 2026-10-12 sull'opzione ufficiale 4 dei Tunguska Triggermen
+    // (501.json): 47 pt, SWC 1.5, Neurocinetics. Prima era una copia
+    // dell'opzione 2 (44 pt, senza Neurocinetics). Verificati sulla fonte
+    // anche armi, equip, attributi e caratteristiche: combaciano.
+    { id: "triggermen_neuro", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Triggermen (Neurocinetics)", tipo: "HI", mov: "6-2", cc: 17, bs: 13, ph: 12, wip: 13, arm: 4, bts: 6, w: 2, s: 4, punti: 47, swc: 1.5, skills: "CC Attack (+1B), Mimetism (-3), Regeneration (PH=14), Stealth, BS Attack (+1SD), Neurocinetics", weapon: "MULTI Sniper Rifle, E/Marat (+1B), Pulzar (+1B)", equip: "360 Visor, MULTI Pistol, CC Weapon (-3)" },
     { id: "triggermen_fd", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Triggermen (BS Attack [+1B], Forward Deployment [+4\"])", tipo: "HI", mov: "6-2", cc: 17, bs: 13, ph: 12, wip: 13, arm: 4, bts: 6, w: 2, s: 4, punti: 43, swc: 0, skills: "Forward Deployment (+4\"), CC Attack (+1B), Mimetism (-3), Regeneration (PH=14), Stealth, BS Attack (+1SD), Surprise Attack (-3), Decoy (1)", weapon: "K1 Combi Rifle (PS=6), E/Marat (+1B), Pulzar (+1B), Drop Bears", equip: "360 Visor, MULTI Pistol, Silenced Pistol, CC Weapon (-3)" },
 
     // ---- profili generati dal JSON ufficiale api.corvusbelli.com, version

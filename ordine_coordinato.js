@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | ordine_coordinato.js | proprieta`: chat MOTORE
+// @versione 2026-10-12.1 | ordine_coordinato.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔗 ORDINE COORDINATO E SELEZIONE (N5) - ordine_coordinato.js
 // ------------------------------------------
@@ -199,7 +199,9 @@ window.confermaCoordinato = () => {
     const M = window.MotoreN5;
     if (!M) return alert('⛔ motore_regole_n5.js non caricato.');
 
-    const esito = M.validaCoordinato(window.selectedCoordinatedUnits, window.spearheadUnit);
+    // 2026-10-12: la lista dell'esercito serve all'Inspiring Leadership
+    // (un Luogotenente che la ha rende Regolari tutte le truppe, righe 8830-8831).
+    const esito = M.validaCoordinato(window.selectedCoordinatedUnits, window.spearheadUnit, { rosterAlleato: window.roster || [] });
     if (!esito.ok) {
         return alert('⛔ ORDINE COORDINATO NON VALIDO\n\n' +
             esito.errori.map(e => `• ${e.messaggio}` + (e.dettaglio ? `\n   ${e.dettaglio}` : '')).join('\n\n'));
@@ -259,7 +261,7 @@ window.mostraTitoloUnitaCorrente = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_coordinato.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_coordinato.js', versione: '2026-10-12.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

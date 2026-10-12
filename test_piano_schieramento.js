@@ -1,4 +1,13 @@
-// @versione 2026-10-10.1 | test_piano_schieramento.js | proprieta`: chat TEST
+// @versione 2026-10-12.4 | test_piano_schieramento.js | proprieta`: chat TEST
+// 2026-10-12.4: REV_MINIMA = 29.
+// 2026-10-12.3: REV_MINIMA = 28. Il database passa a 383 + 378 = 761 profili
+//    (database .12.3: cancellati evader_multi_tb, triggermen_multi,
+//    hannibal_cmd, hannibal_strategic); il Cube scende a 526.
+// 2026-10-12.2: REV_MINIMA = 27. Le prove passano da 297 a 299 (DET-06 e
+//    DIS-06); i cinque punti del numero li controlla gia` questo banco.
+// 2026-10-12.1: REV_MINIMA = 26. Due conteggi che il piano dichiarava "0 su
+//    765" (Cube, Irregular) erano cercati nelle skill: stanno in `chars`. Ora
+//    il piano dichiara 530 e 82, e questo banco li ricalcola dal database.
 // 2026-10-10.1: REV_MINIMA = 25. Il roster di collaudo passa da 43 a 52 righe
 //    (37 Nomadi, 15 PanOceania): nove voci AGGIUNTE, per nove prove che
 //    nominavano una truppa non schierata (LOG-02, DIS-02 due volte, DET-04 due
@@ -98,7 +107,8 @@ const altraFazione = (f) => f === 'NOMADI' ? 'PANOCEANIA' : 'NOMADI';
 const voci = leggiTabelle(fs.readFileSync(PIANO, 'utf8'));
 
 console.log('\n=== 0. Le due tabelle si leggono ===');
-ok(DB.NOMADI.length === 385 && DB.PANOCEANIA.length === 380,
+ok(DB.NOMADI.length === 383 && DB.PANOCEANIA.length === 378,   // 761 dal database .12.3
+  
    `database: ${DB.NOMADI.length} profili nomadi e ${DB.PANOCEANIA.length} panoceani`);
 // 🔴 IL NUMERO ESATTO, non un ">= 30". Il 6 ottobre il parser leggeva 14
 // righe su 35 (pretendeva ^\*\*Nomadi\*\*$ e il piano ha del testo in coda)
@@ -116,7 +126,7 @@ const perFazione = voci.reduce(function (m, v) { m[v.fazione] = (m[v.fazione] ||
 // (Il 7 ottobre ho cambiato questi numeri senza alzare la versione del
 // banco, e due chat hanno letto due contenuti diversi sotto la stessa
 // 2026-10-07.1. Da qui la .2.)
-const REV_MINIMA = 25;
+const REV_MINIMA = 29;
 const testoPiano = fs.readFileSync(PIANO, 'utf8');
 const revisione = (/revisione\s+(\d+)/.exec(testoPiano) || [])[1];
 ok(revisione !== undefined && parseInt(revisione, 10) >= REV_MINIMA,
@@ -267,6 +277,27 @@ ok(dichiarazioni.length > 0, `dichiarazioni di fazione trovate nel testo: ${dich
 ok(bugie.length === 0,
    `nessuna truppa dichiarata nella fazione sbagliata (${bugie.length})`,
    bugie.map(b => `"${b.fam}" dichiarata ${b.dichiarata}`));
+
+
+// LE CARATTERISTICHE SI CERCANO IN `chars`. Fino alla revisione 25 il piano
+// diceva "Cube: 0 su 765" e "IRREGULAR: 0 su 765", e li aveva cercati nelle
+// skill. Qui i due numeri che il piano dichiara ora si ricalcolano dal
+// database, voce per voce: se il piano o il database cambiano, si vede.
+{
+    const tutti = [...DB.NOMADI, ...DB.PANOCEANIA];
+    const voce = (v) => tutti.filter(p => String(p.chars || '').split(',').map(x => x.trim()).indexOf(v) >= 0).length;
+    const cube = voce('Cube'), irr = voce('Irregular');
+    const dichCube = (/`Cube` su \*\*(\d+)\*\* profili/.exec(testoPiano) || [])[1];
+    const dichIrr = (/`Irregular` su \*\*(\d+)\*\* profili/.exec(testoPiano) || [])[1];
+    ok(dichCube !== undefined && parseInt(dichCube, 10) === cube,
+       `il piano dichiara Cube su ${dichCube} profili, il database (campo chars, voce esatta) ne ha ${cube}`);
+    ok(dichIrr !== undefined && parseInt(dichIrr, 10) === irr,
+       `il piano dichiara Irregular su ${dichIrr} profili, il database ne ha ${irr}`);
+    // Controprova: nelle skill non c'e` nessuno dei due. E` il campo dove
+    // li cercavo, e il motivo dello zero sbagliato.
+    const inSkill = tutti.filter(p => /\bCube\b|Irregular/.test(String(p.skills || ''))).length;
+    ok(inSkill === 0 && cube > 0 && irr > 0, `CONTROPROVA: nelle skill nessuno dei due (${inSkill}); in chars ci sono`);
+}
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

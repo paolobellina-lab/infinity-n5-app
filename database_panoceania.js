@@ -1,4 +1,4 @@
-// @versione 2026-10-10.1 | database_panoceania.js | proprieta`: chat DATABASE
+// @versione 2026-10-12.3 | database_panoceania.js | proprieta`: chat DATABASE
 // 2026-10-06: "ECM (Hacker -3)" -> "ECM (Hacking -3)" su tutti i profili.
 // La parentesi di ECM contiene il TIPO DI ATTACCO a cui si applica il MOD,
 // non una skill: lo conferma la voce gemella "ECM (Guided -6)", perche`
@@ -20,6 +20,45 @@
 
 // `punti` = costo in punti di arruolamento, `swc` = Support Weapons Cost.
 // Fonte: JSON ufficiale api.corvusbelli.com, version 7.26246.158.
+// ==========================================
+// `chars` — LE CARATTERISTICHE, aggiunto il 2026-10-10 su richiesta di MOTORE.
+// Stringa separata da virgole, come skills/weapon/equip, coi nomi della
+// fonte: Cube, Cube 2.0, No Cube, Regular, Irregular, Impetuous,
+// Not Impetuous, Hackable, Non Hackable, Peripheral. Dieci valori, nessun
+// altro. Gli spazi non separabili della fonte (U+00A0) sono normalizzati a
+// spazio semplice, come per gli UPGRADE.
+//
+// ⚠️ "Non Hackable" NON E` UNA CARATTERISTICA: e` una Special Skill
+// (regolamento righe 9404-9419, chat REGOLE 2026-10-10). Sta qui perche` e`
+// qui che la mette la FONTE ufficiale, fra le `chars`, e il motore la legge
+// in questo campo (e anche fra le skills, se un domani ci finisse).
+// NON spostarla in `skills` per "sistemarla": si spegnerebbe la lettura che
+// funziona oggi. Effetto reale: vieta solo i programmi il cui requisito
+// chiede un Tipo di Truppa; i cinque Hacker Non Hackable (Coyote,
+// Vigilante) restano bersaglio di Carbonite, Oblivion e Trinity per la via
+// "Hacker".
+// Il motore legge questo campo per ELEMENTO ESATTO, non per sottostringa:
+// e` quello che impedisce a "Non Hackable" di contare come "Hackable".
+// Se un domani qualcuno lo leggesse con indexOf, quei 24 profili
+// diventerebbero hackerabili — lo stesso difetto dell'ECM.
+//
+// Il `Cube` oggi non lo legge nessuno: serve a Sepsitor e Dottore, e il
+// dato sta qui in attesa. E` una scelta consapevole, non una dimenticanza.
+//
+// 59 PROFILI SU 765 NON HANNO QUESTO CAMPO, ed e` ASSENTE, non vuoto: per
+// il motore assente vuol dire "come prima della riga chars", quindi non
+// cambia nessun esito. Non sono un errore da riempire:
+//   51 non hanno corrispondenza sicura con la fonte (35 sono profili
+//      secondari — Battle-Ravaged, Inactive Symbiont Armor, Enhanced
+//      Profile — il resto mercenari e periferiche col nome diverso)
+//    8 sono ambigui: Marvin Specbot e Blueberry Specbot, dove lo stesso
+//      nome di opzione esiste in due gruppi con caratteristiche diverse.
+// Riempirli richiederebbe un abbinamento a somiglianza, ed e` cosi` che a
+// settembre sono nati 32 duplicati mascherati. Meglio un buco dichiarato.
+// Regola di corrispondenza usata: la stessa di test_fonte_ufficiale.js, coi
+// nomi di opzione validi per il loro gruppo e l'ISC solo per il primo.
+// ==========================================
+
 // `swc` e` un numero quando l'arma CONSUMA SWC, ed e` la stringa "+1" sui
 // Tenenti, che invece ne REGALANO: sono due cose opposte nel conto lista.
 // (prima erano trascritti a mano dall'elenco esercito ufficiale "allpano" (pagine 1-29).
@@ -104,7 +143,7 @@ window.DB_PANOCEANIA = [
     { id: "teutonic_firewall", chars: "No Cube, Regular, Impetuous, Hackable", profiloSecondario: false, nome: "Teutonic Knight (TinBot: Firewall)", tipo: "HI", mov: "6-2", cc: 22, bs: 13, ph: 14, wip: 13, arm: 3, bts: 3, w: 2, s: 2, punti: 19, swc: 0, skills: "Dodge (+3), Dodge (+1\"), Impetuous, Limited Cover, Martial Arts L2, Religious Troop, Terrain (Jungle)", weapon: "Light Shotgun, Panzerfaust", equip: "TinBot: Firewall (-3), Pistol, DA CC Weapon(PS=5)" },
     { id: "teutonic_ml", chars: "No Cube, Regular, Impetuous, Hackable", profiloSecondario: false, nome: "Teutonic Knight (Missile Launcher)", tipo: "HI", mov: "6-2", cc: 22, bs: 13, ph: 14, wip: 13, arm: 3, bts: 3, w: 2, s: 2, punti: 28, swc: 1.5, skills: "Dodge (+3), Dodge (+1\"), Impetuous, Limited Cover, Martial Arts L2, Religious Troop, Terrain (Jungle), BS Attack (-3)", weapon: "Missile Launcher, Zapper", equip: "Pistol, DA CC Weapon(PS=5)" },
     { id: "teutonic_specops", chars: "No Cube, Regular, Impetuous, Hackable", profiloSecondario: false, nome: "Teutonic Knight (Specialist Operative)", tipo: "HI", mov: "6-2", cc: 22, bs: 13, ph: 14, wip: 13, arm: 3, bts: 3, w: 2, s: 2, punti: 19, swc: 0, skills: "Specialist Operative, Dodge (+3), Dodge (+1\"), Impetuous, Limited Cover, Martial Arts L2, Religious Troop, Terrain (Jungle)", weapon: "Submachine Gun, Panzerfaust", equip: "Pistol, DA CC Weapon(PS=5)" },
-    { id: "teutonic_nco", chars: "No Cube, Regular, Impetuous, Hackable", profiloSecondario: false, nome: "Teutonic Knight (NCO)", tipo: "HI", mov: "6-2", cc: 22, bs: 13, ph: 14, wip: 13, arm: 3, bts: 3, w: 2, s: 2, punti: 29, swc: 1.5, skills: "NCO, Dodge (+3), Dodge (+1\"), Impetuous, Limited Cover, Martial Arts L2, Religious Troop, Terrain (Jungle), X Visor", weapon: "Spitfire", equip: "Pistol, DA CC Weapon(PS=5)" },
+    { id: "teutonic_nco", chars: "No Cube, Regular, Impetuous, Hackable", profiloSecondario: false, nome: "Teutonic Knight (NCO)", tipo: "HI", mov: "6-2", cc: 22, bs: 13, ph: 14, wip: 13, arm: 3, bts: 3, w: 2, s: 2, punti: 29, swc: 1.5, skills: "NCO, Dodge (+3), Dodge (+1\"), Impetuous, Limited Cover, Martial Arts L2, Religious Troop, Terrain (Jungle)", weapon: "Spitfire", equip: "X Visor, Pistol, DA CC Weapon(PS=5)" },
     { id: "teutonic_lt", chars: "No Cube, Regular, Impetuous, Hackable", profiloSecondario: false, nome: "Teutonic Knight (Lieutenant)", tipo: "HI", mov: "6-2", cc: 22, bs: 13, ph: 14, wip: 13, arm: 3, bts: 3, w: 2, s: 2, punti: 18, swc: 0, skills: "Lieutenant, Dodge (+3), Dodge (+1\"), Impetuous, Limited Cover, Martial Arts L2, Religious Troop, Terrain (Jungle)", weapon: "Light Shotgun, Panzerfaust", equip: "Pistol, DA CC Weapon(PS=5)" },
     { id: "tikbalang", chars: "Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Tikbalang", tipo: "TAG", mov: "6-4", cc: 17, bs: 15, ph: 15, wip: 13, arm: 6, bts: 6, str: 3, s: 6, punti: 69, swc: 1.5, skills: "BS Attack (SR-1), Climbing Plus, Courage, Dodge (PH=11), Gizmokit (PH=13), Mimetism (-3), Remote Presence, Tactical Awareness, Terrain (Total)", weapon: "Heavy Machine Gun, Heavy Flamethrower, Shock Mine", equip: "ECM (Guided -6), AP CC Weapon(PS=5)" },
     { id: "tikbalang_lt", chars: "Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Tikbalang (Lieutenant [+1 Order])", tipo: "TAG", mov: "6-4", cc: 17, bs: 15, ph: 15, wip: 13, arm: 6, bts: 6, str: 3, s: 6, punti: 73, swc: 1.5, skills: "Lieutenant (+1 Order), BS Attack (SR-1), Climbing Plus, Courage, Dodge (PH=11), Gizmokit (PH=13), Mimetism (-3), Remote Presence, Tactical Awareness, Terrain (Total)", weapon: "Heavy Machine Gun, Heavy Flamethrower, Shock Mine", equip: "ECM (Guided -6), AP CC Weapon(PS=5)" },
@@ -249,7 +288,7 @@ window.DB_PANOCEANIA = [
     // ===== GROUP 20: Crux Knight FTO, Redeye, Maximus Agent, Saito Togan, Yuan Yuan =====
     { id: "cruxknight_fto1", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Crux Knight FTO (Drop Bears)", tipo: "HI", mov: "6-2", cc: 22, bs: 14, ph: 14, wip: 13, arm: 5, bts: 6, w: 2, s: 2, punti: 46, swc: 0, skills: "Berserk, BS Attack (+1SD), Martial Arts L2, Natural Born Warrior, Religious Troop, Specialist Operative, Stealth", weapon: "MULTI Marksman Rifle(PS=5), Drop Bears, D-Charges", equip: "Albedo (-6), MULTI Pistol, DA CC Weapon(PS=5)" },
     { id: "cruxknight_fto2", chars: "Cube, Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Crux Knight FTO (Strategic Deployment)", tipo: "HI", mov: "6-2", cc: 22, bs: 14, ph: 14, wip: 13, arm: 5, bts: 6, w: 2, s: 2, punti: 50, swc: 0, skills: "Strategic Deployment, Berserk, BS Attack (+1SD), Martial Arts L2, Natural Born Warrior, Religious Troop, Specialist Operative, Stealth", weapon: "MULTI Marksman Rifle(PS=5), Drop Bears, D-Charges", equip: "Albedo (-6), MULTI Pistol, DA CC Weapon(PS=5)" },
-    { id: "redeye", chars: "Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Redeye", tipo: "VH", mov: "8-2", cc: "-", bs: 14, ph: 13, wip: 13, arm: 6, bts: 6, str: 2, s: 7, punti: 37, swc: 1.5, skills: "Aerial, Courage, Dodge (-3), Gizmokit (PH=14), Mimetism (-6), No Cover, Remote Presence, Super-Jump (Jet Propulsion), Super-Jump (3\"), Terrain (Total), Sensor, Tech-Recovery", weapon: "Spitfire, Chain Rifle, Blitzen", equip: "-" },
+    { id: "redeye", chars: "Regular, Not Impetuous, Hackable", profiloSecondario: false, nome: "Redeye", tipo: "VH", mov: "8-2", cc: "-", bs: 14, ph: 13, wip: 13, arm: 6, bts: 6, str: 2, s: 7, punti: 37, swc: 1.5, skills: "Aerial, Courage, Dodge (-3), Gizmokit (PH=14), Mimetism (-6), No Cover, Remote Presence, Super-Jump (Jet Propulsion), Super-Jump (3\"), Terrain (Total), Sensor, Tech-recovery", weapon: "Spitfire, Chain Rifle, Blitzen", equip: "-" },
     { id: "maximusagent", chars: "Regular, Not Impetuous, Cube 2.0", profiloSecondario: false, nome: "Maximus Agent", tipo: "MI", mov: "6-2", cc: 22, bs: 13, ph: 13, wip: 13, arm: 3, bts: 3, w: 1, s: 2, punti: 48, swc: 1, skills: "CC Attack (-6), Courage, Dodge (+1\"), Immunity (ARM), Natural Born Warrior, No Wound Incapacitation, Specialist Operative, Tactical Awareness, Number 2", weapon: "E/M Carbine, AP Thunderbolt (+2B)", equip: "Heavy Pistol, AP+DA CC Weapon(PS=6), Albedo (-3)" },
     { id: "saitotogan", chars: "Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Saito Togan", tipo: "SK", mov: "4-4", cc: 24, bs: 11, ph: 13, wip: 13, arm: 1, bts: 0, w: 1, s: 2, punti: 33, swc: 0, skills: "Camouflage, Courage, Dodge (+1\"), Hidden Deployment, Infiltration, Martial Arts L4, Mimetism (-6), Stealth, Surprise Attack (-3), Terrain (Total)", weapon: "T2 Boarding Shotgun, Smoke Grenades", equip: "Bangbomb (+4), Pistol, EXP CC Weapon(PS=4)", deployState: "CAMO", state: "CAMO" },
     { id: "yuanyuan1", chars: "No Cube, Irregular, Impetuous", profiloSecondario: false, nome: "Yuan Yuan (Chain Rifle) - AP CC Weapon", tipo: "WB", mov: "4-4", cc: 22, bs: 10, ph: 14, wip: 13, arm: 0, bts: 0, w: 1, s: 2, punti: 6, swc: 0, skills: "Booty, Combat Jump (PH=11), Impetuous, No Cover, Parachutist, Super-Jump (Jet Propulsion)", weapon: "Chain Rifle, Smoke Grenades", equip: "Heavy Pistol, AP CC Weapon(PS=6)" },
@@ -348,8 +387,6 @@ window.DB_PANOCEANIA = [
     { id: "kaplan_engineer", chars: "No Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Kaplan (Engineer, Deactivator)", tipo: "MI", mov: "4-4", cc: 15, bs: 12, ph: 11, wip: 14, arm: 2, bts: 6, w: 1, s: 2, punti: 25, swc: 0, skills: "Engineer, Combat Instinct, Courage, Immunity (Shock), Mimetism (-3)", weapon: "Combi Rifle, Adhesive Launcher Rifle, D-Charges, Deactivator", equip: "GizmoKit, Boarding Pistol, CC Weapon" },
     { id: "kaplan_specops", chars: "No Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Kaplan (Specialist Operative)", tipo: "MI", mov: "4-4", cc: 15, bs: 12, ph: 11, wip: 14, arm: 2, bts: 6, w: 1, s: 2, punti: 21, swc: 0, skills: "Specialist Operative, Combat Instinct, Courage, Immunity (Shock), Mimetism (-3)", weapon: "Combi Rifle, Blitzen", equip: "Boarding Pistol, CC Weapon" },
     { id: "laxmee", chars: "Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Laxmee (Hacker)", tipo: "LI", mov: "4-4", cc: 18, bs: 11, ph: 10, wip: 14, arm: 2, bts: 6, w: 1, s: 2, punti: 24, swc: 0.5, skills: "Hacker, Mimetism (-3), Minelayer", weapon: "Submachine Gun, Pitcher, Cybermine, D-Charges", equip: "Hacking Device Plus (UPGRADE: Fairy Dust), Pistol, CC Weapon" },
-    { id: "hannibal_cmd", chars: "Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Hannibal (Chain of Command)", tipo: "LI", mov: "4-4", cc: 15, bs: 13, ph: 11, wip: 14, arm: 2, bts: 3, w: 1, s: 2, punti: 24, swc: 0, skills: "Chain of Command, Courage, Dodge (+3), Immunity (Shock), No Wound Incapacitation, BS Attack (+1SD), Counterintelligence, Sensor, Tactical Awareness", weapon: "Nanopulser (+1B), Vulkan Shotgun, Flash Pulse, Breaker Pistol", equip: "CC Weapon" },
-    { id: "hannibal_strategic", chars: "Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Hannibal (Chain of Command, Strategic Deployment)", tipo: "LI", mov: "4-4", cc: 15, bs: 13, ph: 11, wip: 14, arm: 2, bts: 3, w: 1, s: 2, punti: 24, swc: 0, skills: "Chain of Command, Courage, Dodge (+3), Immunity (Shock), No Wound Incapacitation, BS Attack (+1SD), Counterintelligence, Sensor, Tactical Awareness", weapon: "Nanopulser (+1B), Vulkan Shotgun, Flash Pulse, Breaker Pistol", equip: "CC Weapon" },
     { id: "samsa", chars: "Cube, Regular, Not Impetuous", profiloSecondario: false, nome: "Samsa", tipo: "MI", mov: "6-2", cc: 15, bs: 13, ph: 11, wip: 13, arm: 3, bts: 0, w: 1, s: 2, punti: 26, swc: 0, skills: "Decoy (1), Dodge (+1\"), Exrah, Infiltration, Mimetism (-3), Specialist Operative, Super-Jump, Surprise Attack (-3)", weapon: "Plasma Rifle, D-Charges", equip: "Pistol, CC Weapon" },
 
     // ---- profili generati dal JSON ufficiale api.corvusbelli.com, version

@@ -1,4 +1,4 @@
-// @versione 2026-10-09.1 | ordine_hacking.js | proprieta`: chat MOTORE
+// @versione 2026-10-12.1 | ordine_hacking.js | proprieta`: chat MOTORE
 // ==========================================
 // 💻 INFOGUERRA (HACKING) N5 - ordine_hacking.js
 // ------------------------------------------
@@ -100,7 +100,19 @@
             });
         }
 
+        // 💻 FAIRY DUST (Paolo, 12 ottobre: "e` un programma hacking e quindi
+        // va li`"). Supportware, Long Skill, No Roll: un bottone suo, poi la
+        // scelta del Tipo di Truppa. Il resto del Supportware resta elencato.
+        if (M.haProgramma && M.haProgramma(unita, 'FAIRY DUST')) {
+            const fd = M.fairyDustDichiarabile(unita, { secondaMeta: !!(window.currentOrder && window.currentOrder.isSecondHalf) });
+            const attivo = ((unita.states || {}).fairyDust) || null;
+            container.innerHTML += M.bottoneArma({ nome: 'FAIRY DUST' }, {
+                attributi: fd.puo ? `onclick="window.mostraFairyDust()"` : `onclick="alert('⛔ ${String(fd.motivo || '').replace(/'/g, "\\'")}')"`,
+                sotto: (attivo ? `Attivo sui ${attivo} · ` : '') + 'Supportware · Abilità Lunga · nessun tiro' + (fd.puo ? '' : ` · ⛔ ${fd.motivo}`) });
+        }
+
         // I programmi non d'attacco esistono: si dicono, non si nascondono.
+        esito.nonAttacco = esito.nonAttacco.filter(p => p.nome !== 'FAIRY DUST');
         if (esito.nonAttacco.length > 0) {
             container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
                 <b style="color:#aaa;">Altri programmi del dispositivo, non gestiti da questa schermata:</b><br>` +
@@ -114,6 +126,54 @@
         }
 
         window.goToStep('step-weapon');
+    };
+
+    // ==============================================================
+    // 1b. FAIRY DUST: il Tipo di Truppa, poi l'invio
+    // ==============================================================
+    window.mostraFairyDust = function () {
+        const M = motore(); if (!M) return;
+        const unita = window.coordUnits[window.coordIndex];
+        const container = document.getElementById('weapon-buttons-container');
+        if (!container) return;
+        const lista = window.roster || [];
+        container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:10px; margin-bottom:15px; text-align:center; color:#fff; border-radius:5px;">
+            <b style="color:${COL.bordo}; font-size:20px;">💻 FAIRY DUST</b><br>
+            <span style="font-size:13px; color:#ccc;">Scegli il Tipo di Truppa della tua lista che riceve Firewall (-3) su tutto il tavolo.<br>Abilità Lunga: Ordine intero, nessun tiro.</span></div>` +
+            M.TIPI_FAIRY_DUST.map(function (tp) {
+                const quanti = lista.filter(u => String(u.tipo || '').toUpperCase() === tp).length;
+                return `<button class="huge-btn" style="width:100%; min-height:56px; margin-bottom:6px; background:#111; border-color:${COL.bordo};"
+                    onclick="window.eseguiFairyDust('${tp}')">${tp} <span style="color:#888; font-size:13px;">(${quanti} in lista)</span></button>`;
+            }).join('');
+        window.goToStep('step-weapon');
+    };
+
+    window.eseguiFairyDust = function (tipo) {
+        const M = motore(); if (!M) return;
+        const unita = window.coordUnits[window.coordIndex];
+        const d = M.dichiaraFairyDust(unita, tipo);
+        if (d.errori.length) return alert('⛔ ' + d.errori.map(e => e.messaggio).join('\n') + '\n\nL\'ordine NON è stato eseguito.');
+        window.currentOrder.action = M.AZIONI.FAIRY_DUST;
+        window.coordPayloads.push({
+            attaccante: unita, azione: M.AZIONI.FAIRY_DUST, arma: null, bersagli: [], burstDisponibile: 0,
+            regole: { senzaTiro: true, isLongSkill: true, fairyDust: d.unitaAggiornata.states.fairyDust,
+                      noteScontro: d.note.slice(0, 1), note: d.note }
+        });
+        const al = M.allarmeOrdine(M.AZIONI.FAIRY_DUST, { unita: unita, coordUnits: window.coordUnits, coordMode: window.coordMode });
+        if (al.payload && typeof window.inviaAllarmeAro === 'function') window.inviaAllarmeAro(al.payload);
+        const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode, aroAtteso: !!(al.aro && al.aro.genera) });
+        if (!spedito) { window.coordPayloads.pop(); return; }
+        // Lo stato sull'hacker, alla FINE (come il Cybermask): lo vede anche
+        // l'avversario, che calcola i suoi attacchi di hacking.
+        if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(unita, d.unitaAggiornata, 'Fairy Dust');
+        else alert('⛔ Lo stato non è stato applicato: motore_core.js non è aggiornato.');
+        const div = document.getElementById('calc-result');
+        if (div) {
+            div.innerHTML = `<div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; margin-top:20px;">
+                <h2 style="color:${COL.bordo}; margin:0;">FAIRY DUST SUI ${d.unitaAggiornata.states.fairyDust}</h2>
+                <p style="font-size:13px; color:#ccc;">${d.note.join('<br>')}</p></div>`;
+            div.style.display = 'block';
+        }
     };
 
     window.declareHackingAttack = function (nomeProgramma) {
@@ -373,7 +433,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_hacking.js', versione: '2026-10-09.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_hacking.js', versione: '2026-10-12.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

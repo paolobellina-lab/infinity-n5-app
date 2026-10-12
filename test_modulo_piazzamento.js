@@ -1,4 +1,8 @@
-// @versione 2026-10-07.2 | test_modulo_piazzamento.js | proprieta`: chat TEST
+// @versione 2026-10-12.1 | test_modulo_piazzamento.js | proprieta`: chat TEST
+// .1 (12 ott): sezione 13 — Zero (Shock Mine) piazza tre mine, la quarta e`
+//    bloccata (ordine_piazzamento 2026-10-12.1, motore 2026-10-12.6). L'uso
+//    resta sull'unita` del roster via sostituisciUnita, quello VERO di
+//    motore_core; il terzo non e` respinto all'invio con E17.
 // Passata 3: piazzamento e innesco da ZdC — node test_modulo_piazzamento.js
 // .2 (7 ott): il colore del tasto si prova contro M.COLORE_TASTO E si pretende
 //    non vuoto e diverso dal giallo dell IDLE — alla .1 era una tautologia.
@@ -351,6 +355,56 @@ ok(allarmi.length === 0, `piazzamento bloccato: nessun allarme (${allarmi.length
 ok(/NON è stato spedito/.test(nodo('calc-result').innerHTML) === false ||
    /token NON è stato spedito/.test(nodo('calc-result').innerHTML),
    'la nota in schermata riguarda il token, non l allarme ARO');
+
+
+console.log('\n=== 13. Zero (Shock Mine): tre mine, la quarta bloccata ===');
+// Difetto vecchio, chiuso il 12 ottobre (MOTORE): la pagina chiamava
+// window.aggiornaUnitaRoster, che non esiste. L'uso scalato restava in
+// coordUnits e moriva con l'ordine, e la quarta mina si piazzava come la
+// prima. Inoltre il terzo e ultimo uso era respinto all'invio con E17.
+// sostituisciUnita qui e` quello VERO, preso da motore_core.js.
+{
+    const core = require('fs').readFileSync(DIR + 'motore_core.js', 'utf8');
+    const i = core.indexOf('window.sostituisciUnita = function'), j = core.indexOf('\n};\n', i);
+    ok(i >= 0 && j > i, 'sostituisciUnita si trova in motore_core.js');
+    if (i >= 0 && j > i) eval(core.slice(i, j + 3));
+    window.MotoreN5 = window.MotoreN5 || M;
+    const zitto = (fn) => { const lg = console.log, lw = console.warn; console.log = () => {}; console.warn = () => {}; try { return fn(); } finally { console.log = lg; console.warn = lw; } };
+    const zv = (window.DB_NOMADI || []).find(u => u.nome === 'Zero (Combi Rifle)');
+    const zero = Object.assign(JSON.parse(JSON.stringify(zv)), { id: 'z1', alias: 'Zero', states: {}, deployState: 'NORMAL', state: 'ACTIVE', combatGroup: 1 });
+    ok(/Shock Mine/.test(zero.weapon) && M.usiResidui(zero, M.profiloArma('Shock Mine')).totali === 3, 'premessa: Zero (Combi Rifle) porta la Shock Mine, Disposable (3)');
+    window.roster = [zero];
+    const grezze = [], spediti = [];
+    function piazzaUna() {
+        window.currentOrder = {}; window.coordUnits = [window.roster[0]]; window.coordIndex = 0;
+        window.coordPayloads = []; window.tokenPiazzati = []; window.deployableRisposte = {}; window.deployableScelta = null;
+        inviato = null; alertUltimo = null;
+        zitto(() => {
+            window.avviaFaseDeployable('PIAZZARE EQUIPAGGIAMENTO', false);
+            window.scegliArmaDaPiazzare('Shock Mine');
+            (window.deployableDomande || []).forEach(d => window.rispondiDeployable(d.id, d.rispostaBloccante === false));
+            window.eseguiPiazzamento();
+        });
+        grezze.push(window.coordPayloads[window.coordPayloads.length - 1] || null); spediti.push(inviato);
+    }
+    piazzaUna(); piazzaUna(); piazzaUna();
+    const usi = () => ((window.roster[0].usiSpesi || {})['SHOCK MINE']);
+    const token = () => window.roster.filter(u => u.deployable === true).length;
+    ok(spediti.every(x => x !== null) && usi() === 3 && token() === 3,
+       `tre mine piazzate: tre buste spedite, 3 usi sull unita\` del roster, 3 segnalini (${spediti.filter(Boolean).length}, ${usi()}, ${token()})`);
+    ok(grezze[2] && grezze[2].regole && grezze[2].regole.usoGiaScalato === true && !(M.creaAttacco(grezze[2]).errori || []).some(e => e.codice === 'E17'),
+       'la terza busta (3 usi su 3, usoGiaScalato) non e` respinta con E17');
+    piazzaUna();
+    ok(spediti[3] === null && token() === 3 && usi() === 3 && alertUltimo,
+       `la quarta e\` bloccata: niente spedito, segnalini e usi restano 3 (${String(alertUltimo).slice(0, 70)})`);
+    // Controprova: senza sostituisciUnita l'uso non arriva al roster. E` il
+    // difetto di prima, rifatto a mano: la prova di sopra non e` una tautologia.
+    const vera = window.sostituisciUnita; window.sostituisciUnita = undefined;
+    const z2 = Object.assign(JSON.parse(JSON.stringify(zv)), { id: 'z2', alias: 'Zero2', states: {}, deployState: 'NORMAL', state: 'ACTIVE' });
+    window.roster = [z2]; piazzaUna();
+    ok(!((window.roster[0].usiSpesi || {})['SHOCK MINE']), 'CONTROPROVA: senza sostituisciUnita l uso NON arriva al roster');
+    window.sostituisciUnita = vera;
+}
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

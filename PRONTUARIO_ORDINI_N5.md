@@ -1,4 +1,4 @@
-<!-- @versione 2026-10-10.3 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-10-12.2 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
 
 # PRONTUARIO ORDINI N5 — richiamo rapido durante la partita
 
@@ -1745,13 +1745,66 @@ Nessun calcolo: l'app deve solo generare la finestra ARO e rispettare i divieti 
 
 ## 1.12 ORDINE COORDINATO
 ### A. Identità
-`ordine_coordinato.js` · costa **un Ordine Regolare per partecipante + un Command Token** · fino a
-**4** truppe, stesso Training (Regolare/Irregolare) e stesso Gruppo di Combattimento · una è lo **Spearhead**.
+`ordine_coordinato.js` · costa **1 Command Token + 1 Ordine Regolare** — uno **in tutto**, non uno
+per partecipante (righe **11348–11350**, confermate dall'elenco dei Command Token, righe
+**11289–11291**) · fino a **4** truppe, stesso Training (Regolare/Irregolare) e stesso Gruppo di
+Combattimento · una è lo **Spearhead** · solo nella **Fase Ordini** (righe 11362–11363).
+
+⚠️ **Ritrattazione (12 ottobre).** Questa scheda diceva «un Ordine Regolare **per partecipante**»:
+era sbagliato. È un Ordine solo, ed è il senso stesso del Coordinato — quattro truppe agiscono al
+prezzo di un Ordine più un Command Token. §8.2 aveva già il valore giusto.
 
 ### B. Requisiti
 - Tutti dichiarano **la stessa sequenza di skill**; se c'è un bersaglio, **lo stesso bersaglio**
 - Chi non soddisfa i requisiti fa **Idle**, gli altri agiscono
 - **Non ammessi**: Attacco Speculativo e Intuitivo, Periferiche e Controller, membri di un Fireteam, Isolati, Decoy
+
+> 🔴 **TRAINING: REGOLARI E IRREGOLARI NON SI MESCOLANO. Due Irregolari fra loro sì.**
+>
+> Riga **11360–11361**, nei REQUIREMENTS: «Only Troopers with the **same Training
+> (Regular/Irregular)** and in the **same Combat Group** can participate in a Coordinated Order».
+>
+> Sono due filtri distinti, entrambi da controllare:
+>
+> | Composizione | Esito | Perché |
+> |---|---|---|
+> | 2+ **Regolari**, stesso Gruppo | ✅ lecito | — |
+> | 2+ **Irregolari**, stesso Gruppo | ✅ **lecito** | hanno lo stesso Training |
+> | **misto** Regolari + Irregolari | ❌ **vietato** | Training diverso. È il caso Morlock + Alguacil |
+> | stesso Training, **Gruppi di Combattimento diversi** | ❌ vietato | secondo filtro della riga 11361 |
+>
+> **`Training` è una Caratteristica del profilo**, definita a riga **566–567**: «Training: Type of
+> Order contributed by the Trooper to the Order Pool». I due valori sono quelli fra parentesi alla
+> riga 11360: **Regular** e **Irregular**. Nient'altro entra in questo confronto.
+>
+> **Non è l'Impetuoso, e non è il gruppo da cui si paga.** Tre ragioni separate:
+> - `Impetuous` è una **Automatic Skill** a sé (righe **8695–8697**, `Impetuous Phase, Obligatory`),
+>   non una Training. Un Morlock è *sia* Irregolare *sia* Impetuoso: il blocco viene dal primo.
+>   Esistono Irregolari non Impetuosi e Impetuosi non Irregolari; il controllo va sul Training.
+> - L'attivazione nella **Fase Impetuosa** è gratuita, «without spending an Order» (righe
+>   **8704–8706**), mentre il Coordinato richiede 1 Command Token + 1 Ordine Regolare (11348–11350)
+>   e si dichiara **solo nella Fase Ordini** (11362–11363). Fase Impetuosa e Fase Ordini sono due
+>   fasi diverse (sequenza di gioco, righe **1390–1392**). Quindi un'attivazione Impetuosa **non può
+>   mai** essere un Coordinato: è un secondo motivo, indipendente dal Training.
+> - Il **gruppo di Ordini che paga** non c'entra: si paga **sempre** con un Ordine **Regolare** del
+>   Pool del Gruppo, anche quando i partecipanti sono tutti Irregolari. Non è una contraddizione,
+>   perché righe **869–871**: «These Irregular Troopers **can still spend Regular Orders from the
+>   Order Pool** of their Combat Group». L'Ordine Irregolare personale (righe 859–868, 928–930)
+>   resta fuori da ogni Pool e **non** può pagare un Coordinato.
+>
+> ⚠️ **L'unica eccezione, e va censita: `Inspiring Leadership`.** Righe **8817–8832**, `AUTOMATIC
+> SKILL`, `Obligatory`: se il **Luogotenente dell'esercito** ha questa skill, è sul tavolo e non è
+> in stato Null, allora «All Troopers in the Army List that provide Orders: ► **Possess the Regular
+> Training Characteristic**» (righe 8830–8831). Con quel Luogotenente in piedi **non esistono più
+> Irregolari**: il controllo non deve mai scattare. E righe **8834–8836** aggiungono che un
+> Coordinato che include il Luogotenente si può dichiarare «by spending **only the Special
+> Lieutenant Order**, without expenditure of Command Tokens or extra Orders». Da verificare con
+> DATABASE se la skill è presente su Nomadi o PanOceania.
+>
+> **Altre esclusioni da tenere accanto a questa** (non c'entrano col Training, ma vivono nello
+> stesso controllo): Periferiche e Controller (righe **9531**, **11384**), `Decoy` (righe
+> **13806–13807**), **Isolato** (riga **14423**), membri di un Fireteam. Il **Dispiegamento
+> Nascosto** invece **è ammesso**, ma «they will lose their own Order» (riga **13907**).
 
 ### C. Burst — la parte che l'app deve calcolare
 | Chi | Burst in BS Attack |
@@ -1930,8 +1983,46 @@ FO: voci come un BS Attack sul WIP. Sensor: solo `+6`. Triangulated: **zero** vo
 > combinazione che il regolamento non vieta.
 - **Minelayer**: piazza allo schieramento una sua arma o equip Deployable nella propria ZdC, scalando un uso Disposable. Requisito: **niente truppe né Marker nemici** nella Trigger Area dell'oggetto, **o nella ZdC se è un'arma Perimeter**. Se l'utente si schiera con una skill Superior Deployment e **fallisce** il tiro (Infiltration, Combat Jump), **perde anche il Deployable**, e l'uso resta speso.
 
+> 🔴 **LE D-CHARGES IN DEMOLITION MODE SI PIAZZANO CON QUESTA SKILL, pur non avendo il
+> Tratto Deployable.** È il caso in cui il requisito generale di questa scheda va scavalcato
+> dalla regola specifica dell'arma.
+>
+> - Requisito generale di Place Deployable, riga **7553**: «Have a Weapon or piece of Equipment
+>   with the **Deployable Label**, or have a Peripheral (Ancillary)». Le D-Charges **non** hanno
+>   quel Tratto: a chart (righe **6062–6065**) hanno solo `ANTI-MATERIEL, DISPOSABLE (3), [*]`.
+> - Ma la descrizione dell'arma, riga **6044**, dice in chiaro: «D-Charges in Demolition Mode
+>   ► **Are placed using the Place Deployable Short Skill**». Regola specifica contro regola
+>   generale: vince la specifica, che è l'autorizzazione a usare la Skill.
+> - Il `[*]` del chart è proprio il rinvio a quel testo: riga **15107**, «NOTE: **[\*] Additional
+>   explanation in the Weaponry section**». Cioè il chart dice da sé di non fermarsi ai Tratti.
+>
+> **Non si comportano però come un deployable normale.** Tre differenze che vanno modellate:
+>
+> | Voce | Deployable normale (Mina, CrazyKoala…) | D-Charges (Demolition Mode) |
+> |---|---|---|
+> | ARO | ✅ `SHORT SKILL / ARO` (riga 7550) | ❌ **vietato**: «Restriction: **Cannot be used in ARO**» (riga **6045**) |
+> | Quando agisce | token alla **Conclusione**, attivo «in subsequent Orders/AROs» (righe 7563–7567) | **detona subito**: «Detonate during the **Resolution Step of the Order**, without requiring a Roll» (righe **6046–6047**) |
+> | Cosa resta sul tavolo | un elemento con profilo proprio, bersagliabile | **niente**: nessun token persistente, nessuna Trigger Area, nessun profilo nella chart dei deployable (riga 16198, riga vuota) |
+>
+> **Requisiti propri** (righe **6036–6038**): contatto di Silhouette con un **Edificio o una
+> Struttura di scenografia**, **oppure** con un **Modello nemico in stato Immobilizzato o Null,
+> eccetto Posseduto e Sepsitorizzato**. Non si usano su un nemico in piedi: per quello c'è il
+> **CC Mode**, che segue le regole del Corpo a Corpo (riga **6049**) con `IMPROVISED` → **CC−6**
+> all'utente (riga **6054**).
+>
+> **Profilo**: PS **6**, B **1**, **AP+EXP**, salvezza su **ARM/2**, **3 salvezze**. Il
+> `Disposable (3)` è **condiviso fra i due modi**: «The user may use it just 3 times max, **no
+> matter which Mode** they are using» (righe **6051–6053**). La detonazione **non colpisce
+> l'utente** (riga **6050**).
+>
+> Conseguenza per l'app: la voce «Piazzare Equipaggiamento» **deve** offrire le D-Charges
+> (Demolition Mode) in Turno Attivo, con i loro requisiti, e **non** deve offrirle in ARO. Il
+> messaggio «non si piazzano» è sbagliato.
+
 ### I. Controllo dell'app
 Nessun calcolo, salvo il caso CAMO nella Trigger Area → deve passare dall'Intuitivo.
+Le **D-Charges (Demolition Mode)** devono comparire fra le opzioni di questa azione in Turno
+Attivo — vedi il box qui sopra — e mai in ARO.
 
 ---
 
@@ -2711,7 +2802,7 @@ allows the user to execute no action at all». **L'Idle è una Skill.** Quindi:
 | | |
 |---|---|
 | Costo | 1 Command Token + 1 Ordine Regolare |
-| Partecipanti | fino a 4, stesso Training e Gruppo di Combattimento |
+| Partecipanti | fino a 4, **stesso Training** (Regolare/Irregolare) **e** stesso Gruppo di Combattimento — righe 11360–11361. Due Irregolari fra loro ✅; misto ❌. Con `Inspiring Leadership` attiva tutti sono Regolari (8830–8831) |
 | Burst | Spearhead: **metà per eccesso**, bonus inclusi · altri: **1** |
 | `+1 SD` | **vale** (F04: non cambia il Burst) |
 | CC | attacca solo lo Spearhead, +1 B per alleato in contatto |

@@ -1,4 +1,7 @@
-// @versione 2026-10-09.1 | test_modulo_osservazione.js | proprieta`: chat TEST
+// @versione 2026-10-12.1 | test_modulo_osservazione.js | proprieta`: chat TEST
+// .1 (12 ott): sezione 6 — il Triangulated Fire conta i BOTTONI su uno
+//    Stempler Zond vero (ordine_osservazione 2026-10-12.1). La prova di prima
+//    guardava solo che il contenitore non fosse vuoto, e passava col titolo.
 // .1 (9 ott, sera): sezione 5 — la PORTA D'INGRESSO del Triangulated Fire.
 //    Chiedendo il numero a `M.modAttacco` con l'azione TRIANGULATED si legge
 //    1 invece di 13, e per qualche minuto ho creduto a un difetto grosso. Non
@@ -30,6 +33,8 @@ require('./catalogo_n5.js'); require('./database_comune.js');
 // PanOceania serve alla sezione 5 per il soggetto vero di OSS-03. Col
 // guardiano: un banco che muore all'avvio perde le sue prove in silenzio.
 try { require('./database_panoceania.js'); } catch (e) { /* detto nella sezione 5 */ }
+// Nomadi serve alla sezione 6: lo Stempler Zond vero del Triangulated Fire.
+try { require('./database_nomad.js'); } catch (e) { /* detto nella sezione 6 */ }
 const M = require('./motore_regole_n5.js');
 require('./ordine_osservazione.js');
 
@@ -165,6 +170,28 @@ ok(/Scopre TUTTI/i.test(nodo('targets-allocation-container').innerHTML), 'e most
 
 nuovo(tri, 'TRIANGULATED FIRE');
 ok(nodo('weapon-buttons-container').innerHTML.length > 0, 'il Triangulated chiede prima l arma');
+
+// 12 ottobre (MOTORE): la pagina mostrava ZERO armi, perche` leggeva .armi su
+// un array, e la prova di sopra passava lo stesso: guardava solo che il
+// contenitore non fosse vuoto, e il titolo bastava. Si contano i BOTTONI, su
+// una truppa vera, e si confrontano col motore nei due versi.
+const bottoniTri = () => [...nodo('weapon-buttons-container').innerHTML.matchAll(/scegliArmaTriangulated\('([^']+)'\)/g)].map(m => m[1]);
+ok(bottoniTri().length === 0 && nodo('weapon-buttons-container').innerHTML.length > 0,
+   'il Zond sintetico non ha armi: zero bottoni, e il contenitore NON e` vuoto (il titolo) — la riga di sopra da sola non prova niente');
+const stemplerV = (window.DB_NOMADI || []).find(u => u.nome === 'Stempler Zond');
+if (stemplerV) {
+    const stempler = Object.assign(JSON.parse(JSON.stringify(stemplerV)), { id: 'sz1', alias: 'Stempler', states: {}, deployState: 'NORMAL', state: 'ACTIVE' });
+    nuovo(stempler, 'TRIANGULATED FIRE');
+    const visti = bottoniTri();
+    const attesi = M.armiDisponibili(stempler, M.AZIONI.BS_ATTACK).filter(a => !a.nonTrovata).map(a => a.nomeRichiesto || a.nome);
+    ok(visti.indexOf('Combi Rifle') >= 0, `Stempler Zond: il Combi Rifle e\` un bottone (bottoni: ${JSON.stringify(visti)})`);
+    const comparsi = visti.filter(x => attesi.indexOf(x) < 0), spariti = attesi.filter(x => visti.indexOf(x) < 0);
+    ok(visti.length > 0 && comparsi.length === 0 && spariti.length === 0,
+       `e i bottoni sono le armi del motore, nei due versi (${visti.length})`, `comparsi: ${JSON.stringify(comparsi)} — spariti: ${JSON.stringify(spariti)}`);
+    ok(!visti.some(x => /Deactivator|Repeater|CC Weapon/.test(x)), 'Deactivator, Repeater e PARA CC Weapon non sono bottoni');
+} else {
+    ok(false, 'Stempler Zond non trovato nel database Nomadi', 'senza di lui il conteggio dei bottoni non guarda niente');
+}
 
 nuovo(fo, 'FORWARD OBSERVER');
 ok(nodo('enemy-target-buttons').innerHTML.length > 0, 'il Forward Observer va ai bersagli');

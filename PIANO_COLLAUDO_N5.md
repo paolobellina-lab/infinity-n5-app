@@ -1,6 +1,174 @@
-<!-- @versione 2026-10-10.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-10-12.4 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 25)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 29)
+
+La **revisione 29** (12 ottobre, sera tardi) segue il motore **2026-10-12.9**
+e `catalogo_n5.js` **2026-10-12.2**. Le prove restano **299**, e la suite torna
+a **0 falliti**.
+- **Chiuso il difetto di testo trovato alla revisione 28.** Con più fonti di
+  Firewall la nota «uno solo» nomina ora le fonti vere, coi loro valori. Sul
+  Teutonic Knight dice *«il suo (-3) e il Fairy Dust di … (-3)»*, e il Repeater
+  non compare. La prova che inchiodava il difetto in `test_modulo_hacking.js`
+  ha cambiato verso: ora prova quattro casi nominati (TinBot + Fairy Dust,
+  Repeater + Fairy Dust, tre fonti, Firewall proprio −6 + Repeater) e la
+  controprova con una fonte sola. Col motore e il catalogo della revisione 28
+  i quattro casi tornano rossi.
+- **Il rosso di MOTORE è chiuso.** `test_hacking_firewall.js` 2026-10-12.1 non
+  pretende più 765 profili.
+
+La **revisione 28** (12 ottobre, sera) segue il motore **2026-10-12.8**,
+`catalogo_n5.js`, `ordine_hacking.js` e `logica_stati.js` **2026-10-12.1**,
+`calcolatore_hub.html` **2026-10-12.3** e i database **2026-10-12.3**. Le
+prove restano **299**.
+
+**Il database ha 761 profili, non più 765.** DATABASE ha cancellato quattro
+profili: `evader_multi_tb`, `triggermen_multi`, `hannibal_cmd` e
+`hannibal_strategic`. Nessuna prova e nessuna voce del roster li nominava;
+l'ho controllato per id e per nome. Cinque banchi miei avevano il numero come
+premessa ("se cambia, rimisura"), e sono diventati rossi come dovevano. Ogni
+differenza viene da quei quattro: `Cube` su **526** profili (530 meno 4, tutti
+col Cubo); 153 portatori di D-Charges (l'Evader cancellato le portava);
+Irregular resta 82. Sono cambiati anche due profili che restano: il Deployable
+Cover del Clockmaker passa in `equip`, e lo Stun Pistol del **Warcor (Sixth
+Sense)**, voce 27 del roster, passa da `weapon` a `equip`. DIF-09 non cambia,
+perché usa il Warcor per il PH e il Sesto Senso.
+
+**Il Fairy Dust c'è** (righe 5192-5209; Paolo: *"è un programma hacking e
+quindi va lì"*). Ce l'hanno Salyut, Laxmee (in tutte e due le fazioni) e
+Mulebot; il Jazz no. È provato in `test_modulo_hacking.js`, sezioni 12 e 13:
+- dalla pagina: il bottone, il tipo di truppa (HI, REM, TAG, VH; un LI dà
+  E58), il blocco come seconda metà dell'Ordine, la busta, l'allarme e lo stato
+  sull'hacker del roster;
+- il Firewall: -3 alle truppe di quel tipo, fonte `FAIRY_DUST`. Non si somma:
+  col proprio (-6) vale -6, col Repeater nemico -3. L'ECM invece si somma;
+- nello scontro: -3 al WIP di chi hackera, +3 al BTS del bersaglio;
+- l'hacker Isolato o Incosciente: niente -3, e la nota lo dice;
+- l'editor degli stati: la casella per toglierlo a mano. Salvando l'hacker
+  Isolato, Incosciente o Morto il Fairy Dust si cancella da solo, e non torna
+  quando si riprende.
+
+**HK-07 diventa eseguibile** appena la Laxmee (Hacker) PanOceania entra nel
+roster: decide Paolo. **Un difetto nuovo, di testo:** con due fonti di Firewall
+la nota è un testo fisso, *«il suo e quello del Repeater nemico»*. Sul Teutonic
+Knight le fonti sono il TinBot e il Fairy Dust, e un Repeater non c'è. È
+inchiodato in `test_modulo_hacking.js`. → MOTORE
+
+**Le esclusioni del Coordinato** (righe 9531, 11384, 13806-13807, 13907):
+- **E47**, Periferica: la danno le 42 Periferiche e nessun altro, confrontate
+  nei due versi su tutti i 761 profili. Ci sono anche gli 11 bot che hanno la
+  sola skill `Peripheral (...)` senza `chars`; i Puppet Masters, che le
+  controllano, non la danno;
+- **E48** Decoy, **E49** Fireteam (un campo vuoto non conta), **E42** per
+  l'Isolato;
+- il Dispiegamento Nascosto non blocca, e lascia solo una nota.
+È provato in `test_coordinato.js`.
+
+Ogni prova nuova l'ho rotta col file vecchio: motore, catalogo e
+`ordine_hacking.js` del pomeriggio danno 20 rossi; la sola pagina 9;
+`logica_stati.js` 2026-10-09.1 6; il motore 2026-10-12.6 sul Coordinato 5. Il
+difetto della nota, corretto a mano in un catalogo di prova, dà 1 rosso.
+
+La **revisione 27** (12 ottobre, pomeriggio) segue il motore **2026-10-12.6**,
+`ordine_coordinato.js`, `ordine_piazzamento.js` e `ordine_osservazione.js`
+**2026-10-12.1**, `calcolatore_hub.html` **2026-10-12.2** e i database
+**2026-10-12.2**. Le prove passano da 297 a **299**: due nuove, DET-06 e DIS-06.
+
+**E44 è corretto, e Paolo lo tiene nell'app.** Con il misto Regolari +
+Irregolari il Coordinato è rifiutato: 82 Irregolari su 82, insieme con
+l'Alguacil, danno E44. Fra Irregolari il Coordinato passa (righe 11360-11361).
+**CO-09** diventa eseguibile per intero, con il Morlock #36 e l'Alguacil #1.
+Il motore conosce anche l'**Inspiring Leadership** (righe 8817-8836): se nel
+roster c'è un Luogotenente con questa Skill, sul tavolo e non in uno Stato
+Null, E44 non scatta e compare una nota. Nel database la Skill ce l'ha solo
+Joan of Arc, in PanOceania. Joan non è nel roster di collaudo, quindi al
+tavolo la prova non si fa; nel banco sì, in sette casi: con Joan, senza Joan,
+Joan Incosciente, Joan in Riserva, una Joan senza la Skill Lieutenant, Joan che
+partecipa (nota sul costo), e la pagina che passa `window.roster` al motore.
+
+**Altri quattro difetti chiusi dal motore e dalle pagine, e coperti:**
+- **`armiDisponibili` offriva l'equipaggiamento come arma.** Erano 39 voci
+  (X Visor, TinBot, Albedo, ECM...), più 8 nell'Attacco BS: MediKit, GizmoKit,
+  Deactivator, FastPanda e Deployable Cover. Ora nessuna delle 47 è offerta, su
+  nessuno dei 765 profili. Nessuna voce senza scheda (`nonTrovata`) diventa un
+  bottone, in nessuna delle quattro azioni. In `test_armi.js`.
+- **Il Triangulated Fire mostrava zero armi.** La prova di prima passava
+  grazie al titolo della schermata. Ora si contano i bottoni: lo Stempler Zond
+  ha Combi Rifle e Flash Pulse, gli stessi del motore, nei due versi. In
+  `test_modulo_osservazione.js`, sezione 6 (OSS-03).
+- **Le D-Charges (Demolition Mode) si piazzano e detonano nello stesso Ordine**
+  (righe 6043-6047): niente segnalino, E23 da `creaDeployable`, niente E16
+  all'invio. Sul tabellone il lato reattivo è chi subisce l'esplosione. In
+  `test_dcharges_percorso.js`, sezioni 6-8. **DET-06** è nuova.
+- **Le cariche Disposable si perdevano a fine Ordine**, e il terzo uso era
+  respinto all'invio con E17. Ora l'uso resta sull'unità del roster: Zero piazza
+  tre Shock Mine e la quarta è bloccata. In `test_modulo_piazzamento.js`,
+  sezione 13. **DIS-06** è nuova.
+
+Ogni prova nuova è stata rotta in due tempi, con il file vecchio al posto del
+nuovo: motore 2026-10-12.2, `ordine_coordinato.js` 2026-10-06.4,
+`ordine_osservazione.js` 2026-10-07.1, `ordine_piazzamento.js` 2026-10-07.7.
+Ogni volta la misura è diventata rossa.
+
+La **revisione 26** (12 ottobre) allinea il piano al motore **2026-10-12.2**, ad
+`app.html` **2026-10-12.1** e a `ordine_attacco_bs.js` **2026-10-10.2**. Le
+prove restano **297**.
+
+**Chiusi i due difetti della revisione 25, e ora inchiodati.**
+- **L'Attacco BS attivo offre le armi scritte fra gli equipaggiamenti.** Il
+  Morlock #36 ha **Chain Rifle**, **Smoke Grenades** e **Kobra Pistol (BS Mode)**,
+  munizione SHOCK, senza avvisi; la CC Mode sta fra le escluse col motivo. Le
+  armi che hanno un'azione loro (MediKit, GizmoKit, Deactivator) non sono mai un
+  bottone, su tutti i 765 profili. In `test_modulo_bs.js` sezione E (MU-21).
+- **PIAZZARE EQUIPAGGIAMENTO lo decide il motore.** Sui 765 profili la voce
+  della pagina e `M.armiPiazzabili` danno lo stesso insieme, nei due versi:
+  **251** profili. Krakot e Bambabot-1 non hanno più la voce; Puppet Masters e
+  Moran sì. Con `app.html` del 9 ottobre i profili erano 11 con la voce e senza
+  niente da piazzare, e 27 portatori di D-Charges senza la voce. In
+  `test_innesco_schermata.js`, sezione DET-04.
+
+**Coperte le tre novità del motore** che nessuna prova guardava:
+`M.nonHackableBlocca` nei sei casi della tabella (REM e TAG sintetici, il REM
+Hacker, la controprova senza la caratteristica, il filtro dei bersagli, i 24
+profili veri) in `test_modulo_hacking.js` sezione 11; e le **D-Charges che si
+piazzano** (154 portatori su 154, mai col Minelayer, mai in ARO), il Chest
+Mine e il Mine Dispenser esclusi **col motivo**, in `test_minelayer.js`
+sezione 6.
+
+**Le decisioni prese su quattro prove** (messaggio di MOTORE del 12 ottobre):
+- **LOG-01 è archiviata.** `Sapper` / `Foxhole` non è applicabile all'app. La
+  regola resta provata in `test_modulo_trincerarsi.js`.
+- **HK-07 aveva la premessa sbagliata.** Non esiste un "secondo Firewall" che
+  si somma. Il **Fairy Dust** è un'altra fonte dello **stesso** Firewall e non
+  cumula: se ne applica **uno solo**, e lo sceglie il giocatore del bersaglio
+  (righe 4761-4763 e 4844-4846). L'ECM invece cumula, perché non è un Firewall.
+  Il Fairy Dust (Laxmee) l'app non lo gestisce: è una funzione nuova, e la
+  decide Paolo.
+- **SUP-07 è riscritta.** Il Cubo **c'è**, nelle caratteristiche (`chars`).
+  Nessuna regola dell'app lo legge, e la nota del Dottore si mostra sempre.
+- **CO-09 (metà E44) è fuori dall'app**, per decisione di Paolo. **Va
+  riconfermata**, per la ragione qui sotto.
+
+**Due misure del piano erano sbagliate, ed erano mie.** Fino alla revisione 25
+il piano diceva *«la parola `Cube` non è in nessuno dei 765 profili»* e
+*«nessun profilo dichiara la Skill `IRREGULAR`»*. Avevo cercato nelle skill. Le
+due parole sono **caratteristiche** e stanno nel campo `chars`:
+- `Cube` su **530** profili (270 Nomadi, 260 PanOceania); `Cube 2.0` su altri
+  10; `No Cube` su 80. Il conto di MOTORE (530) è quello della sola voce `Cube`.
+- `Irregular` su **82** profili (41 + 41). Fra questi c'è il **Morlock del
+  roster, voce 36**.
+
+**Difetto nuovo, che viene da quella misura: E44 non può scattare su nessun
+profilo vero.** `validaCoordinato` decide Regolare o Irregolare leggendo
+`skills` ed `equip` (riga 7462), e il dato sta in `chars`. Morlock #36 con
+Alguacil #1 in un Coordinato: nessun E44. Gli Irregolari veri che non lo danno
+sono **82 su 82**. La controprova: lo stesso Morlock con `Irregular` scritto
+nelle skill dà E44. La lettura giusta c'è già nel motore, cioè
+`M.haCaratteristica(u, 'Irregular')` (righe 1512-1518). La prova di
+`test_coordinato.js` passava perché si scriveva il dato da sola, con
+`skills: 'Irregular'`. Ora il difetto è inchiodato con i profili veri, in
+`test_coordinato.js` sezione E44. Paolo ha messo E44 fuori dall'app quando il
+piano gli diceva "0 profili": con 82 profili e una correzione di una riga, la
+decisione va riconfermata. → **Paolo**, poi **MOTORE**.
 
 La **revisione 25** (10 ottobre) è una revisione di **allineamento**: non aggiunge
 prove — restano **297** — e riporta il piano allo stato dell'app di oggi. Tre
@@ -163,7 +331,7 @@ partecipanti).
 La **revisione 14** aveva aggiunto il **blocco SP** e **corretto la
 convenzione 4**, che diceva una cosa sbagliata e bloccava il tavolo.
 
-Sostituisce la revisione 13 dell'8 ottobre. **297 prove, tutte nello stesso
+Sostituisce la revisione 13 dell'8 ottobre. **299 prove, tutte nello stesso
 format**: si eseguono dall'app, una per una, senza dover andare a
 cercare un'altra prova per capire cosa fare.
 
@@ -173,7 +341,7 @@ campo da completare, non un difetto dell'app.
 
 # 0. Quello che è cambiato dalla revisione 12
 
-**Ogni prova è riscritta nel format dichiarato dal piano stesso**, tutte e 297, nelle stesse
+**Ogni prova è riscritta nel format dichiarato dal piano stesso**, tutte e 299, nelle stesse
 cinque righe: Attivo, Con, Bersaglio, ARO, Atteso. Prima erano scritte in modi
 diversi — alcune su quattro righe, altre tutto su una — e **42 ereditavano
 dalla precedente** ("Come BS-01 ma l'ARO bersaglia un'altra unità"): quelle
@@ -213,7 +381,7 @@ stessa ricerca sul database.
 **Cinque codici erano doppi.** `DIS-01…DIS-05` identificava due gruppi di
 prove diversi, nel blocco J (Scoprire) e nel blocco 23-bis (Disposable):
 dieci prove, cinque codici. Le cinque dello Scoprire sono ora
-**SCO-01…SCO-05**. Adesso i codici sono tutti univoci: alla revisione 17 sono 297.
+**SCO-01…SCO-05**. Adesso i codici sono tutti univoci: alla revisione 27 sono 299.
 
 **I difetti aperti e segnalati sono dodici**, e stanno tutti insieme nel
 **blocco V**, ognuno con la prova che lo mostra e con la data della misura.
@@ -234,7 +402,7 @@ Senza ARO il reattivo dichiara **Nessun ARO** e il confronto deve uscire
 **TIRO NORMALE**. Le bande si contano dal Weapon Chart, otto pollici l'una:
 banda 0 = 0-8", banda 1 = 8-16", banda 2 = 16-24", e così via.
 
-## Quattro convenzioni, per non ripetere la stessa riga 297 volte
+## Quattro convenzioni, per non ripetere la stessa riga 299 volte
 
 Valgono per **tutte** le prove, e sono la ragione per cui i cinque campi sono
 spesso più corti del format completo:
@@ -269,17 +437,17 @@ sta nel **blocco DC** in fondo.
 
 ## I numeri, e da dove vengono
 
-**I numeri delle truppe vengono dal JSON ufficiale**: 765 profili. Se una
+**I numeri delle truppe vengono dal JSON ufficiale**: 761 profili (765 fino al 12 ottobre sera, poi DATABASE ne ha cancellati quattro). Se una
 prova dà un numero diverso da quello scritto qui, guarda prima la scheda
 ufficiale — il piano invecchia insieme ai dati.
 
 Le prove si eseguono **dall'app**. Tutto ciò che si poteva verificare col
-motore è **verde**: **96 file di test, 4491 prove, 0 falliti** con le fonti in
-cartella; **4471 passati e 20 non eseguite** come sta oggi il Project, dove
+motore è **verde**: **96 file di test, 4676 prove, 0 falliti** con le fonti in
+cartella; **4656 passati e 20 non eseguite** come sta oggi il Project. Nel Project
 `501.json`, `101.json` e `REGOLE_N5_v5_1_1.txt` non ci sono più (le prove che li
 leggono sono contate a parte e nominate, né rosse né verdi). Nessun banco
 muto, banco di confronto a zero divergenze (354 scontri identici, 294 attese,
-uscita 0). Misura del 10 ottobre: sta in `CONTEGGIO_TEST_10ott.txt`.
+uscita 0). Misura del 12 ottobre, sera tardi: sta in `CONTEGGIO_TEST_12ott.txt`.
 
 🔴 **Il numero delle prove di questo piano non si cambia più a mano.**
 `test_piano_schieramento.js` le conta nel testo e pretende che i cinque punti
@@ -300,7 +468,24 @@ impronta `c310f11a.197821`**, `motore_core.js` **2026-10-09.1, impronta
 `563a26c8.39990`** e `calcolatore_math.js` **2026-10-07.4, impronta
 `afb03fe9.18214`**, sui profili veri. Gli altri **non** sono stati rimisurati
 uno per uno col motore di oggi: li tiene la suite, che con questo motore è
-verde. Dei file di INTERFACCIA: `app.html` **2026-10-09.6**, `logica_aro.js`
+verde. Quelli toccati dalla revisione 28 — HK-07 e CO-09 — sono misurati con
+`motore_regole_n5.js` **2026-10-12.8, impronta `ce51a86d.730440`**,
+`catalogo_n5.js` **2026-10-12.1, `b9d93c97.198473`**, `ordine_hacking.js`
+**2026-10-12.1, `30e4d0a6.25030`**, `logica_stati.js` **2026-10-12.1,
+`edd48981.30131`**, e i database Nomadi **2026-10-12.3, `82590d51.171615`** e
+PanOceania **2026-10-12.3, `9725fd73.168679`**. Quelli toccati dalla revisione 27 — CO-09, OSS-03, DET-06 e DIS-06 —
+sono misurati con `motore_regole_n5.js` **2026-10-12.6, impronta
+`241a3d4c.722624`**, `ordine_coordinato.js` **2026-10-12.1, `b011ad1a.11021`**,
+`ordine_piazzamento.js` **2026-10-12.1, `369285bd.28485`**,
+`ordine_osservazione.js` **2026-10-12.1, `4c0dd4e2.20010`**, e i database
+Nomadi **2026-10-12.2, `930f740b.172243`** e PanOceania **2026-10-12.2,
+`9d6ba7ad.169679`**. Quelli toccati dalla revisione 26 — MU-21, DET-04, HK-07, SUP-07,
+LOG-01 e CO-09 — sono rimisurati con `motore_regole_n5.js` **2026-10-12.2,
+impronta `2b080cb7.713286`**, `ordine_attacco_bs.js` **2026-10-10.2, impronta
+`f10f8fdf.35917`**, `app.html` **2026-10-12.1, impronta `a5b5efd1.159040`**,
+e i database Nomadi **2026-10-12.1, `68be4968.172243`** e PanOceania
+**2026-10-12.1, `107c502e.169679`**. Per le prove della revisione 25, i file di
+INTERFACCIA erano: `app.html` **2026-10-09.6**, `logica_aro.js`
 **2026-10-09.2**, `calcolatore_controller.js` e `calcolatore_hub.html`
 **2026-10-07.1**. Le regole citate rimandano a `REGOLE_N5_v5_1_1.txt`
 (impronta `5ea7581f.904498`, 17029 righe), con `grep -n` — il file non è più
@@ -849,7 +1034,8 @@ dell'arma; si tira 1d20 e serve **uguale o meno**. Bersagli: **Fusilier**
 - **Bersaglio:** **Fusilier (Combi Rifle)** *(PanOceania #1)* @ banda 0, copertura no
 - **ARO:** nessuno
 - **Atteso:** in **BS Mode** munizione **SHOCK**, Burst 2, **una** salvezza; in **CC Mode** munizione **DA**, Burst 1, **due** salvezze, e il Tratto **Anti-materiel**. È la stessa arma con due profili: se leggi la stessa munizione in entrambe le modalità, la scelta non si applica.
-- 🔴 **Misurato dalla pagina il 10 ottobre: la BS Mode oggi non si può dichiarare nel Turno Attivo.** Nell'ATTACCO BS il Morlock #36 si vede offrire **Chain Rifle** e **Smoke Grenades**, non la Kobra Pistol: il modulo legge solo il campo `weapon` e la Kobra Pistol sta in `equip`. In **ARO** invece compare (`M.armiARO` → Chain Rifle, Smoke Grenades, **Kobra Pistol (BS Mode)**), e in **ATTACCO CC** compare la **CC Mode**. Quindi oggi: la CC Mode si prova da attivo, la BS Mode **solo reagendo** a un Ordine avversario. È il difetto delle armi in `equip` (629 profili su 765), segnalato a MOTORE: il giorno che è corretto, la BS Mode si prova anche da attivo e questa nota va tolta.
+- ✅ **Chiuso il 12 ottobre (ordine_attacco_bs 2026-10-10.2, motore 2026-10-12.2): la BS Mode si dichiara anche nel Turno Attivo.** Nell'ATTACCO BS il Morlock #36 ha esattamente **Chain Rifle**, **Smoke Grenades** e **Kobra Pistol (BS Mode)**: l'insieme è confrontato nei due versi. La BS Mode ha munizione SHOCK e nessun avviso. La **CC Mode** sta fra le escluse, col motivo. È inchiodato in `test_modulo_bs.js` sezione E: con il modulo del 9 ottobre la sezione dà 7 rossi. Quindi entrambe le modalità si provano da attivo.
+- *Com'era il 10 ottobre:* **la BS Mode non si poteva dichiarare nel Turno Attivo.** Nell'ATTACCO BS il Morlock #36 si vede offrire **Chain Rifle** e **Smoke Grenades**, non la Kobra Pistol: il modulo legge solo il campo `weapon` e la Kobra Pistol sta in `equip`. In **ARO** invece compare (`M.armiARO` → Chain Rifle, Smoke Grenades, **Kobra Pistol (BS Mode)**), e in **ATTACCO CC** compare la **CC Mode**. Quindi oggi: la CC Mode si prova da attivo, la BS Mode **solo reagendo** a un Ordine avversario. È il difetto delle armi in `equip` (629 profili su 765), segnalato a MOTORE: il giorno che è corretto, la BS Mode si prova anche da attivo e questa nota va tolta.
 
 **MU-22 — BioWeapon condizionale** *(nuovo)*
 - **Attivo:** Chimera *(Nomadi #14, porta la Viral CC Weapon(PS=6))*
@@ -1153,12 +1339,15 @@ dell'arma; si tira 1d20 e serve **uguale o meno**. Bersagli: **Fusilier**
 - **ARO:** nessuno
 - **Atteso:** tiro attivo **15 −3 = 12**, con la voce *«Firewall del bersaglio: −3 WIP»*; e salvezza del Teutonic **BTS VS 13** — BTS 3 **+3 del Firewall** + PS 7 — con la voce *«Firewall del bersaglio: +3 BTS (equivalente Copertura)»*. Il Firewall fa **due** cose: se ne vedi una sola, metà della regola non si applica.
 
-**HK-07 — Firewall doppio**
+**HK-07 — Due fonti dello stesso Firewall** **[IN ATTESA: serve la Laxmee (Hacker) PanOceania nel roster, decide Paolo]**
 - **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* · HACKING
 - **Con:** CARBONITE
-- **Bersaglio:** Teutonic Knight (TinBot: Firewall) *(PanOceania #7)* con **in più** lo stato che gli dà un secondo Firewall — ⚠️ **non eseguibile con questo schieramento**: nessuna delle 52 voci del roster può portare **due** Firewall insieme (il TinBot è uno solo e nessun programma del roster ne aggiunge un secondo). Serve una truppa con TinBot **e** un alleato che le dia un Firewall via programma
+- **Bersaglio:** Teutonic Knight (TinBot: Firewall) *(PanOceania #7, HI)*. Ha il Firewall (-3) del TinBot, e **in più** quello del **Fairy Dust** di una Laxmee (Hacker) PanOceania, che sceglie gli HI. ⚠️ **Oggi non è eseguibile in app.** La Laxmee porta il Fairy Dust (`Hacking Device Plus (UPGRADE: Fairy Dust)`, 1 profilo per fazione), ma l'app non lo gestisce: nel catalogo il Fairy Dust è solo *"Supportware su alleati (EVO)"*.
 - **ARO:** nessuno
-- **Atteso:** dei due Firewall se ne usa **uno solo**, a scelta: il −3 al tiro e il +3 al BTS **non si sommano**. Il motore ha la funzione (`firewallMultipli`): è il tavolo che non sa produrre il caso.
+- **Atteso:** il Firewall si applica **una volta sola**. Il −3 al tiro e il +3 al BTS **non si sommano**, e il giocatore del bersaglio sceglie quale fonte applicare (righe 4761-4763 e 4844-4846). Un **ECM (Hacking)** sullo stesso bersaglio invece **si somma**: è un'altra cosa, non un Firewall (righe 10722-10742).
+- **Dal 12 ottobre sera l'app gestisce il Fairy Dust** (motore 2026-10-12.8, `ordine_hacking.js` 2026-10-12.1). Prima la Laxmee dichiara FAIRY DUST sugli **HI**, dalla schermata Hacking. Poi l'Interventor hackera il Teutonic Knight: **Firewall −3, non −6**. La nota dice che la scelta della fonte spetta al giocatore del bersaglio, e lo scontro mette il +3 al BTS una volta sola. Misurato nel banco con la Laxmee PanOceania: al tavolo manca solo la sua voce di roster.
+- ✅ **La nota sulle due fonti** dice *«il suo (-3) e il Fairy Dust di … (-3)»* (motore 2026-10-12.9). Fino alla 12.8 nominava il Repeater nemico anche qui, dove non c'è: difetto trovato e chiuso il 12 ottobre sera.
+- **Corretto il 12 ottobre:** questa prova si chiamava *"Firewall doppio"* e cercava *"lo stato che dà un secondo Firewall"*. La premessa era sbagliata: non esistono due Firewall diversi che si sommano, esistono più fonti dello stesso Firewall. Il motore ha `firewallMultipli`. La prova si esegue il giorno che Paolo decide di avere il Fairy Dust e la Laxmee entra nel roster.
 
 **HK-08 — Firewall disabilitato**
 - **Attivo:** Interventor (Hacker Plus) *(Nomadi #8, WIP 15)* · HACKING
@@ -1248,6 +1437,7 @@ dell'arma; si tira 1d20 e serve **uguale o meno**. Bersagli: **Fusilier**
 - **ARO:** nessuno
 - **Atteso:** il tiro è su **BS 13 pieno**, `mod: 0`, **senza alcun MOD**. I tre MOD ignorati vanno mostrati **barrati** e sono nominati dal motore in `modIgnorati`: gittata −3, Copertura Parziale −3, Mimetismo −6. Il motore porta anche `valoreConMod: 1`, cioè quanto sarebbe stato il tiro senza l'Abilità: **13 contro 1**, dodici punti — nasconderli farebbe sembrare che il calcolatore se li sia dimenticati. Salvezza del Croc Man in copertura: **ARM VS 11** (ARM 1 + PS 7 + 3 di Copertura).
 - **Requisito:** `Alguacil (Combi Rifle)` → rifiutato con *«Serve l'Abilità Triangulated Fire.»*
+- **La scelta dell'arma, contata (12 ottobre):** la schermata del Triangulated ha **un bottone per arma**. Per lo Zulu-Cobra sono **Combi Rifle, Jammer e Assault Pistol**, come `M.armiDisponibili`. Fino a `ordine_osservazione.js` 2026-10-07.1 i bottoni erano **zero**: la pagina leggeva `.armi` su un array. La prova del banco guardava solo che la schermata non fosse vuota, e il titolo bastava. Ora conta i bottoni, nei due versi, su uno Stempler Zond vero.
 - **E il limite che resta:** oltre la Gittata Massima del Combi il tiro **non** diventa impossibile — resta 13 — ma arriva l'avviso **A74** con `oltreGittata: true`. Ignorare i MOD non è ignorare la gittata massima, e sono due cose che si confondono facilmente.
 - **Attenzione alla porta d'ingresso** *(costata una falsa segnalazione il 9 ottobre)*: la regola sta in **`M.regoleTriangulated`**. Chiedere il numero a `M.modAttacco` passandogli l'azione `TRIANGULATED FIRE` dà **1**, non 13: `M.SPEC['TRIANGULATED FIRE']` non porta `ignoraTuttiIMod`, e `modAttacco` ci viene chiamato **di proposito** con `BS_ATTACK`, solo per sapere quali MOD mostrare barrati. Il flag `ignoraTuttiIMod: true` sta nel catalogo (`OSSERVAZIONE`, riga 7854) e lo legge `regoleTriangulated`. Inchiodato in `test_modulo_osservazione.js`.
 
@@ -1304,7 +1494,7 @@ dell'arma; si tira 1d20 e serve **uguale o meno**. Bersagli: **Fusilier**
   - DOTTORE → *"Se il bersaglio ha un Cubo, si possono spendere Command Token per ripetere un tiro fallito."*
   - INGEGNERE → *"Se il bersaglio ha Remote Presence, si possono spendere Command Token per ripetere un tiro fallito."*
   Le due note vanno **confrontate fra loro**: se fossero la stessa stringa, il giocatore non saprebbe quale condizione guardare.
-- 🔴 **Misurato: la nota del Dottore non è verificabile al tavolo.** La parola `Cube` **non compare in nessuno dei 765 profili** dei due database. La nota è comunque corretta e si mostra sempre (non è condizionata al campo), quindi la prova è eseguibile per come è scritta — ma la **condizione** che enuncia non si può mettere alla prova con questi dati. Quella dell'Ingegnere sì: il Reaktion Zond ha Remote Presence. Da chiarire con DATABASE se il Cubo vada nei profili o sia implicito nel tipo di truppa.
+- **Riscritta il 12 ottobre — il Cubo c'è.** È una **caratteristica** del profilo, nel campo `chars`: `Cube` su 530 profili, `Cube 2.0` su 10. L'**Alguacil #1** ha `Cube`, quindi la nota del Dottore si legge **su un bersaglio che ha davvero un Cubo**. Il Reaktion Zond #15 non ha la voce `Cube`, e la nota dell'Ingegnere vale per lui grazie a Remote Presence. **Quello che l'app non fa, per decisione:** nessuna regola legge il campo `Cube`. La nota si mostra **sempre**, anche su un bersaglio `No Cube`, e la condizione la controlla il giocatore guardando il profilo. Fino alla revisione 25 questa prova diceva che `Cube` *non compare in nessuno dei 765 profili*. Era sbagliato: lo avevo cercato nelle skill.
 
 ---
 
@@ -1634,7 +1824,8 @@ Imposta lo stato e guarda **la lista ordini**.
 
 # 18. Blocco P — Trincerarsi e logistica *(blocco nuovo)*
 
-**LOG-01 — Trincerarsi** **[NON ESEGUIBILE IN APP: manca il dato]**
+**LOG-01 — Trincerarsi** **[ARCHIVIATA il 12 ottobre: `Sapper` non è applicabile all'app]**
+- **Decisione del 12 ottobre:** Sapper / Foxhole è non applicabile. La prova resta scritta per memoria e non si esegue al tavolo. La regola resta provata nel banco. La domanda a DATABASE qui sotto è chiusa.
 - **Attivo:** nessuno. Misurato il 9 ottobre: l'ordine chiede l'Abilità **`Sapper (Foxhole)`** (`M.azioneSenzaTiro('TRINCERARSI')` la nomina), e **`Sapper` non compare in nessuno dei 765 profili** — né `Foxhole`, né `Trincerarsi`. Nessuna voce di roster può sanarlo: il dato non c'è in tutto il database.
 - **ARO:** nessuno
 - **Atteso:** *(la regola, provata nel banco; in app non c'e` chi la invochi.)* nessun tiro; l'unità entra in Foxhole, con gli effetti di ST-15. `M.foxholeAllaDichiarazione` dà già le due strade con le loro conseguenze: cancellando il Foxhole si muove con MOV e Silhouette veri e perde per tutto l'Ordine Copertura a 360°, Mimetism (-3), Courage e S3 (righe 13871-13876); restandoci non si muove, **nemmeno con una Schivata riuscita** (riga 13867). Misurato in `test_modulo_trincerarsi.js` con un'unità costruita a mano.
@@ -1742,7 +1933,12 @@ Imposta lo stato e guarda **la lista ordini**.
 **CO-09 — Gruppi diversi**
 - **Attivo:** un Ordine Coordinato con Alguacil #1 nel **Gruppo 1** e Alguacil #2 nel **Gruppo 2**, Punta di Lancia il #1
 - **Atteso:** **E43** — *«Le unità appartengono a 2 Gruppi di Combattimento diversi»*.
-- ⚠️ **La seconda metà di questa prova non è eseguibile.** Chiedeva anche **E44** (Regolari con Irregolari): il motore lo controlla cercando la Skill `IRREGULAR` nelle skill della truppa, e **nessun profilo del database Nomadi la dichiara** — verificato su tutti e 385. Il controllo c'è ed è giusto, ma non è innescabile dai dati: è una lacuna del database, segnalata a DATABASE. Il Morlock è *Impetuous*, che non è la stessa cosa.
+- **La seconda metà, E44 (Regolari con Irregolari): eseguibile dal 12 ottobre.** Paolo ha deciso che E44 resta nell'app, e MOTORE l'ha corretto (motore 2026-10-12.6).
+  - **Attivo:** `Morlock (Kobra Pistol, DA CC)` voce **36** e `Alguacil (Combi Rifle)` voce **1**, stesso Gruppo, Ordine Coordinato con Punta di Lancia l'Alguacil.
+  - **Atteso:** **E44** — *«Le unità hanno Addestramento diverso: Regolari e Irregolari non possono coordinarsi.»* Il Morlock è `Irregular`, una **caratteristica** del profilo (campo `chars`): la portano 82 profili, 41 per fazione.
+  - **Controprova:** i due Morlock del roster, #13 e #36, fra loro: il Coordinato **passa**, perché due Irregolari hanno lo stesso Training (righe 11360-11361).
+  - **Inspiring Leadership** (righe 8817-8836): con un Luogotenente che ha questa Skill, sul tavolo e non in uno Stato Null, tutte le truppe hanno Training Regolare. E44 non scatta e compare una nota. Se il Luogotenente partecipa, il costo è solo il suo Ordine Speciale. Nel database c'è solo **Joan of Arc (Lieutenant)**, in PanOceania. Joan non è nel roster di collaudo, quindi al tavolo questa parte non si prova; nel banco sì, in `test_coordinato.js` sezione E44.
+  - *Com'era fino alla revisione 26:* E44 non scattava su nessun profilo vero, perché il motore leggeva `skills` ed `equip` e il dato sta in `chars`.
 
 **CO-10 — Stesso bersaglio**
 - **Attivo:** un Ordine Coordinato con Alguacil (HMG) #2 come Punta e Alguacil (Combi Rifle) #1 come gregario, **tutti contro lo stesso bersaglio**
@@ -2003,6 +2199,12 @@ qualcuno non conta i colpi.
 - **Controprove, due e di peso diverso:** (1) lo **stesso** Intruder con il `MULTI Sniper Rifle` **senza** la notazione → `sd: 0`, nessuna frase: cambia solo la notazione, non la truppa né l'arma; (2) `Alguacil (Combi Rifle)` → `sd: 0` con Burst 3, cioè un Burst alto non è un dado speciale. La prima è la controprova che conta: isola la notazione da tutto il resto.
 - **Terza strada, in mischia:** `Wolfgang Amadeus` con la `DA CC Weapon` ha **Martial Arts L3**, e il motore dà `sd: 1` con la nota *«Martial Arts L3: (+1 SD) — tira un dado in più e poi scartane uno. Non aumenta il Burst.»* Tre sorgenti dello stesso dado (notazione d'arma, Skill di profilo, Martial Arts) e una sola frase a schermo: se una delle tre non arriva, si vede qui.
 
+**DIS-06 — Tre mine, e la quarta no** *(nuova, 12 ottobre)*
+- **Attivo:** `Zero (Hacker, Killer Hacking Device)` voce **9**, rivelato (stato Normale) · PIAZZARE EQUIPAGGIAMENTO in **quattro Ordini** di seguito · **Shock Mine**
+- **ARO:** nessuno
+- **Atteso:** le prime **tre** si piazzano, tre segnalini nel roster. Dopo ogni Ordine la scheda dello Zero dice gli usi spesi giusti (1, 2, 3), anche riaprendo il menu. Il **terzo** uso **non** è respinto all'invio. Al **quarto** la mina è bloccata: *«Shock Mine: usi esauriti»*, nessun segnalino nuovo, e niente parte per l'Hub.
+- **Com'era prima del 12 ottobre:** l'uso scalato si perdeva alla fine dell'Ordine (la pagina chiamava `window.aggiornaUnitaRoster`, che non esiste), quindi la quarta mina si piazzava come la prima. In più la terza era respinta all'invio con E17. È provato in `test_modulo_piazzamento.js` sezione 13, con il `sostituisciUnita` vero di `motore_core.js`.
+
 ---
 
 # 23-ter. Blocco DET — Detonazione e Schivata
@@ -2025,12 +2227,20 @@ qualcuno non conta i colpi.
 **DET-04 — Le tre domande dell'innesco** *(eseguibile dal 10 ottobre, con un difetto accanto)*
 - **Attivo:** `Puppet Masters (Minelayer)` voce 22 · scegli DETONAZIONE per la sua **Shock Mine**; poi **Krakot Renegade (Boarding Shotgun)** voce **31** e **Bambabot-1 (Chain Rifle (ps=6))** voce **32** · PIAZZARE EQUIPAGGIAMENTO
 - **Atteso:** **tre domande**, ciascuna bloccante — un nemico nell'area d'innesco; solo il movimento di una Schivata o di un Guts fallito; un alleato sotto la Sagoma, anche Incosciente. Se manca **anche una sola risposta**, la detonazione **non scatta** e l'app lo dice. **La metà negativa:** il `Chest Mine` del Krakot e il `Mine Dispenser (AP)` del Bambabot **non si piazzano** — `M.armiPiazzabili` risponde con zero armi per entrambi, perché nessuno dei due ha il Tratto Deployable — quindi non diventano mai un segnalino e la voce DETONAZIONE non può arrivare a loro. A schermo: *«Questa unità non ha equipaggiamento da piazzare.»*, e nessun bottone d'arma.
-- 🔴 **DIFETTO APERTO, MISURATO DALLA PAGINA IL 10 OTTOBRE — la voce è offerta lo stesso, e costa l'Ordine.** `PIAZZARE EQUIPAGGIAMENTO` compare nel menu del Krakot e del Bambabot, perché `puoFareAzione` in `app.html` decide dal **nome** (cerca `MINE` fra le armi) e non chiede al motore. Toccandola parte l'allarme (azione `IDLE`: Piazzare dichiarato per primo vale Idle + Piazzare), il reattivo ha il suo ARO, e sulla schermata non c'è niente da piazzare. È la famiglia dell'ordine offerto e non eseguibile, già corretta per Speculativo, Intuitivo e Guidato, che chiedono al motore con `armiPerAzione`: qui basterebbe `M.armiPiazzabili`. → **INTERFACCIA**
+- ✅ **Chiuso il 12 ottobre (app.html 2026-10-12.1).** La voce PIAZZARE EQUIPAGGIAMENTO la decide `M.armiPiazzabili`: al Krakot e al Bambabot-1 non compare più. Sui 765 profili la pagina e il motore danno lo stesso insieme, 251, nei due versi. Il Chest Mine e il Mine Dispenser sono esclusi **col motivo** (motore 2026-10-12.2). È inchiodato in `test_innesco_schermata.js` sezione DET-04 e in `test_minelayer.js` sezione 6. Con `app.html` 2026-10-09.6 la sezione dà 3 rossi.
+- *Com'era il 10 ottobre:* **la voce era offerta lo stesso, e costava l'Ordine.** `PIAZZARE EQUIPAGGIAMENTO` compare nel menu del Krakot e del Bambabot, perché `puoFareAzione` in `app.html` decide dal **nome** (cerca `MINE` fra le armi) e non chiede al motore. Toccandola parte l'allarme (azione `IDLE`: Piazzare dichiarato per primo vale Idle + Piazzare), il reattivo ha il suo ARO, e sulla schermata non c'è niente da piazzare. È la famiglia dell'ordine offerto e non eseguibile, già corretta per Speculativo, Intuitivo e Guidato, che chiedono al motore con `armiPerAzione`: qui basterebbe `M.armiPiazzabili`. → **INTERFACCIA**
 - **Corretto il 10 ottobre:** fino alla revisione 24 questa prova diceva che `Chest Mines` *non è nell'armamento di nessuno dei 765 profili*. Al singolare, `Chest Mine`, lo portano **8** profili: i quattro Krakot Renegade, nelle due fazioni. Il `Mine Dispenser` è in **7**.
 
 **DET-05 — Il token esce dal tavolo**
 - **Attivo:** dopo l'innesco di una mina, guarda il tabellone e riapri l'app; poi passa alla Fase Stati
 - **Atteso:** la mina **sparisce** dal tabellone e dalla copia locale, e non torna riaprendo l'app. Alla Fase Stati invece **non** si toglie: si toglie la Sagoma, non il token.
+
+**DET-06 — Le D-Charges (Demolition Mode) detonano nello stesso Ordine** *(nuova, 12 ottobre)*
+- **Attivo:** `Moran (Surprise Attack, Camouflage)` voce **19**, in stato Normale · PIAZZARE EQUIPAGGIAMENTO · **D-Charges (Demolition Mode)**
+- **Bersaglio:** `Fusilier (Combi Rifle)` *(PanOceania #1)* in stato **Immobilizzato-A**. Un nemico sano non è fra i bersagli ammessi: la schermata lo mette fra i *Non ammessi*, col motivo.
+- **ARO:** nessuno
+- **Atteso:** le D-Charges detonano nella Risoluzione di questo Ordine, **senza tiro**, e **non restano sul tavolo** (righe 6043-6047): nel roster non compare nessun segnalino. Sul tabellone il lato reattivo è il **Fusilier**, con l'azione **SUBISCE L'ESPLOSIONE** e **3 Tiri Salvezza su ARM: riesce con 7 o meno** (ARM 1, dimezzato dall'AP, PS 6). Il lato attivo non subisce nulla. Non compaiono né E16 né E20. Le D-Charges sono Disposable (3): la terza parte, la quarta è bloccata con *«usi esauriti»*.
+- **Com'era prima del 12 ottobre:** l'app cercava un segnalino in `DB_DEPLOYABLES` e si fermava con E20; all'invio il contratto rispondeva E16, *«non è un Deployable»*. È provato in `test_dcharges_percorso.js` sezioni 6-8, con il motore e passando dal modulo.
 
 ---
 
@@ -2279,21 +2489,19 @@ una prova che guarda il posto sbagliato sembra un difetto dell'app.
 - **Atteso:** oggi si legge questo: con un attacco attivo il reattivo in Fuoco di Soppressione scende a **Burst 1**; senza attacco resta **3**. La regola generale dell'ARO sta scavalcando la Soppressione. La regola (riga 14649) dice 3 sempre. → MOTORE
 - **Dove guardare, misurato il 9 ottobre sera:** il motore **sa** già dare il 3. `M.armaReattivaEffettiva(Mobile Brigada in Soppressione, 'Heavy Machine Gun')` torna `Heavy Machine Gun (SF Mode)` con `sfMode: true` e `burst: 3`, e `M.burstARO` con quel profilo dà **3** con la voce «Fuoco di Soppressione: Burst 3 col profilo SF Mode». Con il profilo d'arma **nudo** la stessa funzione dà **1**: `burstARO` alza il Burst solo se vede `arma.sfMode`. Quindi il difetto non è nella regola ma in **chi chiama**: da qualche parte passa l'arma nuda invece di quella effettiva. Non è una riga che posso indicare — i banchi non possono entrare dove l'app costruisce la chiamata — ma il punto da guardare è quello.
 
-## Difetti aperti e segnalati, alla revisione 25
+## Difetti aperti e segnalati, alla revisione 29
 
 Fino alla revisione 24 l'introduzione diceva "resta aperto un difetto solo". Non
 era vero da giorni: gli altri stavano scritti dentro le prove che li avevano
 trovati. Qui stanno tutti insieme, e per ognuno è detto **quanto è fresca la
 misura**: "inchiodato" vuol dire che un banco fissa il comportamento di oggi e
 diventa rosso il giorno della correzione — con la suite verde sul motore
-2026-10-09.6, quelli **ci sono ancora**. Gli altri vanno riletti prima di
+2026-10-12.9, quelli **ci sono ancora**. Gli altri vanno riletti prima di
 contarci.
 
 | Difetto | Dove è scritto | Stato della misura | A chi |
 |---|---|---|---|
 | Il Burst reattivo in Soppressione esce 1 invece di 3 | D-02 qui sopra, BS-12 | del 9 ottobre; non inchiodato (è nella chiamata, non nella regola) | MOTORE |
-| L'Attacco BS attivo non offre le armi scritte in `equip` (pistole): 629 profili su 765 | MU-21 | **misurato il 10 ottobre** dalla pagina e sul motore; non ancora inchiodato | MOTORE |
-| PIAZZARE EQUIPAGGIAMENTO offerto a chi non ha niente da piazzare, e costa l'Ordine | DET-04 | **misurato il 10 ottobre** dalla pagina; non ancora inchiodato | INTERFACCIA |
 | Deployable Cover (Cutting Foam) e (Vitroferro) disegnano lo stesso bottone | — | **inchiodato** in `test_bottone_arma.js` sezione 11 | MOTORE |
 | `M.esitoTerreni` ha due implementazioni che non danno lo stesso esito | blocco T | **inchiodato** in `test_terreni_combinati.js` sezione 8 | MOTORE |
 | Con un MSV3 la nota del terreno dice ancora "MSV2" | blocco T | **inchiodato** in `test_terreni_combinati.js` | MOTORE |
@@ -2303,6 +2511,25 @@ contarci.
 | Il filtro dei bersagli del Supporto ignora VITA contro STR | SUP-05 | del 9 ottobre; non rimisurato in questa revisione | MOTORE |
 | Il Leader di un Fireteam gregario di un Coordinato va a Burst 1 | CO-03 | della revisione 19; non rimisurato in questa revisione | MOTORE |
 | A58 nomina lo strumento ignoto ma non elenca gli identificativi attesi | SUP-06 | del 9 ottobre; non rimisurato in questa revisione | MOTORE |
+
+**Chiuso il 12 ottobre, sera tardi** (motore 2026-10-12.9, catalogo
+2026-10-12.2): la nota «uno solo» che nominava il Repeater nemico anche quando
+la seconda fonte era il Fairy Dust (HK-07). Ora la prova è girata, in
+`test_modulo_hacking.js` sezione 12.
+
+**Chiusi il 12 ottobre, pomeriggio** (motore 2026-10-12.6 e i moduli dello
+stesso giorno), e coperti dai banchi: E44, che non scattava su nessun profilo
+vero (CO-09, `test_coordinato.js`); l'equipaggiamento offerto come arma da
+`armiDisponibili` (`test_armi.js`); il Triangulated Fire senza bottoni (OSS-03,
+`test_modulo_osservazione.js`); le D-Charges (Demolition Mode) fermate con E20
+ed E16 (DET-06, `test_dcharges_percorso.js`); l'uso Disposable che si perdeva
+a fine Ordine (DIS-06, `test_modulo_piazzamento.js`).
+
+**Chiusi il 12 ottobre:** l'Attacco BS attivo che non offriva le armi scritte
+in `equip` (629 profili su 765; MU-21 — `ordine_attacco_bs.js` 2026-10-10.2,
+inchiodato in `test_modulo_bs.js` sezione E), e PIAZZARE EQUIPAGGIAMENTO
+offerto a chi non aveva niente da piazzare (DET-04 — `app.html` 2026-10-12.1,
+inchiodato in `test_innesco_schermata.js` sezione DET-04).
 
 **Chiuso il 9 ottobre sera:** `M.haGuidato` leggeva l'`ECM (Guided -6)` — la
 difesa contro i Guidati — come la capacità di farli (27 profili capaci dove
@@ -2410,7 +2637,7 @@ Nessuna delle quattro era un difetto dell'app. Tutte e quattro erano difetti
 
 ---
 
-# 27. Blocco DC — I campi che il piano non diceva: **0 prove su 297**
+# 27. Blocco DC — I campi che il piano non diceva: **0 prove su 299**
 
 **Il blocco e` chiuso.** Era nato con 135 prove che avevano un campo muto —
 quale unita` usare, quale arma, quale banda — e le avevo lasciate marcate
@@ -2450,20 +2677,20 @@ sezioni 12 e 13.
 
 Alla revisione 24 erano sette. Tre aspettavano una voce di roster e l'hanno
 avuta (LOG-02, DIS-02, DET-04); per due delle altre quattro **il dato c'era**,
-cercato col nome sbagliato (vedi DIS-02 e DET-04). Ne restano **quattro**, e
-per nessuna basta una riga in più:
+cercato col nome sbagliato (vedi DIS-02 e DET-04). Alla revisione 25 ne
+restavano **quattro**. Alla revisione 26 sono tutte decise, e per due di loro
+**il dato c'era anche qui**: lo avevo cercato nel campo sbagliato.
 
-| Prova | Cosa manca | Misura |
+| Prova | Revisione 25 | Revisione 26 (12 ottobre) |
 |---|---|---|
-| **SUP-07** (metà Cubo) | un profilo con `Cube` | **0** su 765 |
-| **LOG-01** | un profilo con `Sapper` / `Foxhole` | **0** su 765 |
-| **HK-07** | un bersaglio con **due** Firewall insieme | il TinBot del roster è uno; `FAIRY DUST` nel catalogo è solo *"Supportware su alleati (EVO)"*, senza un Firewall che l'app possa assegnare |
-| **CO-09** (E44) | un profilo con la Skill `IRREGULAR` | **0** su 765, nelle due fazioni |
+| **SUP-07** (metà Cubo) | `Cube`: **0** su 765 | **sbagliato, era nelle skill.** In `chars`: `Cube` 530, `Cube 2.0` 10. Prova riscritta ed eseguibile sull'Alguacil #1; nessuna regola dell'app legge il Cubo |
+| **LOG-01** | `Sapper` / `Foxhole`: **0** su 765 | **archiviata**: non applicabile all'app |
+| **HK-07** | nessun bersaglio con **due** Firewall | **premessa sbagliata**: il Fairy Dust è lo stesso Firewall e non cumula. In attesa della funzione Fairy Dust (decide Paolo) |
+| **CO-09** (E44) | Skill `IRREGULAR`: **0** su 765 | **sbagliato, era nelle skill.** In `chars`: 82, compreso il Morlock #36. Paolo tiene E44 nell'app; MOTORE l'ha corretto (2026-10-12.6). **Eseguibile** |
 
-Per tutte e quattro la **regola è provata nei banchi** con un soggetto
-costruito a mano, perché deve valere il giorno che il dato arriva. Quello che
-manca è qualcosa da cliccare in app. → **DATABASE**: sono Abilità ed
-equipaggiamenti che mancano ai profili, o che N5 non prevede?
+La lezione è la stessa di DIS-02 e DET-04: prima di scrivere *«0 su 765»* si
+cerca la parola in **tutti** i campi del profilo, `chars` compreso, e si
+stampa il profilo intero.
 
 **Una prova non è riproducibile, e la notizia è buona:** **SPEC-05** cercava
 un'arma con i Tratti dedotti (avvisi A80 o A49). Oggi **0 delle 188 armi** è
