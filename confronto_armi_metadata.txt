@@ -1,0 +1,50 @@
+nostre voci non-contenitore: 165 | metadata: 185
+
+=== 1. VALORI DIVERSI (decide il metadata) — 3 ===
+  AP Thunderbolt                 ammo N->AP
+  Disco Baller                   B 1->-
+  Ohotnik                        bande [0, 3, 3, 3, 0, -3, -6, -6, -6, -6, -6, -6]->[0, 3, 3, 3, 0, -6, -6, -6, -6, -6, -6, -6]
+
+=== 2. TRATTI DIVERSI (decide la wiki) — 35 ===
+  Akrylat-Kanone             noi ['Disposable (2)', 'Non-Lethal', 'State: Immobilized-A']
+                             uff ['Disposable (2)', 'Non-lethal', 'State: IMM-A']
+  AP Mine                    noi ['Concealed', 'Deployable', 'Direct Template (Small Teardrop)', 'Disposable (3)', 'Intuitive Attack']
+                             uff ['Concealed', 'Deployable', 'Direct Template (Small Teardrop)', 'Disposable (3)', 'Intuitive Attack', '[*]']
+  Blitzen                    noi ['Disposable (2)', 'Non-Lethal']
+                             uff ['Disposable (2)', 'Non-lethal', '[**]']
+  Cybermine                  noi ['Comms Attack', 'Concealed', 'Deployable', 'Direct Template (Small Teardrop)', 'Disposable (3)', 'Intuitive Attack', 'Non-Lethal', 'State: Stunned/Immobilized-B']
+                             uff ['Comms. Attack', 'Concealed', 'Deployable', 'Direct Template (Small Teardrop)', 'Disposable (3)', 'Intuitive Attack', 'Non-lethal', 'State: Stunned / Immbolized-B', '[*]']
+  Deactivator                noi ['BS Weapon (WIP)']
+                             uff ['BS Weapon (WIP)', '[***]']
+  Disco Baller               noi ['Disposable (2)', 'Double Shot', 'Speculative Attack', 'Targetless']
+                             uff []
+  Eclipse Grenade Launcher   noi ['Impact Template (Circular)', 'Non-Lethal', 'Reflective', 'Speculative Attack', 'Targetless']
+                             uff ['Impact Template (Circular)', 'Non-lethal', 'Reflective', 'Speculative Attack', 'Targetless', '[**]']
+  Eclipse Grenades           noi ['BS Weapon (PH)', 'Impact Template (Circular)', 'Non-Lethal', 'Reflective', 'Speculative Attack', 'Targetless']
+                             uff ['BS Weapon (PH)', 'Impact Template (Circular)', 'Non-lethal', 'Reflective', 'Speculative Attack', 'Targetless', '[**]']
+  E/Marat                    noi ['Direct Template (Large Teardrop)', 'Intuitive Attack', 'Non-Lethal']
+                             uff ['Direct Template (Large Teardrop)', 'Intuitive Attack', 'Non-lethal', '[**]']
+  E/M Carbine                noi ['Non-Lethal']
+                             uff ['Non-lethal', '[**]']
+  E/M CC Weapon              noi ['CC']
+                             uff ['CC', '[**]']
+  E/M Grenade Launcher       noi ['Impact Template (Circular)', 'Non-Lethal', 'Speculative Attack']
+                             uff ['Impact Template (Circular)', 'Non-lethal', 'Speculative Attack', '[**]']
+  E/M Grenades               noi ['BS Weapon (PH)', 'Impact Template (Circular)', 'Non-Lethal', 'Speculative Attack']
+                             uff ['BS Weapon (PH)', 'Impact Template (Circular)', 'Non-lethal', 'Speculative Attack', '[**]']
+  E/Mitter                   noi ['Non-Lethal']
+                             uff ['Non-lethal', '[**]']
+  E/M Mine                   noi ['Concealed', 'Deployable', 'Direct Template (Small Teardrop)', 'Disposable (3)', 'Intuitive Attack', 'Non-Lethal']
+                             uff ['Concealed', 'Deployable', 'Direct Template (Small Teardrop)', 'Disposable (3)', 'Intuitive Attack', 'Non-lethal', '[**]']
+  FastPanda                  noi ['Deployable', 'Disposable (1)', 'Indiscriminate', 'Perimeter', 'Zone of Control']
+                             uff ['Deployable', 'Disposable (1)', 'Indiscriminate', 'Perimeter', 'Zone of Control', '[***]']
+  Forward Observer           noi ['BS Weapon (WIP)', 'Non-Lethal', 'State: Targeted']
+                             uff ['BS Weapon (WIP)', 'Non-lethal', 'State: Targeted', '[***]']
+  GizmoKit                   noi ['Non-Lethal']
+                             uff ['Non-lethal', '[***]']
+
+=== 3a. SOLO NOSTRE — 58 ===
+  Boarding Pistol (Blast Mode), Boarding Pistol (Hit Mode), Chest Mines (BS Mode), Chest Mines (CC Mode), CrazyKoalas, D-Charges (CC Mode), D-Charges (Demolition Mode), Deployable Cover (Cutting Foam), Deployable Cover (Vitroferro), Disco Ball, Drop Bears (BS Mode), Drop Bears (Deployable Mode), Feuerbach (Blast Mode), Feuerbach (Burst Mode), Flammenspeer (Blast Mode), Flammenspeer (Hit Mode), Heavy Rocket Launcher (Blast Mode), Heavy Rocket Launcher (Hit Mode), Hyper-Rapid Magnetic Cannon (Anti-Materiel Mode), Hyper-Rapid Magnetic Cannon (AP Mode), Hyper-Rapid Magnetic Cannon (Shock Mode), Kobra Pistol (BS Mode), Kobra Pistol (CC Mode), Light Rocket Launcher (Blast Mode), Light Rocket Launcher (Hit Mode), Mine Dispenser (Cybermines), Missile Launcher (Blast Mode), Missile Launcher (Hit Mode), MULTI Heavy Machine Gun (Anti-Materiel Mode), MULTI Heavy Machine Gun (AP Mode), MULTI Heavy Machine Gun (Shock Mode), MULTI Marksman Rifle (Anti-Materiel Mode), MULTI Marksman Rifle (AP Mode), MULTI Marksman Rifle (Shock Mode), MULTI Pistol (Anti-Materiel Mode), MULTI Pistol (AP Mode), MULTI Pistol (Shock Mode), MULTI Red Fury (Anti-Materiel Mode), MULTI Red Fury (AP Mode), MULTI Red Fury (Shock Mode)
+
+=== 3b. SOLO UFFICIALI — 16 ===
+  Chest Mine, Crazykoala, Dazer, Deployable Repeater, Discover, Mine Dispenser, Plasma Sniper Rifle, PT: Endgame, PT: Eraser, PT: Mirrorball, Sepsitor, Sepsitor Plus, Spitfire MULTI, Suppressive Fire Mode Weapon, Viral Tactical Bow, Vorpal CC Weapon

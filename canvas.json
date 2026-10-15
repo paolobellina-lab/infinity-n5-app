@@ -1,0 +1,27 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-09-19T10:00:00Z" },
+  "title": "App Infinity — proposte interfaccia giocatore",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 390, "h": 844, "title": "1 · Radar", "is_interactive": true },
+    "Unita.dc.html": { "x": 470, "y": 0, "w": 390, "h": 844, "title": "2 · Scelta unità", "is_interactive": true },
+    "Ordini.dc.html": { "x": 940, "y": 0, "w": 390, "h": 844, "title": "3 · Scelta ordine", "is_interactive": true },
+    "Bersagli.dc.html": { "x": 0, "y": 1400, "w": 390, "h": 844, "title": "4 · Bersagli e modificatori", "is_interactive": true },
+    "Attesa.dc.html": { "x": 470, "y": 1400, "w": 390, "h": 844, "title": "5 · ARO e seconda metà", "is_interactive": true },
+    "Stati.dc.html": { "x": 940, "y": 1400, "w": 390, "h": 844, "title": "6 · Stati della truppa", "is_interactive": true }
+  },
+  "order": ["Main.dc.html", "Unita.dc.html", "Ordini.dc.html", "Bersagli.dc.html", "Attesa.dc.html", "Stati.dc.html"],
+  "notes": {
+    "t1": { "x": 0, "y": -300, "text": "Costruzione dell'ordine", "kind": "title1", "maxW": 1330 },
+    "t2": { "x": 0, "y": 1100, "text": "Esecuzione e stati", "kind": "title1", "maxW": 1330 },
+    "n1": { "x": 1420, "y": 40, "w": 320, "text": "La barra in alto mostra a che punto è l'ordine: gruppo, unità, azione, arma, bersagli. Oggi questa informazione non esiste da nessuna parte, ed è il motivo per cui \"nessun bersaglio confermato\" sembrava normale.", "color": "orange" },
+    "n2": { "x": 1420, "y": 360, "w": 320, "text": "Un solo pulsante di conferma, sempre in fondo e dello stesso colore. I due \"ESEGUI CALCOLO\" nascevano dall'assenza di questa regola.", "color": "orange" },
+    "n3": { "x": 1420, "y": 600, "w": 320, "text": "Niente gesti nascosti: il tocco lungo resta come scorciatoia, ma ogni azione ha un pulsante visibile.", "color": "orange" },
+    "n4": { "x": 1420, "y": 1440, "w": 320, "text": "Slot fisso per gli avvisi del motore: quelli che chiedono una scelta stanno sopra il pulsante di conferma, dove non si possono saltare.", "color": "teal" },
+    "n5": { "x": 1420, "y": 1720, "w": 320, "text": "Gli stati raggruppati per categoria, le stesse che il motore già restituisce: vitali, postura, infoguerra, occultamento.", "color": "teal" },
+    "n6": { "x": 1420, "y": 1960, "w": 320, "text": "La fascia colorata in cima è l'identità di fazione: arancio Nomadi, azzurro PanOceania. Serve a non prendere il telefono sbagliato al tavolo. Il selettore colore è fra i Tweaks.", "color": "teal" }
+  },
+  "designSystems": []
+}

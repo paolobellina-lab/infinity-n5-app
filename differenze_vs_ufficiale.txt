@@ -1,0 +1,61 @@
+profili confrontati: 440
+
+=== NEL DATABASE, NON PIU` NELL'UFFICIALE (da togliere) ===
+  Immunity                                        65 profili   es: mobilebrigada_multi, mobilebrigada_hmg, mobilebrigada_ml
+  Pistol                                          11 profili   es: intruder_hmg, intruder_hacker, intruder_xvisor
+  X Visor                                          6 profili   es: intruder_xvisor, switcher_fto_bsattack_enh, switcher_fto_combi_enh
+  Specialist Operative                             5 profili   es: evader_multi, evader_multi_tb, evader_multi_gizmo
+  Berserk                                          4 profili   es: switcher_fto_bsattack_enh, switcher_fto_combi_enh, switcher_fto_fo_enh
+  Dodge                                            4 profili   es: switcher_fto_bsattack_enh, switcher_fto_combi_enh, switcher_fto_fo_enh
+  Martial Arts L1                                  4 profili   es: switcher_fto_bsattack_enh, switcher_fto_combi_enh, switcher_fto_fo_enh
+  Camouflage                                       4 profili   es: locust_bsg, locust_marksman, locust_hacker
+  Infiltration                                     4 profili   es: locust_bsg, locust_marksman, locust_hacker
+  Journalist L1                                    3 profili   es: warcor, warcor_sixthsense, warcor_sixthsense
+  Submachine Gun                                   3 profili   es: patsygarnett, bladefto_engineer, blade_decoy
+  Thunderbolt                                      3 profili   es: maximusoptime, operatormaximus, maximusagent
+  TinBot: Firewall                                 2 profili   es: evader_multi_tb, evader_engineer
+  Martial Arts L2                                  2 profili   es: spector_fto, spector_fto_regular
+  No Wound Incapacitation                          2 profili   es: spector_fto, spector_fto_regular
+  Boarding Shotgun                                 2 profili   es: hannibal_cmd, hannibal_strategic
+  Biometric Visor                                  2 profili   es: hannibal_cmd, hannibal_strategic
+  Discover                                         2 profili   es: hannibal_cmd, hannibal_strategic
+
+=== NELL'UFFICIALE, MANCANTI NEL DATABASE (da aggiungere) ===
+  BS Attack                                       15 profili   es: switcher_fto_bsattack, switcher_fto_bsattack_enh, triggermen_sniper
+  Tactical Awareness                              10 profili   es: switcher_fto_bsattack, switcher_fto_bsattack_enh, switcher_fto_combi
+  Pulzar                                           9 profili   es: taskmaster_redfury, taskmaster_sd, taskmaster_lt
+  Albedo                                           9 profili   es: evader_multi, evader_spitfire, evader_multi_tb
+  360º Visor                                       8 profili   es: mobilebrigada_multi, mobilebrigada_hmg, mobilebrigada_ml
+  Repeater                                         7 profili   es: meteor_zond, meteor_zond_bsg, piwell_sync
+  ECM: Hacker                                      6 profili   es: piwell_sync, gecko_multimarksman, gecko_mk12
+  Forward Deployment                               6 profili   es: tsyklon_spitfire, tsyklon_feuerbach, locust_bsg
+  Deactivator                                      6 profili   es: aquila, aquila_fto_specops, aquila_fto_lt
+  Discover                                         4 profili   es: grenzer_discover, grenzer_lt, wolfgang
+  GizmoKit                                         4 profili   es: evader_multi, evader_multi_tb, marspider_grenades
+  Transmutation                                    4 profili   es: switcher_fto_bsattack_enh, switcher_fto_combi_enh, switcher_fto_fo_enh
+  Tech-recovery                                    4 profili   es: gopod_hrl, gopod_multi, gobot
+  Courage                                          4 profili   es: aquila, aquila_fto_specops, aquila_fto_lt
+  Terrain                                          4 profili   es: joanofarc2, joanofarc2_strategic, joanofarc2_lt
+  Hidden Deployment                                4 profili   es: locust_bsg, locust_marksman, locust_hacker
+  Bangbomb                                         4 profili   es: locust_bsg, locust_marksman, locust_hacker
+  Pitcher                                          4 profili   es: locust_hacker, locust_khacker, zulucobra_hacker
+
+=== STESSA VOCE, VALORE DIVERSO (da correggere) ===
+  Deactivator  ->  Deactivator (ReRoll)            8 profili   es: evader_multi, evader_spitfire, evader_multi_tb
+  Viral CC Weapon(PS=6)  ->  Viral CC Weapon (PS   8 profili   es: switcher_fto_bsattack, switcher_fto_bsattack_enh, switcher_fto_combi
+  Super-Jump  ->  Super-Jump (Jet Propulsion)      6 profili   es: hellcat_bsg, hellcat_spitfire, hellcat_hacker
+  FT Master  ->  FT Master (Morlocks, Zellenkrie   5 profili   es: taskmaster_hmg, taskmaster_redfury, taskmaster_hrl
+  CC Weapon  ->  CC Weapon (-3)                    4 profili   es: triggermen_sniper, triggermen_neuro, triggermen_multi
+  CC Attack (-3)  ->  CC Attack (+1B)              4 profili   es: triggermen_sniper, triggermen_neuro, triggermen_multi
+  E/Marat  ->  E/Marat (+1B)                       4 profili   es: triggermen_sniper, triggermen_neuro, triggermen_multi
+  Regeneration (PH=13)  ->  Regeneration (PH=14)   4 profili   es: triggermen_sniper, triggermen_neuro, triggermen_multi
+  Camouflage  ->  Camouflage (1 Use)               3 profili   es: heckler_bsg, heckler_hacker, heckler_redfury
+  Transmutation (Auto)  ->  Transmutation (1)      3 profili   es: puppetbot_minelayer, puppetbot_fo, puppetbot_shock
+  Nanopulser  ->  Nanopulser (+1B)                 3 profili   es: bipandra, hannibal_cmd, hannibal_strategic
+  Armed Turret (Combi Rifle)  ->  Armed Turret (   2 profili   es: clockmaker_turret, machinist_turret
+  MULTI Marksman Rifle  ->  MULTI Marksman Rifle   2 profili   es: aquila_fto_specops, aquila_fto_lt
+  Lieutenant  ->  Lieutenant (+1 Command Token)    2 profili   es: joanofarc_lt_token, joanofarc2_lt_token
+  Drop Bears  ->  Drop Bears (+1SD)                2 profili   es: spector_fto, spector_fto_regular
+  Flash Pulse  ->  Flash Pulse (+1B)               2 profili   es: emily, emily_cmd
+  MULTI Sniper Rifle  ->  MULTI Sniper Rifle (+1   1 profili   es: intruder_xvisor
+  BS Attack (+1B)  ->  BS Attack (+1B) / BS Atta   1 profili   es: puppetbot_shock

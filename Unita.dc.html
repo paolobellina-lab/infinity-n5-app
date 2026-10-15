@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Scelta unità</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Teko:wght@400;600;700&amp;family=Barlow+Condensed:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0a0604}
+a{color:#ff8a3d}a:hover{color:#ffb27a}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0a0604; color: #f2e9e2; font-family: 'Barlow Condensed', sans-serif; display: flex; flex-direction: column;">
+
+  <div style="height: 8px; background: {{accent}}; flex-shrink: 0;"></div>
+
+  <div style="padding: 10px 14px; background: #120b07; border-bottom: 1px solid #2a1b13; display: flex; align-items: center; gap: 8px;">
+    <div style="flex-grow: 1; display: flex; gap: 6px; align-items: center;">
+      <span style="font-size: 15px; letter-spacing: 1px; color: #f2e9e2; background: #2a1b13; padding: 4px 8px;">GRUPPO 1</span>
+      <span style="font-size: 15px; color: #6b5a50;">›</span>
+      <span style="font-size: 15px; letter-spacing: 1px; color: #6b5a50; border: 1px dashed #4a3327; padding: 4px 8px;">UNITÀ</span>
+      <span style="font-size: 15px; color: #6b5a50;">›</span>
+      <span style="font-size: 15px; letter-spacing: 1px; color: #6b5a50;">ORDINE</span>
+      <span style="font-size: 15px; color: #6b5a50;">›</span>
+      <span style="font-size: 15px; letter-spacing: 1px; color: #6b5a50;">BERSAGLI</span>
+    </div>
+  </div>
+
+  <div style="padding: 14px 18px 8px 18px;">
+    <div style="font-family: 'Teko', sans-serif; font-size: 30px; line-height: 1; letter-spacing: 1px;">CHI ESEGUE L'ORDINE</div>
+    <div style="font-size: 15px; color: #a08f84; margin-top: 4px;">Tieni premuto per aggiungere all'Ordine Coordinato.</div>
+  </div>
+
+  <div style="padding: 0 18px; display: flex; flex-direction: column; gap: 12px; flex-grow: 1; overflow: hidden;">
+
+    <button style="min-height: 88px; background: #170d08; border: 2px solid {{accent}}; color: #f2e9e2; text-align: left; padding: 12px 14px; font-family: 'Barlow Condensed', sans-serif; cursor: pointer; display: flex; align-items: center; gap: 12px;">
+      <span style="width: 56px; height: 56px; background: #241610; border: 1px solid #4a3327; flex-shrink: 0;"></span>
+      <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-family: 'Teko', sans-serif; font-size: 28px; line-height: 1;">ALGUACIL</span>
+        <span style="font-size: 16px; color: {{accent}}; font-style: italic;">&laquo;Punta&raquo;</span>
+      </span>
+      <span style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+        <span style="font-size: 14px; letter-spacing: 1px; background: #3a2418; color: #ffcf9b; padding: 3px 7px;">PRONO</span>
+      </span>
+    </button>
+
+    <button style="min-height: 88px; background: #170d08; border: 2px solid #4a3327; color: #f2e9e2; text-align: left; padding: 12px 14px; font-family: 'Barlow Condensed', sans-serif; cursor: pointer; display: flex; align-items: center; gap: 12px;">
+      <span style="width: 56px; height: 56px; background: #241610; border: 1px solid #4a3327; flex-shrink: 0;"></span>
+      <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-family: 'Teko', sans-serif; font-size: 28px; line-height: 1;">ALGUACIL</span>
+        <span style="font-size: 16px; color: {{accent}}; font-style: italic;">&laquo;Coda&raquo;</span>
+      </span>
+      <span style="font-size: 14px; letter-spacing: 1px; background: #16303a; color: #9ee0f0; padding: 3px 7px;">TEAM A</span>
+    </button>
+
+    <button style="min-height: 88px; background: #170d08; border: 2px solid #4a3327; color: #f2e9e2; text-align: left; padding: 12px 14px; font-family: 'Barlow Condensed', sans-serif; cursor: pointer; display: flex; align-items: center; gap: 12px;">
+      <span style="width: 56px; height: 56px; background: #241610; border: 1px solid #4a3327; flex-shrink: 0;"></span>
+      <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-family: 'Teko', sans-serif; font-size: 28px; line-height: 1;">INTRUDER</span>
+        <span style="font-size: 16px; color: {{accent}}; font-style: italic;">&laquo;Tetto&raquo;</span>
+      </span>
+      <span style="font-size: 14px; letter-spacing: 1px; background: #3a3a16; color: #ecec8a; padding: 3px 7px;">MIMETIZZATO</span>
+    </button>
+
+    <div style="border: 2px dashed #6b5a50; background: #0f0906; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 12px; opacity: 0.55;">
+        <span style="width: 56px; height: 56px; background: #1a1210; border: 1px solid #3a2a24; flex-shrink: 0;"></span>
+        <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-family: 'Teko', sans-serif; font-size: 28px; line-height: 1; color: #c9b8ad;">MORAN</span>
+          <span style="font-size: 16px; color: #a08f84; font-style: italic;">&laquo;Sentinella&raquo;</span>
+        </span>
+        <span style="font-size: 14px; letter-spacing: 1px; background: #4a0f0f; color: #ffb3b3; padding: 3px 7px;">INCOSCIENTE</span>
+      </div>
+      <div style="font-size: 16px; color: #ff9c8a;">Stato Nullo: non può ricevere Ordini.</div>
+      <button style="min-height: 48px; background: #140e0a; border: 2px solid {{accent}}; color: {{accent}}; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer;">MODIFICA STATI</button>
+    </div>
+
+  </div>
+
+  <div style="padding: 12px 18px 18px 18px; border-top: 1px solid #2a1b13; display: flex; gap: 10px;">
+    <a href="Main.dc.html" style="min-height: 56px; width: 110px; background: #140e0a; border: 2px solid #4a3327; color: #c9b8ad; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px; letter-spacing: 1px;">INDIETRO</a>
+    <a href="Ordini.dc.html" style="min-height: 56px; flex-grow: 1; background: {{accent}}; border: 2px solid {{accent}}; color: #1a0e06; display: flex; align-items: center; justify-content: center; text-decoration: none; font-family: 'Teko', sans-serif; font-size: 28px; letter-spacing: 1px;">PROCEDI</a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#ff8a3d","options":["#ff8a3d","#e03c31","#2f9bd6","#c9a227"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#ff8a3d' };
+  }
+}
+</script>
+</body>
+</html>

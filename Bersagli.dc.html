@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Bersagli e modificatori</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Teko:wght@400;600;700&amp;family=Barlow+Condensed:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0a0604}
+a{color:#ff8a3d}a:hover{color:#ffb27a}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0a0604; color: #f2e9e2; font-family: 'Barlow Condensed', sans-serif; display: flex; flex-direction: column;">
+
+  <div style="height: 8px; background: {{accent}}; flex-shrink: 0;"></div>
+
+  <div style="padding: 10px 14px; background: #120b07; border-bottom: 1px solid #2a1b13; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+    <span style="font-size: 15px; letter-spacing: 1px; color: #c9b8ad; background: #2a1b13; padding: 4px 8px;">ALGUACIL</span>
+    <span style="font-size: 15px; color: #6b5a50;">›</span>
+    <span style="font-size: 15px; letter-spacing: 1px; color: #c9b8ad; background: #2a1b13; padding: 4px 8px;">ATTACCO BS</span>
+    <span style="font-size: 15px; color: #6b5a50;">›</span>
+    <span style="font-size: 15px; letter-spacing: 1px; color: #c9b8ad; background: #2a1b13; padding: 4px 8px;">COMBI RIFLE</span>
+    <span style="font-size: 15px; color: #6b5a50;">›</span>
+    <span style="font-size: 15px; letter-spacing: 1px; color: #6b5a50; border: 1px dashed #4a3327; padding: 4px 8px;">BERSAGLI</span>
+  </div>
+
+  <div style="padding: 14px 18px 8px 18px; display: flex; align-items: baseline; justify-content: space-between;">
+    <div style="font-family: 'Teko', sans-serif; font-size: 30px; line-height: 1; letter-spacing: 1px;">BERSAGLI E MODIFICATORI</div>
+    <div style="font-size: 16px; color: {{accent}};">Raffica 3</div>
+  </div>
+
+  <div style="padding: 0 18px; display: flex; flex-direction: column; gap: 12px; flex-grow: 1; overflow: hidden;">
+
+    <div style="border: 2px solid {{accent}}; background: #170d08; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+        <span style="font-family: 'Teko', sans-serif; font-size: 26px; line-height: 1;">FUSILIER &laquo;Ponte&raquo;</span>
+        <span style="font-size: 16px; color: {{accent}};">2 dadi</span>
+      </div>
+
+      <div>
+        <div style="font-size: 15px; letter-spacing: 1px; color: #a08f84; margin-bottom: 4px;">GITTATA</div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+          <button style="min-height: 46px; background: #0f0906; border: 1px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 17px; cursor: pointer;">+3</button>
+          <button style="min-height: 46px; background: {{accent}}; border: 1px solid {{accent}}; color: #1a0e06; font-family: 'Barlow Condensed', sans-serif; font-size: 17px; cursor: pointer;">0</button>
+          <button style="min-height: 46px; background: #0f0906; border: 1px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 17px; cursor: pointer;">−3</button>
+          <button style="min-height: 46px; background: #0f0906; border: 1px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 17px; cursor: pointer;">−6</button>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button style="flex-grow: 1; min-height: 46px; background: #0f0906; border: 1px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 17px; cursor: pointer;">COPERTURA −3</button>
+        <button style="flex-grow: 1; min-height: 46px; background: #0f0906; border: 1px solid #4a3327; color: #c9b8ad; font-family: 'Barlow Condensed', sans-serif; font-size: 17px; cursor: pointer;">TERRENO</button>
+      </div>
+    </div>
+
+    <div style="border: 2px solid #4a3327; background: #120b07; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-family: 'Teko', sans-serif; font-size: 26px; line-height: 1; color: #c9b8ad;">AKAL &laquo;Angolo&raquo;</span>
+      <span style="font-size: 16px; color: #a08f84;">tocca per allocare</span>
+    </div>
+
+    <div style="border: 1px solid #3a2a24; background: #0f0906; padding: 10px 12px;">
+      <div style="font-size: 15px; letter-spacing: 1px; color: #6b5a50; margin-bottom: 4px;">ESCLUSI DAL MOTORE</div>
+      <div style="font-size: 16px; color: #a08f84;">Spektr — Marker mimetico: serve prima Scoprire.</div>
+    </div>
+
+  </div>
+
+  <div style="padding: 10px 18px 18px 18px; border-top: 1px solid #2a1b13; display: flex; flex-direction: column; gap: 8px;">
+    <div style="border: 2px solid #c9a227; background: #241c05; padding: 8px 12px; font-size: 16px; color: #f0e2b0;">Combi Rifle ha due modalità: scegli quale usi prima di calcolare.</div>
+    <a href="Attesa.dc.html" style="min-height: 60px; background: {{accent}}; border: 2px solid {{accent}}; color: #1a0e06; display: flex; align-items: center; justify-content: center; text-decoration: none; font-family: 'Teko', sans-serif; font-size: 30px; letter-spacing: 1px;">INVIA AL CALCOLATORE</a>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#ff8a3d","options":["#ff8a3d","#e03c31","#2f9bd6","#c9a227"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#ff8a3d' };
+  }
+}
+</script>
+</body>
+</html>

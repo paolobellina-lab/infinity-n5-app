@@ -1,0 +1,20 @@
+{
+  "id": "infinity-panoceania",
+  "name": "Infinity N5 — PanOceania",
+  "short_name": "PanOceania",
+  "description": "Calcolatore ordini Infinity N5 — fazione PanOceania.",
+  "start_url": "app.html?fazione=panoceania",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#00ccff",
+  "background_color": "#000a14",
+  "icons": [
+    {
+      "src": "img/icona_panoceania.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
