@@ -1,4 +1,4 @@
-// @versione 2026-10-18.1 | ordine_osservazione.js | proprieta`: chat MOTORE
+// @versione 2026-10-19.1 | ordine_osservazione.js | proprieta`: chat MOTORE
 // ==========================================
 // 👁️ OSSERVAZIONE (N5) - ordine_osservazione.js
 // ------------------------------------------
@@ -185,7 +185,7 @@
         const M = motore(); if (!M) return;
         const unita = window.coordUnits[window.coordIndex];
         const azione = window.currentOrder.action;
-        let e, corpo = '', titolo = '';
+        let e, corpo = '', titolo = '', carta = '';
 
         if (azione === M.AZIONI.SENSOR) {
             e = M.regoleSensor(unita, M.rosterNemico());
@@ -217,9 +217,8 @@
                 if (e.valido) {
                     // 18 ottobre (OSS-01): il Burst dell'arma, non 1 fisso.
                     t.burst = e.burst || 1;
-                    corpo = `<div style="text-align:center; color:#ccc; font-size:14px; margin-top:8px;">Burst <b style="color:#fff;">${t.burst}</b></div>` +
-                        window.barraGittata(e.arma, t, 'window.setRangeOsservazione') +
-                        `<div style="margin-top:12px; padding:12px; background:#332200; border:1px solid #cc8800; border-radius:5px; text-align:center;">
+                    carta = window.cartaBersaglioOsservazione(t, e.arma);
+                    corpo = `<div style="margin-top:12px; padding:12px; background:#332200; border:1px solid #cc8800; border-radius:5px; text-align:center;">
                             <b style="color:#ffaa33; font-size:15px;">⚠️ NON INFLIGGE DANNO</b>
                             <div style="color:#ffcc88; font-size:13px; margin-top:6px;">Il bersaglio entra in Stato Bersagliato: nessun Tiro Salvezza.</div>
                         </div>`;
@@ -232,7 +231,10 @@
                 // un dado, come prima (burstDisponibile 1).
                 if (!t.burst) t.burst = 1;
                 if (e.valido) {
-                    corpo = window.barraGittata(arma, t, 'window.setRangeOsservazione') +
+                    // Il Triangulated ignora la Copertura (riga 10340): niente tasto.
+                    t.cover = false;
+                    carta = window.cartaBersaglioOsservazione(t, arma, { senzaCopertura: true });
+                    corpo = 
                         (e.modIgnorati.length
                             ? `<div style="margin-top:12px; padding:12px; background:#0d2a28; border:1px solid ${COL.bordo}; border-radius:5px;">
                                 <div style="color:${COL.bordo}; font-size:13px; margin-bottom:6px;">MOD ignorati dal Triangulated Fire:</div>
@@ -263,9 +265,15 @@
                 <span style="color:#aaa;">${v.motivo}</span>
                 <b style="color:${v.valore >= 0 ? '#00ff00' : '#ff6666'};">${v.fonte === 'base' ? '' : (v.valore > 0 ? '+' + v.valore : v.valore)}</b></div>`).join('');
 
+        // 19 ottobre (Paolo): Forward Observer e Triangulated hanno la scheda
+        // del bersaglio dell'Attacco BS (cartaBersaglioOsservazione) in
+        // cima, e sotto il riquadro del tiro. Il Sensor non ha bersaglio:
+        // resta com'era.
+        const inCima = carta, sotto = corpo;
         container.innerHTML = `
             <h2 style="color:${COL.bordo}; text-align:center; margin-bottom:16px;">${titolo}</h2>
-            <div style="background:#0d2018; border:1px solid #2a5550; padding:12px; border-radius:5px;">
+            ${inCima}
+            <div style="background:#0d2018; border:1px solid #2a5550; padding:12px; border-radius:5px; margin-top:${inCima ? '10px' : '0'};">
                 <div style="text-align:center; color:#fff; margin-bottom:8px;">
                     ${e.attributo} ${e.base} → <b style="color:${COL.bordo}; font-size:26px;">${e.valore}</b>
                     ${e.impossibile ? '<br><span style="color:#ff3333; font-size:13px;">Valore sotto 1: il tiro fallisce automaticamente</span>' : ''}
@@ -273,7 +281,7 @@
                 <div style="border-top:1px solid #1a4440; padding-top:8px; font-size:14px;">${dettaglio}</div>
                 ${e.critici && !e.critici.nessunTiro ? `<div style="text-align:center; color:#ffcc00; font-size:12px; margin-top:6px;">🎯 ${e.critici.testo}</div>` : ''}
             </div>
-            ${corpo}
+            ${sotto}
             ${e.note.length ? `<div style="margin-top:12px; color:#888; font-size:12px; line-height:1.6;">` +
                 e.note.map(n => `• ${n}`).join('<br>') + `</div>` : ''}`;
 
@@ -294,11 +302,48 @@
         // come nell'Attacco BS, e non un tasto a parte.
         seg += `<div class="range-seg ${t.fuoriGittata ? 'active' : ''}" style="background:${t.fuoriGittata ? '#ffcc00' : '#332b00'}; color:${t.fuoriGittata ? '#000' : '#ffcc00'}; font-size:12px;" onclick="window.toggleFuoriGittataOsservazione()">FUORI</div>`;
         lab += `<span>oltre</span>`;
-        const M = motore();
-        return `<div style="text-align:center; color:#aaa; font-size:12px; margin:12px 0 5px;">Gittata:</div>
-            <div class="range-bar">${seg}</div>
-            <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${lab}</div>
-            ${M ? M.rigaRequisiti(['lof'], t, 0, 'window.toggleRequisitoOsservazione') : ''}`;
+        return `<div style="margin-bottom:15px;"><div class="range-bar">${seg}</div>
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${lab}</div></div>`;
+    };
+
+    // 19 ottobre (Paolo): LA SCHEDA DEL BERSAGLIO, come nell'Attacco BS
+    // (ordine_attacco_bs.js, renderTargetsAllocationBS): bordo a sinistra
+    // della fazione, nome del bersaglio e Burst in alto, barra delle gittate
+    // col FUORI in coda, e sotto i due tasti COPERTURA | LINEA DI TIRO. Il
+    // Burst non si divide (un bersaglio solo): si mostra e basta.
+    //   opz.senzaCopertura: niente tasto COPERTURA (Triangulated Fire: "without
+    //   applying any MODs to the Roll (Range, Cover, ...)", riga 10340).
+    //   Nel Forward Observer la Copertura vale: e` un Attacco BS (Tratto
+    //   BS Weapon (WIP)) e il motore la applica (modAttacco).
+    window.cartaBersaglioOsservazione = function (t, arma, opz) {
+        opz = opz || {};
+        const M = motore(); if (!M) return '';
+        const nomadi = document.title.includes('NOMADS');
+        const bordo = nomadi ? 'var(--nomad-red)' : 'var(--nomad-orange)';
+        const sfondo = nomadi ? '#1a0000' : '#001122';
+        const STILE_SI = 'background:#004400; border-color:#00ff00; color:#00ff00;';
+        const STILE_NO = 'background:#554400; border-color:#ffcc00; color:#ffcc00;';
+        const RQ = (M.REQUISITI_TAVOLO || {}).lof || {};
+        const noLoF = M.requisitoManca(t, 'lof');
+        const icona = (k) => (typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore(k) : '';
+        const coverStyle = t.cover ? 'background:var(--nomad-orange); color:#000;' : `background:${sfondo}; color:#fff;`;
+        return `
+            <div class="target-card" style="border-left: 4px solid ${bordo}; margin-bottom: 10px; background: rgba(255,255,255,0.03); padding: 15px; overflow: hidden;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <b style="color:var(--nomad-orange); font-size:20px;">${t.name || 'Bersaglio'}</b>
+                    <div class="burst-ctrl"><span style="font-size:22px; font-weight:bold; color:#00ff00;">Burst <b style="color:#00ff00;">${t.burst || 1}</b></span></div>
+                </div>
+                ${window.barraGittata(arma, t, 'window.setRangeOsservazione')}
+                <div style="display:flex; gap:10px; margin-top: 15px;">
+                    ${opz.senzaCopertura ? '' : `<button class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; ${coverStyle}" onclick="window.toggleCoperturaOsservazione()">${t.cover ? icona('coverSi') + 'IN COPERTURA' : icona('coverNo') + 'NO COPERTURA'}</button>`}
+                    <button class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; ${noLoF ? STILE_NO : STILE_SI}" onclick="window.toggleRequisitoOsservazione(0, 'lof')">${noLoF ? (RQ.no || 'LINEA DI TIRO NO') : (RQ.si || 'LINEA DI TIRO SÌ')}</button>
+                </div>
+            </div>`;
+    };
+    window.toggleCoperturaOsservazione = function () {
+        const t = (window.combatTargets || [])[0]; if (!t) return;
+        t.cover = !t.cover;
+        window.renderOsservazione();
     };
 
     window.setRangeOsservazione = function (i) {
@@ -409,7 +454,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_osservazione.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_osservazione.js', versione: '2026-10-19.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

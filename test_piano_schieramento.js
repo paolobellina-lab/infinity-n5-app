@@ -1,4 +1,6 @@
-// @versione 2026-10-19.1 | test_piano_schieramento.js | proprieta`: chat TEST
+// @versione 2026-10-19.2 | test_piano_schieramento.js | proprieta`: chat TEST
+// 2026-10-19.2: REV_MINIMA = 32 (OSS-01 e OSS-03: la scheda del bersaglio di
+//    Forward Observer e Triangulated Fire). Le prove restano 290.
 // 2026-10-19.1: REV_MINIMA = 31. Le prove passano da 284 a 290 (SUP-02a/b, SUP-04a/b,
 //    ST-16a/b, ST-21, DET-07, DET-08): i codici accettano una lettera minuscola finale.
 // 2026-10-16.2: database 379 + 368 = 747.
@@ -139,7 +141,7 @@ const perFazione = voci.reduce(function (m, v) { m[v.fazione] = (m[v.fazione] ||
 // (Il 7 ottobre ho cambiato questi numeri senza alzare la versione del
 // banco, e due chat hanno letto due contenuti diversi sotto la stessa
 // 2026-10-07.1. Da qui la .2.)
-const REV_MINIMA = 31;
+const REV_MINIMA = 32;
 const testoPiano = fs.readFileSync(PIANO, 'utf8');
 const revisione = (/revisione\s+(\d+)/.exec(testoPiano) || [])[1];
 ok(revisione !== undefined && parseInt(revisione, 10) >= REV_MINIMA,

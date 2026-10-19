@@ -1,4 +1,4 @@
-// @versione 2026-10-15.1 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-19.2 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -250,6 +250,177 @@ window.renderStructures = () => {
 };
 
 // --- IMPORTAZIONE E COSTRUZIONE ROSTER ---
+// ==========================================================================
+//  IMPORTAZIONE DAL TESTO DI INFINITY ARMY ("Plain Text")
+// ==========================================================================
+// 19 ottobre (misura di MOTORE sulla lista di collaudo di Paolo: 8 profili
+// Nomadi sbagliati su 39). Il punteggio di prima guardava il nome base (+5),
+// la PRIMA arma del profilo (+3) e tre parole (HACKER, PARAMEDIC,
+// LIEUTENANT, +3); a pari punti vinceva il primo profilo del database. Due
+// difetti insieme:
+//  - la prima arma e` spesso uguale per tutti i profili di una truppa
+//    (sei Alguacil col Combi Rifle, tutti i Morlock con la Chain Rifle), e
+//    la parentesi dopo il nome ("WARCOR (Sixth Sense)") non contava;
+//  - Army scrive "MULTI Sniper Rifle(+1SD)" senza spazio, il database
+//    "MULTI Sniper Rifle (+1SD)": la prima arma non coincideva nemmeno.
+// Risultato: Alguacil (Forward Observer) diventava Alguacil (Combi Rifle),
+// Clockmaker (Armed Turret) diventava Clockmaker (Engineer), in silenzio.
+// Ora: i due testi si normalizzano allo stesso modo; si confrontano TUTTE
+// le voci della riga (armi, equipaggiamento, le parole fra parentesi dopo il
+// nome) con quelle del profilo (+1 per voce in comune, -1 per ogni arma o
+// equipaggiamento del profilo che nella riga non c'e`); e a pari punti NON
+// si sceglie: la riga e` ambigua e la sceglie il giocatore.
+
+// Lo stesso testo, scritto come lo scrivono Army e il database: maiuscole,
+// niente "REINF.", niente punti, niente spazio prima di "(", virgolette
+// uniformate, spazi singoli.
+window.normalizzaTestoArmy = (t) => String(t || '')
+    .replace(/\u00a0/g, ' ')
+    .toUpperCase()
+    .replace(/\bREINF\.?/g, ' ')
+    .replace(/[\u2018\u2019\u00b4`]/g, "'")
+    .replace(/[\u201c\u201d\u2033]/g, '"')
+    .replace(/\s+\(/g, '(')
+    .replace(/\./g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+// Il NUCLEO di una voce: senza quello che sta fra parentesi o quadre.
+// "GIZMOKIT(+1B)" e "GIZMOKIT" sono la stessa voce; "AP CC WEAPON(PS=6)" e
+// "DA CC WEAPON(PS=6)" no.
+window.nucleoVoceArmy = (v) => window.normalizzaTestoArmy(v).replace(/[\(\[][^\)\]]*[\)\]]/g, ' ').replace(/\s+/g, ' ').trim();
+
+// Le voci di una lista separata da virgole, senza tagliare dentro le
+// parentesi: "Hacking Device Plus (UPGRADE: Oblivion, +1B)" resta una.
+window.vociSeparate = (testo) => {
+    const out = []; let livello = 0, cur = '';
+    for (const ch of String(testo || '')) {
+        if (ch === '(' || ch === '[') livello++;
+        if (ch === ')' || ch === ']') livello = Math.max(0, livello - 1);
+        // Solo la virgola separa: una "/" sta dentro i nomi (E/M CC Weapon,
+        // E/Mitter) e spezzarla li` faceva due voci finte.
+        if (ch === ',' && livello === 0) { out.push(cur); cur = ''; } else cur += ch;
+    }
+    out.push(cur);
+    return out.map(x => x.trim()).filter(x => x && x !== '-');
+};
+
+// Il nome base di un profilo: "Interventor (Hacker) - Boarding Shotgun" ->
+// "INTERVENTOR".
+window.nomeBaseArmy = (u) => window.normalizzaTestoArmy(String((u && u.nome) || '').split('(')[0].split(' - ')[0]);
+
+// Le voci di un profilo, gia` ridotte al nucleo.
+//   armiEquip  armi ed equipaggiamento: se mancano nella riga, -1
+//   opzione    le parole fra parentesi del nome: se mancano nella riga, -1
+//              (e` cio` che distingue "Alguacil (Lieutenant)" da
+//              "Alguacil (Combi Rifle)", che hanno le stesse armi)
+//   tutte      anche Abilita` e le parole fra parentesi del nome
+window.vociProfiloArmy = (u) => {
+    const armiEquip = window.vociSeparate(u.weapon).concat(window.vociSeparate(u.equip)).map(window.nucleoVoceArmy).filter(Boolean);
+    const nome = String(u.nome || '');
+    // Dalla PRIMA "(" all'ULTIMA ")" del nome: "Bambabot-1 (Chain Rifle
+    // (ps=6))" ha una parentesi dentro l'altra.
+    const testa = nome.split(' - ')[0];
+    const a = testa.indexOf('('), b = testa.lastIndexOf(')');
+    const fraParentesi = (a >= 0 && b > a) ? testa.slice(a + 1, b) : '';
+    const dopoTrattino = nome.indexOf(' - ') >= 0 ? nome.split(' - ').slice(1).join(' - ') : '';
+    const altre = window.vociSeparate(u.skills).concat(window.vociSeparate(fraParentesi), window.vociSeparate(dopoTrattino)).map(window.nucleoVoceArmy).filter(Boolean);
+    // " - 27 pt" in coda al nome distingue due voci del database, non due
+    // opzioni di Army: non e` una voce da cercare nella riga.
+    const opzione = window.vociSeparate(fraParentesi).concat(window.vociSeparate(dopoTrattino)).map(window.nucleoVoceArmy).filter(v => v && !/^\d+ ?PT$/.test(v));
+    return { armiEquip: [...new Set(armiEquip)], opzione: [...new Set(opzione)], tutte: [...new Set(armiEquip.concat(altre))] };
+};
+
+// Le voci di una riga di Army, dopo il nome base. Si taglia anche il costo
+// in coda, "(0 | 10)": e` un numero, non una voce.
+window.vociRigaArmy = (rigaNorm, base) => {
+    const resto = rigaNorm.slice(rigaNorm.indexOf(base) + base.length)
+        .replace(/\(\s*[\d,]+\s*\|\s*\d+\s*\)\s*$/, ' ');
+    // Separatori di Army: la virgola, " / " fra armi e armi da CC, le
+    // parentesi dopo il nome, e "|" che dentro "( Abilita` | Equipaggiamento )"
+    // separa le due parti. Una "/" SENZA spazi intorno (E/Mitter) e` del nome.
+    return [...new Set(resto.split(/\s\/\s|[,\(\)\[\]|]/).map(window.nucleoVoceArmy).filter(v => v && v !== '-' && /[A-Z]/.test(v)))];
+};
+
+// UNA riga di Army contro il database della fazione.
+//   { stato: 'OK' | 'AMBIGUA' | 'NESSUNO', profilo, candidati, punteggi }
+// candidati: i profili a pari punti in testa (piu` d'uno se AMBIGUA).
+window.riconosciRigaArmy = (riga, db) => {
+    const r = window.normalizzaTestoArmy(riga);
+    const esito = { stato: 'NESSUNO', profilo: null, candidati: [], punteggi: [] };
+    if (!r) return esito;
+    // Il nome base deve aprire la riga (o stare dopo un numero/ segno, come
+    // "1x"): si prende il piu` LUNGO che coincide, cosi` "PUPPET MASTERS"
+    // non si confonde con un "PUPPET..." piu` corto.
+    const parola = (b) => new RegExp('^(?:[^A-Z]*\\s)?' + b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Z0-9])').test(r);
+    let base = '';
+    (db || []).forEach(u => { const b = window.nomeBaseArmy(u); if (b && b.length > base.length && parola(b)) base = b; });
+    if (!base) return esito;
+    const voci = window.vociRigaArmy(r, base);
+    // I profili SECONDARI (Battle-Ravaged, Enhanced Profile, Inactive
+    // Symbiont Armor) non stanno in una lista di Army: sono lo stato di una
+    // truppa gia` schierata. Prima pareggiavano col profilo vero.
+    const punteggi = (db || []).filter(u => window.nomeBaseArmy(u) === base && u.profiloSecondario !== true).map(u => {
+        const p = window.vociProfiloArmy(u);
+        const comuni = voci.filter(v => p.tutte.indexOf(v) >= 0).length;
+        // L'opzione del database non e` sempre scritta come in Army: il
+        // database dice "Interventor (Hacker Plus)", Army "(Hacker, Hacking
+        // Device Plus)". Una voce dell'opzione conta come presente se c'e`
+        // uguale, oppure se TUTTE le sue parole stanno nella riga.
+        const parole = ' ' + voci.join(' ').split(' ').join(' ') + ' ';
+        const presente = (v) => voci.indexOf(v) >= 0 || v.split(' ').every(w => parole.indexOf(' ' + w + ' ') >= 0);
+        const mancanti = p.armiEquip.filter(v => voci.indexOf(v) < 0).length + p.opzione.filter(v => !presente(v)).length;
+        return { profilo: u, punti: comuni - mancanti, comuni: comuni, mancanti: mancanti };
+    }).sort((a, b) => b.punti - a.punti);
+    esito.punteggi = punteggi;
+    if (!punteggi.length) return esito;
+    esito.candidati = punteggi.filter(x => x.punti === punteggi[0].punti).map(x => x.profilo);
+    if (esito.candidati.length === 1) { esito.stato = 'OK'; esito.profilo = esito.candidati[0]; }
+    else esito.stato = 'AMBIGUA';
+    return esito;
+};
+
+// L'unita` del roster costruita da un profilo: la stessa forma di prima.
+window.unitaDaProfiloArmy = (p, gruppo) => ({
+    id: "u_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+    alias: p.nome,
+    name: p.nome,
+    tipo: p.tipo || 'LI',
+    weapon: p.weapon,
+    bs: p.bs, ph: p.ph, cc: p.cc, wip: p.wip,
+    arm: p.arm, bts: p.bts, str: p.str, w: p.w, s: p.s,
+    skills: p.skills, equip: p.equip,
+    state: "ACTIVE",
+    player: window.getPlayerTag(),
+    combatGroup: gruppo
+});
+
+// Le righe ambigue dell'ultima importazione, da scegliere a mano.
+window.righeAmbigueImport = [];
+
+window.disegnaRigheAmbigue = () => {
+    const box = document.getElementById('import-ambigue');
+    if (!box) return;
+    const lista = window.righeAmbigueImport;
+    if (!lista.length) { box.innerHTML = ''; box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    box.innerHTML = `<div style="color:#ffcc66; font-size:14px; margin:8px 0;">\u26a0\ufe0f ${lista.length} ${lista.length === 1 ? 'riga ambigua' : 'righe ambigue'}: pi\u00f9 profili hanno gli stessi punti. Scegli tu quale.</div>` +
+        lista.map((a, i) => `<div class="riga-ambigua" style="border:1px solid #886600; border-radius:5px; padding:8px; margin-bottom:8px; background:#1a1400;">
+            <div style="color:#ddd; font-size:13px; margin-bottom:6px;">G${a.gruppo} \u00b7 ${a.riga.replace(/</g, '&lt;')}</div>
+            ${a.candidati.map(c => `<button class="btn-status btn-small" style="margin:3px 0; width:100%;" onclick="window.scegliRigaAmbigua(${i}, '${String(c.id).replace(/'/g, "\\'")}')">${c.nome}</button>`).join('')}
+            <button class="btn-status btn-small" style="margin:3px 0; width:100%; color:#888; border-color:#555;" onclick="window.scegliRigaAmbigua(${i}, null)">NESSUNO: SALTA LA RIGA</button>
+        </div>`).join('');
+};
+
+window.scegliRigaAmbigua = (i, idProfilo) => {
+    const a = window.righeAmbigueImport[i];
+    if (!a) return;
+    const p = idProfilo ? a.candidati.find(c => c.id === idProfilo) : null;
+    if (p) { window.roster.push(window.unitaDaProfiloArmy(p, a.gruppo)); window.renderRoster(); }
+    window.righeAmbigueImport.splice(i, 1);
+    window.disegnaRigheAmbigue();
+};
+
 window.importaDaTesto = () => {
     let text = document.getElementById('army-import-text').value;
     if(!text) return alert("Incolla prima il testo della lista dal tasto 'Plain Text' dell'Army!");
@@ -258,62 +429,38 @@ window.importaDaTesto = () => {
     let count = 0;
     let currentParseGroup = 1;
     const dbFazione = window.getDbFazione();
+    window.righeAmbigueImport = [];
 
     lines.forEach(line => {
         let lineUpper = line.toUpperCase().trim();
         if (lineUpper.length < 4) return;
-        if (lineUpper.includes('SWC') || lineUpper.includes('NOMADS') || lineUpper.includes('PANOCEANIA') || lineUpper.includes('CORVUS BELLI') || lineUpper.includes('UNDEFINED')) return; 
+        if (lineUpper.includes('SWC') || lineUpper.includes('NOMADS') || lineUpper.includes('PANOCEANIA') || lineUpper.includes('CORVUS BELLI') || lineUpper.includes('UNDEFINED')) return;
+        // Il codice di Infinity Army in fondo al testo: non e` una truppa.
+        if (/HTTPS?:\/\//.test(lineUpper)) return;
 
-        if (lineUpper.includes('GROUP 1') || lineUpper.includes('GRUPPO 1')) { currentParseGroup = 1; return; }
-        if (lineUpper.includes('GROUP 2') || lineUpper.includes('GRUPPO 2')) { currentParseGroup = 2; return; }
-        if (lineUpper.includes('GROUP 3') || lineUpper.includes('GRUPPO 3')) { currentParseGroup = 3; return; }
-        if (lineUpper.includes('GROUP 4') || lineUpper.includes('GRUPPO 4')) { currentParseGroup = 4; return; }
+        // Army scrive il Gruppo e i suoi Ordini attaccati: "GROUP 28 / 2 / 3"
+        // e` il Gruppo 2 con 8 Ordini. Il Gruppo e` la PRIMA cifra. Prima si
+        // cercava "GROUP 1".."GROUP 4" dentro la riga: "GROUP 51" (Gruppo 5)
+        // non cambiava Gruppo e le sue truppe finivano nel 4.
+        const intest = lineUpper.match(/^(?:GROUP|GRUPPO)\s*(\d)/);
+        if (intest) { currentParseGroup = parseInt(intest[1], 10); return; }
 
-        let bestMatch = null;
-        let highestScore = 0;
-
-        dbFazione.forEach(dbU => {
-            let score = 0;
-            let nomeUpper = dbU.nome.toUpperCase();
-            let weaponUpper = (dbU.weapon || "").toUpperCase();
-            let skillsUpper = (dbU.skills || "").toUpperCase();
-            let nomeBase = nomeUpper.split('(')[0].trim();
-
-            if (lineUpper.includes(nomeBase)) score += 5;
-            if (weaponUpper.split(',')[0].trim().length > 2 && lineUpper.includes(weaponUpper.split(',')[0].trim())) score += 3;
-            if (lineUpper.includes('HACKER') && skillsUpper.includes('HACKER')) score += 3;
-            if (lineUpper.includes('PARAMEDIC') && skillsUpper.includes('PARAMEDIC')) score += 3;
-            if (lineUpper.includes('LIEUTENANT') && skillsUpper.includes('LIEUTENANT')) score += 3;
-
-            if (score > highestScore && score >= 5) {
-                highestScore = score;
-                bestMatch = dbU;
-            }
-        });
-
-        if (bestMatch) {
-            const unit = {
-                id: "u_" + Date.now() + "_" + Math.floor(Math.random()*1000),
-                alias: bestMatch.nome, 
-                name: bestMatch.nome,
-                tipo: bestMatch.tipo || 'LI',
-                weapon: bestMatch.weapon, 
-                bs: bestMatch.bs, ph: bestMatch.ph, cc: bestMatch.cc, wip: bestMatch.wip,
-                arm: bestMatch.arm, bts: bestMatch.bts, str: bestMatch.str, w: bestMatch.w, s: bestMatch.s, 
-                skills: bestMatch.skills, equip: bestMatch.equip,
-                state: "ACTIVE", 
-                player: window.getPlayerTag(),
-                combatGroup: currentParseGroup
-            };
-            window.roster.push(unit);
+        const e = window.riconosciRigaArmy(line, dbFazione);
+        if (e.stato === 'OK') {
+            window.roster.push(window.unitaDaProfiloArmy(e.profilo, currentParseGroup));
             count++;
+        } else if (e.stato === 'AMBIGUA') {
+            window.righeAmbigueImport.push({ riga: line.trim(), gruppo: currentParseGroup, candidati: e.candidati });
         }
     });
+    window.disegnaRigheAmbigue();
 
-    if(count > 0) {
-        alert(`✅ Trovate e importate ${count} unità dal testo!\nSono state smistate correttamente nei rispettivi Gruppi di Combattimento.`);
-        document.getElementById('army-import-text').value = ""; 
-        window.renderRoster(); 
+    const amb = window.righeAmbigueImport.length;
+    if(count > 0 || amb > 0) {
+        alert(`✅ Importate ${count} unità dal testo, nei rispettivi Gruppi di Combattimento.` +
+              (amb ? `\n\n⚠️ ${amb} ${amb === 1 ? 'riga è ambigua' : 'righe sono ambigue'}: scegli tu il profilo sotto il riquadro del testo.` : ''));
+        if (!amb) document.getElementById('army-import-text').value = "";
+        window.renderRoster();
     } else {
         alert("❌ Nessuna unità riconosciuta. Assicurati di aver copiato il formato 'Plain Text' (in INGLESE) dall'Infinity Army.");
     }
@@ -1405,7 +1552,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-10-15.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-10-19.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

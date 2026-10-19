@@ -1,6 +1,6 @@
-<!-- @versione 2026-10-19.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-10-19.2 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 31)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 32)
 
 Bozza scritta dalla chat MOTORE il 15 ottobre, su richiesta di Paolo, da far
 adottare a TEST. Segue il motore **2026-10-15.1**, `motore_core.js`,
@@ -14,6 +14,13 @@ moduli d'Ordine **2026-10-18.1**, il catalogo **2026-10-19.1**, `app.html` e
 `calcolatore_hub.html` **2026-10-18.1** e i database **2026-10-16.2**. Cambiano
 SUP-02 e SUP-04 (divise in due), ST-16 (divisa in due), DIF-10, DIF-13, ST-04,
 ST-05, ST-14, GUI-03 e ORD-02; nuove ST-21, DET-07 e DET-08.
+
+**Revisione 32** (TEST, 19 ottobre): segue `ordine_osservazione.js`
+**2026-10-19.1**. Forward Observer e Triangulated Fire hanno la scheda del
+bersaglio dell'Attacco BS: cambiano OSS-01 (si dichiara la Copertura, −3) e
+OSS-03 (niente tasto Copertura: tolti dall'«Atteso» il bersaglio in copertura e
+il MOD barrato della Copertura, il tiro "senza Abilità" passa da 1 a 4). Le
+prove restano 290.
 
 Ogni prova dice **chi** agisce, **quale Ordine** dichiara, **con che cosa**,
 **contro chi**, **a che distanza** (in pollici) e **cosa si deve leggere**. Dove
@@ -53,7 +60,7 @@ più tutti i MOD. Si tira 1d20 e serve **uguale o meno**. La salvezza si scrive
 
 **Il conteggio.** Il piano contiene **290 prove, tutte nello stesso formato**:
 tutte e 290, nelle stesse cinque righe; le convenzioni servono a non scrivere
-la stessa riga 290 volte. I codici sono uno per prova: alla revisione 31 sono 290.
+la stessa riga 290 volte. I codici sono uno per prova: alla revisione 32 sono 290.
 Prove con un campo da completare: 0 prove su 290
 Il numero lo controlla `test_piano_schieramento.js`: non si cambia a mano.
 
@@ -926,7 +933,8 @@ Il bersaglio delle prove SCO è il **Croc Man (MULTI Sniper Rifle)**
 - **Attivo:** Grenzer (Forward Observer, Sensor, NCO) *(Nomadi #12, WIP 13)* · FORWARD OBSERVER
 - **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* a 8-16"
 - **ARO:** nessuno
-- **Atteso:** tiro su **WIP 13**, Burst 2, nessun MOD di gittata fino a 24". **Nessun Tiro Salvezza**: il bersaglio entra in Stato **Bersagliato**.
+- **Atteso:** in cima la **scheda del bersaglio** come nell'Attacco BS: il **nome del bersaglio**, **Burst 2**, la barra delle gittate (FUORI in coda), e i due tasti **NO COPERTURA** e **LINEA DI TIRO SÌ**. Nessun'altra riga di requisiti. Tiro su **WIP 13**, nessun MOD di gittata fino a 24". **Nessun Tiro Salvezza**: il bersaglio entra in Stato **Bersagliato**.
+- **Poi:** tocca **COPERTURA** → il tasto dice *«IN COPERTURA»*, il tiro scende a **WIP 10** con la voce *«Bersaglio in Copertura Parziale: -3»*, e il tabellone dice *«Successo al: 10»*. Ritocca: torna 13. Tocca **LINEA DI TIRO** → *«LINEA DI TIRO NO»*, e il tasto del calcolo diventa **IDLE**.
 
 **OSS-02 — Sensor**
 - **Attivo:** Grenzer (Forward Observer, Sensor, NCO) *(Nomadi #12)* · SENSOR
@@ -936,9 +944,9 @@ Il bersaglio delle prove SCO è il **Croc Man (MULTI Sniper Rifle)**
 **OSS-03 — Triangulated Fire**
 - **Attivo:** Zulu-Cobra (Triangulated Fire, Sensor) *(PanOceania #10, BS 13)*, **rivelato** · TRIANGULATED FIRE
 - **Con:** Combi Rifle
-- **Bersaglio:** Intruder (HMG) *(Nomadi #24, Mimetismo −3)*, rivelato, a 32-40", **in copertura**
+- **Bersaglio:** Intruder (HMG) *(Nomadi #24, Mimetismo −3)*, rivelato, a 32-40"
 - **ARO:** nessuno
-- **Atteso:** la schermata ha **un bottone per arma** (Combi Rifle, Jammer, Assault Pistol). Il tiro è su **BS 13 pieno**, MOD 0. I MOD ignorati compaiono **barrati**: *«Gittata: -6»*, *«Bersaglio in Copertura Parziale: -3»*, *«Mimetismo del bersaglio: -3»*; con quei MOD il tiro sarebbe stato **1**. Controprova: Alguacil (Combi Rifle) *(Nomadi #1)* non ha la voce, *«Serve l'Abilità Triangulated Fire.»*
+- **Atteso:** la schermata ha **un bottone per arma** (Combi Rifle, Jammer, Assault Pistol). Al tiro, in cima la **scheda del bersaglio**: il **nome del bersaglio**, **Burst 1**, la barra delle gittate e **solo** il tasto **LINEA DI TIRO**: **nessun tasto Copertura**, perché il Triangulated la ignora (riga 10340). Il tiro è su **BS 13 pieno**, MOD 0. I MOD ignorati compaiono **barrati**: *«Gittata: -6»*, *«Mimetismo del bersaglio: -3»*; con quei MOD il tiro sarebbe stato **4**. **LINEA DI TIRO NO** → IDLE. Controprova: Alguacil (Combi Rifle) *(Nomadi #1)* non ha la voce, *«Serve l'Abilità Triangulated Fire.»*
 
 ---
 
@@ -1820,6 +1828,7 @@ quello indicato.
 | Le cinque spazzate sul database (armi, bande, salvezze, notazioni, deployable) | `test_coerenza_dati.js` sezioni 8-12 |
 | Il conteggio di questo piano e le unità del roster | `test_piano_schieramento.js` |
 | Le novità del 18-19 ottobre: FUORI GITTATA come segmento, Burst 2 del FO, Marker col Mimetismo, allarmi ARO di Sensor, Triangulated, Supporto e Soppressione, MediKit e GizmoKit, Cybermask dall'Hacking | `test_novita_18ott.js` |
+| La scheda del bersaglio di Forward Observer e Triangulated Fire: COPERTURA −3 nel FO, nessun tasto Copertura nel Triangulated, LINEA DI TIRO NO → IDLE, OSS-03 coi suoi numeri | `test_scheda_osservazione.js` |
 | La pagina DETONAZIONE di koala e mine, e la busta che parte con AVANTI e NESSUN ARO | `test_innesco_schermata.js` |
 
 Una trappola da sapere scrivendo una prova nuova: la chiave di un requisito non

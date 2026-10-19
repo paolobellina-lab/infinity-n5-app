@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-19.1 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-19.2 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -343,6 +343,11 @@
                 <span style="color:var(--nomad-lightblue); font-size:14px; display:block; margin-bottom:5px; color:#00ffff;">Copia/Incolla la tua lista "Plain Text" dall'Army Builder:</span>
                 <textarea id="army-import-text" placeholder="Incolla il testo qui..." style="width:100%; height:80px; background:#000; color:#00ff00; border:1px solid #005500; font-family:monospace; padding:5px; box-sizing:border-box;"></textarea>
                 <button class="huge-btn" style="background:#004400; border-color:#00ff00; margin-top:5px; min-height:40px; font-size:18px;" onclick="window.importaDaTesto()">⚡ IMPORTA DA TESTO (AUTO-COMPLETA)</button>
+                <!-- 19 ottobre: le righe del testo che corrispondono a piu`
+                     profili a pari punti. Prima l'import prendeva il primo del
+                     database, in silenzio; ora le sceglie il giocatore
+                     (roster_manager.js, window.disegnaRigheAmbigue). -->
+                <div id="import-ambigue" style="display:none;"></div>
             </div>
             <div style="text-align:center; color:#aaa; font-size:12px; margin-bottom:10px;">- OPPURE INSERISCI MANUALMENTE -</div>
             <div class="flex-row">
@@ -583,7 +588,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-19.1', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-10-19.2', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();

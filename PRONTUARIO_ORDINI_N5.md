@@ -1,4 +1,4 @@
-<!-- @versione 2026-10-12.2 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-10-19.1 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
 
 # PRONTUARIO ORDINI N5 — richiamo rapido durante la partita
 
@@ -1540,6 +1540,17 @@ Voci attese: `gittata` (bande SCOPRIRE `[3,0,0,0,-3,-3,-6…]` ✅ corrette nel 
 GizmoKit a distanza) · tutte **Abilità Brevi** · bersagli **alleati** · **nessuna salvezza** per il
 bersaglio. Il punto da controllare subito: **chi tira** cambia da uno strumento all'altro.
 
+> 🔴 **Sono Short Skill, quindi sono sempre la SECONDA metà dell'Ordine.** Non hanno una seconda
+> metà: hanno bisogno della **prima**. Le combinazioni esistenti sono solo tre e vanno dichiarate
+> **nell'ordine mostrato** (righe **1047–1054**, «always declared in the order shown»), e l'unica
+> che contiene una Short è `Basic Short + Short`. Le Basic Short sono tre (chart righe 16622–16624):
+> **Movimento + Supporto**, **Scoprire + Supporto**, **Idle + Supporto**. Non esiste
+> `Supporto + qualcosa`. Chi "cura e basta" sta dichiarando **Idle + Supporto**: righe
+> **7454–7456**, «Whenever a Trooper… chooses not to perform an action with one of the two Short
+> Skills of that Order, that Trooper **is considered to declare Idle**» — e l'Idle **attiva la
+> truppa e genera AROs** (righe 7452–7453). Classi dal chart: Doctor 16645, Engineer 16649,
+> GizmoKit 16651, MediKit 16652, tutti in colonna **SHORT SKILLS**.
+
 | Strumento | Chi tira | Su cosa | Bersaglio | Se il tiro fallisce |
 |---|---|---|---|---|
 | **Dottore** | il Dottore | WIP, Tiro Normale | alleato **VITA** in Incosciente, a contatto | il bersaglio entra in **MORTO** |
@@ -1894,8 +1905,17 @@ Reazioni: come l'Attacco BS (§1.1) — Schivata (PH, −3 senza LoF, IMM-A −6
 Attacco in ARO. **Il Reset non lo evita** (non è Comms né Guidato).
 
 ### 1.13.b SENSOR
-**Abilità Breve** · etichetta *Attack, Zone of Control* · **nessuna LoF, nessun bersaglio designato** ·
-Tiro **Normale WIP+6** che Scopre **tutti** i Marker CAMO e Hidden Deployment nella propria ZdC.
+**Abilità Breve** (riga **9865**; chart riga **16656**) · etichetta *Attack, Optional, Zone of
+Control* · **nessuna LoF, nessun bersaglio designato** · Tiro **Normale WIP+6** che Scopre **tutti**
+i Marker CAMO e Hidden Deployment nella propria ZdC.
+
+> 🔴 **Essendo Short, è sempre la SECONDA metà dell'Ordine**: non ha una seconda metà, ha bisogno
+> della **prima**. Le sole combinazioni sono `Basic Short + Basic Short`, `Basic Short + Short` e
+> `Long`, **nell'ordine mostrato** (righe **1047–1054**). Quindi: **Movimento + Sensor**,
+> **Scoprire + Sensor**, **Idle + Sensor**. Chi dichiara solo il Sensor sta facendo *Idle + Sensor*
+> (righe **7454–7456**), e l'Idle genera AROs. ⚠️ L'etichetta *Attack* ha due conseguenze proprie:
+> lo **Stordito** non può dichiararlo (riga 14614) e un **Marker CAMO** che lo dichiara **si rivela**
+> (riga 13634).
 
 | Voce | Si applica? |
 |---|---|
@@ -2084,6 +2104,13 @@ IMM-A/B, Isolato, Stordito), Jetpack, Overkill… uso singolo, uno per truppa.
 ## 1.18 ENTRARE IN FORMA DI MARKER (Rientro CAMO · Cybermask · Rientro Impersonation)
 `ordine_rientro_camo.js` · azioni `'RIENTRARE IN CAMO'` e `'CYBERMASK'` ·
 tutte **Long Skill**, **nessun tiro**, **nessun bersaglio**.
+
+> 🔴 **Essendo Long, consumano l'intero Ordine: nessuna metà, né prima né seconda.** Righe
+> **1047–1054**: «1 Long Skill (**which activates the Trooper and expends the whole Order**)». Non
+> si combinano con nulla — niente Movimento prima, niente Idle dopo. Cybermask è Long alla riga
+> **5151** e nella chart alla riga **16625** (colonna LONG SKILLS); il rientro CAMO e il rientro
+> Impersonation sono fuori chart ma Long per il testo del proprio stato (righe **13603** e
+> **14202**). E le Long Skill valgono **solo in Turno Attivo** (riga **6733**).
 
 ### A. Identità
 | | Rientro CAMO | Cybermask | Rientro Impersonation |

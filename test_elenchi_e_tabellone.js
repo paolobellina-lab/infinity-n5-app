@@ -1,4 +1,4 @@
-// @versione 2026-10-19.2 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-19.4 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -53,6 +53,10 @@
 //      in sequenza le loro quattro foto, e l'Hub vede la stessa; le mine
 //      in ARO sono una riga con l'immagine del loro tipo e la pagina con
 //      la sola DETONAZIONE, come i koala.
+//  25. Import dal testo di Infinity Army (misura di MOTORE, 19 ottobre):
+//      le righe che sbagliavano danno il profilo giusto, e a pari punti la
+//      riga e` ambigua e la sceglie il giocatore. 25b: la lista vera di
+//      Paolo, incollata com'e`.
 //
 //  NON PROVA: l'aspetto vero nel browser (altezze, colori, immagini che
 //  esistono o no). Il DOM qui e` finto: si guarda l'HTML prodotto.
@@ -1273,6 +1277,78 @@ sezione('24. Le foto dei deployable: koala in sequenza, mine in ARO come i koala
         const prima = (N.MotoreN5.domandeDeployable('INNESCO_MINA')[0] || {}).id;
         ok(T.nomadi.el('aro-action-list').innerHTML.indexOf("rispondiInnesco('" + mina.id + "', '" + prima + "', true)") >= 0, 'dentro, la prima delle tre domande della mina (' + prima + ')');
     }
+});
+
+sezione('25. Import dal testo di Infinity Army (MOTORE, 19 ottobre)', () => {
+    // Le righe sono quelle che MOTORE ha misurato sbagliate, scritte come le
+    // scrive Army (niente spazio prima della parentesi), piu` un'intestazione
+    // di Gruppo e il codice in fondo al testo.
+    const TESTO = [
+        'NOMADS',
+        'GROUP 1',
+        'ALGUACIL (Forward Observer) Combi Rifle, Flash Pulse / Deployable Repeater, Pistol, CC Weapon. (0 | 11)',
+        'MORLOCK Chain Rifle, Smoke Grenades / Kobra Pistol, DA CC Weapon(PS=6). (0 | 12)',
+        'CLOCKMAKER Combi Rifle, D-Charges, Armed Turret / Deactivator, GizmoKit(+1B), Pistol, CC Weapon. (0 | 20)',
+        'GROUP 2',
+        'WARCOR (Sixth Sense) Flash Pulse, Stun Pistol / PARA CC Weapon(-3). (0 | 10)',
+        'INTRUDER MULTI Sniper Rifle(+1SD), Heavy Pistol / CC Weapon. (1.5 | 40)',
+        'MARSPIDER Heavy Flamethrower(+1B), Flash Pulse, Grenades(+1B), GizmoKit / Assault Pistol, DA CC Weapon(PS=7). (0 | 30)',
+        'https://infinitytheuniverse.com/army/list/abc123'
+    ].join('\n');
+    const ATTESI = ['Alguacil (Forward Observer)', 'Morlock (Kobra Pistol, DA CC)', 'Clockmaker (Armed Turret)',
+                    'Warcor (Sixth Sense)', 'Intruder (MULTI Sniper Rifle)', 'Marspider (Grenades)'];
+    const T = creaTavolo(DIR); const N = T.nomadi.g;
+    N.roster = [];
+    T.nomadi.el('army-import-text').value = TESTO;
+    N.importaDaTesto();
+    const nomi = N.roster.map(u => u.name);
+    ATTESI.forEach((n, i) => ok(nomi[i] === n, 'riga ' + (i + 1) + ': ' + n + ' (letto: ' + nomi[i] + ')'));
+    ok(nomi.length === ATTESI.length, 'sei righe, sei truppe: il codice in fondo e le intestazioni non diventano truppe (' + nomi.length + ')');
+    ok(J(N.roster.map(u => u.combatGroup)) === J([1, 1, 1, 2, 2, 2]), 'ognuna nel suo Gruppo');
+    // A pari punti: niente scelta in silenzio, la riga va al giocatore.
+    N.roster = [];
+    T.nomadi.el('army-import-text').value = 'GROUP 1\nALGUACIL Combi Rifle / MediKit, Pistol, CC Weapon. (0 | 14)';
+    N.importaDaTesto();
+    const amb = N.righeAmbigueImport || [];
+    ok(N.roster.length === 0 && amb.length === 1, 'riga senza l opzione fra parentesi e con due profili a pari punti: nessuna truppa aggiunta, la riga e` ambigua (' + amb.length + ')');
+    const box = T.nomadi.el('import-ambigue').innerHTML;
+    ok(/riga ambigua/.test(box) && /scegliRigaAmbigua\(0, 'alguacil_paramedic'\)/.test(box), 'sotto il testo la riga, con un tasto per ogni profilo candidato');
+    if (amb.length) {
+        vmTocco(T.nomadi, (box.match(/onclick="(window\.scegliRigaAmbigua\(0, 'alguacil_paramedic'\))"/) || [])[1] || 'void 0');
+        ok(N.roster.length === 1 && N.roster[0].name === 'Alguacil (Paramedic)' && N.roster[0].combatGroup === 1, 'toccato il profilo: entra quello, nel suo Gruppo');
+        ok((N.righeAmbigueImport || []).length === 0, 'e la riga sparisce dall elenco delle ambigue');
+    }
+    // Un profilo secondario non pareggia piu` col profilo vero.
+    N.roster = [];
+    T.nomadi.el('army-import-text').value = 'PUPPETBOT (Red Fury) Red Fury / PARA CC Weapon(-3). (0 | 8)';
+    N.importaDaTesto();
+    ok(N.roster.length === 1 && N.roster[0].name === 'Puppetbot (Red Fury)', 'Puppetbot (Red Fury): il profilo Battle Ravaged non e` un candidato (' + N.roster.map(u => u.name) + ')');
+});
+
+sezione('25b. Import: la lista di collaudo di Paolo, il testo vero di Infinity Army', () => {
+    // Il testo incollato da Paolo il 19 ottobre, com'e` (anche le righe
+    // rientrate delle Periferiche, "undefined" e il link in fondo).
+    const TESTO = "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\nGROUP 1  10  \n ALGUACIL Combi Rifle / Pistol, CC Weapon. (0 | 10)\n ALGUACIL Heavy Machine Gun / Pistol, CC Weapon. (1 | 18)\n ALGUACIL Missile Launcher / Pistol, CC Weapon. (1.5 | 15)\n ALGUACIL (Forward Observer) Combi Rifle, Flash Pulse ( | Deployable Repeater) / Pistol, CC Weapon. (0 | 12)\n ALGUACIL (Paramedic) Combi Rifle ( | MediKit) / Pistol, CC Weapon. (0 | 12)\n DAKTARI Combi Rifle ( | MediKit) / Pistol, CC Weapon. (0 | 14)\n CLOCKMAKER Combi Rifle, D-Charges / Pistol, CC Weapon. (0 | 18)\n INTERVENTOR (Hacker, Hacking Device Plus) Combi Rifle ( | FastPanda) / Pistol, CC Weapon. (0.5 | 23)\n ZERO (Hacker, Killer Hacking Device) Combi Rifle, Shock Mine ( ) / Pistol, CC Weapon. (0 | 22)\n INTRUDER MULTI Sniper Rifle(+1SD) / Heavy Pistol, CC Weapon. (1.5 | 38)\n\nGROUP 28  / 2  / 3\n GRENZER (Marksmanship) MULTI Sniper Rifle / Pistol, Breaker Pistol, CC Weapon. (1.5 | 32)\n GRENZER (Forward Observer, Sensor, NCO) Combi Rifle, Light Flamethrower(+1B), Flash Pulse / Pistol, Breaker Pistol, CC Weapon. (0 | 29)\n MORLOCK Chain Rifle, Smoke Grenades / Assault Pistol, AP CC Weapon(PS=6). (0 | 6)\n CHIMERA Combi Rifle, Nanopulser, Eclipse Grenades / Pistol, Viral CC Weapon(PS=6). (0 | 19)\n   3X PUPNIK DA CC Weapon(PS=7). (0 | 3)\n REAKTION ZOND Heavy Machine Gun / PARA CC Weapon(-3). (1 | 24)\n MOBILE BRIGADA Heavy Machine Gun / Boarding Pistol(+1B), CC Weapon. (1.5 | 38)\n PUPPETBOT Red Fury / PARA CC Weapon(-3). (1.5 | 16)\n ZONDNAUTICA-A undefined / undefined. (1.5 | 25)\n   ZONDNAUTICA-A Spitfire, Chain Rifle, Smoke Grenade Launcher / Pistol, CC Weapon. (1.5 | 25)\n   ZONDNAUT-A Spitfire / Pistol, CC Weapon. (1.5 | 25)\n   ZONDMATE Chain Rifle, Smoke Grenade Launcher / PARA CC Weapon(-3). (- | 5)\n MORAN (Surprise Attack [-3], Camouflage [1 Use]) Combi Rifle, Flash Pulse, D-Charges, Crazykoala / Pistol, CC Weapon. (0.5 | 18)\n SIN-EATER MULTI Sniper Rifle / Pistol, CC Weapon. (1.5 | 26)\n MARY PROBLEMS (Hacker) Submachine Gun, Zapper, Pitcher / Pistol, CC Weapon. (0.5 | 27)\n\nGROUP 31\n PUPPET MASTERS (Minelayer) Submachine Gun, Shock Mine / Pistol, CC Weapon. (0 | 13)\n INTRUDER Heavy Machine Gun / Heavy Pistol, CC Weapon. (1.5 | 38)\n INTRUDER (Hacker, Infiltration, Killer Hacking Device) AP Submachine Gun(+1B), Pulzar(+1B), Grenades, D-Charges ( ) / Heavy Pistol, CC Weapon. (0 | 33)\n WOLFGANG AMADEUS MULTI Rifle(+1SD), E/M Grenades(+1SD), Chain-colt / Heavy Pistol, PARA CC Weapon(-6), DA CC Weapon(PS=4). (0 | 33)\n WARCOR (Sixth Sense) Flash Pulse / Stun Pistol, PARA CC Weapon(-3). (0 | 3)\n VERTIGO ZOND Missile Launcher / PARA CC Weapon(-3). (1.5 | 16)\n TRIPHAMMER Heavy Shotgun, Heavy Rocket Launcher, Panzerfaust(+1B) / AP CC Weapon(PS=4). (0 | 48)\n   TURTLEMEK . (- | 4)\n KRAKOT RENEGADE Boarding Shotgun, Chest Mine / Heavy Pistol, AP CC Weapon(PS=6). (0 | 16)\n COYOTE (Forward Deployment [+4\"]) Boarding Shotgun, Flash Pulse(PS=6), D-Charges / Boarding Pistol, CC Weapon. (0 | 27)\n   BAMBABOT-1 Chain Rifle(PS=6), Mine Dispenser(AP) / PARA CC Weapon(-3). (0 | 6)\n COYOTE (Forward Deployment [+4\"]) Boarding Shotgun, Flash Pulse(PS=6), D-Charges / Boarding Pistol, CC Weapon. (0 | 27)\n   BAMBABOT-1 Chain Rifle(PS=6), Mine Dispenser(AP) / PARA CC Weapon(-3). (0 | 6)\n\nGROUP 42  \n KULAK REINF. (Hacker, Killer Hacking Device [UPGRADE: Carbonite]) AP Submachine Gun, D-Charges, Cybermine, Disco Baller ( ) / Pistol, CC Weapon. (0 | 20)\n MARSPIDER REINF. Heavy Flamethrower(+1B), Flash Pulse, Grenades(+1B) / Assault Pistol, DA CC Weapon(PS=7). (0 | 18)\n\nGROUP 51\n BAMBADROID (Forward Observer) Thunderbolt, Chain Rifle(PS=6), Flash Pulse(PS=6), D-Charges ( | Deployable Repeater) / Pistol, PARA CC Weapon(-3). (0 | 13)\n GO-POD MULTI Rifle, E/Mitter / . (0 | 33)\n   GO-BOT Flash Pulse, Chain-colt / . (0 | 7)\n RACERBOT Mk-I Adhesive Launcher Rifle, PARA Mine / PARA CC Weapon(-6). (0 | 9)\n RACERBOT Mk-II Heavy Riotstopper, Mine Dispenser(PARA) / PARA CC Weapon(-6). (0 | 9)\n MORLOCK Chain Rifle, Smoke Grenades / Kobra Pistol, DA CC Weapon(PS=6). (0 | 6)\n CLOCKMAKER Combi Rifle, D-Charges, Armed Turret (Combi R.) / Pistol, CC Weapon. (0 | 21)\n\n 17 SWC | 825 Points\n\n[url=https://infinitytheuniverse.com/army/list/gfUGbm9tYWRzASCBLAUBAQAKAIEoAQEAAACBKAECAAAAgSgBBQAAAIEoAQgAAACBKAEJAAAAgZUBAQAAAIGWAQEAAACBlwECAAAAgZEBBgAAAIGLAQYAAAIBAAsAgYkBCAAAAIGJAQYAAACBkwEBAAAAgaYBBAAAAIGZAQEAAACBfgECAAAAhEoCAQAAAIRDAAEAAACBpQEBAAAAgaIBAgAAAIRLAQEAAAMBAAoAhEoBAgAAAIGLAQIAAACBiwEEAAAAhhMBAQAAAKdCAQIAAACBmgEBAAAArTEBBQAAAKoEAQIAAACHaAEBAAAAh2gBAQAABAEBAgCG0AEFAAAAhs8BAgAABQEABgCHaAMDAAAAhz4BAQAAAIdxAQEAAACHcQECAAAAgZMBAgAAAIGWAQMAAA%3D%3D]Open in Infinity Army\n\n";
+    // [Gruppo, profilo] attesi, nell'ordine del testo. Confrontati a mano col
+    // capitolo 1.1 del piano: tutti i profili del piano presenti nel testo ci
+    // sono. Interventor: la riga porta FastPanda, quindi e` "(Hacker Plus,
+    // FastPanda)", non "(Hacker Plus)". "GROUP 51" e` il Gruppo 5.
+    const ATTESI = [[1, "Alguacil (Combi Rifle)"], [1, "Alguacil (HMG)"], [1, "Alguacil (Missile Launcher)"], [1, "Alguacil (Forward Observer)"], [1, "Alguacil (Paramedic)"], [1, "Daktari (Doctor)"], [1, "Clockmaker (Engineer)"], [1, "Interventor (Hacker Plus, FastPanda)"], [1, "Zero (Hacker, Killer Hacking Device)"], [1, "Intruder (MULTI Sniper Rifle)"], [2, "Grenzer (Marksmanship)"], [2, "Grenzer (Forward Observer, Sensor, NCO)"], [2, "Morlock (Assault Pistol)"], [2, "Chimera"], [2, "3X Pupnik"], [2, "Reaktion Zond (HMG)"], [2, "Mobile Brigada (HMG)"], [2, "Puppetbot (Red Fury)"], [2, "Zondnautica-A"], [2, "Zondnaut-A"], [2, "Zondmate (REM)"], [2, "Moran (Surprise Attack [-3], Camouflage [1 Use], Combi Rifle)"], [2, "Sin-Eater (MULTI Sniper Rifle)"], [2, "Mary Problems (Hacker)"], [3, "Puppet Masters (Minelayer)"], [3, "Intruder (HMG)"], [3, "Intruder (Hacker, Killer Hacking Device)"], [3, "Wolfgang Amadeus"], [3, "Warcor (Sixth Sense)"], [3, "Vertigo Zond (Missile Launcher)"], [3, "Triphammer (Heavy Shotgun, Heavy Rocket Launcher, Panzerfaust)"], [3, "Krakot Renegade (Boarding Shotgun)"], [3, "Bambabot-1 (Chain Rifle (ps=6))"], [3, "Bambabot-1 (Chain Rifle (ps=6))"], [4, "Kulak (Hacker, Killer Hacking Device)"], [4, "Marspider (Grenades)"], [5, "Bambadroid (Forward Observer)"], [5, "Go-Pod (MULTI Rifle)"], [5, "Go-Bot (REM)"], [5, "Racerbot Mk-I (Adhesive Launcher Rifle)"], [5, "Racerbot Mk-II (Heavy Riotstopper)"], [5, "Morlock (Kobra Pistol, DA CC)"], [5, "Clockmaker (Armed Turret)"]];
+    const T = creaTavolo(DIR); const N = T.nomadi.g;
+    N.roster = [];
+    T.nomadi.el('army-import-text').value = TESTO;
+    N.importaDaTesto();
+    const letti = N.roster.map(u => [u.combatGroup, u.name]);
+    const diversi = ATTESI.map((a, i) => J(a) === J(letti[i]) ? null : (i + 1) + ': atteso ' + J(a) + ', letto ' + J(letti[i])).filter(Boolean);
+    ok(diversi.length === 0 && letti.length === ATTESI.length, 'le ' + ATTESI.length + ' righe riconosciute danno i profili attesi, nel loro Gruppo (' + (diversi.slice(0, 3).join(' | ') || letti.length + ' righe') + ')');
+    // Le otto che il roster_manager del 15 ottobre sbagliava su questo testo
+    // (misurato qui): posizioni del piano 4, 10, 22, 27, 30, 36, 38, 39.
+    const piano = ['Alguacil (Forward Observer)', 'Intruder (MULTI Sniper Rifle)', 'Puppet Masters (Minelayer)', 'Warcor (Sixth Sense)',
+                   'Triphammer (Heavy Shotgun, Heavy Rocket Launcher, Panzerfaust)', 'Morlock (Kobra Pistol, DA CC)', 'Marspider (Grenades)', 'Clockmaker (Armed Turret)'];
+    ok(piano.every(n => letti.some(l => l[1] === n)), 'le otto righe che prima davano il profilo sbagliato (piano 4, 10, 22, 27, 30, 36, 38, 39) ora danno quello giusto');
+    ok(letti.some(l => l[0] === 5), 'GROUP 51: le sue truppe stanno nel Gruppo 5, non nel 4');
+    const amb = (N.righeAmbigueImport || []).map(a => a.riga.slice(0, 9));
+    ok(J(amb) === J(['TURTLEMEK', 'COYOTE (F', 'COYOTE (F']), 'tre righe ambigue, da scegliere a mano: Turtlemek e i due Coyote, che il database ha doppi (' + J(amb) + ')');
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

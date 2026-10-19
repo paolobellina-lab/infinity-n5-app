@@ -1,4 +1,4 @@
-CONTEGGIO DELLA SUITE — chat TEST, 19 ottobre 2026 (cartella allineata al Project, impronte ricalcolate con M.impronta)
+CONTEGGIO DELLA SUITE — chat TEST, 19 ottobre 2026, terzo giro (ordine_osservazione 2026-10-19.1) (cartella allineata al Project, impronte ricalcolate con M.impronta)
 
 PRODUZIONE
   motore_regole_n5.js         2026-10-18.1    c2e9f994.745144
@@ -14,7 +14,7 @@ PRODUZIONE
   ordine_attacco_bs.js        2026-10-15.1    a16608b4.43506
   ordine_coordinato.js        2026-10-18.1    a0e2dd48.11888
   ordine_piazzamento.js       2026-10-12.1    369285bd.28485
-  ordine_osservazione.js      2026-10-18.1    102671bb.24330
+  ordine_osservazione.js      2026-10-19.1    3898a752.27560
   ordine_hacking.js           2026-10-18.1    1a899ef0.29030
   ordine_scoprire.js          2026-10-18.1    2d7eeecd.22213
   ordine_supporto.js          2026-10-18.1    6a63b2e8.18323
@@ -26,7 +26,7 @@ PRODUZIONE
   database_nomad.js           2026-10-16.2    27567927.170918
   database_panoceania.js      2026-10-16.2    7313f75f.165585
   banco_confronto.js          2026-09-14.1    e8fdec78.34151
-  PIANO_COLLAUDO_N5.md        2026-10-19.1    c75f6413.110987
+  PIANO_COLLAUDO_N5.md        2026-10-19.2    557a84c9.112297
 
 CONVENZIONE: un file = una riga di riepilogo; si somma su TUTTI i file
 test_*.js, test_collaudo_suite.js COMPRESO. banco_confronto.js NON
@@ -109,7 +109,7 @@ test_novita_7ott.js                  127        2026-10-07.2    4c7a6e70.37687  
 test_orchestratore.js                 31        2026-09-23.1    54e73733.6254     TEST
 test_ordini_senza_tiro.js             83        2026-10-07.1    47f53ab8.21658    MOTORE
 test_otto_decisioni.js                93     8  2026-10-09.1    cf922127.18140    TEST
-test_piano_schieramento.js            27        2026-10-19.1    7a53ff2c.19386    TEST
+test_piano_schieramento.js            27        2026-10-19.2    04b71913.19531    TEST
 test_produttori_busta.js              21        2026-09-25.3    71d0754b.9486     TEST
 test_prosa_stati.js                   17        2026-09-24.1    7872300c.8821     TEST
 test_pulsante_calcolo.js              26        2026-09-23.1    1f742b1f.4441     TEST
@@ -124,6 +124,7 @@ test_sagoma_alleati.js               110        2026-10-08.1    c3ac9421.30959  
 test_sagome_multibersaglio.js         18        2026-09-23.1    6a4a387b.6581     TEST
 test_salvezza.js                      33        2026-09-23.1    86851822.5305     TEST
 test_scenografia.js                   53        2026-09-22.1    d5d0ab91.9993     TEST
+test_scheda_osservazione.js           35        2026-10-19.1    c08af746.18733    TEST
 test_schieramento.js                  48        2026-09-25.1    6c660cc6.10728    TEST
 test_scoprire_attacco.js             148        2026-10-08.2    3924085b.49893    TEST
 test_seconda_meta.js                  18        2026-09-23.1    049bc9a2.5973     TEST
@@ -136,11 +137,11 @@ test_template.js                      28        2026-09-23.1    04dc2fae.4842   
 test_tendina_terreno.js               55        2026-10-09.1    6318b041.18078    TEST
 test_terreni_combinati.js             57        2026-10-09.1    c85a68d4.22750    TEST
 test_usi_disposable.js                21        2026-09-29.1    77051b4c.7148     TEST
-test_voce_cybermask.js                18        2026-10-06.5    02d649e9.8221     INTERFACCIA
+test_voce_cybermask.js                21        2026-10-19.1    47ba06ce.11379    INTERFACCIA
 test_voce_rientro_camo.js             15        2026-10-06.5    17ca4e43.8491     INTERFACCIA
 --------------------------------------------------------------------------------------------------
-TOTALE CON LE FONTI                 4842   passati su 97 file, 1 falliti, 0 non eseguite
-TOTALE COME IL PROJECT (senza)      4822   passati su 97 file, 1 falliti, 20 non eseguite
+TOTALE CON LE FONTI                 4881   passati su 98 file, 0 falliti, 0 non eseguite
+TOTALE COME IL PROJECT (senza)      4861   passati su 98 file, 0 falliti, 20 non eseguite
 
 NON ESEGUITE PER FONTE ASSENTE
   test_coerenza_dati.js             1   501.json, 101.json
@@ -149,18 +150,28 @@ NON ESEGUITE PER FONTE ASSENTE
   test_otto_decisioni.js            8   REGOLE_N5_v5_1_1.txt
 
 SPACCATO PER PROPRIETA (con le fonti)
-  TEST + MOTORE                     4344   su 88 file
-  INTERFACCIA                        499   su 9 file
+  TEST + MOTORE                     4379   su 89 file
+  INTERFACCIA                        502   su 9 file
 
 banco_confronto.js: uscita 0, "da guardare 0" in tutte e quattro le sezioni.
 File senza riga di riepilogo: nessuno.
 
-ROSSO ANNUNCIATO, FILE NON DI TEST
-  test_voce_cybermask.js (INTERFACCIA) 1 fallito: «Intruder (Killer Hacking
-  Device) da Marker CAMO: la voce c'e`». La voce CYBERMASK e` uscita dal menu
-  degli Ordini (app.html 2026-10-19.1; punto 8 del messaggio di MOTORE del 18-19
-  ottobre): ora sta nella schermata Hacking, e la prova e` di INTERFACCIA da
-  girare. La stessa cosa e` gia` inchiodata da test_novita_18ott.js sez. 8.
+TERZO GIRO DEL 19: LA SCHEDA DEL BERSAGLIO DI FO E TRIANGULATED
+  ordine_osservazione.js 2026-10-19.1, 3898a752.27560 (MOTORE). Installato:
+  nessun rosso, come annunciato.
+  Banco nuovo test_scheda_osservazione.js (TEST) 2026-10-19.1, c08af746.18733:
+  35/0. Rotto con l'ordine_osservazione di stamattina (2026-10-18.1, cmp:
+  diverso): 17 falliti, le controprove restano verdi.
+  PIANO_COLLAUDO_N5.md rev 32 (2026-10-19.2): OSS-01 e OSS-03. Le prove
+  restano 290. test_piano_schieramento.js 2026-10-19.2: REV_MINIMA 32; col
+  piano rev 31 e` rosso (1 fallito).
+  OSS-03: senza tasto Copertura il bersaglio "in copertura" non si dichiara
+  piu`: fra i MOD barrati restano Gittata -6 e Mimetismo -3, e il tiro "senza
+  Abilita`" e` 4 (prima 1).
+
+SECONDO GIRO DEL 19 (rosso chiuso)
+  test_voce_cybermask.js (INTERFACCIA) 2026-10-19.1, 47ba06ce.11379: 21/0.
+  Controprova: con l'app.html del 15 ottobre e` rosso, 1 fallito.
 
 NOTA SUI CODICI DEL PIANO (rev 31): "ST-19" esisteva gia` (Prono e Scarico) e
 anche ST-20: la prova nuova "Morto all'Hub" e` ST-21. Le due prove nuove
