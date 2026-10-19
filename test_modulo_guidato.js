@@ -1,4 +1,5 @@
-// @versione 2026-10-15.1 | test_modulo_guidato.js | proprieta`: chat TEST
+// @versione 2026-10-19.1 | test_modulo_guidato.js | proprieta`: chat TEST
+// 2026-10-19.1: GUI-03 (Marker CAMO solo secondario) e FUORI GITTATA come segmento della barra (guidato 2026-10-18.1).
 // 2026-10-15.1: sezione 3 girata (ordine_attacco_guidato 2026-10-15.1, Paolo):
 //    niente piu` primary-guided-container e secondary-guided-container, la
 //    lista dei bersagli e` UNA. Si legge dalle voci (window._vociGuidato) e
@@ -89,12 +90,28 @@ h = nodo('enemy-target-buttons').innerHTML;
 const vociG = window._vociGuidato || [];
 const voceG = (alias) => vociG.find(v => v.unita && v.unita.alias === alias);
 const tocchiG = [...h.matchAll(/toccaBersaglioGuidato\('([^']+)'\)/g)].map(x => x[1]).sort();
-ok(JSON.stringify(tocchiG) === JSON.stringify(['p1', 'p2', 'p3']), `una lista sola: si toccano Designato, Vicino e Altro (${JSON.stringify(tocchiG)})`);
+// 🔴 GIRATA IL 19 OTTOBRE (guidato 2026-10-18.1, GUI-03): il Marker CAMO c'e`
+// nella lista, ma solo come secondario. Prima la lista era p1, p2, p3.
+ok(JSON.stringify(tocchiG) === JSON.stringify(['p1', 'p2', 'p3', 'p4']), `una lista sola: si toccano Designato, Vicino, Altro e il Marker (${JSON.stringify(tocchiG)})`);
 ok(!h.includes('primary-guided-container') && !h.includes('secondary-guided-container'), 'i due riquadri di prima non ci sono piu`');
 ok(voceG('Designato') && voceG('Designato').primario === true && /Bersagliato/.test(h), 'il Bersagliato è offerto come Primario');
 ok(voceG('Vicino') && voceG('Vicino').primario === false && voceG('Vicino').secondario === true && /solo sotto la Sagoma/.test(h),
    'un non-Bersagliato NON è Primario, ma sì Secondario (e la riga lo dice)');
-ok(!voceG('Croc Man') && !h.includes('Croc Man'), 'il Marker resta escluso');
+// 🔴 GIRATA IL 19 OTTOBRE (GUI-03): prima 'il Marker resta escluso'.
+ok(voceG('Croc Man') && voceG('Croc Man').primario === false && voceG('Croc Man').secondario === true && voceG('Croc Man').marker === true,
+   `il Marker CAMO e\` nella lista: NON Primario, si\` secondario (${JSON.stringify(voceG('Croc Man') && { p: voceG('Croc Man').primario, s: voceG('Croc Man').secondario })})`);
+ok(h.includes('(Marker: solo sotto la Sagoma)') && h.includes('(non Bersagliato: solo sotto la Sagoma)'), 'la sua riga dice "(Marker: solo sotto la Sagoma)", quella del Vicino "(non Bersagliato: ...)"');
+{
+    // Dalla porta del giocatore: il Marker toccato per primo e` rifiutato;
+    // dopo il Primario entra come preso dalla Sagoma.
+    const tocca = (typeof window.toccaBersaglioGuidato === 'function') ? window.toccaBersaglioGuidato : () => {};
+    alertUltimo = null; tocca('p4');
+    ok(!window.primaryGuidedTarget && alertUltimo && /Croc Man/.test(alertUltimo), 'il Marker toccato per primo: rifiutato come Primario');
+    tocca('p1'); tocca('p4');
+    ok(window.primaryGuidedTarget && window.primaryGuidedTarget.id === 'p1' && (window.secondaryGuidedTargets || []).some(t => t.id === 'p4'),
+       'toccato dopo il Primario: il Marker entra come preso dalla Sagoma');
+    window.primaryGuidedTarget = null; window.secondaryGuidedTargets = [];
+}
 // Il tocco: un non-Bersagliato toccato per primo e` rifiutato.
 alertUltimo = null;
 (typeof window.toccaBersaglioGuidato === 'function' ? window.toccaBersaglioGuidato : () => {})('p2');
@@ -197,6 +214,17 @@ function prontoG() {
     window.preparaModificatoriGuidati();
 }
 prontoG();
+{
+    // 19 ottobre (guidato 2026-10-18.1, punto 2 di MOTORE): FUORI GITTATA e`
+    // un segmento della barra, niente tasto "in gittata" a parte.
+    const hG = nodo('targets-allocation-container').innerHTML;
+    ok(/class="range-seg[^"]*"[^>]*onclick="window\.toggleFuoriGittataGuidato\(\)">FUORI</.test(hG), 'FUORI GITTATA e` un segmento in coda alla barra delle bande');
+    ok(!/toggleRequisitoGuidato\(0, 'gittata'\)/.test(hG), 'e non c e piu` il tasto del requisito gittata (rigaRequisiti senza gittata)');
+    (typeof window.toggleFuoriGittataGuidato === 'function' ? window.toggleFuoriGittataGuidato : () => {})();
+    ok(window.combatTargets[0].fuoriGittata === true && /range-seg active"[^>]*toggleFuoriGittataGuidato/.test(nodo('targets-allocation-container').innerHTML), 'toccato FUORI: il Primario e` fuori gittata e il segmento si accende');
+    window.setTargetRangeGuidato(0);
+    ok(window.combatTargets[0].fuoriGittata === false, 'scelta una banda: torna in gittata');
+}
 ok(tastoG().innerText === 'LANCIA MISSILI',
    `gittata dichiarata: il tasto porta l etichetta dell azione (${tastoG().innerText})`);
 // GIRATA sul motore 2026-10-07.11: il tasto valido non ha piu` lo sfondo

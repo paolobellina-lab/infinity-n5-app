@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-15.1 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-19.1 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -583,7 +583,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-15.1', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-10-19.1', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -642,11 +642,12 @@
                 // id, catalogo e schermata dicono CAMO: due nomi per la stessa
                 // cosa (rilievo della chat MOTORE).
                 { id: 'RIENTRARE IN CAMO', nome: 'RIENTRARE IN CAMO', desc: 'Ordine Intero: torna Marker, fuori dalla LoF nemica.', type: 'LONG_SKILL' },
-                // Cybermask (6 ottobre): Long Skill a se`, non un attacco di
-                // Hacking (regolamento, riga 5151). Il router la porta gia` a
-                // avviaFaseRientroCamo; mancava solo la voce, e senza la voce
-                // l'Hacker non aveva modo di entrare in IMP-2.
-                { id: 'CYBERMASK', nome: 'CYBERMASK', desc: 'Ordine Intero: l\'Hacker entra in IMP-2, fuori dalla LoF nemica.', type: 'LONG_SKILL' },
+                // 18 ottobre (Paolo, via MOTORE): la voce CYBERMASK non sta
+                // piu` qui. Il Cybermask si dichiara dalla schermata
+                // dell'Hacking (ordine_hacking.js), insieme al White Noise:
+                // tutti e due generano ARO. Tenerla anche fra le Abilita`
+                // Lunghe voleva dire due strade per lo stesso Ordine, e quella
+                // di qui portava alla vecchia schermata del rientro in CAMO.
                 { id: 'INGRESSO IN CAMPO', nome: 'INGRESSO IN CAMPO (AD)', desc: 'Schieramento aereo consumando l\'ordine.', type: 'LONG_MOVE' },
                 { id: 'REQUEST SPEEDBALL', nome: 'REQUEST SPEEDBALL', desc: 'Richiedi lancio di rifornimenti.', type: 'LONG_SKILL' }
             ]
@@ -734,7 +735,12 @@
                 nome: (r.blocchi && r.blocchi.length) ? (r.blocchi[0].nome || r.blocchi[0].stato) : null,
                 motivo: r.motivo || null,
                 annullaSoppressione: !!r.annullaSoppressione,
-                nota: r.notaSoppressione || null
+                nota: r.notaSoppressione || null,
+                // 18 ottobre (motore, ST-04): l'Isolato si attiva, ma col
+                // PROPRIO Ordine Irregolare, non con uno del Pool. Il testo e`
+                // del motore.
+                soloIrregolare: !!r.soloOrdineIrregolare,
+                notaIrregolare: r.notaIrregolare || null
             };
         };
 
@@ -928,14 +934,8 @@
                     return M.puoRientrareInCamo(unit, { inAro: false }).puo === true;
                 }
 
-                case 'CYBERMASK': {
-                    // Come sopra: decide il motore (programma posseduto, gia`
-                    // in Impersonation, Isolato, Schieramento Nascosto). Un
-                    // Marker CAMO PUO` dichiararlo, e il motore lo sa.
-                    const M = window.MotoreN5;
-                    if (!M || typeof M.puoUsareCybermask !== 'function') return false;
-                    return M.puoUsareCybermask(unit, { inAro: false }).puo === true;
-                }
+                // (Il caso CYBERMASK e` stato tolto il 18 ottobre con la voce del
+                // menu: nessuno chiedeva piu` quell'azione a questa funzione.)
 
                 case 'INGRESSO IN CAMPO':
                     return skills.includes('COMBAT JUMP') || skills.includes('PARACHUTIST') || skills.includes('AIRBORNE DEPLOYMENT') || skills.includes('AD:');
@@ -1098,6 +1098,42 @@
                    elenco.find(d => String(u.id || '').indexOf('dep_' + d.id + '_') === 0) || null;
         };
 
+        // 19 ottobre (Paolo): i CrazyKoala hanno QUATTRO foto uniche, una per
+        // miniatura, e le prendono in sequenza: il primo koala sul tavolo la
+        // 1, il secondo la 2, e cosi` via. Prima tutti i koala avevano la
+        // stessa immagine comune (img/crazykoala.png) e al tavolo non si
+        // capiva quale riga fosse quale miniatura.
+        // Il numero e` il piu` basso che nessun ALTRO koala vivo del roster
+        // sta usando: un koala esploso (tolto) o Morto libera la sua
+        // miniatura, che torna al prossimo piazzato. Si scrive in
+        // imgVariant, il campo della foto assegnata: e` l'unico che arriva
+        // all'Hub (l'elenco dei campi pubblici e` chiuso), e cosi` l'Hub
+        // mostra la stessa foto. I file stanno nella cartella del
+        // giocatore, come le altre miniature: crazykoala_1.png ... _4.png.
+        // Le mine NON sono qui: per loro basta l'immagine comune del loro
+        // tipo (img/<id>.png), che c'era gia`.
+        window.FOTO_IN_SEQUENZA = { crazykoala: 4 };
+        window.fotoInSequenza = (u) => {
+            if (!u || !u.deployable) return null;
+            const voce = window.voceDeployableDi(u);
+            const quante = voce ? window.FOTO_IN_SEQUENZA[voce.id] : 0;
+            if (!quante) return null;
+            const nome = (k) => voce.id + '_' + k + '.png';
+            const v = u.imgVariant;
+            // Una foto gia` assegnata (in sequenza o dalla galleria) resta.
+            if (typeof v === 'string' && /\.(png|jpe?g|webp)$/i.test(v)) return v;
+            // Solo i segnalini propri: quelli dell'avversario arrivano gia`
+            // con la loro foto, decisa dalla sua app.
+            const roster = window.roster || [];
+            if (roster.indexOf(u) < 0) return null;
+            const prese = roster.filter(x => x && x !== u && x.deployable && x.state !== 'DEAD').map(x => x.imgVariant);
+            for (let k = 1; k <= quante; k++) {
+                if (prese.indexOf(nome(k)) < 0) { u.imgVariant = nome(k); return u.imgVariant; }
+            }
+            // Piu` koala che miniature: questo resta con l'immagine comune.
+            return null;
+        };
+
         window.nomeInElenco = (u) => String((u && (u.nome || u.name)) || '').split('(')[0].trim();
 
         // La cartella delle foto di una fazione (vedi CARTELLA_FOTO in testa).
@@ -1123,6 +1159,7 @@
             // guardava solo la sua immagine di database e ignorava la foto
             // assegnata, cosi` il FastPanda con la foto scelta da Paolo
             // mostrava "DEP" nell'app.
+            window.fotoInSequenza(u);
             const v = u.imgVariant;
             if (typeof v === 'string' && /\.(png|jpe?g|webp)$/i.test(v)) return window.cartellaFoto(fazione) + v;
             // Un segnalino senza foto assegnata ha la SUA immagine comune,
@@ -1372,6 +1409,14 @@
                 }
                 if (pedina && !isDead) {
                     opzioni.sotto = `<div style="color:#999; font-size:13px; margin-top:3px;">${ordinabile.motivo || 'Non riceve Ordini.'}</div>`;
+                }
+                // 18 ottobre (motore, ST-04): l'Isolato si attiva col PROPRIO
+                // Ordine Irregolare, e per lui non si scala un Ordine del
+                // Pool. Prima l'app lo trattava come non attivabile; ora e`
+                // attivabile, e la riga lo dice, con la nota del motore.
+                if (ordinabile.ok && ordinabile.soloIrregolare) {
+                    dopoNome += ` <span style="color:#ff99ff; font-size:13px; font-weight:bold;" title="${ordinabile.notaIrregolare || ''}">\ud83d\udcf5 ORDINE IRREGOLARE PROPRIO</span>`;
+                    opzioni.sotto = `<div class="nota-irregolare" style="color:#ffccff; font-size:13px; margin-top:3px;">${ordinabile.notaIrregolare || ''}</div>`;
                 }
                 // Attivare una truppa in Fuoco di Soppressione annulla lo stato:
                 // va detto PRIMA che spenda l'Ordine, non dopo.
@@ -2456,6 +2501,21 @@
                     window.tornaAlRadar();
                 }, 0);
             };
+
+            // 19 ottobre: prima di ogni invio del roster all'Hub ogni koala
+            // ha gia` la sua foto in sequenza. Un koala piazzato durante la
+            // partita (ordine_piazzamento.js) parte per l'Hub appena nato,
+            // prima che una riga lo disegni: senza questo l'Hub lo vedeva
+            // con l'immagine comune fino all'aggiornamento dopo.
+            const invioSchieramento = window.inviaSchieramentoAllHub;
+            if (typeof invioSchieramento === 'function') {
+                window.inviaSchieramentoAllHub = function (fazione, dati) {
+                    ((dati && dati.roster) || []).forEach(u => { try { window.fotoInSequenza(u); } catch (e) { window.ultimaEccezione = e; } });
+                    return invioSchieramento.apply(this, arguments);
+                };
+            } else {
+                console.error("\u26a0\ufe0f inviaSchieramentoAllHub non trovata: controlla motore_core.js.");
+            }
 
             const invioCore = window.inviaCalcoloAllHub;
             if (typeof invioCore === 'function') {

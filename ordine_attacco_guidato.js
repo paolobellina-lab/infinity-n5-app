@@ -1,4 +1,4 @@
-// @versione 2026-10-15.1 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
+// @versione 2026-10-18.1 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
 // ==========================================
 // 🚀 ATTACCO GUIDATO (N5) - ordine_attacco_guidato.js
 // ------------------------------------------
@@ -149,8 +149,13 @@
         const ammessiPrim = primari.filter(g => g.ammesso);
         const container = document.getElementById('enemy-target-buttons');
 
-        const btnStd = document.querySelector('#step-wait-aro .huge-btn');
-        if (btnStd) btnStd.style.display = 'none';
+        // 16 ottobre (Paolo al tavolo): qui si NASCONDEVA il tasto CONFERMA
+        // BERSAGLI della pagina, e lo si rimetteva solo confermando. Annullando
+        // l'Ordine restava nascosto, e il Corpo a Corpo seguente (che usa
+        // quel tasto) non aveva piu` modo di proseguire. Ora il tasto della
+        // pagina resta, e i bersagli scelti stanno sempre in pendingTargets.
+        window.pendingTargets = window.primaryGuidedTarget
+            ? [window.primaryGuidedTarget].concat(window.secondaryGuidedTargets || []) : [];
 
         // 15 ottobre (Paolo): le righe dei bersagli sono quelle di tutti gli
         // altri elenchi (window.rigaUnitaConFoto: foto, soprannome, stati,
@@ -162,7 +167,10 @@
             if (!g.unita || voci.some(function (v) { return String(v.unita.id) === String(g.unita.id); })) return;
             const p = primari.find(function (x) { return x.unita && String(x.unita.id) === String(g.unita.id); });
             const s = secondari.find(function (x) { return x.unita && String(x.unita.id) === String(g.unita.id); });
-            const v = { unita: g.unita, nome: g.nome, primario: !!(p && p.ammesso), secondario: !!(s && s.ammesso), motivo: (p && p.motivo) || g.motivo };
+            // 16 ottobre (Paolo, GUI-03): il Marker CAMO c'e` nella lista, e si
+            // tocca solo come secondario. Lo decide il motore col ruolo.
+            const st = M.statoBersaglio ? M.statoBersaglio(g.unita) : {};
+            const v = { unita: g.unita, nome: g.nome, primario: !!(p && p.ammesso), secondario: !!(s && s.ammesso), motivo: (p && p.motivo) || g.motivo, marker: !!(st.camo || st.imp) };
             if (v.primario || v.secondario) voci.push(v);
         });
         window._vociGuidato = voci;
@@ -175,7 +183,7 @@
             const isS = window.secondaryGuidedTargets.some(function (x) { return String(x.id) === id; });
             const etichetta = isP ? ' <span style="color:#ff6666; font-size:15px;">[ PRIMARIO ]</span>'
                             : (isS ? ' <span style="color:#66ccff; font-size:15px;">[ PRESO DALLA SAGOMA ]</span>'
-                            : (!v.primario ? ' <span style="color:#888; font-size:13px;">(non Bersagliato: solo sotto la Sagoma)</span>' : ' <span style="color:#ff9999; font-size:13px;">🎯 Bersagliato</span>'));
+                            : (!v.primario ? ' <span style="color:#888; font-size:13px;">(' + (v.marker ? 'Marker' : 'non Bersagliato') + ': solo sotto la Sagoma)</span>' : ' <span style="color:#ff9999; font-size:13px;">🎯 Bersagliato</span>'));
             const att = `onclick="window.toccaBersaglioGuidato('${id.replace(/'/g, "\\'")}')"`;
             righe += (typeof window.rigaUnitaConFoto === 'function')
                 ? window.rigaUnitaConFoto(v.unita, { fazione: 'NEMICA', scelta: isP || isS, opacita: '1',
@@ -191,9 +199,7 @@
                 <b style="color:${COL.bordo};">🎯 BERSAGLI DELL'ATTACCO GUIDATO</b><br>
                 <span style="color:#aaa; font-size:12px;">Il primo che tocchi è il <b>Primario</b>: dev'essere Bersagliato, su di lui si centra la Sagoma e fa il Faccia a Faccia. Gli altri che tocchi sono presi dalla Sagoma e fanno solo il proprio Tiro Salvezza.</span>
             </div>
-            ${motiviNo}${righe || '<p style="color:#888; text-align:center;">Nessun nemico coinvolgibile.</p>'}
-            <button class="huge-btn" style="background:#004400; border-color:#00ff00; min-height:60px; margin-top:20px; width:100%;"
-                onclick="window.confermaBersagliSagomaGuidato()">CONFERMA BERSAGLI <span>(Invia Allarme ARO)</span></button>`;
+            ${motiviNo}${righe || '<p style="color:#888; text-align:center;">Nessun nemico coinvolgibile.</p>'}`;
 
         window.goToStep('step-wait-aro');
     };
@@ -260,10 +266,6 @@
             return alert('⛔ Devi scegliere un Bersaglio Primario in Stato Bersagliato: è su di lui che si centra la Sagoma.');
         }
         window.pendingTargets = [window.primaryGuidedTarget].concat(window.secondaryGuidedTargets);
-
-        const btnStd = document.querySelector('#step-wait-aro .huge-btn');
-        if (btnStd) btnStd.style.display = 'block';
-
         if (window.confirmMultiAro) window.confirmMultiAro(false);
     };
 
@@ -316,10 +318,14 @@
         arma.bands.forEach(function (b, i) {
             let cls = 'seg-2';
             if (b.mod > 0) cls = 'seg-1'; else if (b.mod === -3) cls = 'seg-3'; else if (b.mod < -3) cls = 'seg-4';
-            const attivo = (primo.rangeIndex === i) ? 'active' : '';
+            const attivo = (!primo.fuoriGittata && primo.rangeIndex === i) ? 'active' : '';
             segmenti += `<div class="range-seg ${cls} ${attivo}" onclick="window.setTargetRangeGuidato(${i})">${b.mod > 0 ? '+' + b.mod : b.mod}</div>`;
             etichette += `<span>${b.label}</span>`;
         });
+        // 16 ottobre (Paolo): il FUORI GITTATA e` un segmento della barra,
+        // come nell'Attacco BS e nel Fuoco Speculativo, e non un tasto a parte.
+        segmenti += `<div class="range-seg ${primo.fuoriGittata ? 'active' : ''}" style="background:${primo.fuoriGittata ? '#ffcc00' : '#332b00'}; color:${primo.fuoriGittata ? '#000' : '#ffcc00'}; font-size:12px;" onclick="window.toggleFuoriGittataGuidato()">FUORI</div>`;
+        etichette += `<span>oltre</span>`;
 
         const dettaglio = regole.voci.map(v =>
             `<div style="display:flex; justify-content:space-between; padding:2px 0;">
@@ -355,7 +361,6 @@
                 html += `<div style="text-align:center; color:#aaa; font-size:12px; margin-bottom:5px;">${regole.noteGittata || 'Seleziona la gittata.'}</div>
                     <div class="range-bar">${segmenti}</div>
                     <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${etichette}</div>
-                    ${M.rigaRequisiti(['gittata'], tgt, 0, 'window.toggleRequisitoGuidato')}
                     ${M.domandaAlleatiInMischia ? M.domandaAlleatiInMischia(tgt, index, 'window.setAlleatiInMischiaGuidato') : ''}
                     <div style="margin-top:10px; padding:8px; background:#001a33; border:1px solid ${COL.accent}; border-radius:5px; color:${COL.accent}; font-size:12px; text-align:center;">
                         Reazione del bersaglio: ${regole.reazioneBersaglio}
@@ -397,9 +402,13 @@
         const arma = M.profiloArma(window.currentOrder.weapon);
         const mod = arma.bands[rangeIdx] ? arma.bands[rangeIdx].mod : 0;
         // Una sola Sagoma: la gittata del Primario vale per tutti.
-        window.combatTargets.forEach(function (t) { t.rangeIndex = rangeIdx; t.rangeMod = mod; });
+        // Scelta una banda il Primario e` in gittata: il FUORI si spegne.
+        window.combatTargets.forEach(function (t) { t.rangeIndex = rangeIdx; t.rangeMod = mod; t.fuoriGittata = false; });
         window.renderGuidato();
     };
+    // FUORI: lo stesso requisito 'gittata' (M.invertiRequisito sul Primario),
+    // toccato dalla barra. Ritoccato, torna in gittata.
+    window.toggleFuoriGittataGuidato = function () { window.toggleRequisitoGuidato(0, 'gittata'); };
 
     // ==============================================================
     // 4. INVIO
@@ -480,7 +489,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-10-15.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

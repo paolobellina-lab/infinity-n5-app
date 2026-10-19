@@ -1,4 +1,4 @@
-// @versione 2026-10-15.2 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-19.1 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -148,7 +148,19 @@
         const container = document.getElementById('aro-selection-list');
         if (!container) return;
         container.innerHTML = '';
-        window.selectedAroUnits = [];
+        // 18 ottobre: dalla pagina del CrazyKoala si torna a QUESTO elenco
+        // (tasto RICOMINCIA SELEZIONE). Prima ogni apertura azzerava le
+        // unita` scelte: tornando dal koala si perdevano. Si azzera solo
+        // quando arriva un ARO nuovo (un altro currentAttackData).
+        const stessoAro = (window._aroAperto === (window.currentAttackData || null)) && window._aroAperto !== undefined;
+        window._aroAperto = window.currentAttackData || null;
+        if (!stessoAro) {
+            window.selectedAroUnits = [];
+            window.detonazioniAro = [];
+            window.risposteInnesco = {};
+        }
+        window.selectedAroUnits = window.selectedAroUnits || [];
+        window.detonazioniAro = window.detonazioniAro || [];
 
         const inArrivo = (window.currentAttackData && window.currentAttackData.azione) || null;
         const bg = isNomads() ? '#1a0000' : '#001122';
@@ -287,7 +299,35 @@
 
             window.deployableInnescabili.push({ unita: u, arma: arma, nemico: nemico, mina: mina, domande: domande });
             window.risposteInnesco = window.risposteInnesco || {};
-            window.risposteInnesco[u.id] = {};
+            const giaDetonato = window.detonazioniAro.some(r => String(r.idDeployable) === String(u.id));
+            // Un ARO nuovo le ha gia` azzerate tutte (sopra); nello stesso
+            // ARO si tengono solo quelle di chi e` gia` detonato.
+            if (!giaDetonato) window.risposteInnesco[u.id] = {};
+
+            // 18 ottobre (Paolo, via MOTORE): il CrazyKoala e` una riga come
+            // le altre unita`, con la sua foto. Prima era un riquadro viola
+            // con la domanda della Zona di Controllo gia` aperta dentro
+            // l'elenco: non aveva la foto e non somigliava a niente del
+            // resto dell'app. Il koala non dichiara un ARO, scatta col suo
+            // innesco: per questo la sua pagina ha UNA sola azione,
+            // DETONAZIONE, e la domanda sta li` dentro (window.apriDetonazione).
+            // 19 ottobre (Paolo): anche le MINE. Il 18 restavano nel riquadro
+            // viola con le tre domande aperte nell'elenco, senza la loro
+            // immagine; ora sono una riga con l'immagine del loro tipo
+            // (img/<id>.png, una per tipo di mina) e la stessa pagina con la
+            // sola DETONAZIONE, dove stanno le loro tre domande.
+            if (typeof window.rigaUnitaConFoto === 'function') {
+                const sicK = String(u.id).replace(/'/g, "\\'");
+                const segno = giaDetonato
+                    ? ` <span style="color:#00ff00; font-size:13px; font-weight:bold;">\ud83d\udca5 DETONA (parte con l'ARO)</span>`
+                    : ` <span style="color:#cc88ff; font-size:13px;">\ud83d\udca5 solo DETONAZIONE</span>`;
+                container.innerHTML += window.rigaUnitaConFoto(u, {
+                    id: 'aro-dep-' + u.id, fazione: 'PROPRIA', opacita: '1',
+                    scelta: giaDetonato, dopoNome: segno,
+                    attributi: giaDetonato ? '' : `onclick="window.apriDetonazione('${sicK}')"`
+                });
+                return;
+            }
             container.innerHTML += `
                 <div id="dep-${u.id}" style="background:#2a1a33; border:1px solid #cc88ff; border-radius:5px; padding:12px; margin-bottom:10px;">
                     <div style="color:#fff; font-size:20px; font-weight:bold;">📦 ${M.nomeUnita(u)}</div>
@@ -298,11 +338,54 @@
                 </div>`;
         });
 
+        // Un koala esploso e tolto dal tavolo (Morto) non e` piu` fra le
+        // righe: la sua detonazione pero` parte ancora, e lo si dice.
+        const fuori = window.detonazioniAro.filter(r => !window.deployableInnescabili.some(v => String(v.unita.id) === String(r.idDeployable)));
+        if (fuori.length) {
+            container.innerHTML += `<div id="aro-detonazioni" style="margin-top:10px; padding:10px; background:#0a1a0a; border:1px solid #00ff00; border-radius:5px; color:#00ff00; font-size:14px;">` +
+                fuori.map(r => `\ud83d\udca5 <b>${r.nome}</b> DETONA: parte con l'ARO (AVANTI o NESSUN ARO).`).join('<br>') + `</div>`;
+        }
+
         if (escluse.length > 0) {
             container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
                 <b style="color:#aaa;">Non possono reagire:</b><br>` +
                 escluse.map(x => `• <b>${x.nome}</b> — ${x.motivo}`).join('<br>') + `</div>`;
         }
+    };
+
+    // ==============================================================
+    // 18 ottobre: la PAGINA del CrazyKoala. Una sola azione, DETONAZIONE.
+    // Si usa la stessa pagina delle reazioni delle truppe (step-aro-action),
+    // cosi` il tasto RICOMINCIA SELEZIONE riporta all'elenco.
+    // ==============================================================
+    window.apriDetonazione = function (id) {
+        const M = motore(); if (!M) return;
+        const voce = (window.deployableInnescabili || []).find(x => String(x.unita.id) === String(id));
+        if (!voce) return;
+        window.aggiornaTitoliAro(M.nomeUnita(voce.unita));
+        window.goToAroStep('step-aro-action');
+        const lista = document.getElementById('aro-action-list');
+        if (!lista) return;
+        const sic = String(id).replace(/'/g, "\\'");
+        const spiega = voce.mina ? 'Non lo sceglie la mina: dichiara cosa e` successo al tavolo.'
+                                 : 'Si attiva per Zona di Controllo: la Linea di Tiro non serve.';
+        lista.innerHTML = `<button id="btn-detonazione-${id}" class="huge-btn" style="background:#2a1a33; border-color:#cc88ff; min-height:70px; width:100%;"
+            onclick="window.sceltaDetonazione('${sic}')">\ud83d\udca5 DETONAZIONE
+            <div style="font-size:13px; color:#cc88ff; font-weight:normal;">${spiega}</div></button>`;
+    };
+
+    window.sceltaDetonazione = function (id) {
+        const M = motore(); if (!M) return;
+        const voce = (window.deployableInnescabili || []).find(x => String(x.unita.id) === String(id));
+        const lista = document.getElementById('aro-action-list');
+        if (!voce || !lista) return;
+        window.risposteInnesco = window.risposteInnesco || {};
+        window.risposteInnesco[id] = {};
+        lista.innerHTML = `
+            <div id="dep-${id}" style="background:#2a1a33; border:1px solid #cc88ff; border-radius:5px; padding:12px; margin-bottom:10px;">
+                <div style="color:#fff; font-size:20px; font-weight:bold;">\ud83d\udca5 DETONAZIONE \u2014 ${M.nomeUnita(voce.unita)}</div>
+                <div id="dom-${id}">${window.domandeInnescoHtml(id)}</div>
+            </div>`;
     };
 
     // Le domande ancora aperte, una alla volta: si risponde in ordine, cosi`
@@ -456,8 +539,14 @@
         //
         // `bersaglio` e` il nome di chi ha innescato: senza, lo scontro non
         // sa a chi far tirare la Schivata.
-        window.aroReactions = window.aroReactions || [];
-        window.aroReactions.push({
+        //
+        // 18 ottobre, difetto di questa chat: la busta finiva SOLO in
+        // aroReactions, e confermaSelezioneAro (AVANTI) la azzerava prima del
+        // ciclo delle truppe; senza truppe scelte AVANTI si fermava sul
+        // "Seleziona almeno un'unita`", e NESSUN ARO spediva []. In nessuna
+        // delle tre strade la detonazione partiva. Ora sta anche in
+        // detonazioniAro, che AVANTI e NESSUN ARO spediscono.
+        const busta = {
             nome: M.nomeUnita(voce.unita),
             azione: 'DETONAZIONE',
             arma: voce.arma,
@@ -465,7 +554,11 @@
             deployable: true,
             senzaTiro: true,
             note: [e.difesa, e.rimozione].filter(Boolean)
-        });
+        };
+        window.aroReactions = window.aroReactions || [];
+        window.aroReactions.push(busta);
+        window.detonazioniAro = window.detonazioniAro || [];
+        window.detonazioniAro.push(Object.assign({ idDeployable: voce.unita.id }, busta));
 
         // Detonato: se la regola lo toglie dal gioco, se ne occupa il motore.
         // Questa e` l'app del PROPRIETARIO del token, l'unica che tiene la
@@ -487,7 +580,8 @@
                 <div style="color:${esitoRimozione.rimosso ? '#888' : '#ffaa66'}; font-size:12px; margin-top:6px;">
                     ${esitoRimozione.rimosso
                         ? 'Tolto dal tavolo: ' + esitoRimozione.motivo
-                        : 'RESTA sul tavolo. ' + (esitoRimozione.motivo || '') + ' Se \u00e8 esploso, toglilo a mano dalla sua riga.'}</div>`;
+                        : 'RESTA sul tavolo. ' + (esitoRimozione.motivo || '') + ' Se \u00e8 esploso, toglilo a mano dalla sua riga.'}</div>
+                <div style="color:#00ff00; font-size:13px; margin-top:8px;">Parte con l'ARO: torna all'elenco e premi AVANTI (o NESSUN ARO se le truppe non reagiscono).</div>`;
         }
     };
 
@@ -520,10 +614,23 @@
             .forEach(id => { const e = document.getElementById(id); if (e) e.innerHTML = t; });
     };
 
+    // Le detonazioni gia` decise, senza il campo interno idDeployable.
+    function detonazioniDaSpedire() {
+        return (window.detonazioniAro || []).map(function (r) {
+            const c = Object.assign({}, r); delete c.idDeployable; return c;
+        });
+    }
+
     window.confermaSelezioneAro = function () {
-        if (window.selectedAroUnits.length === 0) return alert('Seleziona almeno un\'unità per reagire.');
+        const det = detonazioniDaSpedire();
+        // Solo il koala (o la mina) e nessuna truppa: si spedisce la
+        // detonazione, non si chiede di scegliere un'unita`.
+        if (window.selectedAroUnits.length === 0) {
+            if (det.length) return spedisci(det);
+            return alert('Seleziona almeno un\'unità per reagire.');
+        }
         window.currentAroIndex = 0;
-        window.aroReactions = [];
+        window.aroReactions = det;
         window.avviaCicloAroUnita();
     };
 
@@ -1272,6 +1379,8 @@
 
         window.selectedAroUnits = [];
         window.aroReactions = [];
+        window.detonazioniAro = [];
+        window._aroAperto = undefined;
         window.aroCurrentConfig = {};
         window.aroSfMode = false;
     }
@@ -1283,7 +1392,10 @@
     // nemico, e sul telefono il popup copriva la pagina. Lo chiamano tutti e
     // due i tasti (barra dell'avviso e fondo pagina), quindi basta qui.
     window.annullaAro = function () {
-        spedisci([]);
+        // 18 ottobre: NESSUN ARO e` la rinuncia delle TRUPPE. Un deployable
+        // gia` detonato non ha dichiarato un ARO, e` scattato: parte lo
+        // stesso. Prima si spediva [] e la detonazione si perdeva.
+        spedisci(detonazioniDaSpedire());
     };
 
     console.log('🚨 logica_aro.js riscritto su MotoreN5.');
@@ -1295,7 +1407,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-10-15.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-10-19.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

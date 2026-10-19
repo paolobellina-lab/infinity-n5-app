@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-12.3 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-18.1 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -56,6 +56,10 @@
             box-shadow:0 0 0 3px #9a9a9a; background:#2a2a2a; }
         .scheda-truppa .st-riga { color:#ccc; font-size:12px; line-height:1.35; margin-top:5px; overflow-wrap:anywhere; }
         .scheda-truppa .st-riga b { color:#fff; }
+        /* 18 ottobre: le icone del Fairy Dust accanto al nome della fazione. */
+        .fairy-dust { display:inline-flex; gap:6px; vertical-align:middle; margin-left:8px; }
+        .fairy-dust img { height:32px; width:auto; vertical-align:middle; }
+        .fairy-dust .fd-testo { font-size:13px; color:#66aaff; border:1px solid #66aaff; border-radius:4px; padding:1px 5px; }
     </style>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
@@ -114,11 +118,11 @@
              `order`: dipende da dove siedono i giocatori, non dall'ordine
              di queste righe. I colori no: Nomads rossi, PanOceania blu. -->
         <div class="faction-panel" id="pannello-nomads" style="order:1; border-color:#ff0000;">
-            <h2 style="color: #ff0000;">NOMADS</h2>
+            <h2 style="color: #ff0000;">NOMADS <span id="fairy-nomads" class="fairy-dust"></span></h2>
             <div id="status-nomads">In attesa...</div>
         </div>
         <div class="faction-panel" id="pannello-pano" style="order:2; border-color:#00ccff;">
-            <h2 style="color: #00ccff;">PANOCEANIA</h2>
+            <h2 style="color: #00ccff;">PANOCEANIA <span id="fairy-pano" class="fairy-dust"></span></h2>
             <div id="status-pano">In attesa...</div>
         </div>
     </div>
@@ -165,7 +169,7 @@
         // quello dove una copia vecchia (cache del telefono) e` piu` probabile.
         (function () {
             var g = (typeof window !== 'undefined') ? window : globalThis;
-            var v = { file: 'calcolatore_hub.html', versione: '2026-10-12.3', proprieta: 'INTERFACCIA' };
+            var v = { file: 'calcolatore_hub.html', versione: '2026-10-18.1', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();

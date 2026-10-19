@@ -1,4 +1,7 @@
-// @versione 2026-10-16.1 | test_piano_schieramento.js | proprieta`: chat TEST
+// @versione 2026-10-19.1 | test_piano_schieramento.js | proprieta`: chat TEST
+// 2026-10-19.1: REV_MINIMA = 31. Le prove passano da 284 a 290 (SUP-02a/b, SUP-04a/b,
+//    ST-16a/b, ST-21, DET-07, DET-08): i codici accettano una lettera minuscola finale.
+// 2026-10-16.2: database 379 + 368 = 747.
 // 2026-10-16.1: database 383 + 375 = 758 (cancellati tre doppioni PanOceania).
 // 2026-10-15.1: adottata la revisione 30 (riscritta da MOTORE per Paolo, 284
 //    prove). REV_MINIMA = 30; roster 39 Nomadi + 16 PanOceania = 55 (nuovi
@@ -115,7 +118,8 @@ const altraFazione = (f) => f === 'NOMADI' ? 'PANOCEANIA' : 'NOMADI';
 const voci = leggiTabelle(fs.readFileSync(PIANO, 'utf8'));
 
 console.log('\n=== 0. Le due tabelle si leggono ===');
-ok(DB.NOMADI.length === 383 && DB.PANOCEANIA.length === 375,   // 758 dal database 2026-10-16.1: cancellati anche fusilier_lt2, orc_lieutenant, orc_lieutenant_2
+ok(DB.NOMADI.length === 379 && DB.PANOCEANIA.length === 368,   // 747 dal database 2026-10-16.2: tolte 11 righe doppie (4 Nomadi, 7 PanOceania)
+     // 758 dal database 2026-10-16.1: cancellati anche fusilier_lt2, orc_lieutenant, orc_lieutenant_2
      // 761 dal database .12.3
   
    `database: ${DB.NOMADI.length} profili nomadi e ${DB.PANOCEANIA.length} panoceani`);
@@ -135,7 +139,7 @@ const perFazione = voci.reduce(function (m, v) { m[v.fazione] = (m[v.fazione] ||
 // (Il 7 ottobre ho cambiato questi numeri senza alzare la versione del
 // banco, e due chat hanno letto due contenuti diversi sotto la stessa
 // 2026-10-07.1. Da qui la .2.)
-const REV_MINIMA = 30;
+const REV_MINIMA = 31;
 const testoPiano = fs.readFileSync(PIANO, 'utf8');
 const revisione = (/revisione\s+(\d+)/.exec(testoPiano) || [])[1];
 ok(revisione !== undefined && parseInt(revisione, 10) >= REV_MINIMA,
@@ -152,7 +156,8 @@ const prove = (testoPiano.match(/^- \*\*Atteso:\*\*/gm) || []).length;
 // `— ` dopo il codice: una prova si apre con "**SCO-01 — titolo**". Senza
 // questo si prende anche "**SCO-01…SCO-05**" del changelog, che e` un
 // riferimento, non una prova, e il controllo dei doppioni va rosso a torto.
-const codici = (testoPiano.match(/^\*\*([A-Z]+-\d+) —/gm) || []).map(x => x.slice(2).replace(/ —$/, ''));
+// 19 ottobre: un codice puo` finire con una lettera minuscola (SUP-02a, SUP-02b).
+const codici = (testoPiano.match(/^\*\*([A-Z]+-\d+[a-z]?) —/gm) || []).map(x => x.slice(2).replace(/ —$/, ''));
 ok(prove > 0, `le prove si contano nel testo del piano (${prove} righe "Atteso")`);
 ok(codici.length === prove,
    `e ogni prova ha il suo codice in testa, uno per una (${codici.length} codici per ${prove} prove)`);
@@ -182,7 +187,7 @@ ok(fuori.length === 0,
 // E il numero delle prove incomplete, che il blocco DC dichiara: contato
 // sulle prove vere, non ripreso dalla volta prima. Il 7 ottobre il piano
 // diceva "135 prove su 277" e nessuno dei due numeri era giusto.
-const blocchi = testoPiano.split(/(?=^\*\*[A-Z]+-\d+ —)/m).slice(1);
+const blocchi = testoPiano.split(/(?=^\*\*[A-Z]+-\d+[a-z]? —)/m).slice(1);
 const incompiute = blocchi.filter(b => /DA COMPLETARE/.test(b)).length;
 // 9 ottobre sera: il blocco DC e` arrivato a ZERO, e il numero sta in grassetto
 // nel titolo ("**0 prove su 297**"). Il gruppo accetta UNA cifra: con \d{2,4}

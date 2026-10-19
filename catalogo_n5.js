@@ -1,4 +1,4 @@
-// @versione 2026-10-12.2 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-10-18.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -715,6 +715,12 @@ window.CATALOGO_N5.MOVIMENTO = {
         // Long Skill, Supportware, No Roll: Ordine intero, nessun bersaglio.
         'FAIRY DUST': { nome: 'Fairy Dust', tipo: 'LONG_SKILL', generaAro: true,
                               note: 'Ordine Intero, nessun tiro. L\'hacker sceglie un Tipo di Truppa (HI, REM, TAG o VH) della sua lista: Firewall (-3) su tutto il tavolo.' },
+        // WHITE NOISE (Paolo, 18 ottobre: "genera ARO, quindi va considerato
+        // come un Ordine"): programma di Hacking, Abilita` Breve, nessun tiro.
+        // Si dichiara dalla schermata Hacking, come prima o seconda meta`.
+        // La Sagoma la gestisce il giocatore al tavolo.
+        'WHITE NOISE': { nome: 'White Noise', tipo: 'SHORT_SKILL', generaAro: true,
+                              note: 'Abilita` Breve, nessun tiro. L\'Hacker piazza la Sagoma Circolare del White Noise nella sua Area di Hacking: per i Multispectral Visor e` una zona che blocca la Linea di Tiro. La Sagoma la gestisci al tavolo.' },
         'PIAZZARE EQUIPAGGIAMENTO': { nome: 'Place Deployable', tipo: 'SHORT_SKILL', generaAro: true,
                               note: 'Se c\'e` un Marker Mimetico nemico nell\'Area d\'Innesco, va invece dichiarato un Attacco Intuitivo.' }
     },
@@ -2642,9 +2648,13 @@ window.CATALOGO_N5.HACKING = {
 
     // --- esistono in N5 ma non sono attacchi: questo modulo non li gestisce ---
     // nfb: "NFB, No Roll" (riga 5153). Fino al 5 ottobre l'etichetta mancava.
-    'CYBERMASK':         { fonte: 'regolamento, righe 5150-5171', tipo: 'NON_ATTACCO', nfb: true, abilita: 'LONG_SKILL',
-                           note: 'Long Skill senza tiro: l\'Hacker entra in IMP-2. Si dichiara dalla voce CYBERMASK delle Abilita` Lunghe, non da questa schermata.' },
-    'WHITE NOISE':       { nfb: true, fonte: 'wiki', tipo: 'NON_ATTACCO',  note: 'Zona di rumore bianco.' },
+    // 18 ottobre (Paolo): Cybermask e White Noise si dichiarano DA QUESTA
+    // schermata, come Ordini senza tiro che generano ARO (gestito: true). Lo
+    // stato IMP-2 del Cybermask lo mette il giocatore dall'editor degli stati.
+    'CYBERMASK':         { fonte: 'regolamento, righe 5150-5171', tipo: 'NON_ATTACCO', nfb: true, abilita: 'LONG_SKILL', gestito: true,
+                           note: 'Abilita` Lunga, nessun tiro. Requisito: l\'Hacker e` fuori dalla LoF di Modelli e Marker nemici; se non lo e`, esegue un Idle. Lo stato IMP-2 lo metti tu dall\'editor degli stati.' },
+    'WHITE NOISE':       { nfb: true, fonte: 'wiki', tipo: 'NON_ATTACCO', abilita: 'SHORT_SKILL', gestito: true,
+                           note: 'Abilita` Breve, nessun tiro: la Sagoma Circolare del White Noise nella tua Area di Hacking. Blocca la LoF dei Multispectral Visor.' },
     'ZERO PAIN':         { fonte: 'wiki', tipo: 'NON_ATTACCO',  note: 'Non gestito dal modulo attacco.' },
     'ASSISTED FIRE':     { fonte: 'wiki', tipo: 'SUPPORTWARE', bersaglioAlleato: true, note: 'Supportware su alleati (EVO).' },
     'ENHANCED REACTION': { fonte: 'wiki', tipo: 'SUPPORTWARE', bersaglioAlleato: true, note: 'Da` B2 in ARO a un REM alleato (EVO).' },
@@ -2820,7 +2830,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-10-12.2', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-12.1 | ordine_osservazione.js | proprieta`: chat MOTORE
+// @versione 2026-10-18.1 | ordine_osservazione.js | proprieta`: chat MOTORE
 // ==========================================
 // 👁️ OSSERVAZIONE (N5) - ordine_osservazione.js
 // ------------------------------------------
@@ -63,7 +63,9 @@
         if (azione === M.AZIONI.SENSOR) return window.renderOsservazione();
         // Il Triangulated Fire serve un'arma BS.
         if (azione === M.AZIONI.TRIANGULATED) return window.mostraArmiTriangulated();
-        // Il Forward Observer ha un'arma sua.
+        // Il Forward Observer ha un'arma sua. Si scrive nell'Ordine, perche`
+        // dopo l'ARO la ripresa (M.riprendiOrdineDaFinestra) la ritrovi.
+        window.currentOrder.weapon = 'Forward Observer';
         return window.setupBersagliOsservazione();
     };
 
@@ -91,10 +93,14 @@
             <span style="color:#aaa; font-size:13px;">Ordine Intero. Nessun MOD al tiro,<br>
             tranne quelli che toccano il Burst.</span></div>`;
 
+        // 18 ottobre (Paolo): la stessa grafica dell'Attacco BS — il bottone
+        // approvato (M.bottoneArma) — invece dei bottoni col solo nome.
         (e.armi || []).forEach(function (a) {
             const nomeEsc = String(a.nomeRichiesto || a.nome).replace(/'/g, "\\'");
-            container.innerHTML += `<button class="huge-btn" style="width:100%; min-height:58px; font-size:18px; margin-bottom:6px; background:#111; border-color:${COL.bordo};"
-                onclick="window.scegliArmaTriangulated('${nomeEsc}')">🎯 ${a.nome}</button>`;
+            container.innerHTML += (typeof M.bottoneArma === 'function')
+                ? M.bottoneArma(a, { attributi: `onclick="window.scegliArmaTriangulated('${nomeEsc}')"` })
+                : `<button class="huge-btn" style="width:100%; min-height:58px; font-size:18px; margin-bottom:6px; background:#111; border-color:${COL.bordo};"
+                    onclick="window.scegliArmaTriangulated('${nomeEsc}')">🎯 ${a.nome}</button>`;
         });
         window.goToStep('step-weapon');
     };
@@ -122,6 +128,21 @@
         const fo = (azione === M.AZIONI.FORWARD_OBSERVER);
         const container = document.getElementById('enemy-target-buttons');
         if (!container) return;
+        // 18 ottobre (Paolo): la pagina dei bersagli e` quella dell'Attacco BS
+        // — le righe con la foto (window.renderTargetButtons) e il tasto
+        // CONFERMA BERSAGLI, che manda l'allarme ARO e aspetta la risposta.
+        // Prima qui c'erano bottoni col solo nome, e toccandone uno si andava
+        // al tiro SENZA allarme: l'avversario non reagiva mai.
+        if (typeof window.renderTargetButtons === 'function' && typeof window.confirmMultiAro === 'function') {
+            window.pendingTargets = [];
+            window.renderTargetButtons();
+            if (window.targetsScartati.length > 0) {
+                container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
+                    <b style="color:#aaa;">Non bersagliabili:</b><br>` +
+                    window.targetsScartati.map(t => `• <b>${t.nome}</b> — ${t.motivo}`).join('<br>') + `</div>`;
+            }
+            return window.goToStep('step-wait-aro');
+        }
         container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:12px; border-radius:5px; margin-bottom:15px; text-align:center;">
             <b style="color:${COL.bordo}; font-size:18px;">${fo ? '👁️ FORWARD OBSERVER' : '🎯 TRIANGULATED FIRE'}</b><br>
             <span style="color:#aaa; font-size:13px;">${fo
@@ -158,6 +179,8 @@
     // ==============================================================
     // 2. IL TIRO
     // ==============================================================
+    function titoloAzione(a) { return String(a || '').toUpperCase(); }
+
     window.renderOsservazione = function () {
         const M = motore(); if (!M) return;
         const unita = window.coordUnits[window.coordIndex];
@@ -176,15 +199,26 @@
                 </div>`;
             }
         } else {
+            // Un bersaglio solo: dalla pagina dei bersagli possono arrivarne
+            // piu` d'uno, e vale il primo.
+            if ((window.combatTargets || []).length > 1) {
+                alert('⚠️ ' + titoloAzione(azione) + ' ha un bersaglio solo: vale il primo scelto, ' + window.combatTargets[0].name + '.');
+                window.combatTargets = [window.combatTargets[0]];
+                window.pendingTargets = (window.pendingTargets || []).slice(0, 1);
+            }
             const t = (window.combatTargets || [])[0];
             if (!t) { alert('⛔ Nessun bersaglio scelto.'); return window.setupBersagliOsservazione(); }
             const bers = (window.pendingTargets || [])[0] || {};
 
             if (azione === M.AZIONI.FORWARD_OBSERVER) {
-                e = M.regoleForwardObserver(unita, bers, { rangeIndex: t.rangeIndex, cover: t.cover });
+                e = M.regoleForwardObserver(unita, bers, { rangeIndex: t.rangeIndex, cover: t.cover,
+                                                          coordMode: window.coordMode, indiceCoord: window.coordIndex });
                 titolo = 'FORWARD OBSERVER';
                 if (e.valido) {
-                    corpo = window.barraGittata(e.arma, t, 'window.setRangeOsservazione') +
+                    // 18 ottobre (OSS-01): il Burst dell'arma, non 1 fisso.
+                    t.burst = e.burst || 1;
+                    corpo = `<div style="text-align:center; color:#ccc; font-size:14px; margin-top:8px;">Burst <b style="color:#fff;">${t.burst}</b></div>` +
+                        window.barraGittata(e.arma, t, 'window.setRangeOsservazione') +
                         `<div style="margin-top:12px; padding:12px; background:#332200; border:1px solid #cc8800; border-radius:5px; text-align:center;">
                             <b style="color:#ffaa33; font-size:15px;">⚠️ NON INFLIGGE DANNO</b>
                             <div style="color:#ffcc88; font-size:13px; margin-top:6px;">Il bersaglio entra in Stato Bersagliato: nessun Tiro Salvezza.</div>
@@ -194,6 +228,9 @@
                 const arma = M.profiloArma(window.osservazioneArma || window.currentOrder.weapon);
                 e = M.regoleTriangulated(unita, bers, arma, { rangeIndex: t.rangeIndex, cover: t.cover });
                 titolo = 'TRIANGULATED FIRE';
+                // Dalla pagina dei bersagli il bersaglio arriva senza dadi:
+                // un dado, come prima (burstDisponibile 1).
+                if (!t.burst) t.burst = 1;
                 if (e.valido) {
                     corpo = window.barraGittata(arma, t, 'window.setRangeOsservazione') +
                         (e.modIgnorati.length
@@ -250,14 +287,18 @@
         arma.bands.forEach(function (b, i) {
             let cls = 'seg-2';
             if (b.mod > 0) cls = 'seg-1'; else if (b.mod === -3) cls = 'seg-3'; else if (b.mod < -3) cls = 'seg-4';
-            seg += `<div class="range-seg ${cls} ${t.rangeIndex === i ? 'active' : ''}" onclick="${callback}(${i})">${b.mod > 0 ? '+' + b.mod : b.mod}</div>`;
+            seg += `<div class="range-seg ${cls} ${(!t.fuoriGittata && t.rangeIndex === i) ? 'active' : ''}" onclick="${callback}(${i})">${b.mod > 0 ? '+' + b.mod : b.mod}</div>`;
             lab += `<span>${b.label}</span>`;
         });
+        // 18 ottobre (Paolo): il FUORI GITTATA e` un segmento della barra,
+        // come nell'Attacco BS, e non un tasto a parte.
+        seg += `<div class="range-seg ${t.fuoriGittata ? 'active' : ''}" style="background:${t.fuoriGittata ? '#ffcc00' : '#332b00'}; color:${t.fuoriGittata ? '#000' : '#ffcc00'}; font-size:12px;" onclick="window.toggleFuoriGittataOsservazione()">FUORI</div>`;
+        lab += `<span>oltre</span>`;
         const M = motore();
         return `<div style="text-align:center; color:#aaa; font-size:12px; margin:12px 0 5px;">Gittata:</div>
             <div class="range-bar">${seg}</div>
             <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${lab}</div>
-            ${M ? M.rigaRequisiti(['lof', 'gittata'], t, 0, 'window.toggleRequisitoOsservazione') : ''}`;
+            ${M ? M.rigaRequisiti(['lof'], t, 0, 'window.toggleRequisitoOsservazione') : ''}`;
     };
 
     window.setRangeOsservazione = function (i) {
@@ -268,8 +309,11 @@
             : M.profiloArma(window.osservazioneArma || window.currentOrder.weapon);
         window.combatTargets[0].rangeIndex = i;
         window.combatTargets[0].rangeMod = (arma.bands && arma.bands[i]) ? arma.bands[i].mod : 0;
+        window.combatTargets[0].fuoriGittata = false;     // scelta una fascia: in gittata
         window.renderOsservazione();
     };
+    // FUORI: lo stesso requisito 'gittata' (M.invertiRequisito), dalla barra.
+    window.toggleFuoriGittataOsservazione = function () { window.toggleRequisitoOsservazione(0, 'gittata'); };
 
     window.aggiornaPulsanteOsservazione = function (disabilitato) {
         const btn = document.getElementById('btn-esegui-calcolo') ||
@@ -319,7 +363,7 @@
             azione: azione,
             arma: e.arma || null,
             bersagli: (azione === M.AZIONI.SENSOR) ? [] : window.combatTargets,
-            burstDisponibile: 1,
+            burstDisponibile: (azione === M.AZIONI.FORWARD_OBSERVER) ? (e.burst || 1) : 1,
             regole: {
                 attributo: e.attributo,
                 valoreSuccesso: e.valore,
@@ -344,7 +388,18 @@
             return window.avviaPassoOsservazione();
         }
 
-        const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode });
+        // 18 ottobre (Paolo, OSS-02): il Sensor non passa dalla scelta dei
+        // bersagli, dove parte l'allarme ARO degli altri ordini, e cosi`
+        // l'avversario non poteva reagire. Ogni Ordine attiva la truppa e
+        // genera ARO: l'allarme si manda qui, e l'Hub aspetta la risposta.
+        let aroAtteso;
+        if (azione === M.AZIONI.SENSOR && !window.currentOrder.isSecondHalf) {
+            const al = M.allarmeOrdine(azione, { unita: unita, coordUnits: window.coordUnits, coordMode: window.coordMode });
+            if (al.payload && typeof window.inviaAllarmeAro === 'function') window.inviaAllarmeAro(al.payload);
+            aroAtteso = !!(al.aro && al.aro.genera);
+        }
+        const spedito = M.inviaCalcolo(window.coordPayloads, aroAtteso === undefined ? { isCoordinated: window.coordMode }
+                                                                                   : { isCoordinated: window.coordMode, aroAtteso: aroAtteso });
         if (!spedito) { window.coordIndex--; window.coordPayloads.pop(); return; }
     };
 
@@ -354,7 +409,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_osservazione.js', versione: '2026-10-12.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_osservazione.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

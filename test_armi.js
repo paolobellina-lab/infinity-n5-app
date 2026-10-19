@@ -1,4 +1,5 @@
-// @versione 2026-10-16.1 | test_armi.js | proprieta`: chat TEST
+// @versione 2026-10-16.2 | test_armi.js | proprieta`: chat TEST
+// 2026-10-16.2: premessa 758 -> 747 (database 2026-10-16.2).
 // 2026-10-16.1: premessa 761 -> 758 (database 2026-10-16.1).
 // 2026-10-12.2: premessa 765 -> 761 (database .12.3, quattro profili
 //    cancellati); i messaggi leggono il numero dal database.
@@ -151,7 +152,8 @@ console.log('\n=== armiDisponibili non offre l equipaggiamento come arma (motore
     const SOLO_FUORI_DAL_CC = ["Deactivator", "Deactivator (ReRoll)", "Deployable Cover", "FastPanda", "GizmoKit", "GizmoKit(+1B)", "MediKit", "MediKit (+1B)"];
     const voci = new Set(); TUTTI.forEach(u => M.dividiLista((u.weapon || '') + ',' + (u.equip || '')).forEach(v => voci.add(v)));
     const assentiDalDb = [...EQUIP_39, ...SOLO_FUORI_DAL_CC].filter(v => !voci.has(v));
-    ok(TUTTI.length === 758 && assentiDalDb.length === 0,   // 758 dal database 2026-10-16.1: cancellati anche fusilier_lt2, orc_lieutenant, orc_lieutenant_2
+    ok(TUTTI.length === 747 && assentiDalDb.length === 0,   // 747 dal database 2026-10-16.2: tolte 11 righe doppie (4 Nomadi, 7 PanOceania)
+         // 758 dal database 2026-10-16.1: cancellati anche fusilier_lt2, orc_lieutenant, orc_lieutenant_2
          // 761 dal 12 ottobre sera (database .12.3): cancellati evader_multi_tb, triggermen_multi, hannibal_cmd, hannibal_strategic
       
        `premessa: le ${EQUIP_39.length + SOLO_FUORI_DAL_CC.length} voci nominate stanno tutte nei profili (assenti: ${assentiDalDb.length}) — la prova morde`,

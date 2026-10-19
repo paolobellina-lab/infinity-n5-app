@@ -1,4 +1,4 @@
-// @versione 2026-10-15.2 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-18.1 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-15.2';
+    M.VERSIONE = '2026-10-18.1';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -1749,7 +1749,21 @@
                 case M.AZIONI.GUIDATO:
                     // Solo il PRIMARIO deve essere in Stato Bersagliato: i secondari
                     // sono presi dalla sagoma e non hanno bisogno di essere designati.
-                    if (marker) nega('In forma di Marker: non può essere in Stato Bersagliato.');
+                    // 16 ottobre (Paolo, GUI-03): il Marker CAMO non puo` essere
+                    // il Primario (non puo` essere Bersagliato), ma la Sagoma lo
+                    // prende: come SECONDARIO e` ammesso, come nel Fuoco
+                    // Speculativo (righe 3914-3919). Il Tiro Salvezza lo rivela
+                    // (M.notaMarkerSuSalvezza, riga 13638). Il Marker
+                    // IMPERSONATION invece conta come alleato e annulla il colpo
+                    // (righe 14283-14289).
+                    if (marker && opzioni.ruolo === 'secondario') {
+                        if (s.imp) { nega('Marker Impersonation sotto la Sagoma: conta come alleato e ANNULLA il colpo, anche con un altro Primario (righe 14283-14289). Sposta la Sagoma.'); esito.annullaIlColpo = true; }
+                        else {
+                            esito.secondario = true;
+                            esito.note.push('Marker CAMO preso dalla Sagoma: fa il Tiro Salvezza, e lo stato CAMO si cancella anche se la salvezza riesce (riga 13638).');
+                        }
+                    }
+                    else if (marker) nega('In forma di Marker: non può essere in Stato Bersagliato.');
                     else if (opzioni.ruolo === 'primario' && !s.targeted) {
                         nega('Non è in Stato Bersagliato: il primario dell\'Attacco Guidato dev\'essere designato.');
                     } else if (!s.targeted) {
@@ -3307,6 +3321,26 @@
                      nota: `Fairy Dust di ${M.nomeUnita(h)} cancellato: l'hacker e\` ${sth.isolato ? 'Isolato' : 'in uno Stato Nullo'} (righe 4735-4738). Resta cancellato anche se l'hacker si riprende: va dichiarato di nuovo.` };
         }
         return { valore: -3, hacker: h, tipo: tipo, nota: null };
+    };
+
+    // 18 ottobre (Paolo): l'Hub mostra un'icona in testa alla colonna della
+    // fazione quando c'e` un Fairy Dust attivo. Qui si dice QUALI: per ogni
+    // hacker della lista con lo stato fairyDust, il Tipo di Truppa e se vale
+    // ancora (Isolato o in Stato Nullo il Fairy Dust e` cancellato, righe
+    // 4735-4738: attivo false, col motivo). La pagina sceglie solo come
+    // disegnarlo.
+    M.fairyDustAttivi = function (roster) {
+        return (Array.isArray(roster) ? roster : []).filter(function (u) {
+            return u && u.states && u.states.fairyDust;
+        }).map(function (h) {
+            const tipo = String(h.states.fairyDust).toUpperCase();
+            const sth = M.statoBersaglio(h);
+            const cancellato = !!(sth.isolato || M.eNullo(h));
+            return { hacker: h, nome: M.nomeUnita(h), tipo: tipo, attivo: !cancellato,
+                     testo: cancellato
+                         ? `Fairy Dust di ${M.nomeUnita(h)} sui ${tipo}: cancellato (hacker ${sth.isolato ? 'Isolato' : 'in uno Stato Nullo'}).`
+                         : `Fairy Dust di ${M.nomeUnita(h)}: Firewall (-3) sui ${tipo}.` };
+        });
     };
 
     // Puo` dichiararlo? Programma Supportware, Long Skill, No Roll.
@@ -5168,6 +5202,12 @@
     };
 
     M.valoreMimetismo = function (unita) {
+        // 18 ottobre (Paolo, SCO-01): un Marker arriva all'avversario senza
+        // Abilita` (anti-spoiler), e il Mimetismo si perdeva: lo Scoprire su
+        // un Croc Man in CAMO non aveva il -6. Ora il segnalino porta il solo
+        // valore, nel campo `mimetismo` (M.filtraPerAvversario). Vale se il
+        // profilo non dice altro.
+        if (unita && typeof unita.mimetismo === 'number' && !/MIMETISM/.test(skillsDi(unita))) return unita.mimetismo;
         const s = skillsDi(unita);
         const m = /MIMETISM[^(]*\(\s*(-?\d+)/.exec(s);
         if (m) return -Math.abs(parseInt(m[1], 10));
@@ -7037,7 +7077,12 @@
                             // (Trincerarsi, rientro in CAMO, Cybermask) usciva
                             // con burst 1: "1 dado" per un Ordine che non tira.
                             const R = att.regole || {};
-                            if (spec.tiro === false) {
+                            // 18 ottobre: anche il Fuoco di Soppressione dichiarato
+                            // come Ordine (Ordine intero, nessun tiro; la SPEC tiene
+                            // BS perche` l'ARO in SF Mode tira, ma quello e` un
+                            // BS Attack). La busta da sola NON decide: una busta
+                            // senzaTiro non zittisce il Supporto (test_ordini_senza_tiro).
+                            if (spec.tiro === false || att.azione === M.AZIONI.SOPPRESSIONE) {
                                 // L'Abilita` senza tiro che si e` risolta in un IDLE
                                 // (Requisito fallito: in LoF per Cybermask e rientro
                                 // in CAMO, senza spazio per Trincerarsi). Lo scrive il
@@ -7057,6 +7102,37 @@
                                      impossibile: vs != null && vs < 1 };
                         })();
                 const Rd = att.regole || {};
+                // 18 ottobre (Paolo, SUP-02): MediKit e GizmoKit hanno DUE tiri,
+                // e al tabellone ne arrivava uno, col PH del bersaglio messo sotto
+                // il nome di chi soccorre. Ora: a sinistra chi soccorre (il BS
+                // per colpire, se a distanza; in contatto non tira), a destra
+                // il bersaglio col suo tiro (PH per il MediKit).
+                if (att.azione === M.AZIONI.SUPPORTO_BS && Rd.chiTira === 'BERSAGLIO') {
+                    const tpc = Rd.tiroPerColpire || null;
+                    const nomeB = Rd.nomeChiTira || (bersagli[0] && (bersagli[0].name || bersagli[0].nome)) || 'Bersaglio';
+                    scontri.push({
+                        tipo: M.CONFRONTO.NESSUNO,
+                        titolo: tpc ? 'TIRO DI SUPPORTO A DISTANZA' : 'TIRO DI SUPPORTO IN CONTATTO',
+                        attivo: tpc
+                            ? { nome: M.nomeUnita(att.attaccante), azione: (Rd.strumento || 'SUPPORTO') + ': TIRO PER COLPIRE',
+                                attributo: 'BS', base: tpc.base, mod: tpc.valore, burst: tpc.burst || 1,
+                                impossibile: typeof tpc.valore === 'number' && tpc.valore < 1,
+                                voci: tpc.voci || [], note: ['Prima si colpisce: se il tiro riesce, il bersaglio fa il suo tiro.'],
+                                salvezzaInflitta: { offensivo: false, note: ['Tiro non offensivo.'] } }
+                            : { nome: M.nomeUnita(att.attaccante), azione: (Rd.strumento || 'SUPPORTO') + ' IN CONTATTO',
+                                attributo: null, base: null, mod: null, burst: 0, senzaTiro: true,
+                                voci: [], note: ['In contatto di Silhouette non si tira per colpire.'],
+                                salvezzaInflitta: { offensivo: false, note: ['Tiro non offensivo.'] } },
+                        reattivo: { nome: nomeB, azione: 'TIRO DEL BERSAGLIO (' + (Rd.strumento || 'SUPPORTO') + ')',
+                                    attributo: e.attributo, base: e.base, mod: e.valore, burst: 1,
+                                    impossibile: !!e.impossibile, voci: e.voci, note: e.note || [],
+                                    salvezzaInflitta: { offensivo: false, note: ['Tiro non offensivo.'] } },
+                        note: (Array.isArray(Rd.noteScontro) ? Rd.noteScontro.slice() : [])
+                              .concat(Rd.fallimentoLetale ? ['Se il tiro del bersaglio fallisce, il bersaglio passa a Morto.'] : ['Se il tiro del bersaglio fallisce, riceve 1 Ferita.']),
+                        avvisi: []
+                    });
+                    return;
+                }
                 const detonazione = !!(Rd.detonazioneAContatto && Rd.bersaglioDetonazione);
                 scontri.push({
                     tipo: M.CONFRONTO.NESSUNO,
@@ -7636,7 +7712,11 @@
         const blocchi = [];
         if (st.morto)       blocchi.push({ stato: 'morto', nome: M.nomeStato('morto'), motivo: A['morto'] });
         if (st.incosciente) blocchi.push({ stato: 'incosciente', nome: M.nomeStato('incosciente'), motivo: A['incosciente'] });
-        if (st.isolato)     blocchi.push({ stato: 'isolato', nome: M.nomeStato('isolato'), motivo: A['isolato'] });
+        // 18 ottobre (Paolo, ST-04): l'Isolato NON riceve Ordini dal Pool, ma
+        // nel Turno Attivo dopo e` Irregolare e usa il PROPRIO Ordine
+        // (righe 14405-14407). Non e` un blocco: e` un'avvertenza. Resta fuori
+        // dal Coordinato (E59) e dal Fireteam.
+        const soloIrregolare = !!st.isolato;
         if (st.disconnesso) blocchi.push({ stato: 'disconnesso', nome: M.nomeStato('disconnesso'), motivo: A['disconnesso'] });
         // Posseduto e Sepsitorizzato: la truppa passa sotto controllo
         // avversario. La regola e` esplicita per entrambi.
@@ -7647,6 +7727,8 @@
             puo: blocchi.length === 0,
             blocchi: blocchi,
             motivo: blocchi.length ? blocchi[0].motivo : null,
+            soloOrdineIrregolare: soloIrregolare && blocchi.length === 0,
+            notaIrregolare: soloIrregolare ? 'Isolato: niente Ordini dal Pool. Usa solo il proprio Ordine Irregolare (non trasformabile in Regolare).' : null,
             // L'attivazione annulla il Fuoco di Soppressione.
             annullaSoppressione: !!st.suppressive,
             notaSoppressione: st.suppressive
@@ -7656,6 +7738,14 @@
 
     // Nome storico, tenuto per non rompere i chiamanti esistenti.
     M.puoEssereAttivata = function (unita) { return M.puoRicevereOrdine(unita); };
+
+    // 18 ottobre (Paolo, ST-05): lo Stato Disconnesso e` SOLO delle
+    // Periferiche (righe 13816-13836: "The Peripheral cannot be activated").
+    // L'editor degli stati lo offre solo a loro.
+    M.ePeriferica = function (unita) {
+        if (!unita) return false;
+        return !!(M.haCaratteristica(unita, 'Peripheral') || /PERIPHERAL\s*\(/i.test(skillsDi(unita)));
+    };
 
     // Un gruppo puo` formare un Ordine Coordinato?
     // INSPIRING LEADERSHIP (righe 8817-8836, REGOLE 12 ottobre): se il
@@ -7711,6 +7801,9 @@
             const nome = M.nomeUnita(u);
             if (M.haCaratteristica(u, 'Peripheral') || /PERIPHERAL\s*\(/.test(skillsDi(u))) {
                 errori.push(err('E47', `${nome}: e\` una Periferica, non partecipa a un Ordine Coordinato.`, 'Righe 9531 e 11384.'));
+            }
+            if (st.isolato) {
+                errori.push(err('E59', `${nome}: e\` Isolato, non partecipa a un Ordine Coordinato.`, 'Riga 14423.'));
             }
             if (st.decoy) {
                 errori.push(err('E48', `${nome}: e\` in stato Decoy, non partecipa a un Ordine Coordinato.`, 'Righe 13806-13807.'));
@@ -8034,6 +8127,10 @@
             // Marker mostrerebbe la pedina che c'e` sotto.
             p.imgVariant = '0';
             p.states = { camo: eCamo, impersonation: !eCamo };
+            // 18 ottobre (Paolo): il solo valore del Mimetismo viaggia col
+            // segnalino, perche` lo Scoprire (e l'Hub) lo applichino. Niente
+            // Abilita`: il resto del profilo resta nascosto.
+            p.mimetismo = M.valoreMimetismo(unita);
             return p;
         }
 
@@ -11251,9 +11348,15 @@
         if (R.effetto) note.push(R.effetto);
         if (R.token) note.push(R.token);
 
+        // 18 ottobre (Paolo, OSS-01): il Burst e` quello dell'arma Forward
+        // Observer (B2 nel Weapon Chart), con le regole di sempre (Coordinato,
+        // Fireteam...). La pagina mandava 1 fisso.
+        const b = M.burstIniziale(attaccante, arma, { coordMode: ctx.coordMode, indiceCoord: ctx.indiceCoord,
+                                                      livelloFireteam: ctx.livelloFireteam, fireteam: ctx.fireteam });
         return {
             valido: true, arma: arma,
             attributo: e.attributo, base: e.base, mod: e.mod, valore: e.valore,
+            burst: b.valore, burstVoci: b.voci,
             impossibile: e.valore < 1, critici: M.critici(e.valore),
             voci: e.voci, note: note, avvisi: avvisi,
             // 🔴 Nessun danno: il bersaglio non tira una salvezza, entra in

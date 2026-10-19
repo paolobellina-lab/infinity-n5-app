@@ -1,4 +1,8 @@
-// @versione 2026-10-16.1 | test_innesco_schermata.js | proprieta`: chat TEST
+// @versione 2026-10-19.1 | test_innesco_schermata.js | proprieta`: chat TEST
+// 2026-10-19.1: logica_aro 2026-10-19.1 — koala e mine sono una riga aro-dep-<id>; la domanda
+//    sta nella pagina DETONAZIONE (apriDetonazione -> sceltaDetonazione, in aro-action-list);
+//    window.detonazioniAro parte con AVANTI e con NESSUN ARO.
+// 2026-10-16.2: premessa 758 -> 747 profili; i piazzabili restano 250 (nessun cancellato piazzava).
 // 2026-10-16.1: premessa 761 -> 758 profili (database 2026-10-16.1); i piazzabili restano 250.
 // 2026-10-15.1: nomi aggiornati (1).
 //    Nomi dal database 2026-10-15.1 (DATABASE): Moran "Camouflage [1 Use]" col nome dell arma,
@@ -116,7 +120,35 @@ ok(elenco.includes('mina1') && elenco.includes('koala1'), 'mina e koala compaion
 const domKoala = ((t.g.deployableInnescabili || []).find(x => x.unita.id === 'koala1') || {}).domande || [];
 ok(domKoala.length === 1, 'il koala ha UNA domanda', domKoala.map(d => d.id));
 const idKoala = (domKoala[0] || {}).id;
-ok(t.el('aro-selection-list').innerHTML.includes("rispondiInnesco('koala1', '" + idKoala + "', false)"), 'e il pulsante NO chiama rispondiInnesco con l\'id della domanda', idKoala);
+// 🔴 GIRATA IL 19 OTTOBRE (logica_aro 2026-10-19.1, MOTORE punto 9): la
+// domanda non sta piu` nell'elenco. Koala e mina sono una riga aro-dep-<id>
+// con la foto; il tocco apre la pagina (apriDetonazione) con UNA azione,
+// DETONAZIONE (sceltaDetonazione), e le domande stanno in aro-action-list.
+const lista0 = t.el('aro-selection-list').innerHTML;
+ok(!lista0.includes("rispondiInnesco('koala1'") && !lista0.includes("rispondiInnesco('mina1'"), 'nell elenco non ci sono piu` le domande d innesco');
+ok(/id="aro-dep-koala1"[^>]*>/.test(lista0) && lista0.includes("window.apriDetonazione('koala1')"), 'il koala e` una riga aro-dep-koala1 che apre la sua pagina');
+ok(/id="aro-dep-mina1"/.test(lista0) && lista0.includes("window.apriDetonazione('mina1')") && lista0.includes('img/mina_shock.png'), 'la mina pure, con l immagine del suo tipo (img/mina_shock.png)');
+const apriD = (id) => (typeof t.g.apriDetonazione === 'function' ? t.g.apriDetonazione(id) : null);
+const scegliD = (id) => (typeof t.g.sceltaDetonazione === 'function' ? t.g.sceltaDetonazione(id) : null);
+apriD('koala1');
+const pagK = t.el('aro-action-list').innerHTML;
+ok((pagK.match(/<button/g) || []).length === 1 && /DETONAZIONE/.test(pagK) && pagK.includes("window.sceltaDetonazione('koala1')"), 'la pagina del koala: un solo tasto, DETONAZIONE', (pagK.match(/<button/g) || []).length);
+scegliD('koala1');
+ok(t.el('aro-action-list').innerHTML.includes("rispondiInnesco('koala1', '" + idKoala + "', false)"), 'dentro DETONAZIONE il pulsante NO chiama rispondiInnesco con l\'id della domanda', idKoala);
+apriD('mina1'); scegliD('mina1');
+ok(t.el('aro-action-list').innerHTML.includes("rispondiInnesco('mina1', 'nelTriggerArea', true)"), 'la mina: dentro DETONAZIONE la prima delle tre domande');
+
+console.log('\n--- DETONAZIONE: la busta parte con AVANTI e con NESSUN ARO (window.detonazioniAro) ---');
+[['AVANTI', g => g.confermaSelezioneAro()], ['NESSUN ARO', g => g.annullaAro()], ['nessuna detonazione, NESSUN ARO', g => g.annullaAro()]].forEach(([nome, fai], k) => {
+  const tt = tavolo(); const spediti = [];
+  const vero = tt.g.inviaRispostaAro; tt.g.inviaRispostaAro = (p, f) => { spediti.push(JSON.parse(JSON.stringify(p))); return vero ? vero(p, f) : undefined; };
+  if (k < 2) tt.g.rispondiInnesco('koala1', idKoala, true);
+  ok(k < 2 ? (tt.g.detonazioniAro || []).length === 1 : (tt.g.detonazioniAro || []).length === 0, nome + ': window.detonazioniAro ' + (k < 2 ? 'ha la detonazione' : 'e` vuoto'), (tt.g.detonazioniAro || []).length);
+  fai(tt.g);
+  const det = ((spediti[0] || {}).reazioni || []).filter(r => r.azione === 'DETONAZIONE');
+  ok(spediti.length === 1 && det.length === (k < 2 ? 1 : 0) && (k === 2 || (det[0].deployable === true && det[0].idDeployable === undefined)),
+     nome + (k < 2 ? ': parte UNA busta con la DETONAZIONE, senza il campo interno idDeployable' : ': parte la busta vuota (controprova)'), spediti.map(p => (p.reazioni || []).map(r => r.azione)));
+});
 
 console.log('\n--- KOALA: il giocatore tocca NO ---');
 t.g.rispondiInnesco('koala1', idKoala, false);
@@ -184,10 +216,11 @@ console.log('\n--- DET-04: la voce PIAZZARE EQUIPAGGIAMENTO la decide il motore 
   const g = d.g, M = g.MotoreN5;
   const pronti = [...(g.DB_NOMADI || []), ...(g.DB_PANOCEANIA || [])].map((p, i) =>
     Object.assign(JSON.parse(JSON.stringify(p)), { id: 'pz' + i, states: {}, state: 'ACTIVE', deployState: 'NORMAL', combatGroup: 1 }));
-  ok(pronti.length === 758 &&   // 758 dal database 2026-10-16.1: cancellati anche fusilier_lt2, orc_lieutenant, orc_lieutenant_2
+  ok(pronti.length === 747 &&   // 747 dal database 2026-10-16.2: tolte 11 righe doppie (4 Nomadi, 7 PanOceania)
+        // 758 dal database 2026-10-16.1: cancellati anche fusilier_lt2, orc_lieutenant, orc_lieutenant_2
         // 761 dal 12 ottobre sera (database .12.3): cancellati evader_multi_tb, triggermen_multi, hannibal_cmd, hannibal_strategic
       typeof g.puoFareAzione === 'function' && typeof M.armiPiazzabili === 'function',
-     'premessa: 758 profili, puoFareAzione nella pagina e armiPiazzabili nel motore', [pronti.length, typeof g.puoFareAzione, typeof M.armiPiazzabili]);
+     'premessa: 747 profili, puoFareAzione nella pagina e armiPiazzabili nel motore', [pronti.length, typeof g.puoFareAzione, typeof M.armiPiazzabili]);
   const pagina = new Set(), motore = new Set();
   pronti.forEach(u => {
     if (g.puoFareAzione(u, 'PIAZZARE EQUIPAGGIAMENTO')) pagina.add(u.nome);

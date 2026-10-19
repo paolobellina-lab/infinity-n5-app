@@ -1,7 +1,54 @@
-// @versione 2026-10-15.1 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-18.1 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
+// --- OGNI SCHERMATA PARTE DALL'ALTO (Paolo, 18 ottobre) ---
+// In testa al file: non dipende dal motore ne` da Firebase, e cosi` vale
+// anche se piu` sotto qualcosa si ferma.
+// "Quando passo da una schermata a un'altra, fammi partire la pagina sempre
+// da in alto e non a meta`." Le schermate si cambiano in tanti posti (goToStep
+// della pagina, goToAroStep, i moduli che accendono un passo a mano): invece
+// di toccarli uno per uno, si guarda il DOM. Quando un passo (.step-container,
+// un id "step-...", o il riquadro #battle) passa da nascosto a visibile, la
+// pagina e il passo tornano in cima. Un passo che resta visibile e si
+// ridisegna NON si sposta: chi tocca un bottone a meta` pagina resta li`.
+window.portaInCima = function (el) {
+    try {
+        if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
+        if (document.documentElement) document.documentElement.scrollTop = 0;
+        if (document.body) document.body.scrollTop = 0;
+        if (el) {
+            el.scrollTop = 0;
+            if (el.querySelectorAll) el.querySelectorAll('*').forEach(function (x) { if (x.scrollTop) x.scrollTop = 0; });
+        }
+    } catch (e) { /* lo scorrimento non deve mai fermare un Ordine */ }
+};
+(function () {
+    if (typeof window === 'undefined' || typeof MutationObserver !== 'function' || typeof document === 'undefined') return;
+    const ePasso = function (el) {
+        return !!(el && el.nodeType === 1 && ((el.classList && el.classList.contains('step-container')) ||
+                  /^step-/.test(el.id || '') || el.id === 'battle'));
+    };
+    const visibile = function (el) { return !!(el && el.style && el.style.display !== 'none' && el.style.display !== ''); };
+    const prima = new WeakMap();
+    const avvia = function () {
+        document.querySelectorAll('.step-container, [id^="step-"], #battle').forEach(function (el) { prima.set(el, visibile(el)); });
+        new MutationObserver(function (mut) {
+            let daPortare = null;
+            mut.forEach(function (m) {
+                const el = m.target;
+                if (!ePasso(el)) return;
+                const ora = visibile(el), era = prima.has(el) ? prima.get(el) : false;
+                prima.set(el, ora);
+                if (ora && !era) daPortare = el;
+            });
+            if (daPortare) window.portaInCima(daPortare);
+        }).observe(document.body || document.documentElement, { attributes: true, attributeFilter: ['style'], subtree: true });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', avvia);
+    else avvia();
+})();
+
 
 // --- 1. TRASPORTO CLOUD — uno solo per app e Hub: M.installaTrasportoCloud
 // nel motore. (Prima: una copia qui e una in calcolatore_cloud.js.) ---
@@ -742,7 +789,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-15.1', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

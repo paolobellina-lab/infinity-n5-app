@@ -1,4 +1,4 @@
-// @versione 2026-10-15.2 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-19.2 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -44,6 +44,15 @@
 //      (difetto trovato da TEST il 10 ottobre).
 //  20. Hub: le truppe come la lista d'esercito, per Gruppo di
 //      Combattimento (Paolo, 12 ottobre).
+//  21-22. Le sette correzioni del 15 ottobre; i modi della stessa arma.
+//  23. I quattro lavori del 18 ottobre (motore 2026-10-18.1): Fairy Dust
+//      nell'Hub, CYBERMASK fuori dalle Abilita` Lunghe, la pagina del
+//      CrazyKoala con la sola DETONAZIONE (che ora PARTE davvero), la nota
+//      dell'Isolato.
+//  24. Le foto dei deployable (Paolo, 19 ottobre): i CrazyKoala prendono
+//      in sequenza le loro quattro foto, e l'Hub vede la stessa; le mine
+//      in ARO sono una riga con l'immagine del loro tipo e la pagina con
+//      la sola DETONAZIONE, come i koala.
 //
 //  NON PROVA: l'aspetto vero nel browser (altezze, colori, immagini che
 //  esistono o no). Il DOM qui e` finto: si guarda l'HTML prodotto.
@@ -1092,6 +1101,177 @@ sezione('22. ARO: le modalita` della stessa arma in UN bottone (Paolo, motore 20
         N.selectedAroUnits = ['n1']; N.currentAroIndex = 0; N.aroReactions = []; N.avviaCicloAroUnita(); N.selezionaAzioneAro('CC_ATTACK');
         const bot = T.nomadi.el('aro-weapon-list').innerHTML.match(BOT) || [];
         ok(bot.length >= 1 && bot.every(b => /selezionaArmaAro\('[^']*', false\)/.test(b)), 'Morlock in CC: bottoni semplici, nessuna famiglia di modi (' + bot.length + ')');
+    }
+});
+
+sezione('23. I quattro lavori del 18 ottobre (motore 2026-10-18.1)', () => {
+    // --- 1. Fairy Dust nell'Hub, accanto al nome della fazione -----------
+    {
+        const T = creaTavolo(DIR);
+        const hack = truppa(profilo(T, /^Zero \(Hacker/) , { id: 'n1', alias: 'Fata', states: { fairyDust: 'HI' } });
+        T.schiera([hack], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        const fd = T.hub.el('fairy-nomads').innerHTML;
+        ok(/<img src="img\/fairy_dust_hi\.png"/.test(fd), 'Hub: Fairy Dust sui HI attivo, l icona HI accanto a NOMADS (' + fd.slice(0, 80) + ')');
+        ok(/title="Fairy Dust di [^"]*HI/.test(fd) && /FD HI/.test(fd), 'col testo del motore nel titolo, e la scritta di riserva se l immagine manca');
+        ok(T.hub.el('fairy-pano').innerHTML === '', 'PanOceania senza Fairy Dust: nessuna icona');
+        const html = fs.readFileSync(DIR + 'calcolatore_hub.html', 'utf8');
+        ok(/NOMADS <span id="fairy-nomads"/.test(html) && /PANOCEANIA <span id="fairy-pano"/.test(html), 'il posto delle icone e` dentro le intestazioni NOMADS e PANOCEANIA');
+    }
+    {
+        // Controprova: l'hacker Isolato lo cancella (lo dice il motore).
+        const T = creaTavolo(DIR);
+        const hack = truppa(profilo(T, /^Zero \(Hacker/), { id: 'n1', alias: 'Fata', states: { fairyDust: 'TAG', isolated: true } });
+        T.schiera([hack], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        ok(!/fairy_dust/.test(T.hub.el('fairy-nomads').innerHTML), 'CONTROPROVA: hacker Isolato, il Fairy Dust e` cancellato e l icona non c e');
+    }
+
+    // --- 2. CYBERMASK non e` piu` fra le Abilita` Lunghe -------------------
+    {
+        const T = creaTavolo(DIR);
+        // Il profilo del database COM'E` (Marker CAMO): truppa() lo
+        // schiererebbe a faccia in su, e il Cybermask non sarebbe offerto
+        // nemmeno coi file vecchi.
+        const intr = Object.assign(profilo(T, /^Intruder \(Hacker, Killer/), { id: 'n1', alias: 'Ombra', state: 'ACTIVE', combatGroup: 1 });
+        T.schiera([intr], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        const menu = T.apriMenu(T.nomadi, 0);
+        ok(!/selectAction\('CYBERMASK'/.test(menu), 'Intruder (Killer Hacking Device): nel menu NON c e la voce CYBERMASK');
+        const app = fs.readFileSync(DIR + 'app.html', 'utf8');
+        ok(!/\{ id: 'CYBERMASK'/.test(app) && !/case 'CYBERMASK':/.test(app), 'in app.html non restano ne` la voce ne` il suo caso in puoFareAzione');
+    }
+
+    // --- 3. Isolato: si attiva col proprio Ordine Irregolare, e lo si legge -
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g;
+        T.schiera([truppa(profilo(T, /^Alguacil \(HMG/), { id: 'n1', alias: 'Solo', states: { isolated: true } })], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        N.currentGroup = 1; N.aggiornaGraficaRoster();
+        const h = T.nomadi.el('unit-buttons-container').innerHTML;
+        const nota = N.MotoreN5.puoRicevereOrdine(N.roster[0]).notaIrregolare;
+        ok(/ORDINE IRREGOLARE PROPRIO/.test(h) && h.indexOf(nota) >= 0, 'la riga dell Isolato dice ORDINE IRREGOLARE PROPRIO, con la nota del motore');
+        ok(/finePressioneUnita\(0, true\)/.test(h) && !/NON ATTIVABILE/.test(h), 'e si attiva: il tocco breve apre i suoi Ordini');
+        N.roster[0].states = {}; N.aggiornaGraficaRoster();
+        ok(!/ORDINE IRREGOLARE PROPRIO/.test(T.nomadi.el('unit-buttons-container').innerHTML), 'CONTROPROVA: non Isolato, la nota non c e');
+    }
+
+    // --- 4. CrazyKoala: una riga con la foto, una pagina, la DETONAZIONE ---
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+        T.schiera([truppa(profilo(T, /^Taskmaster \(Red Fury/), { id: 'n1', alias: 'Task' })], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        // Come nella sezione 5: piazza, PanOceania non reagisce, l Hub chiude.
+        // Il Taskmaster piazza il CrazyKoala dal menu (nessun Marker
+        // nell area, percorso libero), PanOceania non reagisce, l Hub chiude.
+        T.apriMenu(T.nomadi, 0); N.selectAction('PIAZZARE EQUIPAGGIAMENTO', false); N.scegliArmaDaPiazzare('Crazykoala');
+        (N.deployableDomande || []).forEach(d => N.rispondiDeployable(d.id, d.id !== 'markerNellArea'));
+        N.eseguiPiazzamento(); T.giro(); P.annullaAro(); T.giro(); T.hub.g.chiudiRisoluzione(); N.tornaAlRadar(); T.giro();
+        T.hub.g.toggleTurn(); T.giro();
+        T.apriMenu(T.pano, 0); P.selectAction('MOVIMENTO', false); T.giro();
+        const koala = N.roster.find(u => u.deployable);
+        ok(!!koala && /koala/i.test(koala.nome || ''), 'premessa: il Taskmaster ha piazzato il CrazyKoala (' + (koala && koala.nome) + ')');
+        N.apriSelezioneAro();
+        const lista = T.nomadi.el('aro-selection-list').innerHTML;
+        const riga = (lista.match(/<button[^>]*riga-unita[\s\S]*?<\/button>/g) || []).find(r => r.indexOf('aro-dep-' + koala.id) >= 0) || '';
+        ok(riga && riga.indexOf(N.fotoUnita(koala)) >= 0, 'in ARO il koala e` una riga come le altre, con la sua immagine (' + N.fotoUnita(koala) + ')');
+        ok(/apriDetonazione\(/.test(riga) && !/rispondiInnesco\('/.test(lista), 'la domanda non e` piu` nell elenco: toccando si apre la sua pagina');
+        vmTocco(T.nomadi, (riga.match(/onclick="([^"]*)"/) || [])[1] || 'void 0');
+        const azioni = T.nomadi.el('aro-action-list').innerHTML;
+        ok((azioni.match(/<button/g) || []).length === 1 && /DETONAZIONE/.test(azioni), 'la pagina ha UNA sola azione: DETONAZIONE');
+        vmTocco(T.nomadi, (azioni.match(/onclick="([^"]*)"/) || [])[1] || 'void 0');
+        // Il DOM finto non legge l HTML: la domanda si cerca nella pagina.
+        const dom = T.nomadi.el('aro-action-list').innerHTML;
+        const idZdC = (N.MotoreN5.domandeDeployable('ATTIVAZIONE')[0] || {}).id;
+        ok(dom.indexOf("rispondiInnesco('" + koala.id + "', '" + idZdC + "', true)") >= 0, 'dentro DETONAZIONE c e la domanda della Zona di Controllo (' + idZdC + ')');
+        const spediti = []; const vero = N.inviaRispostaAro; N.inviaRispostaAro = (p, f) => { spediti.push(p); return vero(p, f); };
+        vmTocco(T.nomadi, "window.rispondiInnesco('" + koala.id + "', '" + idZdC + "', true)");
+        ok(/DETONA/.test(T.nomadi.el('dep-' + koala.id).innerHTML), 'risposto SI: il koala DETONA');
+        N.apriSelezioneAro();
+        ok(/DETONA/.test(T.nomadi.el('aro-selection-list').innerHTML), 'tornati all elenco, la detonazione pronta si legge');
+        N.confermaSelezioneAro();
+        const det = ((spediti[0] || {}).reazioni || []).filter(r => r.azione === 'DETONAZIONE');
+        ok(spediti.length === 1 && det.length === 1 && det[0].deployable === true && det[0].idDeployable === undefined,
+           'AVANTI senza truppe scelte: la busta DETONAZIONE PARTE (prima si fermava su "Seleziona almeno un unita`") (' + spediti.length + ' invii)');
+        ok(!N.alert_.some(a => /Seleziona almeno/.test(a)), 'e nessun avviso di scegliere un unita`');
+    }
+});
+
+sezione('24. Le foto dei deployable: koala in sequenza, mine in ARO come i koala (Paolo, 19 ottobre)', () => {
+    // --- I koala: piazzati dal giocatore nello schieramento ---------------
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g;
+        const task = truppa(profilo(T, /^Taskmaster \(Red Fury/), { id: 'n1', alias: 'Task' });
+        const task2 = truppa(profilo(T, /^Taskmaster \(Red Fury/), { id: 'n2', alias: 'Task2' });
+        N.roster = [task, task2];
+        // Dalla porta del giocatore: pagina di schieramento del Taskmaster,
+        // tasto del CrazyKoala (lo stesso che tocca Paolo), finche` ce n'e`.
+        const piazzaKoala = (i) => {
+            N.apriDeployStati(i);
+            const h = T.nomadi.el('deploy-states-content').innerHTML;
+            const m = h.match(/window\.schieraPiazzabile\((\d+), (\d+)\)"[^>]*>\s*Crazy/i);
+            if (!m) return false;
+            N.schieraPiazzabile(+m[1], +m[2]); return true;
+        };
+        let posati = 0;
+        for (let giro = 0; giro < 6 && posati < 3; giro++) { if (piazzaKoala(0)) posati++; else if (piazzaKoala(1)) posati++; else break; }
+        const koala = () => N.roster.filter(u => u.deployable && /koala/i.test(u.nome || ''));
+        ok(koala().length >= 2, 'premessa: dallo schieramento ci sono almeno due CrazyKoala (' + koala().length + ')');
+        const foto = koala().map(k => N.fotoUnita(k));
+        ok(foto[0] === 'img/nomadi/crazykoala_1.png' && foto[1] === 'img/nomadi/crazykoala_2.png',
+           'il primo koala ha la foto 1, il secondo la 2, nella cartella del giocatore (' + foto.join(', ') + ')');
+        ok(new Set(foto).size === foto.length, 'nessuna foto ripetuta fra i koala');
+        // Il primo esce dal tavolo (Morto): il prossimo prende la sua miniatura.
+        koala()[0].state = 'DEAD';
+        const prima = koala().length;
+        if (piazzaKoala(0) || piazzaKoala(1)) {
+            const nuovo = koala()[koala().length - 1];
+            ok(koala().length === prima + 1 && N.fotoUnita(nuovo) === 'img/nomadi/crazykoala_1.png',
+               'koala 1 Morto: il nuovo prende la foto 1, rimasta libera (' + N.fotoUnita(nuovo) + ')');
+        } else ok(false, 'premessa mancata: nessun altro koala da piazzare');
+        // L'Hub vede la stessa foto.
+        N.schieramentoCompletato = true;
+        N.inviaSchieramentoAllHub('NOMADI', { roster: N.roster, strutture: [], terreni: [] }); T.giro();
+        // Si cercano per nome: deployable arriva all'Hub solo dal catalogo
+        // 2026-10-19.1, e questo controllo deve valere anche prima.
+        const kHub = (T.hub.g.gameState.nomads || []).filter(u => /koala/i.test(u.nome || ''));
+        const fHub = kHub.map(k => T.hub.g.fotoTruppaHub(k, 'NOMADI'));
+        const fApp = koala().map(k => N.fotoUnita(k));
+        ok(kHub.length === koala().length && fHub.every(f => /^img\/nomadi\/crazykoala_[1-4]\.png$/.test(f)) && J(fHub) === J(fApp),
+           'all Hub i koala arrivano con la stessa foto dell app (' + fHub.join(', ') + ')');
+        // Catalogo 2026-10-19.1: lo stato vitale arriva all'Hub, e il koala
+        // Morto ha la sua icona. Prima all'Hub ogni truppa Morta sembrava viva.
+        const mortoHub = kHub.find(k => k.id === koala()[0].id);
+        ok(mortoHub && mortoHub.state === 'DEAD' && /icon_dead/.test(T.hub.g.schedaTruppa(mortoHub, 'NOMADI')),
+           'all Hub il koala Morto arriva Morto, con l icona (' + (mortoHub && mortoHub.state) + ')');
+    }
+    {
+        // Un koala dell'AVVERSARIO non si numera qui: la foto la decide lui.
+        const T = creaTavolo(DIR); const N = T.nomadi.g;
+        const estraneo = { id: 'dep_crazykoala_9_1', deployable: true, chiaveArma: 'CrazyKoalas', nome: 'CrazyKoala #9', imgVariant: '0' };
+        N.roster = [];
+        ok(N.fotoUnita(estraneo) === 'img/crazykoala.png' && estraneo.imgVariant === '0', 'CONTROPROVA: un koala fuori dal proprio roster resta con l immagine comune e non viene toccato');
+        // All'Hub arriva la vista pubblica, senza il campo deployable: il
+        // segnalino si riconosce dall'id (prima: nessuna immagine, la sigla).
+        const pubblico = { id: 'dep_crazykoala_9_1', nome: 'CrazyKoala #9', imgVariant: '0' };
+        ok(T.hub.g.fotoTruppaHub(pubblico, 'NOMADI') === 'img/crazykoala.png', 'Hub: un segnalino senza foto assegnata ha l immagine del suo tipo (' + T.hub.g.fotoTruppaHub(pubblico, 'NOMADI') + ')');
+    }
+
+    // --- Le mine in ARO: riga con l'immagine del tipo, pagina DETONAZIONE ---
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+        T.schiera([truppa(profilo(T, /^Puppet Masters/), { id: 'n1', alias: 'Posa' })], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        piazza(T).eseguiPiazzamento(); T.giro(); P.annullaAro(); T.giro(); T.hub.g.chiudiRisoluzione(); N.tornaAlRadar(); T.giro();
+        T.hub.g.toggleTurn(); T.giro();
+        T.apriMenu(T.pano, 0); P.selectAction('MOVIMENTO', false); T.giro();
+        const mina = N.roster.find(u => u.deployable);
+        ok(!!mina && N.MotoreN5.eMina(mina), 'premessa: il Puppet Masters ha piazzato una mina (' + (mina && mina.nome) + ')');
+        N.apriSelezioneAro();
+        const lista = T.nomadi.el('aro-selection-list').innerHTML;
+        const riga = (lista.match(/<button[^>]*riga-unita[\s\S]*?<\/button>/g) || []).find(r => r.indexOf('aro-dep-' + mina.id) >= 0) || '';
+        ok(riga && /img\/mina_[a-z_]+\.png/.test(riga) && riga.indexOf(N.fotoUnita(mina)) >= 0, 'in ARO la mina e` una riga con l immagine del suo tipo (' + N.fotoUnita(mina) + ')');
+        ok(/apriDetonazione\(/.test(riga) && lista.indexOf('id="dep-' + mina.id + '"') < 0, 'niente piu` riquadro viola con le domande nell elenco');
+        vmTocco(T.nomadi, (riga.match(/onclick="([^"]*)"/) || [])[1] || 'void 0');
+        const azioni = T.nomadi.el('aro-action-list').innerHTML;
+        ok((azioni.match(/<button/g) || []).length === 1 && /DETONAZIONE/.test(azioni) && /Non lo sceglie la mina/.test(azioni), 'la sua pagina: una sola azione, DETONAZIONE, con la spiegazione della mina');
+        vmTocco(T.nomadi, (azioni.match(/onclick="([^"]*)"/) || [])[1] || 'void 0');
+        const prima = (N.MotoreN5.domandeDeployable('INNESCO_MINA')[0] || {}).id;
+        ok(T.nomadi.el('aro-action-list').innerHTML.indexOf("rispondiInnesco('" + mina.id + "', '" + prima + "', true)") >= 0, 'dentro, la prima delle tre domande della mina (' + prima + ')');
     }
 });
 

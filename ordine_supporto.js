@@ -1,4 +1,4 @@
-// @versione 2026-09-14.1 | ordine_supporto.js | proprieta`: chat MOTORE
+// @versione 2026-10-18.1 | ordine_supporto.js | proprieta`: chat MOTORE
 // ==========================================
 // 🩺 SUPPORTO: MEDICO E INGEGNERE (N5) - ordine_supporto.js
 // ------------------------------------------
@@ -259,6 +259,14 @@
         const M = motore(); if (!M) return;
         const unita = window.coordUnits[window.coordIndex];
         const e = window.supportoEsito || {};
+        // 18 ottobre (SUP-02/SUP-04): a distanza il tiro per colpire ha il
+        // Burst dell'equipaggiamento del profilo — GizmoKit(+1B) tira 2 dadi.
+        if (e.tiroPerColpire && typeof M.burstIniziale === 'function') {
+            const voce = M.dividiLista(((unita && unita.weapon) || '') + ',' + ((unita && unita.equip) || ''))
+                .find(n => String(n).toUpperCase().indexOf(String(e.strumento || '').toUpperCase()) === 0);
+            const arma = voce ? M.profiloArma(voce) : null;
+            if (arma && !arma.nonTrovata) e.tiroPerColpire.burst = M.burstIniziale(unita, arma, { azione: M.AZIONI.SUPPORTO_BS }).valore;
+        }
 
         window.coordPayloads.push({
             attaccante: unita,
@@ -288,7 +296,18 @@
             return window.startUnitSupportoLoop();
         }
 
-        const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode });
+        // 18 ottobre (Paolo, SUP-01): il Supporto non mandava l'allarme ARO,
+        // e l'avversario non poteva reagire. "Non e` un ARO" (catalogo) vuol
+        // dire che non si dichiara COME reazione; dichiarato nel proprio
+        // Turno attiva la truppa e genera ARO come ogni Ordine. L'allarme
+        // parte qui, nella prima meta`; in seconda meta` e` gia` partito.
+        const opz = { isCoordinated: window.coordMode };
+        if (!window.currentOrder.isSecondHalf && typeof M.allarmeOrdine === 'function') {
+            const al = M.allarmeOrdine(window.currentOrder.action, { unita: window.coordUnits[0], coordUnits: window.coordUnits, coordMode: window.coordMode });
+            if (al.payload && typeof window.inviaAllarmeAro === 'function') window.inviaAllarmeAro(al.payload);
+            opz.aroAtteso = !!(al.aro && al.aro.genera);
+        }
+        const spedito = M.inviaCalcolo(window.coordPayloads, opz);
         if (!spedito) { window.coordIndex--; window.coordPayloads.pop(); return; }
 
         const calcDiv = document.getElementById('calc-result');
@@ -311,7 +330,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_supporto.js', versione: '2026-09-14.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_supporto.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

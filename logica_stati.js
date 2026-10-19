@@ -1,4 +1,4 @@
-// @versione 2026-10-13.1 | logica_stati.js | proprieta`: chat MOTORE
+// @versione 2026-10-18.1 | logica_stati.js | proprieta`: chat MOTORE
 // ==========================================
 // NOTA: le regole di questo file passano da MotoreN5.
 //  - la cancellazione degli stati Marker (Ritirata!, Ingaggiato, Stati Nulli)
@@ -159,10 +159,10 @@ window.apriPaginaStati = (index) => {
                     <input type="checkbox" id="st-retreat" class="state-checkbox" ${s.retreat ? 'checked' : ''}>
                     <img src="img/icon_retreat.png" class="state-icon" onerror="this.outerHTML='<span class=\\'fallback-emoji\\'>🏳️</span>'">
                 </label>
-                <label class="state-label" title="Disconnesso">
+                ${(!window.MotoreN5 || typeof window.MotoreN5.ePeriferica !== 'function' || window.MotoreN5.ePeriferica(window.unitToEdit) || s.disconnected) ? `<label class="state-label" title="Disconnesso (solo Periferiche)">
                     <input type="checkbox" id="st-disc" class="state-checkbox" ${s.disconnected ? 'checked' : ''}>
                     <img src="img/icon_disconnected.png" class="state-icon" onerror="this.outerHTML='<span class=\\'fallback-emoji\\'>🔌</span>'">
-                </label>
+                </label>` : ''}
                 <label class="state-label" title="Posseduto (TAG)">
                     <input type="checkbox" id="st-poss" class="state-checkbox" ${s.possessed ? 'checked' : ''}>
                     <img src="img/icon_possessed.png" class="state-icon" onerror="this.outerHTML='<span class=\\'fallback-emoji\\'>👾</span>'">
@@ -351,7 +351,9 @@ window.salvaStatiUnita = () => {
     s.suppressive = document.getElementById('st-supp').checked;
     s.retreat = document.getElementById('st-retreat').checked;
     // Scarico non gestito dall'app (23 sett.): casella tolta, e con lei questa lettura.
-    s.disconnected = document.getElementById('st-disc').checked;
+    // 18 ottobre (ST-05): Disconnesso solo per le Periferiche; la casella
+    // per le altre truppe non c'e`.
+    s.disconnected = document.getElementById('st-disc') ? document.getElementById('st-disc').checked : false;
     s.possessed = document.getElementById('st-poss').checked;
     s.sepsitorized = document.getElementById('st-seps').checked;
 
@@ -529,7 +531,7 @@ window.salvaStatiUnita = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_stati.js', versione: '2026-10-13.1', proprieta: 'MOTORE' };
+    var v = { file: 'logica_stati.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

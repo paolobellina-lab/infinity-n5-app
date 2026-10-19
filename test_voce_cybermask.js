@@ -1,12 +1,29 @@
-// @versione 2026-10-06.5 | test_voce_cybermask.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-19.1 | test_voce_cybermask.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 6 ottobre 2026.
 //
 //  COSA PROVA
-//  1. La voce CYBERMASK nel menu degli Ordini: a chi e` offerta (anche a un
-//     Marker CAMO), a chi no, e che toccandola l'Hacker finisce in IMP-2.
+//  1. Il CYBERMASK dalla porta del giocatore: menu degli Ordini -> HACKING
+//     -> il suo bottone nella schermata Hacking. A chi e` offerto (anche a
+//     un Marker CAMO), a chi no, e che toccandolo parte un Ordine intero.
 //     Si entra da procediAlleAzioni (il menu) e selectAction (il tocco).
 //     I profili sono quelli del database.
+//     19 ottobre (Paolo, via MOTORE e TEST): fino alla 2026-10-06.5 questo
+//     banco cercava la voce CYBERMASK fra le Abilita` Lunghe di app.html, e
+//     toccandola l'Hacker finiva in IMP-2 da solo. La voce e` stata tolta il
+//     18 ottobre: Cybermask e White Noise si dichiarano dalla schermata
+//     Hacking (ordine_hacking.js), e lo stato IMP-2 lo mette il giocatore
+//     dall'editor degli stati. Prima/dopo dei controlli riscritti:
+//       "la voce c'e`" (menu)        -> "nel menu NON c'e`" + "dalla
+//                                       schermata Hacking il bottone c'e`"
+//       "il router sa dove mandarla" -> tolto: la voce non esiste piu`
+//       "a chi NO" (menu)            -> "a chi NO" (schermata Hacking;
+//                                       l'Isolato non vede nemmeno HACKING)
+//       "toccando si arriva in IMP-2"-> "toccando parte l'Ordine intero,
+//                                       con l'allarme ARO"; come seconda
+//                                       meta` non si dichiara
+//       "l'IMP si vede"              -> resta, con l'IMP-2 messo come lo
+//                                       mette l'editor (deployState IMP_2)
 //  2. Che l'IMP si VEDA nell'elenco delle truppe (generaIconeStati).
 //  3. Che la versione registrata in fondo ai tre file di INTERFACCIA sia la
 //     stessa scritta in testa: erano rimaste indietro di giorni.
@@ -81,31 +98,53 @@ function menu(g) {
 console.log('--- la pagina ---');
 let g = conUnita(/^Intruder \(Hacker, Killer/);
 ok(assenti.length === 0 && nonCaricati.length === 0, 'tutti gli script si caricano', assenti.concat(nonCaricati).slice(0, 3));
-ok(g.ordineInstradabile('CYBERMASK') === true, 'il router sa dove mandare CYBERMASK');
 
-console.log('\n--- a chi viene offerta ---');
+// La schermata Hacking dell'unita` di testa, entrando dal menu come il giocatore.
+const VOCE_HACK = "selectAction('HACKING', false)";
+function schermataHacking(x) {
+  if (!menu(x).includes(VOCE_HACK)) return null;
+  x.selectAction('HACKING', false);
+  return x.el('weapon-buttons-container').innerHTML;
+}
+const TASTO = (nome) => "dichiaraProgrammaSenzaTiro('" + nome + "')";
+
+console.log('\n--- a chi viene offerto ---');
 ok(g.MotoreN5.statoBersaglio(g.roster[0]).camo === true, 'premessa: l\'Intruder Hacker del database e` Marker CAMO', g.MotoreN5.statoBersaglio(g.roster[0]));
-ok(menu(g).includes(VOCE), 'Intruder (Killer Hacking Device) da Marker CAMO: la voce c\'e`');
+ok(!menu(g).includes(VOCE), 'il menu degli Ordini NON ha piu` la voce CYBERMASK fra le Abilita` Lunghe');
+let hk = schermataHacking(g);
+ok(hk !== null && hk.includes(TASTO('CYBERMASK')), 'Intruder (Killer Hacking Device) da Marker CAMO: HACKING, e nella schermata il bottone CYBERMASK', (hk || '').slice(0, 160));
+ok(/class="bottone-arma"/.test((hk || '').split(TASTO('CYBERMASK'))[0].slice(-3000)), 'il bottone e` quello del motore (M.bottoneArma)');
 
 console.log('\n--- a chi NO ---');
-ok(!menu(conUnita(/^Alguacil \(Combi/)).includes(VOCE), 'Alguacil, non Hacker: niente voce');
-ok(!menu(conUnita(/^Hellcat \(Hacker\)/)).includes(VOCE), 'Hellcat con Hacking Device normale (senza il programma): niente voce');
+ok(schermataHacking(conUnita(/^Alguacil \(Combi/)) === null, 'Alguacil, non Hacker: niente HACKING, quindi niente Cybermask');
+const hell = schermataHacking(conUnita(/^Hellcat \(Hacker\)/));
+ok(hell !== null && !hell.includes(TASTO('CYBERMASK')), 'Hellcat con Hacking Device normale (senza il programma): HACKING si`, Cybermask no');
 let iso = conUnita(/^Intruder \(Hacker, Killer/); iso.roster[0].states.isolated = true;
-ok(!menu(iso).includes(VOCE), 'Intruder Hacker Isolato: niente voce');
+ok(schermataHacking(iso) === null, 'Intruder Hacker Isolato: niente HACKING, quindi niente Cybermask');
+const plus = schermataHacking(conUnita(/^Interventor \(Hacker Plus\)/));
+ok(plus !== null && plus.includes(TASTO('CYBERMASK')) && plus.includes(TASTO('WHITE NOISE')), 'Interventor (Hacking Device Plus): Cybermask E White Noise nella schermata Hacking');
 
-console.log('\n--- toccando la voce si arriva in IMP-2 ---');
-menu(g);
-g.selectAction('CYBERMASK', false);
-ok(g.currentOrder.action === 'CYBERMASK', 'la dichiarazione e` scritta nell\'Ordine', g.currentOrder.action);
-const schermo = g.el('targets-allocation-container').innerHTML;
-const dom = (schermo.match(/rispondiRientroCamo\('([^']+)', true\)/) || [])[1];
-ok(!!dom, 'la domanda sulla LoF e` a schermo', schermo.slice(0, 200));
-ok(!/IMP-2/.test(g.generaIconeStati(g.roster[0])), 'premessa: prima di eseguire l\'elenco NON dice IMP-2');
-g.rispondiRientroCamo(dom, true);
-g.eseguiRientroCamo();
-ok(g.MotoreN5.livelloImpersonation(g.roster[0]) === 2, 'SI` ed ESEGUI: nel roster e` in IMP-2', { deploy: g.roster[0].deployState, state: g.roster[0].state });
+console.log('\n--- toccandolo parte un Ordine intero ---');
+const allarmi = [], buste = [];
+g.inviaAllarmeAro = (p) => allarmi.push(p);
+const veroInvio = g.MotoreN5.inviaCalcolo; g.MotoreN5.inviaCalcolo = (pl, op) => { buste.push({ pl, op }); return true; };
+vm.runInContext("window." + TASTO('CYBERMASK'), g);
+ok(g.currentOrder.action === 'CYBERMASK' && g.currentOrder.isLongSkill === true, 'la dichiarazione e` nell\'Ordine, come Abilita` Lunga', { action: g.currentOrder.action, lunga: g.currentOrder.isLongSkill });
+ok(allarmi.length === 1 && buste.length === 1 && buste[0].op.aroAtteso === true, 'parte l\'allarme ARO e la busta aspetta le reazioni', { allarmi: allarmi.length, buste: buste.length });
+ok(/CYBERMASK DICHIARATO/.test(g.el('calc-result').innerHTML), 'a schermo: CYBERMASK DICHIARATO');
+g.MotoreN5.inviaCalcolo = veroInvio;
+// Come seconda meta` non si dichiara: e` un'Abilita` Lunga.
+let sec = conUnita(/^Intruder \(Hacker, Killer/); menu(sec);
+sec.currentOrder.isSecondHalf = true; sec.startUnitHackingLoop();
+const hs = sec.el('weapon-buttons-container').innerHTML;
+ok(!hs.includes(TASTO('CYBERMASK')) && /CYBERMASK/.test(hs), 'come seconda meta` il bottone c\'e` ma non dichiara (avviso: solo Ordine intero)');
+
+console.log('\n--- l\'IMP si vede ---');
+ok(!/IMP-2/.test(g.generaIconeStati(g.roster[0])), 'premessa: prima l\'elenco NON dice IMP-2');
+// Lo stato lo mette il giocatore dall'editor: deployState IMP_2.
+g.roster[0].deployState = 'IMP_2'; g.roster[0].states.impersonation = true; g.roster[0].states.camo = false;
+ok(g.MotoreN5.livelloImpersonation(g.roster[0]) === 2, 'messo IMP-2 come lo mette l\'editor: il motore lo legge', { deploy: g.roster[0].deployState });
 ok(/IMP-2/.test(g.generaIconeStati(g.roster[0])), 'e l\'elenco delle truppe lo mostra: IMP-2', g.generaIconeStati(g.roster[0]).slice(-200));
-ok(!menu(g).includes(VOCE), 'gia` in Impersonation: la voce non c\'e` piu`');
 
 console.log('\n--- il nome della voce del rientro ---');
 let riv = conUnita(/^Intruder \(HMG/, (x) => { x.spearheadUnit = x.roster[0]; x.selectedCoordinatedUnits = []; x.currentOrder = {}; x.procediAlleAzioni(); x.selectAction('MOVIMENTO', false); x.dichiaraRequisitoFallito(); });

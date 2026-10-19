@@ -1,4 +1,4 @@
-// @versione 2026-10-15.1 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-19.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -717,7 +717,13 @@ window.fotoTruppaHub = (u, fazione) => {
         console.error('\u26d4 fotoTruppaHub: fazione sconosciuta (' + fazione + '), non so in che cartella cercare ' + v);
         return '';
     }
-    if (u.deployable) {
+    // 19 ottobre: all'Hub un segnalino arriva dalla vista PUBBLICA, che fino
+    // al catalogo 2026-10-18 non portava il campo deployable: questo ramo non
+    // scattava mai, e un segnalino senza foto assegnata compariva con la sola
+    // sigla. Dal catalogo 2026-10-19.1 il campo arriva; l'id (dep_<id del
+    // database>_...) resta come seconda via per gli stati di partita salvati
+    // prima.
+    if (u.deployable || /^dep_/.test(String(u.id || ''))) {
         const el = window.DB_DEPLOYABLES || [];
         const voce = el.find(d => u.modelId && d.id === u.modelId) || el.find(d => u.chiaveArma && d.chiaveArma === u.chiaveArma) ||
                      el.find(d => String(u.id || '').indexOf('dep_' + d.id + '_') === 0);
@@ -836,7 +842,43 @@ window.refreshUI = () => {
     if(statNomads) statNomads.innerHTML = window.elencoFazioneHub(window.gameState.nomads, 'NOMADI');
     if(statPano) statPano.innerHTML = window.elencoFazioneHub(window.gameState.panoceania, 'PANOCEANIA');
 
+    // 18 ottobre (Paolo, via MOTORE): il Fairy Dust attivo si vede in cima,
+    // accanto al nome della fazione. Prima l'Hub non lo mostrava da nessuna
+    // parte: chi calcolava un attacco di hacking contro quei Tipi di Truppa
+    // non sapeva del Firewall -3. Chi e` attivo lo decide il motore
+    // (M.fairyDustAttivi: un hacker Isolato o Null lo cancella).
+    window.aggiornaFairyDust('fairy-nomads', window.gameState.nomads);
+    window.aggiornaFairyDust('fairy-pano', window.gameState.panoceania);
+
     window.aggiornaScenario();
+};
+
+// Un'icona per Tipo di Truppa: le immagini ufficiali le mette Paolo. Se il
+// file non c'e`, al posto dell'icona resta la scritta: niente sparisce.
+window.ICONE_FAIRY_DUST = {
+    HI: 'img/fairy_dust_hi.png',
+    REM: 'img/fairy_dust_rem.png',
+    TAG: 'img/fairy_dust_tag.png',
+    VH: 'img/fairy_dust_vh.png'
+};
+window.fairyDustHtml = (roster) => {
+    const M = window.MotoreN5;
+    if (!M || typeof M.fairyDustAttivi !== 'function') return '';
+    return M.fairyDustAttivi(roster || []).filter(f => f && f.attivo).map(f => {
+        const tipo = String(f.tipo || '').toUpperCase();
+        const testo = String(f.testo || '').replace(/"/g, '&quot;');
+        const scritta = `<span class="fd-testo">\ud83d\udcbb FD ${tipo}</span>`;
+        const src = window.ICONE_FAIRY_DUST[tipo];
+        if (!src) return `<span class="fd-voce" title="${testo}" onclick="alert(this.title)">${scritta}</span>`;
+        // Le virgolette doppie della scritta dentro un onerror fra virgolette
+        // doppie rompevano l'attributo: la scritta sta gia` accanto, nascosta,
+        // e l'onerror la scopre.
+        return `<span class="fd-voce" data-tipo="${tipo}" title="${testo}" onclick="alert(this.title)"><img src="${src}" alt="FD ${tipo}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"><span class="fd-testo" style="display:none;">\ud83d\udcbb FD ${tipo}</span></span>`;
+    }).join('');
+};
+window.aggiornaFairyDust = (id, roster) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = window.fairyDustHtml(roster);
 };
 
 window.toggleDettagli = (id) => {
@@ -1090,7 +1132,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-10-15.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-10-19.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

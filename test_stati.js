@@ -1,4 +1,5 @@
-// @versione 2026-09-23.1 | test_stati.js | proprieta`: chat TEST
+// @versione 2026-10-19.1 | test_stati.js | proprieta`: chat TEST
+// 2026-10-19.1: sezione 8, l'Isolato si attiva col proprio Ordine Irregolare (motore 2026-10-18.1, ST-04).
 // Test di integrità Fireteam e stati — node test_stati.js
 global.window = global;
 require('./catalogo_n5.js'); require('./database_comune.js');
@@ -82,12 +83,22 @@ console.log('\n=== 8. Chi può ricevere un Ordine dal Pool ===');
 function ord(st, dead) { return M.puoRicevereOrdine({ alias: 'X', states: st || {}, state: dead ? 'DEAD' : 'ACTIVE' }); }
 ok(ord({}).puo === true, 'unità normale: può');
 [['morto', {}, true], ['incosciente', { unconscious: true }],
- ['isolato', { isolated: true }], ['disconnesso', { disconnected: true }],
+ ['disconnesso', { disconnected: true }],
  ['posseduto', { possessed: true }], ['sepsitorizzato', { sepsitorized: true }]
 ].forEach(function (c) {
     const e = ord(c[1], c[2]);
     ok(e.puo === false && e.motivo, `${c[0]}: NON può, col motivo`);
 });
+// 🔴 GIRATA IL 19 OTTOBRE (motore 2026-10-18.1, ST-04): l'Isolato non riceve
+// Ordini dal Pool, ma si attiva col PROPRIO Ordine Irregolare (catalogo,
+// ATTIVAZIONE.impedita.isolato). Prima era fra i "NON può".
+{
+    const e = ord({ isolated: true });
+    ok(e.puo === true && e.soloOrdineIrregolare === true && /Ordine Irregolare/.test(e.notaIrregolare || ''),
+       `isolato: può, ma solo col proprio Ordine Irregolare, e la nota lo dice (${JSON.stringify({ puo: e.puo, solo: e.soloOrdineIrregolare })})`);
+    const n = ord({});
+    ok(!n.soloOrdineIrregolare && !n.notaIrregolare, 'CONTROPROVA: un\'unità normale non porta la nota dell\'Ordine Irregolare');
+}
 // VERIFICATO wiki: "cannot be activated or receive Orders from their
 // player's Order Pool" — frase identica su entrambe le pagine.
 ok(/controllo avversario/i.test(ord({ possessed: true }).motivo),

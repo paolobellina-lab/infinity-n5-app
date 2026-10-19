@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | ordine_difesa.js | proprieta`: chat MOTORE
+// @versione 2026-10-18.1 | ordine_difesa.js | proprieta`: chat MOTORE
 // ==========================================
 // 🛡️ DIFESA: SCHIVATA, RESET E SOPPRESSIONE - ordine_difesa.js
 // ------------------------------------------
@@ -256,21 +256,36 @@
         const eraInFireteam = !!(unita.states.fireteam);
         if (eraInFireteam) unita.states.fireteam = '';
 
-        const payloadInfo = {
-            attaccante: unita.alias || unita.nome,
-            attaccanti: [unita.alias || unita.nome],
-            azione: M.AZIONI.SOPPRESSIONE,
-            bersagli: [],
-            sfMode: {
-                arma: sf.nome, armaOriginale: sf.nomeOriginale,
-                burst: sf.burst, bands: sf.bands,
-                ammo: sf.ammo, ps: sf.dam,
-                malusAiNemici: -3,
-                burstSuUnSoloBersaglio: true
-            },
-            timestamp: Date.now()
+        // 18 ottobre (Paolo, DIF-10): la Soppressione e` un Ordine intero e
+        // come ogni Ordine genera ARO. L'allarme partiva, ma fatto a mano
+        // (senza la busta di M.allarmeOrdine) e senza nessun invio all'Hub:
+        // il tabellone non sapeva di dover aspettare un ARO e non mostrava
+        // niente. Ora: allarme standard (con la SF Mode, che e` pubblica:
+        // lo Stato si vede sul tavolo), poi una busta senza tiro con
+        // aroAtteso, come il Cybermask.
+        const sfPubblico = {
+            arma: sf.nome, armaOriginale: sf.nomeOriginale,
+            burst: sf.burst, bands: sf.bands,
+            ammo: sf.ammo, ps: sf.dam,
+            malusAiNemici: -3,
+            burstSuUnSoloBersaglio: true
         };
-        if (window.inviaAllarmeAro) window.inviaAllarmeAro(payloadInfo);
+        const al = M.allarmeOrdine(M.AZIONI.SOPPRESSIONE, { unita: unita, coordUnits: [unita], coordMode: false });
+        if (al.payload) {
+            al.payload.sfMode = sfPubblico;
+            if (typeof window.inviaAllarmeAro === 'function') window.inviaAllarmeAro(al.payload);
+        }
+        const notaSF = unita.alias || unita.nome;
+        window.coordPayloads = [{
+            attaccante: unita, azione: M.AZIONI.SOPPRESSIONE,
+            arma: Object.assign({}, arma, { nome: sf.nome, burst: sf.burst, bands: sf.bands }), bersagli: [], burstDisponibile: 0,
+            regole: { senzaTiro: true, isLongSkill: true, sfMode: sfPubblico,
+                      noteScontro: [notaSF + ' entra in Fuoco di Soppressione con ' + sf.nome + ' (B' + sf.burst + ' in ARO, -3 a chi gli dichiara BS Attack).'],
+                      note: ['Nessun tiro: lo Stato si attiva a fine Ordine.'] }
+        }];
+        if (typeof M.inviaCalcolo === 'function') {
+            M.inviaCalcolo(window.coordPayloads, { isCoordinated: false, aroAtteso: !!(al.aro && al.aro.genera) });
+        }
 
         const fazione = document.title.includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA';
         // 🔴 Qui partiva window.roster INTERO — il privato — sul canale di
@@ -308,7 +323,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_difesa.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_difesa.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

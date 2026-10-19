@@ -1,4 +1,4 @@
-// @versione 2026-10-12.1 | ordine_coordinato.js | proprieta`: chat MOTORE
+// @versione 2026-10-18.1 | ordine_coordinato.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔗 ORDINE COORDINATO E SELEZIONE (N5) - ordine_coordinato.js
 // ------------------------------------------
@@ -130,11 +130,25 @@ window.controllaAttivazione = (u) => {
         alert(`⚠️ ${M.nomeUnita(u)} — ${esito.blocchi[0].nome || esito.blocchi[0].stato}\n\n${esito.motivo}`);
         return false;
     }
+    // 18 ottobre (ST-04): l'Isolato si attiva col proprio Ordine Irregolare.
+    if (esito.soloOrdineIrregolare) {
+        alert(`📵 ${M.nomeUnita(u)} — ${esito.notaIrregolare}`);
+    }
     // Attivare la miniatura annulla il Fuoco di Soppressione.
     if (esito.annullaSoppressione) {
-        u.states.suppressive = false;
+        // 18 ottobre (Paolo, DIF-13): lo stato spariva dall'app ma restava
+        // sul tabellone — si scriveva a mano e l'Hub non ne sapeva niente.
+        // Ora passa dal posto unico (motore_core), che manda l'AGGIORNAMENTO,
+        // come fa gia` l'ARO in modo normale (logica_aro).
+        const ann = M.annullaSoppressione(u);
+        if (typeof window.sostituisciUnita === 'function') {
+            window.sostituisciUnita(u, ann.unitaAggiornata, 'Soppressione annullata: Ordine dichiarato');
+        } else {
+            u.states.suppressive = false;
+            if (window.aggiornaGraficaRoster) window.aggiornaGraficaRoster();
+            console.error('\u26d4 window.sostituisciUnita manca (motore_core.js non caricato?): Soppressione annullata, Hub NON avvisato.');
+        }
         alert(`🔥 ${M.nomeUnita(u)}: ${esito.notaSoppressione}`);
-        if (window.aggiornaGraficaRoster) window.aggiornaGraficaRoster();
     }
     return true;
 };
@@ -261,7 +275,7 @@ window.mostraTitoloUnitaCorrente = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_coordinato.js', versione: '2026-10-12.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_coordinato.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

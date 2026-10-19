@@ -1,4 +1,9 @@
-// @versione 2026-10-12.3 | test_coordinato.js | proprieta`: chat TEST
+// @versione 2026-10-19.1 | test_coordinato.js | proprieta`: chat TEST
+// 2026-10-19.1: l'Isolato si attiva col proprio Ordine Irregolare (sez. 5) ed esce dal Coordinato con E59 (motore 2026-10-18.1, ST-04).
+// 2026-10-16.2: premesse Irregular 82 -> 79 (Nomadi 40) e Periferiche 42 -> 40 (database 2026-10-16.2).
+// 2026-10-15.1: nomi aggiornati (1).
+//    Nomi dal database 2026-10-15.1 (DATABASE): Moran "Camouflage [1 Use]" col nome dell arma,
+//    Helot "Camouflage [1 Use]", Triggermen "[+1SD]". Solo il campo nome e` cambiato.
 // 2026-10-12.3: sezione "chi non partecipa" (motore 2026-10-12.8, righe 9531,
 //    11384, 13806-13807, 13907): E47 Periferica nei due versi su 761
 //    profili (chars o skill "Peripheral (...)"), E48 Decoy, E49 Fireteam,
@@ -66,12 +71,18 @@ ok(conBonus.note.some(n => n.includes('PH')), 'e la nota ricorda il +PH al danno
 console.log('\n=== 5. Chi può essere attivato ===');
 ok(M.puoEssereAttivata(u('X')).puo === true, 'unità normale: attivabile');
 [['morto', { }, 'DEAD'], ['incosciente', { unconscious: true }],
- ['isolato', { isolated: true }], ['disconnesso', { disconnected: true }]
+ ['disconnesso', { disconnected: true }]
 ].forEach(function (c) {
     const unita = c[2] ? u('X', { state: 'DEAD' }) : u('X', { states: c[1] });
     const e = M.puoEssereAttivata(unita);
     ok(e.puo === false && e.motivo, `${c[0]}: non attivabile, col motivo`);
 });
+// 🔴 GIRATA IL 19 OTTOBRE (ST-04): l'Isolato si attiva col proprio Ordine
+// Irregolare; fuori dal Coordinato lo tiene E59 (sezione in fondo).
+{
+    const e = M.puoEssereAttivata(u('X', { states: { isolated: true } }));
+    ok(e.puo === true && e.soloOrdineIrregolare === true && !!e.notaIrregolare, 'isolato: attivabile, solo col proprio Ordine Irregolare (con la nota)');
+}
 
 const sopp = u('S', { states: { suppressive: true } });
 const es = M.puoEssereAttivata(sopp);
@@ -191,7 +202,8 @@ const DBT = [...DBN, ...DBP];
 const voci = (p) => String(p.chars || '').split(',').map(x => x.trim());
 const irr = DBT.filter(p => voci(p).indexOf('Irregular') >= 0);
 const irrN = DBN.filter(p => voci(p).indexOf('Irregular') >= 0).length;
-ok(irr.length === 82 && irrN === 41, `premessa: Irregular e\` in chars di ${irr.length} profili (Nomadi ${irrN}) — se 82 cambia, e\` cambiato il database: rimisura`);
+// 82 -> 79 col database 2026-10-16.2: fra le righe doppie tolte c'erano tre Irregolari (morlock_chain_rifle e i due motorized_bounty_hunter PanOceania).
+ok(irr.length === 79 && irrN === 40, `premessa: Irregular e\` in chars di ${irr.length} profili (Nomadi ${irrN}) — se 79 cambia, e\` cambiato il database: rimisura`);
 const inSkills = DBT.filter(p => /Irregular/i.test(String(p.skills || '') + ',' + String(p.equip || '')));
 ok(inSkills.length === 0, `e in skills/equip non c'e\` su nessun profilo (${inSkills.length}): la prova della sezione 3 costruisce un dato che il database non ha`);
 const vero = (n, id, extra) => { const p = DBT.find(x => x.nome === n); if (!p) throw new Error('assente: ' + n);
@@ -231,7 +243,7 @@ console.log('\n=== Inspiring Leadership (righe 8817-8836) ===');
 const conIL = DBT.filter(p => /Inspiring Leadership/i.test(String(p.skills || '')));
 ok(conIL.length > 0 && conIL.every(p => /^Joan /i.test(p.nome) && DBP.indexOf(p) >= 0),
    `premessa: Inspiring Leadership su ${conIL.length} profili, tutti Joan of Arc, tutti PanOceania`);
-const joan = vero('Joan of Arc (Lieutenant)', 'joan'), helot = vero('Helot Militiaman (Surprise Attack [-3], Camouflage, Shock Marksman Rifle)', 'he'),
+const joan = vero('Joan of Arc (Lieutenant)', 'joan'), helot = vero('Helot Militiaman (Surprise Attack [-3], Camouflage [1 Use], Shock Marksman Rifle)', 'he'),
       fus = vero('Fusilier (Combi Rifle)', 'fu');
 ok(voci(helot).indexOf('Irregular') >= 0 && voci(fus).indexOf('Regular') >= 0 && /Lieutenant/.test(joan.skills),
    'premessa: Helot Irregular, Fusilier Regular, Joan (Lieutenant) ha la Skill Lieutenant');
@@ -285,8 +297,9 @@ const conE47 = (r) => codici(r).indexOf('E47') >= 0;
 const attesiE47 = new Set(DBT.filter(ePer).map(p => p.id));
 const vistiE47 = new Set(DBT.filter(p => conE47(M.validaCoordinato([vero(p.nome, 'x'), algA], algA))).map(p => p.id));
 const soloVisti = [...vistiE47].filter(x => !attesiE47.has(x)), soloAttesi = [...attesiE47].filter(x => !vistiE47.has(x));
-ok(attesiE47.size === 42 && soloVisti.length === 0 && soloAttesi.length === 0,
-   `E47: le ${attesiE47.size} Periferiche, e solo loro, su ${DBT.length} profili (comparse ${soloVisti.length}, sparite ${soloAttesi.length}) — se 42 cambia, rimisura`,
+// 42 -> 40 col database 2026-10-16.2: tolti robbybot e robbybot_2 (Peripheral).
+ok(attesiE47.size === 40 && soloVisti.length === 0 && soloAttesi.length === 0,
+   `E47: le ${attesiE47.size} Periferiche, e solo loro, su ${DBT.length} profili (comparse ${soloVisti.length}, sparite ${soloAttesi.length}) — se 40 cambia, rimisura`,
    JSON.stringify({ soloVisti: soloVisti.slice(0, 5), soloAttesi: soloAttesi.slice(0, 5) }));
 // Il caso di MOTORE: un Puppetbot "Battle Ravaged" non ha `chars`, ha solo la skill.
 const pbBR = DBT.find(p => /^Puppetbot/.test(p.nome) && / - Battle Ravaged/.test(p.nome));
@@ -299,7 +312,14 @@ ok(errDi({ states: { decoy: true } }).indexOf('E48') >= 0, 'E48: un Alguacil in 
 ok(errDi({ states: { fireteam: 'A' } }).indexOf('E49') >= 0, 'E49: un Alguacil membro del Fireteam A');
 ok(errDi({ states: { fireteam: '' } }).indexOf('E49') < 0 && errDi({ states: { fireteam: '   ' } }).indexOf('E49') < 0,
    'CONTROPROVA: il campo fireteam vuoto (o di soli spazi) non da` E49');
-ok(errDi({ states: { isolated: true } }).indexOf('E42') >= 0, 'Isolato: resta bloccato con E42');
+// 🔴 GIRATA IL 19 OTTOBRE (motore 2026-10-18.1): l'Isolato esce dal
+// Coordinato con E59 (riga 14423), non piu` con E42 (che resta per i Nulli).
+{
+    const isoErr = errDi({ states: { isolated: true } });
+    ok(isoErr.indexOf('E59') >= 0 && isoErr.indexOf('E42') < 0, `Isolato: escluso dal Coordinato con E59, non E42 (${JSON.stringify(isoErr)})`);
+    ok(errDi({ states: { unconscious: true } }).indexOf('E42') >= 0 && errDi({ states: { unconscious: true } }).indexOf('E59') < 0, 'CONTROPROVA: un Incosciente resta E42, senza E59');
+    ok(errDi({}).indexOf('E59') < 0, 'CONTROPROVA: un Alguacil normale non da` E59');
+}
 const hid = M.validaCoordinato([vero('Alguacil (Combi Rifle)', 'a9', { deployState: 'HIDDEN' }), algA], algA);
 ok(hid.ok && hid.note.some(n => /Dispiegamento Nascosto/.test(n) && /perde il proprio Ordine/.test(n)),
    `Dispiegamento Nascosto: nessun blocco, solo la nota (${JSON.stringify(codici(hid))})`);

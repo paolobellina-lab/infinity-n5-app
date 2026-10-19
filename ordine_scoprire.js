@@ -1,4 +1,4 @@
-// @versione 2026-10-08.1 | ordine_scoprire.js | proprieta`: chat MOTORE
+// @versione 2026-10-18.1 | ordine_scoprire.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔍 SCOPRIRE (N5) - ordine_scoprire.js
 // ------------------------------------------
@@ -188,6 +188,23 @@
         });
         window.scoprireEsito = e;
 
+        let seg = '', lab = '';
+        arma.bands.forEach(function (b, i) {
+            let cls = 'seg-2';
+            if (b.mod > 0) cls = 'seg-1'; else if (b.mod === -3) cls = 'seg-3'; else if (b.mod < -3) cls = 'seg-4';
+            seg += `<div class="range-seg ${cls} ${(!t.fuoriGittata && t.rangeIndex === i) ? 'active' : ''}" onclick="window.setRangeScoprire(${i})">${b.mod > 0 ? '+' + b.mod : b.mod}</div>`;
+            lab += `<span>${b.label}</span>`;
+        });
+        // 18 ottobre (Paolo): il FUORI GITTATA e` un segmento della barra,
+        // come nell'Attacco BS, e non un tasto a parte.
+        seg += `<div class="range-seg ${t.fuoriGittata ? 'active' : ''}" style="background:${t.fuoriGittata ? '#ffcc00' : '#332b00'}; color:${t.fuoriGittata ? '#000' : '#ffcc00'}; font-size:12px;" onclick="window.toggleFuoriGittataScoprire()">FUORI</div>`;
+        lab += `<span>oltre</span>`;
+        // 18 ottobre (Paolo): la barra c'e` anche col successo automatico, perche`
+        // il FUORI GITTATA si dichiara li`.
+        const barraGittata = `<div style="text-align:center; color:#aaa; font-size:12px; margin-bottom:5px;">Gittata (Scoprire ha bande proprie):</div>
+                <div class="range-bar">${seg}</div>
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${lab}</div>`;
+
         let corpo;
         if (superato.superato) {
             corpo = `<div style="text-align:center; padding:20px; background:#1a1a00; border:2px solid #ffcc00; border-radius:5px;">
@@ -196,15 +213,9 @@
         } else if (e.automatico) {
             corpo = `<div style="text-align:center; padding:20px; background:#003300; border:2px solid #00ff00; border-radius:5px;">
                 <b style="color:#00ff00; font-size:22px;">✅ SUCCESSO AUTOMATICO</b><br>
-                <span style="color:#aaccaa; font-size:13px;">${e.note[0]}</span></div>`;
+                <span style="color:#aaccaa; font-size:13px;">${e.note[0]}</span></div>
+                <div style="margin-top:12px;">${barraGittata}</div>`;
         } else {
-            let seg = '', lab = '';
-            arma.bands.forEach(function (b, i) {
-                let cls = 'seg-2';
-                if (b.mod > 0) cls = 'seg-1'; else if (b.mod === -3) cls = 'seg-3'; else if (b.mod < -3) cls = 'seg-4';
-                seg += `<div class="range-seg ${cls} ${t.rangeIndex === i ? 'active' : ''}" onclick="window.setRangeScoprire(${i})">${b.mod > 0 ? '+' + b.mod : b.mod}</div>`;
-                lab += `<span>${b.label}</span>`;
-            });
 
             const dettaglio = e.voci.length
                 ? e.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
@@ -223,9 +234,7 @@
                     <div style="border-top:1px solid #004400; padding-top:8px; font-size:14px;">${dettaglio}</div>
                     ${e.critici && !e.critici.nessunTiro ? `<div style="text-align:center; color:#ffcc00; font-size:12px; margin-top:6px;">🎯 ${e.critici.testo}</div>` : ''}
                 </div>
-                <div style="text-align:center; color:#aaa; font-size:12px; margin-bottom:5px;">Gittata (Scoprire ha bande proprie):</div>
-                <div class="range-bar">${seg}</div>
-                <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${lab}</div>
+                ${barraGittata}
                 <button class="huge-btn" style="width:100%; margin-top:12px; min-height:55px; font-size:16px; ${stileCop}"
                     onclick="window.toggleCoverScoprire()">${t.cover ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverSi') : ''}BERSAGLIO IN COPERTURA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverNo') : ''}BERSAGLIO ALLO SCOPERTO`}</button>`;
         }
@@ -235,7 +244,7 @@
             <div class="target-card" style="border-left:4px solid ${COL.bordo}; background:rgba(0,255,0,0.04); padding:15px; border-radius:5px;">
                 <b style="color:#fff; font-size:22px; display:block; margin-bottom:12px;">🔍 ${superato.superato ? (M.nomeUnita(difTrovato) || t.name) : t.name}</b>
                 ${corpo}
-                ${superato.superato ? '' : M.rigaRequisiti(['lof', 'gittata'], t, 0, 'window.toggleRequisitoScoprire')}
+                ${superato.superato ? '' : M.rigaRequisiti(['lof'], t, 0, 'window.toggleRequisitoScoprire')}
                 ${(!superato.superato && e.note.length) ? `<div style="margin-top:12px; color:#888; font-size:12px; line-height:1.6;">` +
                     e.note.map(n => `• ${n}`).join('<br>') + `</div>` : ''}
             </div>`;
@@ -268,8 +277,12 @@
         const arma = M.armaScoprire();
         window.combatTargets[0].rangeIndex = i;
         window.combatTargets[0].rangeMod = arma.bands[i] ? arma.bands[i].mod : 0;
+        window.combatTargets[0].fuoriGittata = false;     // scelta una fascia: in gittata
         window.renderScoprire();
     };
+    // FUORI: lo stesso requisito 'gittata' (M.invertiRequisito), toccato
+    // dalla barra. Ritoccato, torna in gittata.
+    window.toggleFuoriGittataScoprire = function () { window.toggleRequisitoScoprire(0, 'gittata'); };
     window.toggleCoverScoprire = function () {
         window.combatTargets[0].cover = !window.combatTargets[0].cover;
         window.renderScoprire();
@@ -373,7 +386,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_scoprire.js', versione: '2026-10-08.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_scoprire.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,12 +1,19 @@
-<!-- @versione 2026-10-15.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-10-19.1 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 30)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 31)
 
 Bozza scritta dalla chat MOTORE il 15 ottobre, su richiesta di Paolo, da far
 adottare a TEST. Segue il motore **2026-10-15.1**, `motore_core.js`,
 `ordine_attacco_bs.js`, `ordine_attacco_guidato.js`,
 `ordine_attacco_intuitivo.js` e `ordine_fuoco_speculativo.js` **2026-10-15.1**,
 i database **2026-10-15.1** e i file di INTERFACCIA **2026-10-15.1**.
+
+**Revisione 31** (TEST, 19 ottobre): segue il motore **2026-10-18.1** coi
+moduli d'Ordine **2026-10-18.1**, il catalogo **2026-10-19.1**, `app.html` e
+`logica_aro.js` **2026-10-19.1**, `calcolatore_controller.js` **2026-10-19.2**,
+`calcolatore_hub.html` **2026-10-18.1** e i database **2026-10-16.2**. Cambiano
+SUP-02 e SUP-04 (divise in due), ST-16 (divisa in due), DIF-10, DIF-13, ST-04,
+ST-05, ST-14, GUI-03 e ORD-02; nuove ST-21, DET-07 e DET-08.
 
 Ogni prova dice **chi** agisce, **quale Ordine** dichiara, **con che cosa**,
 **contro chi**, **a che distanza** (in pollici) e **cosa si deve leggere**. Dove
@@ -44,10 +51,10 @@ casella della barra.
 più tutti i MOD. Si tira 1d20 e serve **uguale o meno**. La salvezza si scrive
 **ARM VS 8 ×1**: ARM (o BTS, o PH) più il PS dell'arma, un dado.
 
-**Il conteggio.** Il piano contiene **284 prove, tutte nello stesso formato**:
-tutte e 284, nelle stesse cinque righe; le convenzioni servono a non scrivere
-la stessa riga 284 volte. I codici sono uno per prova: alla revisione 30 sono 284.
-Prove con un campo da completare: 0 prove su 284
+**Il conteggio.** Il piano contiene **290 prove, tutte nello stesso formato**:
+tutte e 290, nelle stesse cinque righe; le convenzioni servono a non scrivere
+la stessa riga 290 volte. I codici sono uno per prova: alla revisione 31 sono 290.
+Prove con un campo da completare: 0 prove su 290
 Il numero lo controlla `test_piano_schieramento.js`: non si cambia a mano.
 
 **Se un numero non torna**, guarda prima la scheda ufficiale della miniatura e
@@ -727,7 +734,7 @@ Bersagli di riferimento: **Fusilier (Combi Rifle)** *(PanOceania #1: ARM 1, BTS
 - **Con:** Missile Launcher (Blast Mode)
 - **Bersaglio:** sul tavolo Fusilier (Combi Rifle) #1 **Bersagliato**, Fusilier (Missile Launcher) #2 senza stato, Croc Man #6 Marker CAMO. Tocca prima il Fusilier #2, poi il #1, poi il #2
 - **ARO:** nessuno
-- **Atteso:** una **lista sola** con le righe con la foto, come gli altri elenchi; il Croc Man non c'è. Il primo tocco sul #2 è rifiutato: *«non può essere il Primario»*. Poi il #1 è **[ PRIMARIO ]** e il #2 **[ PRESO DALLA SAGOMA ]**. Sul tabellone due scontri: il Faccia a Faccia e il Critico restano del solo Primario.
+- **Atteso:** una **lista sola** con le righe con la foto, come gli altri elenchi. Il Croc Man **c'è**, con l'etichetta *«(Marker: solo sotto la Sagoma)»*: toccato per primo è rifiutato, dopo il Primario entra come preso dalla Sagoma. Il primo tocco sul #2 è rifiutato: *«non può essere il Primario»*. Poi il #1 è **[ PRIMARIO ]** e il #2 **[ PRESO DALLA SAGOMA ]**. Sul tabellone due scontri: il Faccia a Faccia e il Critico restano del solo Primario.
 
 **GUI-04 — ECM (Guided −6)**
 - **Attivo:** Vertigo Zond *(Nomadi #28)* · ATTACCO GUIDATO
@@ -943,11 +950,17 @@ Il bersaglio delle prove SCO è il **Croc Man (MULTI Sniper Rifle)**
 - **ARO:** nessuno
 - **Atteso:** tira il Daktari su **WIP 13**, una voce *«WIP di Daktari: 13»*, nessun bonus. Il fallimento è **letale**: *«⚠️ Il bersaglio entra AUTOMATICAMENTE in Stato Morto e viene rimosso dal tavolo.»*
 
-**SUP-02 — MediKit**
-- **Attivo:** Alguacil (Paramedic) *(Nomadi #5, BS 11)* · MEDIKIT
+**SUP-02a — MediKit in contatto**
+- **Attivo:** Alguacil (Paramedic) *(Nomadi #5)* · MEDIKIT, **IN CONTATTO DI SILHOUETTE**
 - **Bersaglio:** Morlock (Assault Pistol) *(Nomadi #13, PH 13)* messo **Incosciente**
 - **ARO:** nessuno
-- **Atteso:** due tiri in ordine: l'Alguacil colpisce su **BS 11**, poi il **Morlock** tira su **PH 13** (il PH del bersaglio, non dell'utente). Nessun Tiro Salvezza. Fallimento: Morto.
+- **Atteso:** l'Alguacil **non tira**. Tira il **Morlock** su **PH 13** (il PH del bersaglio, non dell'utente). Nessun Tiro Salvezza. Fallimento: Morto.
+
+**SUP-02b — MediKit a distanza**
+- **Attivo:** Alguacil (Paramedic) *(Nomadi #5, BS 11)* · MEDIKIT, **A DISTANZA**
+- **Bersaglio:** Morlock (Assault Pistol) *(Nomadi #13, PH 13)* messo **Incosciente**, a 0-8"
+- **ARO:** nessuno
+- **Atteso:** due tiri in ordine: l'Alguacil colpisce su **BS 11 + la banda** (a 0-8" **14**), **Burst 1**; poi il **Morlock** tira su **PH 13**. Nessun Tiro Salvezza. Fallimento: Morto.
 
 **SUP-03 — Ingegnere**
 - **Attivo:** Clockmaker (Engineer) *(Nomadi #7, WIP 15)* · INGEGNERE
@@ -955,11 +968,17 @@ Il bersaglio delle prove SCO è il **Croc Man (MULTI Sniper Rifle)**
 - **ARO:** nessuno
 - **Atteso:** **WIP 15**; il fallimento dà **1 Ferita**, non la morte: *«il bersaglio riceve 1 Ferita invece di rimuoverla»*.
 
-**SUP-04 — GizmoKit(+1B)**
-- **Attivo:** Clockmaker (Engineer) *(Nomadi #7, BS 11)* · GIZMOKIT
-- **Bersaglio:** Reaktion Zond (HMG) *(Nomadi #15)* messo **Incosciente**
+**SUP-04a — GizmoKit in contatto**
+- **Attivo:** Clockmaker (Engineer) *(Nomadi #7)* · GIZMOKIT, **IN CONTATTO DI SILHOUETTE**
+- **Bersaglio:** Reaktion Zond (HMG) *(Nomadi #15, PH 10)* messo **Incosciente**
 - **ARO:** nessuno
-- **Atteso:** **BS 11** per colpire, **Burst 2** con le voci *«Burst dell'arma GizmoKit»* e *«BS Attack (+1B): +1 Burst in Turno Attivo»*; poi il bersaglio su PH. Fallimento: 1 Ferita. Controprova: Machinist (Combi Rifle) *(PanOceania #13)*, GizmoKit senza notazione, Burst **1**.
+- **Atteso:** il Clockmaker **non tira**. Tira il **Reaktion Zond** su **PH 10**. Fallimento: 1 Ferita.
+
+**SUP-04b — GizmoKit(+1B) a distanza**
+- **Attivo:** Clockmaker (Engineer) *(Nomadi #7, BS 11)* · GIZMOKIT, **A DISTANZA**
+- **Bersaglio:** Reaktion Zond (HMG) *(Nomadi #15, PH 10)* messo **Incosciente**, a 0-8"
+- **ARO:** nessuno
+- **Atteso:** **BS 11 + la banda** (a 0-8" **14**) per colpire, e sul tabellone **Dadi da lanciare: 2** (il +1B del GizmoKit); poi lo Zond su **PH 10**. Fallimento: 1 Ferita. Controprova: Machinist (Combi Rifle) *(PanOceania #13)*, GizmoKit senza notazione, **1** dado.
 
 **SUP-05 — Filtro dei bersagli**
 - **Attivo:** Daktari *(Nomadi #6)* · DOTTORE; poi Clockmaker *(Nomadi #7)* · INGEGNERE
@@ -1026,7 +1045,8 @@ attacca l'**Interventor (Hacker Plus)** *(Nomadi #8)* con HACKING, CARBONITE.
 **DIF-10 — Dichiarare la Soppressione**
 - **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* · FUOCO DI SOPPRESSIONE
 - **Con:** Combi Rifle
-- **Atteso:** nessun tiro. Lo stato compare sul tabellone e l'arma passa al profilo **Combi Rifle (SF Mode)**.
+- **ARO:** nessuno
+- **Atteso:** l'Ordine **genera ARO**: il reattivo riceve l'allarme, e l'Hub aspetta la sua risposta. Poi, sul tabellone, **ABILITÀ SENZA TIRO**, nessun dado, con la nota *«… entra in Fuoco di Soppressione con Combi Rifle (SF Mode) (B3 in ARO, -3 a chi gli dichiara BS Attack).»* Lo stato compare nell'elenco dell'Hub.
 
 **DIF-11 — Armi ammesse**
 - **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)*, poi Morlock (Assault Pistol) *(Nomadi #13)* · FUOCO DI SOPPRESSIONE
@@ -1040,7 +1060,7 @@ attacca l'**Interventor (Hacker Plus)** *(Nomadi #8)* con HACKING, CARBONITE.
 **DIF-13 — Attivarsi cancella la Soppressione**
 - **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* **in Soppressione** · IDLE
 - **ARO:** nessuno
-- **Atteso:** la Soppressione sparisce dalla riga dell'unità e dal tabellone appena parte l'Ordine.
+- **Atteso:** la Soppressione sparisce appena parte l'Ordine: dalla riga dell'unità **e anche dall'elenco dell'Hub** (l'app lo avvisa con un aggiornamento).
 
 ---
 
@@ -1061,10 +1081,11 @@ IDLE, CAUTO, SALTO, ARRAMPICARSI, SOPPRESSIONE, REQUEST SPEEDBALL.
 - **Atteso:** nessun Ordine.
 
 **ST-04 — Isolato**
-- **Atteso:** nessun Ordine dal Pool, col motivo.
+- **Atteso:** l'Isolato **si attiva col PROPRIO Ordine Irregolare**, non con uno del Pool: la riga dice **📵 ORDINE IRREGOLARE PROPRIO**, con la nota *«Isolato: niente Ordini dal Pool. Usa solo il proprio Ordine Irregolare (non trasformabile in Regolare).»* Il menu è pieno (l'Alguacil non ha Hacking). È **escluso dal Coordinato**: **E59**.
 
 **ST-05 — Disconnesso**
-- **Atteso:** nessun Ordine.
+- **Attivo:** Zondmate (REM) *(Nomadi #18)*, una Periferica, messo **Disconnesso** dall'editor degli stati; poi apri l'editor dell'Alguacil #1
+- **Atteso:** lo Zondmate: nessun Ordine. L'Alguacil **non ha la casella** Disconnesso: lo stato è solo delle Periferiche.
 
 **ST-06 — IMM-A**
 - **Atteso:** solo SCHIVATA.
@@ -1091,16 +1112,20 @@ IDLE, CAUTO, SALTO, ARRAMPICARSI, SOPPRESSIONE, REQUEST SPEEDBALL.
 - **Atteso:** il menu pieno; dichiarare un Ordine cancella lo stato (DIF-13).
 
 **ST-14 — Tre stati insieme**
-- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* messo IMM-A, Bersagliato e Mimetizzato (CAMO) · guarda il tabellone
-- **Atteso:** i tre stati, tutti visibili.
+- **Attivo:** Intruder (HMG) *(Nomadi #24)* messo IMM-A, Bersagliato e CAMO · guarda la riga dell'unità nell'app
+- **Atteso:** i tre stati, tutti visibili. Sull'elenco dell'Hub, finché è un Marker, si vede **solo CAMO**: gli altri due l'avversario non li deve sapere.
 
 **ST-15 — Foxhole al tavolo**
 - **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* in **Foxhole** · guarda la riga dell'unità e una scheda di bersaglio nemica
 - **Atteso:** Silhouette 3, Copertura Parziale a 360°, Mimetism (−3) e Courage. Nessun movimento, nemmeno dopo una Schivata riuscita. Si cancella andando Prono, o dichiarando una Skill di Movimento.
 
-**ST-16 — L'ordine degli stati sul tabellone**
-- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* messo Incosciente, IMM-A, Bersagliato e CAMO · guarda il tabellone
-- **Atteso:** in quest'ordine: **Incosciente, Immobilizzato-A, Bersagliato, CAMO**.
+**ST-16a — L'ordine degli stati**
+- **Attivo:** Intruder (HMG) *(Nomadi #24)* messo IMM-A, Bersagliato e CAMO · in console, `MotoreN5.statiPerCategoria(<l'Intruder del roster>)`
+- **Atteso:** in quest'ordine: **Immobilizzato-A, Bersagliato, CAMO**.
+
+**ST-16b — Lo Stato Nullo annulla il CAMO**
+- **Attivo:** lo stesso Intruder *(#24)*, messo anche **Incosciente** dall'editor degli stati · guarda l'elenco dell'Hub
+- **Atteso:** in quest'ordine: **Incosciente, Immobilizzato-A, Bersagliato**. Il CAMO non c'è più: lo annulla lo Stato Nullo.
 
 **ST-17 — Una riga malata non svuota il tabellone**
 - **Attivo:** in console, con tre unità sul tabellone, forza `MotoreN5.statiPerCategoria` a sollevare un errore solo sulla seconda
@@ -1113,6 +1138,10 @@ IDLE, CAUTO, SALTO, ARRAMPICARSI, SOPPRESSIONE, REQUEST SPEEDBALL.
 **ST-19 — Prono e Scarico non sono stati**
 - **Attivo:** apri l'editor degli stati dell'Alguacil #1
 - **Atteso:** nessuna casella per Prono e Scarico; le caselle sono **16**.
+
+**ST-21 — Morto all'Hub**
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* messo **Morto** dall'editor degli stati · guarda l'elenco dell'Hub; poi il CrazyKoala del Moran *(Nomadi #19)* dopo la sua detonazione (DET-07)
+- **Atteso:** l'Alguacil sull'Hub risulta **Morto**, con l'icona. Lo stesso per il CrazyKoala. Le truppe vive non hanno l'icona.
 
 **ST-20 — Il Marker si chiama CAMO**
 - **Attivo:** Croc Man (MULTI Sniper Rifle) *(PanOceania #6)* schierato Marker · guarda il tabellone e le note di uno Scoprire su di lui
@@ -1578,6 +1607,16 @@ già sul tavolo. Nel turno PanOceania si muove il **Fusilier (Combi Rifle)**
 - **ARO:** nessuno
 - **Atteso:** detonano subito, senza tiro, e nel roster non resta nessun segnalino. Sul tabellone il lato reattivo è il Fusilier: **SUBISCE L'ESPLOSIONE**, **3 Tiri Salvezza su ARM: riesce con 7 o meno**. Nessun E16, nessun E20. La terza carica parte, la quarta è bloccata.
 
+**DET-07 — Il CrazyKoala in ARO**
+- **Attivo:** nel turno PanOceania, Fusilier (Combi Rifle) *(PanOceania #1)* · MUOVERE, nella ZdC del CrazyKoala del Moran *(Nomadi #19)*
+- **ARO:** il CrazyKoala: tocca la sua riga, poi **DETONAZIONE**, poi **SÌ**; poi AVANTI senza truppe scelte
+- **Atteso:** il koala è una **riga con la sua foto** (*crazykoala_N.png*), come le altre unità. Toccandola si apre una pagina con **una sola azione, DETONAZIONE**; dentro, la domanda della Zona di Controllo. Risposto **SÌ**, la detonazione **parte con AVANTI** (e con NESSUN ARO) e arriva al tabellone.
+
+**DET-08 — La mina in ARO**
+- **Attivo:** nel turno PanOceania, Fusilier (Combi Rifle) *(PanOceania #1)* · MUOVERE, dentro l'area d'innesco della Shock Mine della Puppet Masters *(Nomadi #22)*
+- **ARO:** la Shock Mine: tocca la sua riga, poi **DETONAZIONE**
+- **Atteso:** la mina è una **riga con l'immagine del suo tipo** (*mina_shock.png*). La pagina ha **una sola azione, DETONAZIONE**, e dentro **le tre domande d'innesco**, una alla volta (DET-04). Nell'elenco non ci sono più le domande.
+
 ---
 
 # 26. Blocco RIP — Riprendere una partita
@@ -1607,9 +1646,9 @@ già sul tavolo. Nel turno PanOceania si muove il **Fusilier (Combi Rifle)**
 - **Atteso:** le domande sono bloccanti: senza una risposta non si esegue. È il modello della famiglia (DEP-02, DET-04).
 
 **ORD-02 — Cybermask**
-- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)*; Zero (Hacker, Killer Hacking Device) *(#9)*, schierato Marker; Orc (Hacker, Hacking Device) *(PanOceania #4)*; Alguacil (Combi Rifle) *(Nomadi #1)* · apri il menu e, dove c'è, CYBERMASK
+- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)*; Zero (Hacker, Killer Hacking Device) *(#9)*; Orc (Hacker, Hacking Device) *(PanOceania #4)* · apri il menu degli Ordini, poi HACKING
 - **ARO:** nessuno
-- **Atteso:** la voce c'è per Interventor e Zero (anche da Marker). Non c'è per l'Orc né per l'Alguacil: *«Serve il programma Cybermask: Hacking Device Plus o Killer Hacking Device.»* Toccandola, una domanda: *«L'Hacker è FUORI dalla Linea di Tiro di ogni Modello e di ogni Marker nemico?»*. **SÌ**: entra in IMP-2 senza tiro, Ordine speso. **NO**: Idle, Ordine speso. **Senza risposta**: non si esegue. La voce sparisce all'hacker **Isolato** e a chi è già in Impersonation.
+- **Atteso:** CYBERMASK **non è più fra le voci del menu degli Ordini**: sta nella schermata **HACKING**, col bottone dei programmi (*Abilità Lunga · Ordine intero · nessun tiro · genera ARO*). Interventor: CYBERMASK e WHITE NOISE. Zero: solo CYBERMASK. Orc: nessuno dei due. Toccando CYBERMASK parte l'allarme ARO, e sul tabellone **ABILITÀ SENZA TIRO**; nessuna domanda sulla Linea di Tiro, e lo stato **IMP-2 lo metti tu** dall'editor degli stati. Come seconda metà il Cybermask è bloccato: è un'Abilità Lunga.
 
 **ORD-03 — Rientrare in CAMO**
 - **Attivo:** Intruder (HMG) *(Nomadi #24)*, prima Marker, poi rivelato; Moran *(#19)*, schierato Marker e poi rivelato; Alguacil (Combi Rifle) *(#1)* · apri il menu
@@ -1780,6 +1819,8 @@ quello indicato.
 | Requisiti dichiarati al tavolo (lof, gittata, sagoma, contatto, area) | `test_novita_7ott.js` e i banchi dei moduli |
 | Le cinque spazzate sul database (armi, bande, salvezze, notazioni, deployable) | `test_coerenza_dati.js` sezioni 8-12 |
 | Il conteggio di questo piano e le unità del roster | `test_piano_schieramento.js` |
+| Le novità del 18-19 ottobre: FUORI GITTATA come segmento, Burst 2 del FO, Marker col Mimetismo, allarmi ARO di Sensor, Triangulated, Supporto e Soppressione, MediKit e GizmoKit, Cybermask dall'Hacking | `test_novita_18ott.js` |
+| La pagina DETONAZIONE di koala e mine, e la busta che parte con AVANTI e NESSUN ARO | `test_innesco_schermata.js` |
 
 Una trappola da sapere scrivendo una prova nuova: la chiave di un requisito non
 è il nome del campo. `gittata` legge `fuoriGittata` (manca se **true**),
