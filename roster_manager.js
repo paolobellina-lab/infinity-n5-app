@@ -1,4 +1,4 @@
-// @versione 2026-10-19.2 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-20.1 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -282,6 +282,9 @@ window.normalizzaTestoArmy = (t) => String(t || '')
     .replace(/[\u201c\u201d\u2033]/g, '"')
     .replace(/\s+\(/g, '(')
     .replace(/\./g, ' ')
+    // Il database scrive "Drumbot_1", Army "DRUMBOT-1": stesso nome. Senza
+    // questa riga il periferico letto dalla riga sotto non combaciava mai.
+    .replace(/_/g, '-')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -345,18 +348,34 @@ window.vociRigaArmy = (rigaNorm, base) => {
 // UNA riga di Army contro il database della fazione.
 //   { stato: 'OK' | 'AMBIGUA' | 'NESSUNO', profilo, candidati, punteggi }
 // candidati: i profili a pari punti in testa (piu` d'uno se AMBIGUA).
-window.riconosciRigaArmy = (riga, db) => {
+// Il nome base con cui si apre una riga di Army ('' se nessuno).
+// Il nome base deve aprire la riga (o stare dopo un numero/ segno, come
+// "1x"): si prende il piu` LUNGO che coincide, cosi` "PUPPET MASTERS"
+// non si confonde con un "PUPPET..." piu` corto.
+window.baseRigaArmy = (riga, db) => {
     const r = window.normalizzaTestoArmy(riga);
-    const esito = { stato: 'NESSUNO', profilo: null, candidati: [], punteggi: [] };
-    if (!r) return esito;
-    // Il nome base deve aprire la riga (o stare dopo un numero/ segno, come
-    // "1x"): si prende il piu` LUNGO che coincide, cosi` "PUPPET MASTERS"
-    // non si confonde con un "PUPPET..." piu` corto.
     const parola = (b) => new RegExp('^(?:[^A-Z]*\\s)?' + b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Z0-9])').test(r);
     let base = '';
     (db || []).forEach(u => { const b = window.nomeBaseArmy(u); if (b && b.length > base.length && parola(b)) base = b; });
+    return base;
+};
+
+// vociExtra (facoltativo): voci gia` normalizzate che vengono dalle righe
+// VICINE, non da questa. 19 ottobre (DATABASE, Drummer opz 7 e 8): Army
+// scrive i periferici su righe rientrate SOTTO la truppa, e la riga della
+// truppa da sola non dice quale periferico porta. Tre Drummer osservatori
+// (Drumbot_5 / Drumbot_1+5 / Drumbot_3+5) hanno la stessa riga: misurato
+// sul file di prima, i due da 47 pt diventavano in silenzio quello da 21.
+// Lo stesso per i Coyote (Bambabot-1 o -2) e per il Turtlemek, che si
+// riconosce dal TAG sopra di lui (Triphammer o Scarface).
+window.riconosciRigaArmy = (riga, db, vociExtra) => {
+    const r = window.normalizzaTestoArmy(riga);
+    const esito = { stato: 'NESSUNO', profilo: null, candidati: [], punteggi: [], base: '' };
+    if (!r) return esito;
+    const base = window.baseRigaArmy(riga, db);
     if (!base) return esito;
-    const voci = window.vociRigaArmy(r, base);
+    esito.base = base;
+    const voci = [...new Set(window.vociRigaArmy(r, base).concat((vociExtra || []).filter(Boolean)))];
     // I profili SECONDARI (Battle-Ravaged, Enhanced Profile, Inactive
     // Symbiont Armor) non stanno in una lista di Army: sono lo stato di una
     // truppa gia` schierata. Prima pareggiavano col profilo vero.
@@ -431,10 +450,16 @@ window.importaDaTesto = () => {
     const dbFazione = window.getDbFazione();
     window.righeAmbigueImport = [];
 
+    // Prima si raccolgono le righe con il loro RIENTRO: Army mette i
+    // periferici (Drumbot, Bambabot, Turtlemek...) su righe piu` rientrate
+    // sotto la truppa che li porta. Prima ogni riga si leggeva da sola, e la
+    // riga della truppa non diceva quale periferico avesse (vedi
+    // riconosciRigaArmy).
+    const righe = [];
     lines.forEach(line => {
         let lineUpper = line.toUpperCase().trim();
         if (lineUpper.length < 4) return;
-        if (lineUpper.includes('SWC') || lineUpper.includes('NOMADS') || lineUpper.includes('PANOCEANIA') || lineUpper.includes('CORVUS BELLI') || lineUpper.includes('UNDEFINED')) return;
+        if (lineUpper.includes('SWC') || lineUpper.includes('NOMADS') || lineUpper.includes('PANOCEANIA') || lineUpper.includes('CORVUS BELLI')) return;
         // Il codice di Infinity Army in fondo al testo: non e` una truppa.
         if (/HTTPS?:\/\//.test(lineUpper)) return;
 
@@ -443,17 +468,62 @@ window.importaDaTesto = () => {
         // cercava "GROUP 1".."GROUP 4" dentro la riga: "GROUP 51" (Gruppo 5)
         // non cambiava Gruppo e le sue truppe finivano nel 4.
         const intest = lineUpper.match(/^(?:GROUP|GRUPPO)\s*(\d)/);
-        if (intest) { currentParseGroup = parseInt(intest[1], 10); return; }
+        if (intest) { currentParseGroup = parseInt(intest[1], 10); righe.push({ intestazione: true }); return; }
 
-        const e = window.riconosciRigaArmy(line, dbFazione);
+        // "ZONDNAUTICA-A undefined / undefined" non si importa, ma resta come
+        // riga madre: le righe rientrate sotto sono SUE, non della truppa
+        // prima.
+        righe.push({ line: line, gruppo: currentParseGroup, rientro: line.replace(/\t/g, '    ').match(/^\s*/)[0].length,
+                     salta: lineUpper.includes('UNDEFINED'), base: window.baseRigaArmy(line, dbFazione) });
+    });
+
+    // 20 ottobre (MOTORE, DATABASE 20.1): pilota e moto della Zondnautica,
+    // e l'Operator di un TAG con Escape System, NON sono truppe della lista:
+    // nascono in partita (SCENDI DALLA MOTO, Escape System). Army li scrive
+    // rientrati sotto la loro truppa, e prima diventavano unita` a se`
+    // (Zondnautica + Zondnaut + Zondmate: tre unita` per una). Qui si
+    // raccolgono, per ogni nome base, i nomi base dei profili che il database
+    // lega a lui (smonta.pilota, smonta.periferico, espelle.pilota).
+    const perId = {};
+    dbFazione.forEach(u => { perId[u.id] = u; });
+    const legatiA = (base) => {
+        const out = [];
+        dbFazione.filter(u => window.nomeBaseArmy(u) === base).forEach(u => {
+            [u.smonta && u.smonta.pilota, u.smonta && u.smonta.periferico, u.espelle && u.espelle.pilota]
+                .filter(Boolean).forEach(id => { if (perId[id]) out.push(window.nomeBaseArmy(perId[id])); });
+        });
+        return out;
+    };
+    let assorbite = 0;
+
+    righe.forEach((x, i) => {
+        if (x.intestazione || x.salta) return;
+        const extra = [];
+        // La riga madre: la piu` vicina sopra, meno rientrata, senza passare
+        // un'intestazione di Gruppo.
+        let madre = null;
+        for (let j = i - 1; j >= 0 && !righe[j].intestazione; j--) {
+            if (righe[j].rientro < x.rientro) { madre = righe[j]; if (righe[j].base) extra.push(righe[j].base); break; }
+        }
+        // Pilota o moto della truppa madre: fa parte di lei, non si importa.
+        if (madre && madre.base && x.base && legatiA(madre.base).indexOf(x.base) >= 0) { assorbite++; return; }
+        // Le righe figlie: quelle sotto, piu` rientrate, fino alla prossima
+        // riga allo stesso livello.
+        for (let j = i + 1; j < righe.length && !righe[j].intestazione && righe[j].rientro > x.rientro; j++) {
+            if (righe[j].base) extra.push(righe[j].base);
+        }
+        const e = window.riconosciRigaArmy(x.line, dbFazione, extra);
         if (e.stato === 'OK') {
-            window.roster.push(window.unitaDaProfiloArmy(e.profilo, currentParseGroup));
+            window.roster.push(window.unitaDaProfiloArmy(e.profilo, x.gruppo));
             count++;
         } else if (e.stato === 'AMBIGUA') {
-            window.righeAmbigueImport.push({ riga: line.trim(), gruppo: currentParseGroup, candidati: e.candidati });
+            window.righeAmbigueImport.push({ riga: x.line.trim(), gruppo: x.gruppo, candidati: e.candidati });
         }
     });
     window.disegnaRigheAmbigue();
+    // Per il banco e per chi guarda la console: quante righe rientrate sono
+    // state lette come parte della truppa sopra.
+    window.righeAssorbiteImport = assorbite;
 
     const amb = window.righeAmbigueImport.length;
     if(count > 0 || amb > 0) {
@@ -1552,7 +1622,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-10-19.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-10-20.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

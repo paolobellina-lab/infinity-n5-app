@@ -1,4 +1,4 @@
-// @versione 2026-10-18.1 | logica_stati.js | proprieta`: chat MOTORE
+// @versione 2026-10-20.1 | logica_stati.js | proprieta`: chat MOTORE
 // ==========================================
 // NOTA: le regole di questo file passano da MotoreN5.
 //  - la cancellazione degli stati Marker (Ritirata!, Ingaggiato, Stati Nulli)
@@ -211,6 +211,29 @@ window.apriPaginaStati = (index) => {
                  </label>`;
     }
 
+    // 20 ottobre (Paolo): il SECONDO PROFILO (Transmutation: Battle Ravaged,
+    // Enhanced, Symbiont) e l'ESCAPE SYSTEM si mettono da qui, a mano:
+    // l'app non conta le ferite. Tutti e due a senso unico, tranne il
+    // pilota che (regola della casa) risale sul TAG con un Ordine.
+    const Mp = window.MotoreN5;
+    const trasf = (Mp && typeof Mp.trasformazioneDi === 'function') ? Mp.trasformazioneDi(window.unitToEdit) : null;
+    const esp = (Mp && typeof Mp.puoEspellere === 'function') ? Mp.puoEspellere(window.unitToEdit) : null;
+    let profiloHtml = '';
+    if (trasf && !trasf.gia) {
+        profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:#2a1a00; border-color:#ffaa33; color:#ffcc66; font-size:18px;" onclick="window.cambiaProfiloDaStati()">
+            🔄 ${trasf.tipo === 'WIP' ? 'TIRO RIUSCITO: ' : ''}PASSA AL PROFILO: ${trasf.nome}<br><span style="font-size:12px; color:#cc9955;">${trasf.quando} ${trasf.nota}</span></button>`;
+    } else if (trasf && trasf.gia && trasf.reversibile) {
+        profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:#1a1a1a; border-color:#ffaa33; color:#ffcc66; font-size:18px;" onclick="window.tornaPrimoProfiloDaStati()">
+            ↩️ TORNA AL PRIMO PROFILO<br><span style="font-size:12px; color:#cc9955;">In uso: ${trasf.nome}. ${trasf.nota}</span></button>`;
+    } else if (trasf && trasf.gia) {
+        profiloHtml += `<div style="color:#cc9955; font-size:13px; margin-bottom:8px;">🔄 Secondo profilo in uso: ${trasf.nome}. ${trasf.nota}</div>`;
+    }
+    if (esp && esp.puo) {
+        profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:#1a1a33; border-color:#8888ff; color:#ccccff; font-size:18px;" onclick="window.espelliPilotaDaStati()">
+            🪂 ESCAPE SYSTEM: FAI USCIRE IL PILOTA<br><span style="font-size:12px; color:#9999cc;">A fine Ordine, quando il TAG ha ricevuto le ferite indicate. Il TAG resta vuoto sul tavolo; il pilota può risalire.</span></button>`;
+    }
+    if (profiloHtml) html += `</div></div><div style="margin-top:15px;">${profiloHtml}</div><div><div>`;
+
     html += `</div></div>
         <div id="ft-dynamic-panel" style="background:#222; border:1px solid #444; padding:10px; margin-top:15px; border-radius:5px; display:flex; justify-content:space-between; align-items:center;">
         </div>
@@ -302,6 +325,43 @@ window.cycleFireteam = () => {
 // Tre ritorni possibili. Il terzo — lo schieramento — l'interfaccia lo
 // gestiva con un ponte in app.html; ora e` qui, letto dallo stesso flag
 // che mette lei, cosi` il ponte si puo` togliere. (21 settembre.)
+// 20 ottobre: cambio di profilo ed Escape System, applicati SUBITO (con una
+// conferma): li calcola il motore, li applica window.sostituisciUnita, che
+// avvisa l'Hub. Le altre modifiche non ancora salvate in questa pagina si
+// perdono: lo dice la conferma.
+window.cambiaProfiloDaStati = () => {
+    const M = window.MotoreN5; const u = window.unitToEdit;
+    if (!M || !u) return;
+    const e = M.trasforma(u);
+    if (!e.possibile) return alert('⛔ ' + e.motivo);
+    const definitivo = e.unitaAggiornata.tipoTrasformazione !== 'WIP';
+    if (!confirm(`${M.nomeUnita(u)} passa al profilo "${e.unitaAggiornata.nome}".\n\nFerite e Stati restano. ${definitivo ? 'Il cambio NON torna indietro.' : 'Torna da solo al primo profilo a fine turno (Fase Stati).'}\n(Le altre modifiche non salvate di questa pagina si perdono.)\n\nConfermi?`)) return;
+    if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(u, e.unitaAggiornata, 'Transmutation');
+    else Object.assign(u, e.unitaAggiornata);
+    window.annullaStati();
+};
+window.tornaPrimoProfiloDaStati = () => {
+    const M = window.MotoreN5; const u = window.unitToEdit;
+    if (!M || !u) return;
+    const e = M.tornaAlPrimoProfilo(u);
+    if (!e.possibile) return alert('⛔ ' + e.motivo);
+    if (!confirm(`${M.nomeUnita(u)} torna al profilo "${e.unitaAggiornata.nome}".\n(Le altre modifiche non salvate di questa pagina si perdono.)\n\nConfermi?`)) return;
+    if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(u, e.unitaAggiornata, 'Transmutation (WIP): primo profilo');
+    else Object.assign(u, e.unitaAggiornata);
+    window.annullaStati();
+};
+window.espelliPilotaDaStati = () => {
+    const M = window.MotoreN5; const u = window.unitToEdit;
+    if (!M || !u) return;
+    const e = M.espelliPilota(u);
+    if (!e.possibile) return alert('⛔ ' + e.motivo);
+    if (!confirm(`ESCAPE SYSTEM: il pilota esce da ${M.nomeUnita(u)}.\n\n${e.note.join('\n')}\n(Le altre modifiche non salvate di questa pagina si perdono.)\n\nConfermi?`)) return;
+    window.roster.push(e.nuova);
+    if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(u, e.unitaAggiornata, 'Escape System');
+    else Object.assign(u, e.unitaAggiornata);
+    window.annullaStati();
+};
+
 window.annullaStati = () => {
     if (window.statiApertiDalloSchieramento) {
         window.statiApertiDalloSchieramento = false;
@@ -531,7 +591,7 @@ window.salvaStatiUnita = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_stati.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
+    var v = { file: 'logica_stati.js', versione: '2026-10-20.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-18.1 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-20.1 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -256,6 +256,23 @@ window.applicaCambioTurno = (valoreRicevuto, opzioni) => {
     }
 
     console.log("🔄 Core: Cambio turno applicato. Tocca a:", dati.attivo);
+
+    // 20 ottobre: il cambio turno e` la Fase Stati del turno che finisce.
+    // Le truppe in Transmutation (WIP) tornano da sole al primo profilo
+    // (righe 10284-10285). Non alla ripresa: li` il turno non e` cambiato.
+    if (!opzioni.ripresa && window.MotoreN5 && typeof window.MotoreN5.fineTurnoTransmutation === 'function') {
+        const tornate = window.MotoreN5.fineTurnoTransmutation(window.roster || []);
+        if (tornate.length) {
+            tornate.forEach(x => Object.assign(x.unita, x.unitaAggiornata));
+            console.log('🔄 Transmutation (WIP): tornate al primo profilo: ' + tornate.map(x => window.MotoreN5.nomeUnita(x.unita)).join(', '));
+            if (typeof window.inviaSchieramentoAllHub === 'function') {
+                window.inviaSchieramentoAllHub(document.title.includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA', {
+                    roster: window.roster, strutture: window.activeStructures || [],
+                    terreni: window.activeTerrains || [], motivo: 'AGGIORNAMENTO'
+                });
+            }
+        }
+    }
 
     document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
     document.getElementById('step-sync').style.display = 'none';
@@ -789,7 +806,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-20.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

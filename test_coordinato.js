@@ -1,4 +1,5 @@
-// @versione 2026-10-19.1 | test_coordinato.js | proprieta`: chat TEST
+// @versione 2026-10-19.2 | test_coordinato.js | proprieta`: chat TEST
+// 2026-10-19.2: Irregular 79 -> 77, Nomadi 40 -> 39 (tolti i due Warcor (Flash Pulse) doppi, database 2026-10-19).
 // 2026-10-19.1: l'Isolato si attiva col proprio Ordine Irregolare (sez. 5) ed esce dal Coordinato con E59 (motore 2026-10-18.1, ST-04).
 // 2026-10-16.2: premesse Irregular 82 -> 79 (Nomadi 40) e Periferiche 42 -> 40 (database 2026-10-16.2).
 // 2026-10-15.1: nomi aggiornati (1).
@@ -203,7 +204,8 @@ const voci = (p) => String(p.chars || '').split(',').map(x => x.trim());
 const irr = DBT.filter(p => voci(p).indexOf('Irregular') >= 0);
 const irrN = DBN.filter(p => voci(p).indexOf('Irregular') >= 0).length;
 // 82 -> 79 col database 2026-10-16.2: fra le righe doppie tolte c'erano tre Irregolari (morlock_chain_rifle e i due motorized_bounty_hunter PanOceania).
-ok(irr.length === 79 && irrN === 40, `premessa: Irregular e\` in chars di ${irr.length} profili (Nomadi ${irrN}) — se 79 cambia, e\` cambiato il database: rimisura`);
+// 79 -> 77 col database 2026-10-19: tolti i due Warcor (Flash Pulse) doppi, Irregolari (warcor_flash_pulse_3 Nomadi, warcor_flash_pulse PanOceania).
+ok(irr.length === 77 && irrN === 39, `premessa: Irregular e\` in chars di ${irr.length} profili (Nomadi ${irrN}) — se 77 cambia, e\` cambiato il database: rimisura`);
 const inSkills = DBT.filter(p => /Irregular/i.test(String(p.skills || '') + ',' + String(p.equip || '')));
 ok(inSkills.length === 0, `e in skills/equip non c'e\` su nessun profilo (${inSkills.length}): la prova della sezione 3 costruisce un dato che il database non ha`);
 const vero = (n, id, extra) => { const p = DBT.find(x => x.nome === n); if (!p) throw new Error('assente: ' + n);

@@ -1,4 +1,4 @@
-<!-- @versione 2026-10-19.1 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-10-19.2 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
 
 # PRONTUARIO ORDINI N5 — richiamo rapido durante la partita
 
@@ -2802,6 +2802,113 @@ allows the user to execute no action at all». **L'Idle è una Skill.** Quindi:
 > righe non si contraddicono — la 14130 vieta di **dichiarare** l'Idle, la 7454 descrive cosa
 > **è** il non dichiarare nulla. Per l'app: l'Idle non va offerto nel menù di IMM-A e IMM-B,
 > e l'ordine che si chiude senza dichiarazioni si risolve come Idle da solo.
+
+---
+
+## 7.2 TRANSMUTATION — una unità, due profili
+
+`TRANSMUTATION` è una **AUTOMATIC SKILL** (righe **10235–10240**): «the user's ability to transform
+into a different type of Trooper with its own Attributes and Skills». Non si dichiara, non costa
+Ordine, non è un'azione: è il cambio del **profilo** con cui l'unità gioca.
+
+### A. Le due regole generali, che valgono per TUTTI i tipi
+
+| Regola | Testo | Riga |
+|---|---|---|
+| **VITA/STR condivisi** | «The VITA/STR Attribute points of a Trooper possessing this Special Skill are **shared among all of their Unit Profiles**. So, any Wounds received by one of the Unit Profiles **also apply to the other** Unit Profiles» | **10251–10252** |
+| **Stati condivisi** | «Similarly, **States are also shared** by the different Unit Profiles, if applicable» | **10253** |
+| Modello | si sostituisce il Modello; se non ce n'è uno alternativo, si mette un token `TRANSMUTED` accanto | 10248–10250 |
+
+I due esempi ufficiali li confermano in concreto: righe **10302–10307**, il Trooper passa al secondo
+profilo «**placing his Wounds next to it**. Thus, the Trooper will remain active on the table, **but
+he still has 2 Wounds**»; righe **10315–10316**, «If the Trooper is in Stunned and Immobilized-B
+States when the Unit Profile and the Model are changed, the Trooper **retains both State Tokens**».
+
+### B. I cinque tipi, e quali tornano indietro
+
+Il regolamento ne elenca **cinque**, e solo questi:
+
+| Tipo | Innesco | Torna al primo profilo? | Righe |
+|---|---|---|---|
+| **(X)** | aver **ricevuto X Ferite**; il cambio è alla **fine dell'Ordine** in cui si raggiunge X | ❌ **mai**: nessuna clausola di ritorno | 10254–10259 |
+| **(Escape System-X)** | come (X), più una Sagoma Circolare di Eclipse centrata sul Modello | ❌ mai | 10260–10263 |
+| **(Hatching)** | schieramento come token **Seed-Embryo**; passa alla Forma Sviluppata con un Movimento come **prima** Short, o con una Schivata ARO riuscita | ❌ mai | 10264–10275 |
+| **(Auto)** | **qualsiasi abilità con etichetta Movimento** | ✅ **sì, in entrambi i versi** | 10276–10280 |
+| **(WIP)** | Tiro Normale di WIP prima di dichiarare Ordine o ARO | ✅ **automaticamente**, all'inizio della Fase Stati | 10281–10288 |
+
+🔴 **(X) ed (Escape System-X) sono definitivi per la partita. REGOLA SCRITTA.** L'argomento è il
+contrasto fra i tipi, non il silenzio: la **(WIP)** ha una clausola di ritorno esplicita — «At the
+start of the States Phase the Trooper **changes back** to their first Unit Profile» (righe 10284–10285) — e
+la **(Auto)** usa il verbo reciproco, «may **switch between** the different Unit Profiles» (riga
+10278). La **(X)** invece ha solo lingua a senso unico: «must be **replaced by** the second Unit
+Profile» (riga 10257). Dove il regolamento vuole il ritorno lo scrive; qui non lo scrive. In più
+l'innesco è **monotòno**: «how many Wounds the Trooper **must receive**» (riga 10256) conta le Ferite
+*ricevute*, e un Dottore o un Ingegnere che ne curano una non fanno "non ricevere" nulla.
+
+⚠️ **Nomi come `Battle Ravaged`, `Enhanced`, `Inactive Symbiont Armor` non sono tipi di
+Transmutation.** Non esistono nel regolamento: sono i **nomi del secondo profilo** nella scheda
+dell'unità. Il tipo sta sempre fra parentesi dopo `Transmutation`. Per l'app contano solo i cinque
+della tabella.
+
+### C. AI MOTORCYCLE — il caso con la Periferica
+
+`AUTOMATIC EQUIPMENT` (righe **10421–10427**). «An AI Motorcycle is a Motorcycle that, when its
+rider dismounts, becomes a **Peripheral (Synchronized) Remote**». Righe **10430–10431**: «Units
+equipped with an AI Motorcycle have **two different Unit Profiles**, applying the **Transmutation
+(Auto)** rules to change between them».
+
+Quindi **il quando lo detta la (Auto)**, e il **come** lo detta questa voce:
+
+| | Profilo **Montato** | Profilo **Smontato** |
+|---|---|---|
+| Quando | **all'inizio** di qualsiasi abilità con **etichetta Movimento** (riga 10279) | idem |
+| Requisito di posizione | il Modello Smontato **deve essere a contatto di Silhouette con la Periferica** (righe 10436–10437) | nessuno |
+| Manovra sui modelli | sostituisci la **Periferica** col Modello Montato, poi **togli** il Modello Smontato (righe 10437–10439) | sostituisci il Modello Montato con la **Periferica**, poi metti il Modello Smontato **a contatto di Silhouette** con essa (righe 10443–10445) |
+| Armi | **primo** elenco di armi del profilo (righe 10446–10448) | **secondo** elenco |
+| Regole aggiunte | quelle dell'equipaggiamento **Motorcycle** (righe 10433–10435) | quelle di **Peripheral (Synchronized)**: Coerenza, Disconnesso (righe 9550–9555) |
+
+**Le due Restrizioni proprie:**
+- Righe **10449–10451**: «If the Peripheral (Synchronized) Remote is in **Isolated, IMM, or any Null
+  State**, the Trooper **cannot change to its Mounted Trooper Profile**». Quindi con lo Zondmate
+  morto, incosciente, isolato o immobilizzato il rimonto **è vietato**: il pilota resta a piedi per
+  il resto della partita. Nota che la restrizione è **più larga** del solo "morto": copre anche
+  IMM-A/IMM-B e l'Isolato, che sono reversibili — lì il divieto vale solo mentre lo stato dura.
+- Righe **10452–10455**: «The Mounted Trooper Profile **cannot benefit from any Supportware**
+  affecting the Peripheral (Synchronized) Remote, so it is **canceled** for that Trooper at the
+  moment the Mounted Trooper Profile is applied». Montando, un Supportware sulla moto **cade**.
+
+**Le Ferite nel rimonto.** Due pool distinti, e il regolamento li tiene separati:
+- Le Ferite del **pilota** (VITA) sono **condivise fra i suoi due profili**, Montato e Smontato, per
+  la riga **10251–10252**: il profilo Montato riprende sempre la VITA già consumata.
+- Lo **Zondmate** non è un profilo del pilota: è una **Periferica**, cioè un elemento di gioco a sé,
+  con STR propria, AROs propri (riga 9523) e punti vittoria propri (riga 9528). La sua
+  STR **non** entra nella condivisione della riga 10251, che parla di «Unit Profiles» dello stesso
+  Trooper.
+
+⚠️ **LETTURA, ma quasi sempre senza conseguenze.** Il regolamento **non dice** che fine fa un danno
+già subìto dalla Periferica quando questa viene rimossa dal tavolo per far posto al Modello Montato
+(righe 10437–10439). E non serve che lo dica, perché il caso si chiude da sé: se lo Zondmate ha
+**STR 1**, la prima Ferita lo manda in Incosciente o Morto, cioè in uno stato **Null**, e la riga
+10449 **vieta il rimonto**. L'unico caso in cui la domanda esisterebbe è uno Zondmate con STR ≥ 2
+ferito ma non Null. 🔴 **Serve il dato da DATABASE**: la STR del profilo Zondmate. Se è 1, la
+questione non si pone mai e l'app non deve modellare nessun travaso.
+
+### D. Cosa serve all'app (col cambio profilo messo a mano dal giocatore)
+
+1. **Una unità, N profili**, con un selettore di profilo attivo. Il cambio non è un'azione: non
+   consuma Ordine, non genera AROs di per sé (l'ARO lo genera l'abilità di Movimento che lo porta).
+2. **Stati e Ferite viaggiano col cambio**, non col profilo (righe 10251–10253). Se l'app non conta
+   le Ferite, deve almeno **non azzerare gli stati** quando il giocatore cambia profilo.
+3. **Le armi cambiano** col profilo: due elenchi separati, primo = Montato, secondo = Smontato
+   (righe 10446–10448).
+4. **Gate sul rimonto**: profilo Montato **non selezionabile** se la Periferica è Isolata, IMM o in
+   qualsiasi stato Null (righe 10449–10451).
+5. **Montando, cancella il Supportware** che era sulla Periferica (righe 10452–10455).
+6. **Smontato**: la moto è una Periferica (Synchronized) → valgono Coerenza e Disconnesso
+   (righe 9550–9555), e Periferica e Controller **non** possono stare in Coordinato né in Fireteam
+   (riga 9531).
+7. **(X) e (Escape System-X)**: il selettore va in **una direzione sola**. Una volta scelto il
+   secondo profilo, il primo non torna più disponibile per quella partita.
 
 ---
 

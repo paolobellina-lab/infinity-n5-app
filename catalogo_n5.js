@@ -1,4 +1,4 @@
-// @versione 2026-10-18.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-10-20.2 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -52,7 +52,10 @@ window.CATALOGO_N5.MUNIZIONI = {
     'AP':     { salvezze: 1, attributo: 'ARM|BTS', dimezza: true,  dannoPerFallimento: 1, statoFallimento: null, critExtra: 1, note: 'ATTRIBUTO DIPENDENTE DALL\'ARMA: AP dimezza ARM o BTS a seconda di cosa usa l\'arma. COME SI COMPORTA DAVVERO IL MOTORE: il dimezzamento lo decide SOLO il campo salvAttr dell\'arma (ARM/2, BTS/2). Il dimezza:true qui descrive la regola, non il calcolo: un\'arma AP con salvAttr senza /2 NON viene dimezzata; il motore segue il dato e lo segnala con l\'avviso A86.' },
     'DA':     { salvezze: 2, attributo: 'ARM', dimezza: false, dannoPerFallimento: 1, statoFallimento: null, critExtra: 1, note: 'Entrambe le salvezze obbligatorie. Critico -> 3 salvezze.' },
     'EXP':    { salvezze: 3, attributo: 'ARM', dimezza: false, dannoPerFallimento: 1, statoFallimento: null, critExtra: 1, note: 'Tutte e 3 obbligatorie. Critico -> 4 salvezze.' },
-    'SHOCK':  { salvezze: 1, attributo: 'ARM', dimezza: false, dannoPerFallimento: 1, statoFallimento: null, critExtra: 1, note: 'Se bersaglio ha VITA=1 e va Incosciente -> MORTO diretto. Annulla Dogged/NWI/Shasvastii.' },
+    'SHOCK':  { salvezze: 1, attributo: 'ARM', dimezza: false, dannoPerFallimento: 1, statoFallimento: null, critExtra: 1, note: 'Se bersaglio ha VITA=1 e va Incosciente -> MORTO diretto. Annulla Dogged/NWI/Shasvastii.',
+                // 19 ottobre (Paolo, MU-05): la nota che arriva al tabellone, solo
+                // contro chi ha VITA (contro STR lo Shock non fa niente di diverso).
+                notaSalvezza: { soloVita: true, testo: 'SHOCK: una truppa a VITA 1 che diventa Incosciente passa direttamente a Morto (niente Dogged, No Wound Incapacitation, Shasvastii).' } },
     'E/M':    { salvezze: 2, attributo: 'BTS', dimezza: true,  dannoPerFallimento: 0, statoFallimento: 'ISOLATO', critExtra: 1, note: 'Fallimento = Isolato; se HI/TAG/REM/VH anche IMM-B. Critico -> 3 salvezze.' },
     'T2':     { salvezze: 1, attributo: 'ARM', dimezza: false, dannoPerFallimento: 2, statoFallimento: null, critExtra: 1, critExtraDanno: 1, note: 'Ogni fallimento = 2 Ferite. La salvezza extra da Critico infligge solo 1 Ferita.' },
     'PARA':   { salvezze: 1, attributo: 'PH',  dimezza: false, tiroSpeciale: 'PH-6', dannoPerFallimento: 0, statoFallimento: 'IMM-A', critExtra: 1, note: 'Non ARM/BTS: e` un tiro PH-6. Nessun effetto su bersagli senza PH.' },
@@ -685,6 +688,16 @@ window.CATALOGO_N5.MOVIMENTO = {
                               ],
                               fonte: 'regolamento, p.80' },
         'RICARICARE':       { nome: 'Reload',            tipo: 'SHORT_SKILL', generaAro: true },
+        // 20 ottobre (Paolo): scendere e risalire valgono una meta` Ordine di
+        // Movimento (regola della casa: nel regolamento il cambio avviene
+        // all'inizio di un Movimento, righe 10278-10279). Chi puo` lo decide
+        // M.trasportoPossibile.
+        'SCENDI DALLA MOTO':{ nome: 'Scendi dalla moto', tipo: 'BASIC_SHORT', generaAro: true, trasporto: true,
+                              note: 'Il pilota scende; la moto diventa una Periferica (Synchronized) con STR propria.' },
+        'RISALI SULLA MOTO':{ nome: 'Risali sulla moto', tipo: 'BASIC_SHORT', generaAro: true, trasporto: true,
+                              note: 'Il pilota deve essere a contatto con la moto, e la moto non Isolata, Immobilizzata o in uno Stato Nullo.' },
+        'RISALI SUL TAG':   { nome: 'Risali sul TAG',    tipo: 'BASIC_SHORT', generaAro: true, trasporto: true,
+                              note: 'Il pilota uscito con l\'Escape System risale sul TAG vuoto (regola della casa). Il TAG torna attivo con le ferite che aveva.' },
         'ALLERTA':          { nome: 'Alert',             tipo: 'ARO',         generaAro: false },
         'GUARDA_FUORI':     { nome: 'Look Out',          tipo: 'SHORT_SKILL', generaAro: true },
         // 🔴 La chiave dev'essere la stringa CANONICA, la stessa che usano
@@ -911,6 +924,25 @@ window.CATALOGO_N5.SCHIERAMENTO = {
 
     // Di un Marker si vede il segnalino e nient\'altro.
     campiMarker: ['id', 'alias', 'name', 'tipo', 'deployState', 'imgVariant', 'states', 'x', 'y'],
+    // 20 ottobre (Paolo): i Marker sono NUMERATI, per tipo, per distinguerli
+    // al tavolo. Il numero lo da` l'app (il piu` basso libero fra i Marker
+    // dello stesso tipo della fazione) e Paolo schiera il segnalino con quel
+    // numero, come per i CrazyKoala. Nessun limite: le immagini sono
+    // previste fino a `immagini`; oltre, il numero c'e` ma l'immagine no.
+    // 20 ottobre, sera (Paolo): al tavolo si distinguono CAMO, CAMO-3 e
+    // CAMO-6, e IMP-1 da IMP-2: sono segnalini fisici diversi. Ogni tipo ha
+    // la SUA serie di numeri e le SUE immagini (CAMO-3 1, CAMO-3 2... a
+    // parte da CAMO 1, CAMO 2...). Il tipo lo decide M.segnalinoMarker:
+    // il Mimetismo del profilo per i CAMO, il livello per gli IMP.
+    // `aliasExtra` va nel nome che vede l'avversario, fra il nome del
+    // segnalino e il numero ("SEGNALINO MIMETICO (-3) 2").
+    segnaliniNumerati: {
+        'CAMO':   { immagini: 10, file: 'img/camo_{n}.png',   etichetta: 'CAMO',   aliasExtra: '' },
+        'CAMO-3': { immagini: 10, file: 'img/camo-3_{n}.png', etichetta: 'CAMO-3', aliasExtra: '(-3)' },
+        'CAMO-6': { immagini: 10, file: 'img/camo-6_{n}.png', etichetta: 'CAMO-6', aliasExtra: '(-6)' },
+        'IMP-1':  { immagini: 10, file: 'img/imp-1_{n}.png',  etichetta: 'IMP-1',  aliasExtra: '(IMP-1)' },
+        'IMP-2':  { immagini: 10, file: 'img/imp-2_{n}.png',  etichetta: 'IMP-2',  aliasExtra: '(IMP-2)' }
+    },
     noteMarker: 'Di un Marker Mimetico o Impersonation l\'avversario vede solo il segnalino: niente statistiche, armi, Abilita` o Equipaggiamento. Nemmeno il nome dell\'Unita`.',
 
     // Di una truppa visibile si vede tutto: e` sul tavolo a faccia in su.
@@ -918,9 +950,13 @@ window.CATALOGO_N5.SCHIERAMENTO = {
     // ("alguaciles_2.png"; chat INTERFACCIA, 7 ottobre: una foto per
     // miniatura fisica, proxy compresi). Per un Marker il motore lo riporta a
     // '0' (M.filtraPerAvversario): la foto direbbe chi sta sotto il segnalino.
+    // 19 ottobre (INTERFACCIA): mancavano `state` e `deployable`. Senza
+    // `state` all'Hub una truppa Morta (state 'DEAD') e una viva erano
+    // uguali — per ogni truppa, non solo per i koala. Tutti e due sono
+    // fatti del tavolo, a faccia in su.
     campiVisibili: ['id', 'nome', 'alias', 'name', 'tipo', 'deployState', 'imgVariant',
                     'states', 'combatGroup', 'cc', 'bs', 'ph', 'wip', 'arm', 'bts', 'w', 's',
-                    'mov', 'weapon', 'equip', 'skills', 'x', 'y'],
+                    'mov', 'weapon', 'equip', 'skills', 'x', 'y', 'state', 'deployable', 'chiaveArma'],
 
     etichette: {
         'CAMO': 'SEGNALINO MIMETICO',
@@ -2830,7 +2866,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-10-20.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

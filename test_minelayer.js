@@ -1,4 +1,12 @@
-// @versione 2026-10-12.2 | test_minelayer.js | proprieta`: chat TEST
+// @versione 2026-10-20.1 | test_minelayer.js | proprieta`: chat TEST
+// 2026-10-20.1: sezione 7 — il roster del piano (rev 34) ha 41 righe Nomadi; DEP-01
+//    nomina dodici truppe (nuovo lo Switcher #40, Madtraps).
+// 2026-10-19.1: sezione 7 — DEP-01 del piano (rev 33) nomina chi del roster piazza, e cosa.
+//    I portatori di D-Charges sono 152 (database 2026-10-19: tolto evader_multi,
+//    doppione di evader_engineer).
+// 2026-10-15.1: nomi aggiornati (2).
+//    Nomi dal database 2026-10-15.1 (DATABASE): Moran "Camouflage [1 Use]" col nome dell arma,
+//    Helot "Camouflage [1 Use]", Triggermen "[+1SD]". Solo il campo nome e` cambiato.
 // 2026-10-12.2: i portatori di D-Charges sono 153 (database .12.3: cancellato
 //    l Evader MULTI TinBot).
 // 2026-10-12.1: sezione 6 — cosa si piazza (motore 2026-10-12.2): D-Charges si`
@@ -120,7 +128,7 @@ const pronto = (n) => Object.assign(profilo(n), { deployState: 'NORMAL', state: 
 const nomiArmi = (r) => ((r && r.armi) || []).map(a => a.nome);
 const dueVersiP = (visti, attesi) => ({ comparsi: visti.filter(x => attesi.indexOf(x) < 0), spariti: attesi.filter(x => visti.indexOf(x) < 0) });
 const PIAZZABILI = { 'Spektr (Minelayer)': ['D-Charges (Demolition Mode)', 'E/M Mine', 'Shock Mine'],
-                     'Moran (Surprise Attack, Camouflage)': ['D-Charges (Demolition Mode)', 'CrazyKoalas'],
+                     'Moran (Surprise Attack [-3], Camouflage [1 Use], Combi Rifle)': ['D-Charges (Demolition Mode)', 'CrazyKoalas'],
                      'Puppet Masters (Minelayer)': ['Shock Mine'] };
 Object.keys(PIAZZABILI).forEach(function (n) {
     const d = dueVersiP(nomiArmi((typeof M.armiPiazzabili === 'function' ? M.armiPiazzabili : () => undefined)(pronto(n))), PIAZZABILI[n]);
@@ -131,12 +139,13 @@ Object.keys(PIAZZABILI).forEach(function (n) {
 const conDC = TUTTI.filter(u => /D-Charges/i.test((u.weapon || '') + ',' + (u.equip || '')));
 const senzaDC = conDC.filter(u => nomiArmi((typeof M.armiPiazzabili === 'function' ? M.armiPiazzabili : () => undefined)(Object.assign(JSON.parse(J(u)), { states: {}, deployState: 'NORMAL', state: 'ACTIVE' }))).indexOf('D-Charges (Demolition Mode)') < 0).map(u => u.nome);
 // 154 -> 153 col database .12.3: l Evader (MULTI Rifle, TinBot) e` stato cancellato.
-ok(conDC.length === 153 && senzaDC.length === 0,
+// 153 -> 152 col database 2026-10-19: tolto evader_multi (= evader_engineer), che portava le D-Charges.
+ok(conDC.length === 152 && senzaDC.length === 0,
    `i ${conDC.length} portatori di D-Charges le possono piazzare tutti (senza: ${senzaDC.length})`,
-   `senza: ${JSON.stringify(senzaDC.slice(0, 5))} — se 153 cambia, e\` cambiato il database: rimisura`);
+   `senza: ${JSON.stringify(senzaDC.slice(0, 5))} — se 152 cambia, e\` cambiato il database: rimisura`);
 // Il Minelayer NON le offre: quello che schiera prima della partita e` un
 // Deployable che resta sul tavolo, e le D-Charges no.
-['Spektr (Minelayer)', 'Firefly (Minelayer)', 'Moran (Surprise Attack, Camouflage)'].forEach(function (n) {
+['Spektr (Minelayer)', 'Firefly (Minelayer)', 'Moran (Surprise Attack [-3], Camouflage [1 Use], Combi Rifle)'].forEach(function (n) {
     const o = M.opzioniMinelayer(pronto(n));
     ok(o.ha === true && o.armi.length > 0 && o.armi.every(a => !/D-Charges/.test(a.nome)),
        `${n}: il Minelayer offre ${JSON.stringify(o.armi.map(a => a.nome))}, e mai le D-Charges`);
@@ -157,6 +166,45 @@ ok(nomiArmi(bb).length === 0 && (bb.escluse || []).some(e => /Mine Dispenser/.te
 // "escluso col motivo" non distingue la regola da un motivo messo a tutti.
 ok((typeof M.motivoNonPiazzabile === 'function' ? M.motivoNonPiazzabile : () => undefined)('Shock Mine') === null && (typeof M.motivoNonPiazzabile === 'function' ? M.motivoNonPiazzabile : () => undefined)('D-Charges (Demolition Mode)') === null,
    'CONTROPROVA: Shock Mine e D-Charges non hanno un motivo di esclusione');
+
+console.log('\n=== 7. DEP-01 del piano dice chi del roster piazza, e cosa (piano rev 33) ===');
+// Il piano elencava chi ha PIAZZARE EQUIPAGGIAMENTO a mano, e ne mancavano tre
+// (#4 Deployable Repeater, #29 Drop Bears, #35 PARA Mine) prima ancora che il
+// #8 diventasse l'Interventor col FastPanda (19 ottobre). Qui l'elenco si
+// ricalcola: roster del piano -> M.armiPiazzabili -> il testo di DEP-01.
+{
+    const fs = require('fs');
+    const PIANO = (process.env.CARTELLA || (__dirname + '/')).replace(/\/?$/, '/') + 'PIANO_COLLAUDO_N5.md';
+    if (!fs.existsSync(PIANO)) ok(false, 'PIANO_COLLAUDO_N5.md non trovato accanto al banco');
+    else {
+        const testo = fs.readFileSync(PIANO, 'utf8');
+        let fz = null; const roster = [];
+        testo.split('\n').forEach(r => { const t = r.trim();
+            if (/^\*\*Nomadi\*\*/.test(t)) { fz = 'N'; return; }
+            if (/^\*\*PanOceania\*\*/.test(t) || /^#{1,3}\s/.test(t)) { fz = null; return; }
+            const m = t.match(/^\|\s*(\d+)\s*\|\s*(.+?)\s*\|/);
+            if (fz && m) roster.push({ n: +m[1], nome: m[2].replace(/\*\*/g, '').replace(/`/g, '') }); });
+        ok(roster.length === 41, `premessa: il roster Nomadi del piano ha 41 righe (${roster.length})`);
+        const chi = roster.map(r => ({ n: r.n, nome: r.nome, armi: nomiArmi(M.armiPiazzabili(pronto(r.nome))).map(a => a.split(' (')[0]) }))
+                          .filter(r => r.armi.length);
+        const dep = (testo.match(/\*\*DEP-01 — [\s\S]*?(?=\n\*\*DEP-02 —)/) || [''])[0];
+        const atteso = (dep.match(/- \*\*Atteso:\*\*([\s\S]*?)Non compare/) || [])[1] || '';
+        const nelPiano = [...atteso.matchAll(/\*\(#(\d+)\)\*/g)].map(m => +m[1]);
+        ok(!!atteso, 'premessa: DEP-01 c e, con la frase di chi piazza');
+        ok(J(nelPiano.slice().sort((a, b) => a - b)) === J(chi.map(r => r.n)),
+           `DEP-01 nomina esattamente chi piazza, nei due versi: ${J(chi.map(r => r.n))}`, `nel piano: ${J(nelPiano)}`);
+        const armiMancanti = chi.filter(r => { const pezzo = (atteso.split('*(#' + r.n + ')*')[1] || '').split(';')[0];
+            return !r.armi.every(a => pezzo.indexOf(a) >= 0); }).map(r => '#' + r.n + ' ' + r.armi.join('+'));
+        ok(armiMancanti.length === 0, 'e per ognuno le sue armi da piazzare', J(armiMancanti));
+        const parole = ['zero','una','due','tre','quattro','cinque','sei','sette','otto','nove','dieci','undici','dodici','tredici'];
+        ok(new RegExp('\\*\\*' + parole[chi.length] + '\\*\\* truppe').test(atteso), `e dice quante sono: ${parole[chi.length]}`);
+        // CONTROPROVA: l'Interventor senza FastPanda non piazza niente: e` il
+        // cambio del #8 a portare la voce, non un motore diverso.
+        ok(nomiArmi(M.armiPiazzabili(pronto('Interventor (Hacker Plus)'))).length === 0 &&
+           J(nomiArmi(M.armiPiazzabili(pronto('Interventor (Hacker Plus, FastPanda)')))) === J(['FastPanda']),
+           'CONTROPROVA: Interventor (Hacker Plus) non piazza niente, quello col FastPanda il FastPanda');
+    }
+}
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

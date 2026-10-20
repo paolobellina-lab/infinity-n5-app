@@ -1,4 +1,6 @@
-// @versione 2026-10-19.1 | test_innesco_schermata.js | proprieta`: chat TEST
+// @versione 2026-10-19.2 | test_innesco_schermata.js | proprieta`: chat TEST
+// 2026-10-19.2: premessa 747 -> 745 profili, piazzabili 250 -> 249 (database 2026-10-19: tolto
+//    evader_multi, che piazzava le D-Charges).
 // 2026-10-19.1: logica_aro 2026-10-19.1 — koala e mine sono una riga aro-dep-<id>; la domanda
 //    sta nella pagina DETONAZIONE (apriDetonazione -> sceltaDetonazione, in aro-action-list);
 //    window.detonazioniAro parte con AVANTI e con NESSUN ARO.
@@ -216,11 +218,12 @@ console.log('\n--- DET-04: la voce PIAZZARE EQUIPAGGIAMENTO la decide il motore 
   const g = d.g, M = g.MotoreN5;
   const pronti = [...(g.DB_NOMADI || []), ...(g.DB_PANOCEANIA || [])].map((p, i) =>
     Object.assign(JSON.parse(JSON.stringify(p)), { id: 'pz' + i, states: {}, state: 'ACTIVE', deployState: 'NORMAL', combatGroup: 1 }));
-  ok(pronti.length === 747 &&   // 747 dal database 2026-10-16.2: tolte 11 righe doppie (4 Nomadi, 7 PanOceania)
+  ok(pronti.length === 745 &&   // 745 dal database 2026-10-19 (Nomadi 19.1, PanOceania 19.2): 4 tolti, 2 aggiunti
+        // 747 dal database 2026-10-16.2: tolte 11 righe doppie (4 Nomadi, 7 PanOceania)
         // 758 dal database 2026-10-16.1: cancellati anche fusilier_lt2, orc_lieutenant, orc_lieutenant_2
         // 761 dal 12 ottobre sera (database .12.3): cancellati evader_multi_tb, triggermen_multi, hannibal_cmd, hannibal_strategic
       typeof g.puoFareAzione === 'function' && typeof M.armiPiazzabili === 'function',
-     'premessa: 747 profili, puoFareAzione nella pagina e armiPiazzabili nel motore', [pronti.length, typeof g.puoFareAzione, typeof M.armiPiazzabili]);
+     'premessa: 745 profili, puoFareAzione nella pagina e armiPiazzabili nel motore', [pronti.length, typeof g.puoFareAzione, typeof M.armiPiazzabili]);
   const pagina = new Set(), motore = new Set();
   pronti.forEach(u => {
     if (g.puoFareAzione(u, 'PIAZZARE EQUIPAGGIAMENTO')) pagina.add(u.nome);
@@ -230,7 +233,8 @@ console.log('\n--- DET-04: la voce PIAZZARE EQUIPAGGIAMENTO la decide il motore 
   ok(soloPagina.length === 0, `nessuno ha la voce senza niente da piazzare (pagina ${pagina.size}, motore ${motore.size})`, soloPagina.slice(0, 6));
   ok(soloMotore.length === 0, 'e nessuno che puo` piazzare resta senza la voce', soloMotore.slice(0, 6));
   // 251 -> 250 col database .12.3: l Evader (MULTI Rifle, TinBot), cancellato, portava le D-Charges.
-  ok(motore.size === 250, `premessa: chi puo\` piazzare sono ${motore.size} profili — se 250 cambia, e\` cambiato il database o il motore: rimisura`, motore.size);
+  // 250 -> 249 col database 2026-10-19: tolto evader_multi, che portava le D-Charges.
+  ok(motore.size === 249, `premessa: chi puo\` piazzare sono ${motore.size} profili — se 249 cambia, e\` cambiato il database o il motore: rimisura`, motore.size);
   // Nominati: i due della prova, e due che la voce devono averla.
   const NO = ['Krakot Renegade (Boarding Shotgun)', 'Bambabot-1 (Chain Rifle (ps=6))'];
   const SI = ['Puppet Masters (Minelayer)', 'Moran (Surprise Attack [-3], Camouflage [1 Use], Combi Rifle)'];

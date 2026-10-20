@@ -1,4 +1,4 @@
-// @versione 2026-10-19.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-20.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -428,7 +428,12 @@ window.STATI_TABELLONE = {
     hidden:         { icona: '🫥',  testo: 'NASCOSTO',        sfondo: '#1a1a1a', colore: '#888888' },
     decoy:          { icona: '🪞',  testo: 'DECOY',           sfondo: '#204040', colore: '#99ffff' },
     holoecho:       { icona: '🌀',  testo: 'HOLOECHO',        sfondo: '#204040', colore: '#99ffff' },
-    holomask:       { icona: '🎭',  testo: 'HOLOMASK',        sfondo: '#204040', colore: '#99ffff' }
+    holomask:       { icona: '🎭',  testo: 'HOLOMASK',        sfondo: '#204040', colore: '#99ffff' },
+    // 20 ottobre (Paolo, Escape System): il TAG resta sul tavolo vuoto. Non
+    // e` uno stato del catalogo (e` una regola della casa): il motore lo
+    // mette in states.tagVuoto, e prima qui finiva fra i "non normalizzati"
+    // come un generico punto di domanda con la scritta TAGVUOTO.
+    tagVuoto:       { icona: '🪂',  testo: 'TAG VUOTO',       sfondo: '#1a1a33', colore: '#ccccff' }
 };
 
 
@@ -447,7 +452,7 @@ window.ICONE_STATI = {
     stordito: 'icon_stunned', immA: 'icon_imma', immB: 'icon_immb', isolato: 'icon_isolated',
     disconnesso: 'icon_disconnected', posseduto: 'icon_possessed', sepsitorizzato: 'icon_sepsitorized',
     camo: 'icon_camo', imp: 'icon_imp', hidden: 'icon_hidden', decoy: 'icon_decoy',
-    holoecho: 'icon_holoecho', holomask: 'icon_holomask'
+    holoecho: 'icon_holoecho', holomask: 'icon_holomask', tagVuoto: 'icon_tag_vuoto'
 };
 
 window.etichettaStato = (icona, testo, sfondo, colore, titolo, nullo, idStato) => {
@@ -489,8 +494,12 @@ window.mostraDettaglioStato = (idStato, nome) => {
     }
     window.dettaglioStatoAperto = idStato;
 
-    const voce = ((window.CATALOGO_N5 || {}).STATI || {})[idStato] ||
-                 ((window.CATALOGO_N5 || {}).STATI_NON_GESTITI || {})[idStato] || {};
+    // Il TAG vuoto non sta nel catalogo degli stati: come se ne esce lo
+    // dice la regola della casa (MOTORE, 20 ottobre), scritta qui una volta.
+    const voce = (idStato === 'tagVuoto')
+        ? { cancellazione: ['Il pilota risale sul TAG: RISALI SUL TAG, metà Ordine di Movimento, a contatto col TAG (regola della casa). Il TAG torna attivo con le ferite che aveva.'] }
+        : (((window.CATALOGO_N5 || {}).STATI || {})[idStato] ||
+           ((window.CATALOGO_N5 || {}).STATI_NON_GESTITI || {})[idStato] || {});
     const modi = Array.isArray(voce.cancellazione) ? voce.cancellazione : null;
 
     let corpo;
@@ -577,11 +586,21 @@ window.generateStateTags = (unit) => {
         });
     });
 
+    // 1b. TAG vuoto (Escape System, 20 ottobre): fuori dal catalogo, quindi
+    //     statiPerCategoria non lo restituisce. Si disegna qui, col suo nome.
+    const tagVuoto = !!(unit && unit.states && unit.states.tagVuoto);
+    if (tagVuoto) {
+        const v = window.STATI_TABELLONE.tagVuoto;
+        tags += window.etichettaStato(v.icona, v.testo, v.sfondo, v.colore,
+            'Escape System: il pilota è uscito. Niente Ordini né ARO finché non risale.', false, 'tagVuoto');
+    }
+
     // 2. Quello che solo statoBersaglio sa: cosa il profilo scrive e il
     //    motore non normalizza, piu` le quantita`.
     const s = M.statoBersaglio(unit);
 
-    (s.nonNormalizzati || []).forEach(k => {
+    // tagVuoto e` gia` disegnato sopra: non lo si ripete come sconosciuto.
+    (s.nonNormalizzati || []).filter(k => !(tagVuoto && k === 'tagVuoto')).forEach(k => {
         tags += window.etichettaStato('\u2753', String(k).toUpperCase(), '#552200', '#ffaa66',
             'Stato presente nel profilo ma non normalizzato dal motore');
     });
@@ -729,7 +748,9 @@ window.fotoTruppaHub = (u, fazione) => {
                      el.find(d => String(u.id || '').indexOf('dep_' + d.id + '_') === 0);
         if (voce) return 'img/' + voce.id + '.png';
     }
-    if (String(u.nome || u.name || '') === 'MARKER') return 'img/MARKER.png';
+    // 20 ottobre (Paolo): il segnalino numerato (img/camo_2.png...), se il
+    // motore lo manda. Prima ogni Marker aveva lo stesso img/MARKER.png.
+    if (String(u.nome || u.name || '') === 'MARKER') return u.immagineMarker || 'img/MARKER.png';
     return '';
 };
 
@@ -761,8 +782,10 @@ window.schedaTruppa = (u, fazione) => {
     const skill = window.skillVisibiliDi(u);
     const foto = window.fotoTruppaHub(u, fazione);
     const sigla = String((u && u.tipo) || '').slice(0, 3) || '?';
+    // Immagine numerata non ancora caricata: si ripiega sul segnalino comune.
+    const ripiegoFoto = (u && u.immagineMarker && foto === u.immagineMarker) ? 'img/MARKER.png' : '';
     const immagine = foto
-        ? `<img class="st-foto" src="${foto}" alt="" onerror="this.outerHTML='<div class=&quot;st-sigla&quot;>${sigla}</div>';">`
+        ? `<img class="st-foto" src="${foto}" alt="" onerror="${ripiegoFoto ? `if(!this.dataset.ripiego){this.dataset.ripiego='1';this.src='${ripiegoFoto}';return;}` : ''}this.outerHTML='<div class=&quot;st-sigla&quot;>${sigla}</div>';">`
         : `<div class="st-sigla">${sigla}</div>`;
     return `<div class="scheda-truppa" data-fazione="${fazione}" style="--st-colore:${colore};">
             ${immagine}
@@ -932,11 +955,22 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
     }
 
     scontri.forEach((scontro, index) => {
-        let dadiDifensoreHtml = scontro.reattivo.burst > 0 
+        // 20 ottobre (MOTORE 20.3): Sagoma Diretta, colpo senza tiro. Il motore
+        // la segna con automatico: true e mod 'Auto', all'attivo e ora anche al
+        // reattivo in ARO. Prima qui si leggeva solo il Burst: la cella diceva
+        // "Successo al: Auto (o meno)" e "Dadi da lanciare: 1", un tiro che
+        // non c'e`. Il Burst di una Sagoma e` il numero di Sagome da piazzare.
+        const sagomaHtml = (lato) => {
+            const n = lato.burst || 0;
+            return `<div style="margin-top:15px; font-size:18px; color:#fff;">Nessun dado: colpo automatico` +
+                (n > 1 ? `<br><span style="color:#aaa; font-size:14px;">Sagome da piazzare:</span> <span style="color:#ffcc00; font-weight:bold; font-size:28px;">${n}</span>` : '') + `</div>`;
+        };
+        const eSagoma = (lato) => !!(lato && lato.dati && lato.dati.automatico && !lato.dati.requisitoFallito && !lato.dati.colpoAnnullato);
+        let dadiDifensoreHtml = eSagoma(scontro.reattivo) ? sagomaHtml(scontro.reattivo) : scontro.reattivo.burst > 0 
             ? `<div style="margin-top:15px; font-size:18px; color:#fff;">Dadi da lanciare: <span style="color:#ffcc00; font-weight:bold; font-size:28px;">${scontro.reattivo.burst}</span></div>`
             : `<div style="margin-top:15px; font-size:18px; color:#555;">Nessun dado</div>`;
 
-        let dadiAttaccanteHtml = scontro.attivo.burst > 0 
+        let dadiAttaccanteHtml = eSagoma(scontro.attivo) ? sagomaHtml(scontro.attivo) : scontro.attivo.burst > 0 
             ? `<div style="margin-top:15px; font-size:18px; color:#fff;">Dadi da lanciare: <span style="color:#ffcc00; font-weight:bold; font-size:28px;">${scontro.attivo.burst}</span></div>`
             : `<div style="margin-top:15px; font-size:18px; color:#555;">Nessun dado</div>`;
 
@@ -971,6 +1005,10 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
                        // Il motivo e` del motore (dati.note). Stava solo nei
                        // dettagli, che sono chiusi: qui si legge subito.
                        `<span style="color:#cc8888; font-size:12px;">${(Array.isArray(lato.dati.note) && lato.dati.note.length) ? lato.dati.note.join('<br>') : 'Il tiro non si esegue.'}</span><br>`;
+            }
+            if (eSagoma(lato)) {
+                return `<span style="color:#00ff00; font-weight:bold; font-size:22px;">COLPO AUTOMATICO</span><br>` +
+                       `<span style="color:#888; font-size:12px;">Sagoma Diretta: nessun tiro per colpire</span><br>`;
             }
             if (!(lato && lato.burst > 0)) return `<br>`;
             // Misurato il 6 ottobre con INGRESSO IN CAMPO e TRINCERARSI: il
@@ -1018,11 +1056,20 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
                     <div style="flex:1; text-align:right; ${opz.dx || ''} ${fondo(celle[1], true)}">${celle[1].html}</div>
                 </div>`;
         };
+        // 20 ottobre (TEST, via MOTORE): il tabellone stampava l'id interno
+        // ("Azione: CC_ATTACK"). Il nome da leggere lo da` M.nomeAzione; un
+        // motore senza la funzione (prima della 2026-10-20.3) lo dice.
+        const nomeAzioneTab = (id) => {
+            const M = window.MotoreN5;
+            if (M && typeof M.nomeAzione === 'function') return M.nomeAzione(id);
+            console.error('\u26d4 M.nomeAzione assente (serve motore_regole_n5.js dalla 2026-10-20.3): il tabellone mostra l id interno ' + id);
+            return id;
+        };
         const allineaDalLatoDi = (fazione) => (window.latoDi(fazione) === 'DX') ? 'right' : 'left';
         const testa = (lato, attivo) => ruolo(attivo) +
             `<b style="color:${colore(lato.fazione)}; font-size:22px;">${lato.fazione} ${lato.nome}</b><br>`;
         const cellaPiena = (lato, attivo, modHtml, dadiHtml) => ({ fazione: lato.fazione, html: testa(lato, attivo) +
-            `<span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${lato.azione}</span><br>
+            `<span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${nomeAzioneTab(lato.azione)}</span><br>
                         ${modHtml}
                         ${dadiHtml}` });
         const cellaSpenta = (lato, attivo) => ({ fazione: lato.fazione, acceso: false, html: testa(lato, attivo) +
@@ -1132,7 +1179,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-10-19.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-10-20.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

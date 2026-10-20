@@ -1,4 +1,4 @@
-// @versione 2026-10-18.1 | ordine_coordinato.js | proprieta`: chat MOTORE
+// @versione 2026-10-20.1 | ordine_coordinato.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔗 ORDINE COORDINATO E SELEZIONE (N5) - ordine_coordinato.js
 // ------------------------------------------
@@ -259,7 +259,9 @@ window.mostraTitoloUnitaCorrente = () => {
             }
         }
         let lanciaStr = isSpearhead 
-            ? `<br><span style="font-size:16px; color:#00ff00;">[🎯 PUNTA DI LANCIA — metà Burst${dadi}]</span>` 
+            // 20 ottobre (Paolo): l'icona della Punta di Lancia. Se il file
+            // manca torna il 🎯 di prima.
+            ? `<br><span style="font-size:16px; color:#00ff00;">[<img src="img/icon_spearhead.png" class="spearhead-token" style="margin:0 6px 0 0;" alt="" onerror="this.outerHTML='🎯 '">PUNTA DI LANCIA — metà Burst${dadi}]</span>` 
             : `<br><span style="font-size:16px; color:#ff9900;">[GREGARIO — Burst 1]</span>`;
         
         header.style.display = 'block';
@@ -275,7 +277,7 @@ window.mostraTitoloUnitaCorrente = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_coordinato.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_coordinato.js', versione: '2026-10-20.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

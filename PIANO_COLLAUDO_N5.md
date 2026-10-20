@@ -1,6 +1,6 @@
-<!-- @versione 2026-10-19.2 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-10-20.3 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 32)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 36)
 
 Bozza scritta dalla chat MOTORE il 15 ottobre, su richiesta di Paolo, da far
 adottare a TEST. Segue il motore **2026-10-15.1**, `motore_core.js`,
@@ -21,6 +21,40 @@ bersaglio dell'Attacco BS: cambiano OSS-01 (si dichiara la Copertura, −3) e
 OSS-03 (niente tasto Copertura: tolti dall'«Atteso» il bersaglio in copertura e
 il MOD barrato della Copertura, il tiro "senza Abilità" passa da 1 a 4). Le
 prove restano 290.
+
+**Revisione 33** (TEST, 19 ottobre): segue i database **2026-10-19** (Nomadi
+19.1, PanOceania 19.2: 745 profili) e `app.html` **2026-10-19.2**. Il #8 del
+roster è **Interventor (Hacker Plus, FastPanda)**, il profilo della lista di
+Infinity Army di Paolo (sua decisione): le prove dell'Interventor non cambiano.
+Nuova la nota sull'import della lista (capitolo 1.1). DEP-01 riscritta: col
+FastPanda il #8 piazza, e all'elenco mancavano già #4, #29 e #35. Le prove
+restano 290.
+
+**Revisione 34** (TEST, 20 ottobre): segue il motore e il catalogo
+**2026-10-20.2**, `motore_core.js`, `logica_stati.js`, `ordine_movimento.js`,
+`ordine_coordinato.js` **2026-10-20.1**, i database **2026-10-20.1** (745
+profili; secondo profilo, moto ed Escape System) e i file di INTERFACCIA
+**2026-10-20.1**. Il #18 del roster diventa **Zondnautica-A**: lo Zondmate
+(REM) non si sceglie più a mano, nasce in partita con SCENDI DALLA MOTO
+(cambiano A-05, CC-04 e ST-05, che lo usano); nuovi Switcher *(#40)* e Anaconda
+(Heavy Machine Gun) *(#41)*, e lo Switcher entra in DEP-01 (Madtraps). Cambiano MU-05, MU-08, MU-09,
+MU-11, CC-03, LOG-02, TPL-05, FT-01 e FT-02; nuove SCH-06 (Marker numerati),
+ST-22 (secondo profilo), ST-23 (Transmutation WIP), LOG-04 (moto), LOG-05
+(Escape System), CO-14 (Punta di Lancia) e DIF-14 (Fumo in ARO). Ogni «Atteso»
+cambiato o nuovo è stato misurato sulle pagine intere prima di scriverlo.
+
+**Revisione 35** (TEST, 20 ottobre, sera): segue il motore **2026-10-20.3**,
+`ordine_movimento.js` **2026-10-20.2** e `calcolatore_controller.js`
+**2026-10-20.2**. I due difetti del capitolo 31 sono corretti e diventano prove:
+TPL-10 (Sagoma Diretta in ARO) e LOG-06 (la seconda metà offre solo quello che
+la truppa può fare). Cambia TPL-01: sul tabellone l'attivo con la Sagoma Diretta
+si legge **COLPO AUTOMATICO**, non più «Auto».
+
+**Revisione 36** (TEST, 20 ottobre, sera): segue il motore **2026-10-20.4**. La
+Schivata di chi innesca un koala o una mina (e il Reset contro una Cybermine)
+sta **dentro** lo scontro della detonazione: sul tabellone c'è uno scontro solo,
+non più un «TIRO DI SUPPORTO / DIFESA» a parte. Cambiano DEP-06 e DET-01,
+misurate sulle pagine intere. Le prove restano 299.
 
 Ogni prova dice **chi** agisce, **quale Ordine** dichiara, **con che cosa**,
 **contro chi**, **a che distanza** (in pollici) e **cosa si deve leggere**. Dove
@@ -58,10 +92,10 @@ casella della barra.
 più tutti i MOD. Si tira 1d20 e serve **uguale o meno**. La salvezza si scrive
 **ARM VS 8 ×1**: ARM (o BTS, o PH) più il PS dell'arma, un dado.
 
-**Il conteggio.** Il piano contiene **290 prove, tutte nello stesso formato**:
-tutte e 290, nelle stesse cinque righe; le convenzioni servono a non scrivere
-la stessa riga 290 volte. I codici sono uno per prova: alla revisione 32 sono 290.
-Prove con un campo da completare: 0 prove su 290
+**Il conteggio.** Il piano contiene **299 prove, tutte nello stesso formato**:
+tutte e 299, nelle stesse cinque righe; le convenzioni servono a non scrivere
+la stessa riga 299 volte. I codici sono uno per prova: alla revisione 36 sono 299.
+Prove con un campo da completare: 0 prove su 299
 Il numero lo controlla `test_piano_schieramento.js`: non si cambia a mano.
 
 **Se un numero non torna**, guarda prima la scheda ufficiale della miniatura e
@@ -85,7 +119,7 @@ letto, cosa ti aspettavi.
 | 5 | Alguacil (Paramedic) | MediKit |
 | 6 | Daktari (Doctor) | Dottore |
 | 7 | Clockmaker (Engineer) | Ingegnere, GizmoKit(+1B) |
-| 8 | Interventor (Hacker Plus) | Carbonite, Oblivion, Spotlight, Total Control, Cybermask |
+| 8 | Interventor (Hacker Plus, FastPanda) | Carbonite, Oblivion, Spotlight, Total Control, Cybermask, FastPanda |
 | 9 | Zero (Hacker, Killer Hacking Device) | Trinity, Camo, Shock Mine |
 | 10 | Intruder (MULTI Sniper Rifle) | MSV L2, `MULTI Sniper Rifle (+1SD)` |
 | 11 | Grenzer (Marksmanship) | Marksmanship, MULTI Sniper Rifle |
@@ -95,7 +129,7 @@ letto, cosa ti aspettavi.
 | 15 | Reaktion Zond (HMG) | Total Reaction, REM, PARA CC Weapon |
 | 16 | Mobile Brigada (HMG) | HI, ARM 5 |
 | 17 | Puppetbot (Red Fury) | BS Attack (+1B), Dodge (+3) |
-| 18 | Zondmate (REM) | PARA CC Weapon(-3) |
+| 18 | Zondnautica-A | AI Motorcycle: SCENDI / RISALI. Smontata, la moto è lo **Zondmate (REM)**: PARA CC Weapon(-3), Periferica |
 | 19 | Moran (Surprise Attack [-3], Camouflage [1 Use], Combi Rifle) | CrazyKoalas, D-Charges, Camouflage (1 Use) |
 | 20 | Sin-Eater (MULTI Sniper Rifle) | Neurocinetics |
 | 21 | Mary Problems (Hacker) | Pitcher, Zapper, upgrade di hacking, Climbing Plus |
@@ -117,6 +151,8 @@ letto, cosa ti aspettavi.
 | 37 | Hawkwood (K1 Sniper Rifle) | ARM = 0 |
 | 38 | **Marspider (Grenades)** | **nuova**: Grenades senza visore (TER-06) |
 | 39 | **Clockmaker (Armed Turret)** | **nuova**: Armed Turret (DEP-11) |
+| 40 | **Switcher** | **nuova**: Transmutation (WIP), secondo profilo Enhanced (ST-23); Madtraps |
+| 41 | **Anaconda (Heavy Machine Gun)** | **nuova**: TAG con Escape System, pilota Operator (LOG-05) |
 
 **PanOceania**
 
@@ -138,6 +174,26 @@ letto, cosa ti aspettavi.
 | 14 | Dr. Harper FTO | No Cover, No Wound Incapacitation, Plasma Carbine |
 | 15 | Swiss Guard (Heavy Machine Gun, Pulzar) | Mimetismo -6 |
 | 16 | **Laxmee (Hacker)** | **nuova**: Fairy Dust (HK-07) |
+
+**Importare la lista.** Il roster Nomadi si può importare dal testo di
+Infinity Army (*Plain Text*): è la lista di collaudo di Paolo. Tre truppe non
+ci sono e vanno aggiunte a mano dopo l'import: Spector *(#29)*, Saito Togan
+*(#33)* e Hawkwood *(#37)*. Una riga che corrisponde a più profili a pari
+punti l'app non la sceglie da sola: compare sotto il riquadro del testo, e il
+profilo lo tocca il giocatore. **Da verificare al tavolo:** con un testo vero
+di Infinity Army che contenga un Drummer da 47 pt, l'import deve riconoscere
+il Drummer giusto dai Drumbot elencati sotto di lui.
+
+**La Zondnautica è UNA unità** (20 ottobre). Nella lista di Paolo la
+Zondnautica-A porta sotto di sé il pilota e la moto: l'import li legge come
+parte di lei e non crea Zondnaut e Zondmate a parte. Lo stesso per i TAG con
+Escape System (Anaconda, Maximus): l'Operator elencato sotto il TAG non è
+un'unità a parte. Pilota e moto, o pilota e TAG vuoto, nascono in partita (LOG-04,
+LOG-05). **Lo Zondmate (REM) non si può aggiungere a mano**: è un profilo
+secondario. Le prove che lo usano (A-05, CC-04, ST-05) partono dalla
+Zondnautica-A *(#18)* con SCENDI DALLA MOTO. Switcher *(#40)* e Anaconda (Heavy
+Machine Gun) *(#41)* non sono nella lista di Paolo: si aggiungono a mano, come
+Spector, Saito Togan e Hawkwood.
 
 ## 1.2 Terreni
 
@@ -214,8 +270,8 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 - **Atteso:** **nessun allarme**, con il motivo; la busta all'Hub parte lo stesso. Il secondo Cauto **richiede di nuovo** la risposta: non eredita quella del primo.
 
 **A-05 — Cauto negato**
-- **Attivo:** apri il menu degli Ordini di Reaktion Zond (HMG) *(Nomadi #15)*, Zondmate (REM) *(Nomadi #18)* e Alguacil (Combi Rifle) *(Nomadi #1)* messo **Bersagliato** dall'editor degli stati
-- **Atteso:** MOVIMENTO CAUTO **non compare** per nessuno dei tre (REM; AI Motorcycle; Bersagliato).
+- **Attivo:** apri il menu degli Ordini di Reaktion Zond (HMG) *(Nomadi #15)*, Zondnautica-A *(Nomadi #18)* in sella, lo Zondmate (REM) nato dalla Zondnautica-A con SCENDI DALLA MOTO, e Alguacil (Combi Rifle) *(Nomadi #1)* messo **Bersagliato** dall'editor degli stati
+- **Atteso:** MOVIMENTO CAUTO **non compare** per nessuno dei quattro (REM; Motorcycle; AI Motorcycle; Bersagliato). Controprova: lo Zondnaut-A a piedi **lo ha**.
 
 **A-06 — Idle**
 - **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* · IDLE
@@ -485,7 +541,7 @@ Bersagli di riferimento: **Fusilier (Combi Rifle)** *(PanOceania #1: ARM 1, BTS
 **MU-05 — Red Fury (SHOCK)**
 - **Attivo:** Puppetbot (Red Fury) *(Nomadi #17)* · ATTACCO BS
 - **Con:** Red Fury, munizione SHOCK
-- **Atteso:** Fusilier **ARM VS 8 ×1**; Orc **ARM VS 11 ×1**. La nota dice che una truppa a VITA 1 che diventa Incosciente passa a Morto.
+- **Atteso:** Fusilier **ARM VS 8 ×1**; Orc **ARM VS 11 ×1**. Nella salvezza la nota *«SHOCK: una truppa a VITA 1 che diventa Incosciente passa direttamente a Morto (niente Dogged, No Wound Incapacitation, Shasvastii).»* Solo contro bersagli con VITA: contro un TAG (STR) la nota non c'è.
 
 **MU-06 — DA CC Weapon (DA)**
 - **Attivo:** Teutonic Knight (TinBot: Firewall) *(PanOceania #7)* · ATTACCO CC
@@ -502,12 +558,12 @@ Bersagli di riferimento: **Fusilier (Combi Rifle)** *(PanOceania #1: ARM 1, BTS
 - **Attivo:** Go-Pod (MULTI Rifle) *(Nomadi #34)* · ATTACCO BS
 - **Con:** E/Mitter, munizione E/M
 - **Bersaglio:** Fusilier e Orc a **8-16"** (l'E/Mitter a 0-8" ha −3)
-- **Atteso:** Fusilier **BTS VS 7 ×2**; Orc **BTS VS 9 ×2**. Fallita: Isolato.
+- **Atteso:** Fusilier **BTS VS 7 ×2**; Orc **BTS VS 9 ×2**. Nella salvezza, in rosso, **«Fallimento = Isolato»**.
 
 **MU-09 — PARA CC Weapon (PARA)**
 - **Attivo:** Reaktion Zond (HMG) *(Nomadi #15)* · ATTACCO CC
 - **Con:** PARA CC Weapon(-3)
-- **Atteso:** Fusilier **PH VS 4 ×1**; Orc **PH VS 8 ×1** (PH −6). Nessuna Ferita: Immobilizzato-A.
+- **Atteso:** Fusilier **PH VS 4 ×1**; Orc **PH VS 8 ×1** (PH −6). Nessuna Ferita: nella salvezza, in rosso, **«Fallimento = Immobilizzato-A»**.
 
 **MU-10 — Adhesive Launcher Rifle**
 - **Attivo:** Racerbot Mk-I (Adhesive Launcher Rifle) *(Nomadi #35)* · ATTACCO BS
@@ -519,7 +575,7 @@ Bersagli di riferimento: **Fusilier (Combi Rifle)** *(PanOceania #1: ARM 1, BTS
 - **Attivo:** Alguacil (Forward Observer) *(Nomadi #4)* · ATTACCO BS
 - **Con:** Flash Pulse
 - **Bersaglio:** Fusilier e Orc a **8-16"**
-- **Atteso:** tiro su **WIP** (13 +3 = 16). Fusilier **BTS VS 7 ×1**; Orc **BTS VS 10 ×1**.
+- **Atteso:** tiro su **WIP** (13 +3 = 16). Fusilier **BTS VS 7 ×1**; Orc **BTS VS 10 ×1**. Nella salvezza, in rosso, **«Fallimento = Stordito»**.
 
 **MU-12 — Nanopulser**
 - **Attivo:** Chimera *(Nomadi #14)* · ATTACCO BS
@@ -591,7 +647,7 @@ Bersagli di riferimento: **Fusilier (Combi Rifle)** *(PanOceania #1: ARM 1, BTS
 - **Con:** Chain Rifle
 - **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* sotto la Sagoma, *BERSAGLIO SOTTO LA SAGOMA*
 - **ARO:** Fusilier → SCHIVATA, con LoF
-- **Atteso:** **TIRO NORMALE**: attivo **Auto**, reattivo **PH 10**, salvezza Fusilier **ARM VS 8 ×1**. Nota: chi è colpito da una Sagoma non prende il +3 di copertura.
+- **Atteso:** **TIRO NORMALE**: attivo **COLPO AUTOMATICO** (*«Sagoma Diretta: nessun tiro per colpire»*, *«Nessun dado: colpo automatico»*), reattivo **PH 10**, salvezza Fusilier **ARM VS 8 ×1**. Nota: chi è colpito da una Sagoma non prende il +3 di copertura.
 
 **TPL-02 — Continuous Damage**
 - **Attivo:** Grenzer (Forward Observer, Sensor, NCO) *(Nomadi #12)* · ATTACCO BS
@@ -619,7 +675,7 @@ Bersagli di riferimento: **Fusilier (Combi Rifle)** *(PanOceania #1: ARM 1, BTS
 - **Con:** Chain Rifle
 - **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* sotto la Sagoma
 - **ARO:** Fusilier → SCHIVATA **senza LoF** verso il Morlock; poi la stessa prova **con LoF**
-- **Atteso:** la Schivata è **sempre concessa** contro una Sagoma, con la nota. Senza LoF **PH 7** (10 −3); con LoF **PH 10**.
+- **Atteso:** la Schivata è **sempre concessa** contro una Sagoma, con la nota. Senza LoF **PH 7** (10 −3); con LoF **PH 10**. In più la nota *«Se la Schivata riesce, il bersaglio esce dalla Sagoma (fino a 2"): non subisce il colpo e non fa il Tiro Salvezza.»*
 
 **TPL-06 — Critico solo sul Principale**
 - **Attivo:** Alguacil (Missile Launcher) *(Nomadi #3)* · ATTACCO BS
@@ -647,6 +703,13 @@ Bersagli di riferimento: **Fusilier (Combi Rifle)** *(PanOceania #1: ARM 1, BTS
 - **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* e Fusilier (Missile Launcher) *(PanOceania #2)*
 - **ARO:** nessuno
 - **Atteso:** in testa *«UNA SAGOMA: ogni bersaglio scelto è sotto l'area e ne subisce il colpo»*; accanto ai due nomi *«1 Sagoma»*, senza tasti − e +. Sul tabellone due scontri, ARM VS 8 per tutti e due.
+
+**TPL-10 — Sagoma Diretta in ARO** *(nuova)*
+- **Attivo:** Fusilier (Combi Rifle) *(PanOceania #1)* · ATTACCO BS
+- **Con:** Combi Rifle
+- **Bersaglio:** Morlock (Assault Pistol) *(Nomadi #13)* a 0-8"
+- **ARO:** Morlock → ATTACCO BS, **Chain Rifle**, contro il Fusilier
+- **Atteso:** **TIRO NORMALE** (righe 3657-3661): il Fusilier tira **15** con 3 dadi; il Morlock **COLPO AUTOMATICO**, nessun dado. Tutti e due infliggono la salvezza: **ARM VS 8 ×1** a ciascuno. Nota *«Sagoma Diretta del reattivo: colpisce senza tiro…»*. Mai *«Valore di Successo non fornito dal calcolo»*. Controprova: lo stesso ARO con l'**Assault Pistol** è un **Faccia a Faccia**.
 
 ---
 
@@ -780,10 +843,10 @@ Bersagli di riferimento: **Fusilier (Combi Rifle)** *(PanOceania #1: ARM 1, BTS
 - **Con:** AP CC Weapon(PS=6)
 - **Bersaglio:** (a) Fusilier (Combi Rifle) *(PanOceania #1)* messo **Incosciente**; (b) Fusilier sano; (c) Dr. Harper FTO *(PanOceania #14, No Wound Incapacitation)* messo **Incosciente**
 - **ARO:** nessuno
-- **Atteso:** (a) riquadro rosso **☠️ COLPO DI GRAZIA**: nessun tiro d'attacco, nessun Tiro Salvezza, *«Senza alcun tiro, il bersaglio passa automaticamente da Incosciente a Morto, senza possibilità di Tiro Salvezza.»* (b) nessun riquadro: *«Il bersaglio non è Incosciente.»* (c) riquadro giallo **⚠️ COLPO DI GRAZIA NON APPLICABILE**: *«Il bersaglio ha Dogged o No Wound Incapacitation: il Colpo di Grazia non si usa, il CC Attack si risolve normalmente.»*
+- **Atteso:** (a) riquadro rosso **☠️ COLPO DI GRAZIA**: nessun tiro d'attacco, nessun Tiro Salvezza, *«Senza alcun tiro, il bersaglio passa automaticamente da Incosciente a Morto, senza possibilità di Tiro Salvezza.»* Sul tabellone dell'Hub lo scontro si chiama **COLPO DI GRAZIA**: *Azione: COLPO DI GRAZIA*, **Nessun dado** per tutti e due, **Nessun Tiro Salvezza**. (b) nessun riquadro: *«Il bersaglio non è Incosciente.»* (c) riquadro giallo **⚠️ COLPO DI GRAZIA NON APPLICABILE**: *«Il bersaglio ha Dogged o No Wound Incapacitation: il Colpo di Grazia non si usa, il CC Attack si risolve normalmente.»*
 
 **CC-04 — PARA CC Weapon**
-- **Attivo:** Zondmate (REM) *(Nomadi #18)* · ATTACCO CC
+- **Attivo:** Zondmate (REM) — la moto della Zondnautica-A *(Nomadi #18)* dopo SCENDI DALLA MOTO · ATTACCO CC
 - **Con:** PARA CC Weapon(-3)
 - **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)*, a contatto
 - **ARO:** nessuno
@@ -815,25 +878,25 @@ Tutte le prove di hacking: bersaglio **nell'Area di Hacking**. Gittata e
 copertura non contano e la schermata non le chiede.
 
 **HK-00 — Programmi per dispositivo**
-- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)*, Zero (Hacker, Killer Hacking Device) *(Nomadi #9)*, Orc (Hacker, Hacking Device) *(PanOceania #4)* · HACKING, guarda l'elenco dei programmi
+- **Attivo:** Interventor (Hacker Plus, FastPanda) *(Nomadi #8)*, Zero (Hacker, Killer Hacking Device) *(Nomadi #9)*, Orc (Hacker, Hacking Device) *(PanOceania #4)* · HACKING, guarda l'elenco dei programmi
 - **Atteso:** Interventor: Carbonite, Oblivion, Spotlight, Total Control fra gli attacchi (più Cybermask e White Noise). Zero: **solo Trinity** fra gli attacchi. Orc: i quattro programmi base, nessun Cybermask.
 
 **HK-01 — Carbonite**
-- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* · HACKING
+- **Attivo:** Interventor (Hacker Plus, FastPanda) *(Nomadi #8)* · HACKING
 - **Con:** CARBONITE
 - **Bersaglio:** Orc (Hacker, Hacking Device) *(PanOceania #4)*
 - **ARO:** Orc → RESET, contro l'Interventor
 - **Atteso:** Faccia a Faccia. Attivo WIP **15** B2, reattivo Reset WIP **12** B1. Salvezza dell'Orc **BTS VS 10 ×2**.
 
 **HK-02 — Oblivion**
-- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* · HACKING
+- **Attivo:** Interventor (Hacker Plus, FastPanda) *(Nomadi #8)* · HACKING
 - **Con:** OBLIVION
 - **Bersaglio:** Orc (Hacker, Hacking Device) *(PanOceania #4)*
 - **ARO:** nessuno
 - **Atteso:** WIP **15** B1. Salvezza **BTS VS 6 ×1** (BTS dimezzato + PS 4), effetto Isolato.
 
 **HK-03 — Spotlight su un non hacker**
-- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* · HACKING
+- **Attivo:** Interventor (Hacker Plus, FastPanda) *(Nomadi #8)* · HACKING
 - **Con:** SPOTLIGHT
 - **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)*
 - **ARO:** nessuno
@@ -847,41 +910,41 @@ copertura non contano e la schermata non le chiede.
 - **Atteso:** WIP 13 +3 = **16** B3, con la voce *«TRINITY: +3 WIP»*. Salvezza **BTS VS 9 ×1**.
 
 **HK-05 — Filtro bersagli**
-- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* per CARBONITE, OBLIVION, TOTAL CONTROL e SPOTLIGHT; Zero (Hacker, Killer Hacking Device) *(Nomadi #9)* per TRINITY · HACKING
+- **Attivo:** Interventor (Hacker Plus, FastPanda) *(Nomadi #8)* per CARBONITE, OBLIVION, TOTAL CONTROL e SPOTLIGHT; Zero (Hacker, Killer Hacking Device) *(Nomadi #9)* per TRINITY · HACKING
 - **Bersaglio:** sul tavolo Tikbalang *(PanOceania #8)*, Orc *(#4)*, Fusilier (Combi Rifle) *(#1)* e Croc Man (MULTI Sniper Rifle) *(#6)* come Marker CAMO
 - **ARO:** nessuno
 - **Atteso:** CARBONITE e OBLIVION: Tikbalang e Orc ammessi; Fusilier no (*«non hackerabile»*); Croc Man no (*«va Scoperto prima»*). TOTAL CONTROL: solo il Tikbalang. TRINITY: solo l'Orc. SPOTLIGHT: anche il Fusilier.
 
 **HK-06 — Firewall**
-- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8, WIP 15)* · HACKING
+- **Attivo:** Interventor (Hacker Plus, FastPanda) *(Nomadi #8, WIP 15)* · HACKING
 - **Con:** CARBONITE
 - **Bersaglio:** Teutonic Knight (TinBot: Firewall) *(PanOceania #7, BTS 3)*
 - **ARO:** nessuno
 - **Atteso:** tiro **12**, voce *«Firewall del bersaglio: −3 WIP»*. Salvezza **BTS VS 13 ×2**, voce *«Firewall del bersaglio: +3 BTS (equivalente Copertura)»*. Il Firewall fa due cose: se ne vedi una sola, metà della regola manca.
 
 **HK-07 — Due fonti dello stesso Firewall**
-- **Attivo:** prima Laxmee (Hacker) *(PanOceania #16)* · HACKING · **FAIRY DUST** sugli **HI**; poi, nel turno nomade, Interventor (Hacker Plus) *(Nomadi #8)* · HACKING
+- **Attivo:** prima Laxmee (Hacker) *(PanOceania #16)* · HACKING · **FAIRY DUST** sugli **HI**; poi, nel turno nomade, Interventor (Hacker Plus, FastPanda) *(Nomadi #8)* · HACKING
 - **Con:** CARBONITE
 - **Bersaglio:** Teutonic Knight (TinBot: Firewall) *(PanOceania #7, HI)*
 - **ARO:** nessuno
 - **Atteso:** Firewall **−3, non −6**: tiro **12**, salvezza **BTS VS 13 ×2** con il +3 una volta sola. La nota dice che le fonti sono due — *«il suo (-3) e il Fairy Dust di … (-3)»* — e che la scelta spetta al giocatore del bersaglio. Il Repeater non compare.
 
 **HK-08 — Firewall spento**
-- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* · HACKING
+- **Attivo:** Interventor (Hacker Plus, FastPanda) *(Nomadi #8)* · HACKING
 - **Con:** CARBONITE
 - **Bersaglio:** Teutonic Knight (TinBot: Firewall) *(PanOceania #7)* messo **Isolato**
 - **ARO:** nessuno
 - **Atteso:** tiro **15** e salvezza **BTS VS 10 ×2**: niente −3, niente +3. È la controprova di HK-06.
 
 **HK-09 — ECM (Hacking −3)**
-- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* · HACKING
+- **Attivo:** Interventor (Hacker Plus, FastPanda) *(Nomadi #8)* · HACKING
 - **Con:** CARBONITE
 - **Bersaglio:** Aquila *(PanOceania #11)*
 - **ARO:** nessuno
 - **Atteso:** tiro **12**, voce *«ECM (Hacking -3) del bersaglio: -3 WIP»*. L'ECM non dà il +3 alla salvezza: la salvezza è **BTS VS 13 ×2** perché il BTS dell'Aquila è 6.
 
 **HK-10 — Dati da verificare**
-- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)* con TOTAL CONTROL sul Tikbalang *(PanOceania #8)*; Zero *(Nomadi #9)* con TRINITY sull'Orc *(#4)* · HACKING
+- **Attivo:** Interventor (Hacker Plus, FastPanda) *(Nomadi #8)* con TOTAL CONTROL sul Tikbalang *(PanOceania #8)*; Zero *(Nomadi #9)* con TRINITY sull'Orc *(#4)* · HACKING
 - **ARO:** nessuno
 - **Atteso:** l'avviso **A91** — *«Dati di "<programma>" non verificati sulla scheda ufficiale»* — compare sui programmi che il catalogo marca `fonte: 'DA VERIFICARE'`. Se non compare su nessuno dei due, chiedi a DATABASE se sono stati verificati prima di segnalarlo.
 
@@ -893,7 +956,7 @@ copertura non contano e la schermata non le chiede.
 - **Atteso:** l'upgrade entra nel calcolo — l'Oblivion di Mary Problems a **Burst 2** — oppure compare l'avviso **A94**. Mai ignorato in silenzio.
 
 **HK-12 — Reset contro l'hacking, Schivata contro il BS**
-- **Attivo:** prima Interventor (Hacker Plus) *(Nomadi #8)* · HACKING · CARBONITE; poi Alguacil (Combi Rifle) *(Nomadi #1)* · ATTACCO BS · Combi Rifle a 8-16", copertura no
+- **Attivo:** prima Interventor (Hacker Plus, FastPanda) *(Nomadi #8)* · HACKING · CARBONITE; poi Alguacil (Combi Rifle) *(Nomadi #1)* · ATTACCO BS · Combi Rifle a 8-16", copertura no
 - **Bersaglio:** Orc (Hacker, Hacking Device) *(PanOceania #4)*
 - **ARO:** l'Orc apre il menu degli ARO
 - **Atteso:** contro l'HACKING: Reset sì, **Schivata no**. Contro l'ATTACCO BS: Schivata sì, e Reset sì anche lui (vedi AR-01). La differenza da leggere è la Schivata.
@@ -1009,7 +1072,7 @@ Il bersaglio delle prove SCO è il **Croc Man (MULTI Sniper Rifle)**
 
 Nelle prove DIF-01…04 attacca il **Fusilier (Combi Rifle)** *(PanOceania #1)*
 con ATTACCO BS, Combi Rifle, a 8-16", senza copertura. Nelle DIF-05…08
-attacca l'**Interventor (Hacker Plus)** *(Nomadi #8)* con HACKING, CARBONITE.
+attacca l'**Interventor (Hacker Plus, FastPanda)** *(Nomadi #8)* con HACKING, CARBONITE.
 
 **DIF-01 — Schivata con LoF**
 - **Bersaglio e ARO:** Alguacil (Combi Rifle) *(Nomadi #1, PH 10)* → SCHIVATA, **con** LoF verso il Fusilier
@@ -1070,6 +1133,13 @@ attacca l'**Interventor (Hacker Plus)** *(Nomadi #8)* con HACKING, CARBONITE.
 - **ARO:** nessuno
 - **Atteso:** la Soppressione sparisce appena parte l'Ordine: dalla riga dell'unità **e anche dall'elenco dell'Hub** (l'app lo avvisa con un aggiornamento).
 
+**DIF-14 — Fumo in ARO** *(nuova)*
+- **Attivo:** Fusilier (Combi Rifle) *(PanOceania #1)* · ATTACCO BS
+- **Con:** Combi Rifle
+- **Bersaglio:** Morlock (Assault Pistol) *(Nomadi #13)* a **0-8"**
+- **ARO:** Morlock → ATTACCO BS, **Smoke Grenades**, contro il Fusilier
+- **Atteso:** **TIRO FACCIA A FACCIA**: Morlock **13** con 1 dado (*«Smoke Grenades: Tratto "BS Weapon (PH)" — si tira su PH, non su BS.»*), Fusilier **15** con 3 dadi. Per il Fusilier *«Nessun Tiro Salvezza: azione non offensiva.»*; il Morlock, se perde, **ARM VS 8 ×1**. Controprova: lo stesso ARO contro l'ATTACCO BS dell'Aquila *(PanOceania #11, Multispectral Visor L3)* dà **TIRO NORMALE** per tutti e due (righe 5810-5812: chi ha un Multispectral Visor non fa Faccia a Faccia contro il Fumo).
+
 ---
 
 # 15. Blocco M — Stati dell'attivo
@@ -1092,7 +1162,7 @@ IDLE, CAUTO, SALTO, ARRAMPICARSI, SOPPRESSIONE, REQUEST SPEEDBALL.
 - **Atteso:** l'Isolato **si attiva col PROPRIO Ordine Irregolare**, non con uno del Pool: la riga dice **📵 ORDINE IRREGOLARE PROPRIO**, con la nota *«Isolato: niente Ordini dal Pool. Usa solo il proprio Ordine Irregolare (non trasformabile in Regolare).»* Il menu è pieno (l'Alguacil non ha Hacking). È **escluso dal Coordinato**: **E59**.
 
 **ST-05 — Disconnesso**
-- **Attivo:** Zondmate (REM) *(Nomadi #18)*, una Periferica, messo **Disconnesso** dall'editor degli stati; poi apri l'editor dell'Alguacil #1
+- **Attivo:** Zondmate (REM) — la moto della Zondnautica-A *(Nomadi #18)* dopo SCENDI DALLA MOTO, una Periferica — messo **Disconnesso** dall'editor degli stati; poi apri l'editor dell'Alguacil #1
 - **Atteso:** lo Zondmate: nessun Ordine. L'Alguacil **non ha la casella** Disconnesso: lo stato è solo delle Periferiche.
 
 **ST-06 — IMM-A**
@@ -1155,6 +1225,14 @@ IDLE, CAUTO, SALTO, ARRAMPICARSI, SOPPRESSIONE, REQUEST SPEEDBALL.
 - **Attivo:** Croc Man (MULTI Sniper Rifle) *(PanOceania #6)* schierato Marker · guarda il tabellone e le note di uno Scoprire su di lui
 - **Atteso:** **CAMO** in tutti e due i posti. La Skill Mimetismo si chiama ancora così, con il suo −6.
 
+**ST-22 — Secondo profilo a senso unico** *(nuova)*
+- **Attivo:** Puppetbot (Red Fury) *(Nomadi #17)* con un soprannome, messo **Bersagliato**; apri l'editor degli stati
+- **Atteso:** il tasto **🔄 PASSA AL PROFILO: Puppetbot (Red Fury) - Battle Ravaged**, senza «TIRO RIUSCITO». Toccato e confermato: **BS 11, ARM 0** (prima 12 e 1); soprannome, Bersagliato, Gruppo e foto restano; l'Hub vede BS 11 e ARM 0. Riaperto l'editor, il tasto **non c'è più**: resta la scritta *«Secondo profilo in uso»*. Controprova: l'editor dell'Alguacil (Combi Rifle) *(#1)* non ha il tasto.
+
+**ST-23 — Transmutation (WIP): avanti, indietro, e da sola al cambio turno** *(nuova)*
+- **Attivo:** Switcher *(Nomadi #40)* · apri l'editor degli stati
+- **Atteso:** il tasto **🔄 TIRO RIUSCITO: PASSA AL PROFILO: Switcher - Enhanced Profile**, con la spiegazione del tiro (*Tiro Normale di WIP 13* prima di dichiarare un Ordine o un ARO). Toccato: **CC 23** (prima 15), e l'Hub vede CC 23. Riaperto l'editor: **↩️ TORNA AL PRIMO PROFILO**; toccato: CC 15, anche all'Hub. Ripassa al profilo Enhanced, poi **cambia turno** dall'Hub: lo Switcher torna da solo a **CC 15**, e l'Hub lo vede (AGGIORNAMENTO). Controprova: un Puppetbot *(#17)* passato a Battle Ravaged (ST-22) al cambio turno **resta** Battle Ravaged; un secondo cambio turno non cambia niente.
+
 ---
 
 # 16. Blocco N — Stati del reattivo
@@ -1162,7 +1240,7 @@ IDLE, CAUTO, SALTO, ARRAMPICARSI, SOPPRESSIONE, REQUEST SPEEDBALL.
 Per tutte: il reattivo è l'**Orc (Hacker, Hacking Device)** *(PanOceania #4)*,
 messo nello stato indicato; si apre il suo menu degli ARO. L'attivo è
 **Alguacil (Combi Rifle)** *(Nomadi #1)* · ATTACCO BS, Combi Rifle a 8-16",
-contro l'Orc; oppure, dove la prova dice HACKING, **Interventor (Hacker Plus)**
+contro l'Orc; oppure, dove la prova dice HACKING, **Interventor (Hacker Plus, FastPanda)**
 *(Nomadi #8)* · HACKING, CARBONITE, contro l'Orc.
 
 **AR-01 — Normale, contro un ATTACCO BS**
@@ -1205,7 +1283,7 @@ contro l'Orc; oppure, dove la prova dice HACKING, **Interventor (Hacker Plus)**
 
 **DEP-01 — Chi può piazzare**
 - **Attivo:** le truppe nomadi del roster · apri il menu degli Ordini di ognuna
-- **Atteso:** PIAZZARE EQUIPAGGIAMENTO compare, con queste armi: Moran *(#19)* CrazyKoalas e D-Charges; Zero *(#9)* Shock Mine; Puppet Masters *(#22)* Shock Mine; Kulak *(#23)* Cybermine e D-Charges; Clockmaker (Armed Turret) *(#39)* Armed Turret e D-Charges; Clockmaker (Engineer) *(#7)* e Intruder (Hacker, Killer Hacking Device) *(#25)* solo D-Charges. Non compare al Puppetbot *(#17)*, al Krakot *(#31)* né al Bambabot-1 *(#32)*: Chest Mine e Mine Dispenser non hanno il Tratto Deployable.
+- **Atteso:** PIAZZARE EQUIPAGGIAMENTO compare a **dodici** truppe, con queste armi: Alguacil (Forward Observer) *(#4)* Deployable Repeater; Clockmaker (Engineer) *(#7)* D-Charges; Interventor *(#8)* FastPanda; Zero *(#9)* Shock Mine; Moran *(#19)* CrazyKoalas e D-Charges; Puppet Masters *(#22)* Shock Mine; Kulak *(#23)* Cybermine e D-Charges; Intruder (Hacker, Killer Hacking Device) *(#25)* D-Charges; Spector *(#29)* Drop Bears; Racerbot Mk-I *(#35)* PARA Mine; Clockmaker (Armed Turret) *(#39)* Armed Turret e D-Charges; Switcher *(#40)* Madtraps. Non compare alle altre, fra cui il Puppetbot *(#17)*, il Krakot *(#31)* e il Bambabot-1 *(#32)*: Chest Mine e Mine Dispenser non hanno il Tratto Deployable.
 
 **DEP-02 — Le domande bloccano prima**
 - **Attivo:** Moran *(Nomadi #19)* · IDLE → PIAZZARE EQUIPAGGIAMENTO
@@ -1233,7 +1311,7 @@ contro l'Orc; oppure, dove la prova dice HACKING, **Interventor (Hacker Plus)**
 **DEP-06 — Il koala scatta**
 - **Attivo:** nel turno PanOceania, Fusilier (Combi Rifle) *(PanOceania #1)* · MUOVERE, e finisce nella Zona di Controllo del CrazyKoala del Moran
 - **ARO:** il CrazyKoala → si attiva da solo; alla domanda *«è dentro la ZdC, con percorso libero?»* rispondi **sì**. Il Fusilier risponde con una SCHIVATA
-- **Atteso:** il segnalino compare nella schermata ARO **separato** dalle truppe: non dichiara, si attiva. **TIRO NORMALE**: attivo **Auto**, Schivata del Fusilier a **PH 10** senza il −3 per la LoF, salvezza **ARM VS 6**. Due note, una volta sola ciascuna: *«Se la Schivata riesce, l'attacco è evitato del tutto»* e *«Dopo la detonazione l'arma è rimossa dal gioco»*.
+- **Atteso:** il segnalino compare nella schermata ARO **separato** dalle truppe: non dichiara, si attiva. Sul tabellone **uno scontro solo**, *«CrazyKoala #1 detona su …»*: il koala **DETONAZIONE, Nessun dado**; il Fusilier **SCHIVATA (Tiro Normale)** a **PH 10**, senza il −3 (il koala non è una Sagoma); salvezza **SHOCK, ARM VS 6 ×1**. Nessun *«TIRO DI SUPPORTO / DIFESA»* a parte. Due note, una volta sola ciascuna: *«L'unico modo di evitarlo è una Schivata riuscita»* e *«Dopo la detonazione l'arma è rimossa dal gioco»*.
 
 **DEP-07 — Il koala non scatta**
 - **Attivo:** nel turno PanOceania, nella Zona di Controllo del CrazyKoala: (a) Zulu-Cobra *(PanOceania #10)* come **Marker CAMO** · MUOVERE; (b) Fusilier *(#1)* · MUOVERE, lasciando **senza risposta** la domanda sulla ZdC
@@ -1268,26 +1346,40 @@ contro l'Orc; oppure, dove la prova dice HACKING, **Interventor (Hacker Plus)**
 # 18. Blocco P — Logistica
 
 **LOG-02 — Ingresso in campo**
-- **Attivo:** Spector (Parachutist, Combat Jump) *(Nomadi #29, PH 13)*, in Riserva · INGRESSO IN CAMPO (AD)
+- **Attivo:** Spector (Parachutist, Combat Jump) *(Nomadi #29, PH 13)*, in Riserva: apri il suo menu degli Ordini, poi INGRESSO IN CAMPO (AD)
 - **ARO:** nessuno
-- **Atteso:** la schermata mostra **PH 13** con la voce *«PH di <soprannome>: 13»*, poi una domanda bloccante sul punto di atterraggio con **sei divieti** (l'ultimo, solo per il Combat Jump: niente Visibilità Bassa, Pessima o Zero, Fumo ed Eclipse compresi). Finché non rispondi il tasto dice **RISPONDI ALLA DOMANDA**. Prima del tiro il riquadro *SE IL TIRO FALLISCE*: si entra comunque dalla propria Zona di Schieramento, come Modello e senza i Deployable. Controprova: Alguacil (Combi Rifle) *(#1)* non ha la voce.
+- **Atteso:** la schermata mostra **PH 13** con la voce *«PH di <soprannome>: 13»*, poi una domanda bloccante sul punto di atterraggio con **sei divieti** (l'ultimo, solo per il Combat Jump: niente Visibilità Bassa, Pessima o Zero, Fumo ed Eclipse compresi). Finché non rispondi il tasto dice **RISPONDI ALLA DOMANDA**. Prima del tiro il riquadro *SE IL TIRO FALLISCE*: si entra comunque dalla propria Zona di Schieramento, come Modello e senza i Deployable. Nel menu dello Spector in Riserva c'è **SOLO** «INGRESSO IN CAMPO (AD)». Controprova: lo stesso Spector schierato sul tavolo ha il menu normale, **senza** Ingresso; l'Alguacil (Combi Rifle) *(#1)* non ha la voce.
 
 **LOG-03 — Request Speedball**
 - **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1, PH 10)*, poi Squalo Mk-II (MULTI Marksman Rifle) *(PanOceania #12, PH 15)* · REQUEST SPEEDBALL
 - **ARO:** nessuno
 - **Atteso:** per tutti e due **14**, con la voce *«PH fisso 14: non quello della truppa»*. Servono **due** Token: il primo si sceglie, il secondo si tira sulla tabella (1-3 VITAPACK, 4-6 AUTOREPAIRS, 7-10 SWITCH ON, 11-13 JETPACK, 14-16 OVERKILL, 17-20 NANOSHIELD).
 
+**LOG-04 — Moto: scendere e risalire** *(nuova)*
+- **Attivo:** Zondnautica-A *(Nomadi #18)* · SCENDI DALLA MOTO
+- **ARO:** nessuno
+- **Atteso:** in sella il menu ha **SCENDI DALLA MOTO** e non RISALI. Scelta la voce: la Zondnautica-A diventa **Zondnaut-A** e nasce una seconda unità, **Zondmate (REM)** (STR 1), nello stesso Gruppo; l'Hub la vede; all'avversario parte l'**allarme ARO** e a te si offre la **seconda metà**. A piedi il menu del pilota ha **RISALI SULLA MOTO** e non SCENDI. Moto messa **Isolata** dall'editor: il pilota **non ha** RISALI. Moto sana: RISALI → torna **Zondnautica-A**, la moto esce dal roster. Controprova: l'Alguacil (Combi Rifle) *(#1)* non ha nessuna delle tre voci nel menu.
+
+**LOG-05 — Escape System: il pilota esce e risale** *(nuova)*
+- **Attivo:** Anaconda (Heavy Machine Gun) *(Nomadi #41)* · editor degli stati → **🪂 ESCAPE SYSTEM: FAI USCIRE IL PILOTA**
+- **Atteso:** il TAG resta sul tavolo **vuoto**: icona TAG VUOTO sulla riga, non attivabile; all'Hub la scheda dice **TAG VUOTO**. Nasce il pilota **Operator (Spitfire)** nello stesso Gruppo. In ARO il TAG vuoto non si sceglie: *«TAG vuoto: il pilota è uscito (Escape System). Non dichiara ARO finché non risale.»*; il pilota sì. Il menu del pilota ha **RISALI SUL TAG**: scelto, il pilota esce dal roster e il TAG torna attivo. Controprova: TAG messo **Morto** → RISALI negato, *«Il TAG e` distrutto (Stato Nullo): non si risale.»*
+
+**LOG-06 — La seconda metà: solo quello che la truppa può fare** *(nuova)*
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* · MUOVERE → guarda la seconda metà; poi Zondnautica-A *(Nomadi #18)* · SCENDI DALLA MOTO → guarda la seconda metà
+- **ARO:** nessuno
+- **Atteso:** l'Alguacil **non** ha SCENDI DALLA MOTO, RISALI SULLA MOTO né RISALI SUL TAG, e nemmeno HACKING; ATTACCO BS sì. Il pilota appena sceso ha **RISALI SULLA MOTO**, e non SCENDI né RISALI SUL TAG.
+
 ---
 
 # 19. Blocco Q — Fireteam
 
 **FT-01 — Livello = truppe della stessa Unità**
-- **Attivo:** Fireteam con Alguacil *(Nomadi #1, #2, #3, #4, #5)* · apri la schermata del Fireteam
-- **Atteso:** **LIVELLO 5 (5 membri)** e i cinque bonus.
+- **Attivo:** Alguacil *(Nomadi #1, #2, #3, #4, #5)* messi in **TEAM A** dall'editor degli stati (il #1 **Leader**), tutti nello stesso Gruppo; poi dai un Ordine all'Alguacil #1
+- **Atteso:** il banner in cima alla pagina delle azioni dice **🔥 FIRETEAM A — LIVELLO 5 (5 membri) 🔥** e i cinque bonus: *BS Attack (+1 SD) | +3 Discover | +1 Schivata | +1 BS | Sesto Senso*.
 
 **FT-02 — Cinque truppe diverse**
-- **Attivo:** Fireteam con Alguacil *(#1)*, Grenzer (Marksmanship) *(#11)*, Zero *(#9)*, Daktari *(#6)*, Morlock (Assault Pistol) *(#13)* · apri la schermata del Fireteam
-- **Atteso:** **LIVELLO 1 (5 membri)**, con la nota, e nessun bonus.
+- **Attivo:** Alguacil *(#1)*, Grenzer (Marksmanship) *(#11)*, Zero *(#9)*, Daktari *(#6)*, Morlock (Assault Pistol) *(#13)* messi in **TEAM A** dall'editor degli stati (l'Alguacil **Leader**), tutti nello stesso Gruppo; poi dai un Ordine all'Alguacil
+- **Atteso:** il banner dice **🔥 FIRETEAM A — LIVELLO 1 (5 membri) 🔥**, con la nota *«Livello 1 su 5 membri: solo 1 appartengono alla stessa Unità.»* e *Bonus: nessuno*.
 
 **FT-03 — Il +1 BS**
 - **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)*, in Fireteam con gli Alguacil #2, #3, #4 (Livello 4) · ATTACCO BS
@@ -1379,6 +1471,10 @@ Tutte le prove: truppe dello stesso Gruppo, dove non è scritto altro. Bersaglio
 - **Attivo:** Coordinato con gli Alguacil #1 e #2
 - **Atteso:** il promemoria che il Command Token si scala **a mano**.
 
+**CO-14 — L'icona della Punta di Lancia** *(nuova)*
+- **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* e Alguacil (HMG) *(#2)* · ORDINE COORDINATO, il #1 Punta di Lancia, poi conferma la squadra
+- **Atteso:** mentre scegli la squadra la riga del #1 ha l'icona della Punta di Lancia (`img/icon_spearhead.png`; senza il file la scritta), il #2 no. Nel riquadro in alto della pagina dell'Ordine: *-- ALGUACIL --* con l'icona e **PUNTA DI LANCIA — metà Burst — B2**; per il #2 **[GREGARIO — Burst 1]**, senza icona. Controprova: in un Ordine singolo nessuna icona.
+
 ---
 
 # 21. Blocco S — Schieramento
@@ -1402,6 +1498,10 @@ Tutte le prove: truppe dello stesso Gruppo, dove non è scritto altro. Bersaglio
 **SCH-05 — Terreni solo fra quelli in schieramento**
 - **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* · ATTACCO BS sul Fusilier #1 · tocca la riga Terreno
 - **Atteso:** compaiono solo i cinque terreni del capitolo 1.2, più Fumo ed Eclipse.
+
+**SCH-06 — Marker numerati: una serie per segnalino** *(nuova)*
+- **Attivo:** in schieramento metti in CAMO Zero *(Nomadi #9)*, Intruder (HMG) *(#24)* e Saito Togan *(#33)*; metti in **IMP-1** dall'editor degli stati Interventor *(#8)* e Kulak *(#23)*; poi conferma lo schieramento
+- **Atteso:** accanto al nome, nella tua app: Interventor **IMP-1 1**, Zero **CAMO-3 1**, Kulak **IMP-1 2**, Intruder (HMG) **CAMO-3 2**, Saito **CAMO-6 1**. Il segnalino lo decide il Mimetismo del profilo (−3 → CAMO-3, −6 → CAMO-6) e, per gli IMP, il livello: ogni segnalino ha la sua serie. L'avversario e l'Hub vedono *«SEGNALINO MIMETICO (-3) 1»*, *«SEGNALINO MIMETICO (-3) 2»*, *«SEGNALINO MIMETICO (-6) 1»*, *«PERSONAGGIO SCONOSCIUTO (IMP-1) 1»* e *«PERSONAGGIO SCONOSCIUTO (IMP-1) 2»*, con le immagini `img/camo-3_1.png`, `camo-3_2.png`, `camo-6_1.png`, `imp-1_1.png`, `imp-1_2.png`; nessun nome vero. Poi lo Zero si rivela e metti in CAMO l'Intruder (MULTI Sniper Rifle) *(#10)*: prende **CAMO-3 1**, l'Intruder (HMG) resta CAMO-3 2. Poi il Kulak passa a IMP-2 dall'editor: **IMP-2 1**, l'Interventor resta IMP-1 1. Nel roster non c'è un Marker senza Mimetismo: il CAMO semplice (*«SEGNALINO MIMETICO 1»*, `img/camo_1.png`) e l'undicesimo Marker di una serie (numero sì, immagine no) li tiene `test_novita_20ott.js`.
 
 ---
 
@@ -1588,7 +1688,7 @@ già sul tavolo. Nel turno PanOceania si muove il **Fusilier (Combi Rifle)**
 **DET-01 — La mina detona e chi l'ha innescata schiva**
 - **Attivo:** Fusilier *(PanOceania #1)* · MUOVERE → SCHIVATA
 - **ARO:** la Shock Mine → DETONAZIONE, contro il Fusilier
-- **Atteso:** a sinistra **SCHIVATA (Tiro Normale) 7** (PH 10 −3), sotto la salvezza della mina con la sua munizione.
+- **Atteso:** **uno scontro solo**, *«Mina Shock #1 detona su …»*: la mina **DETONAZIONE, Nessun dado**; il Fusilier **SCHIVATA (Tiro Normale) 7** (PH 10 −3, voce *«Schivata contro la Sagoma di un Deployable: -3»*), e sotto la salvezza della mina con la sua munizione: **SHOCK, ARM VS 8 ×1**. Nessun *«TIRO DI SUPPORTO / DIFESA»* a parte.
 
 **DET-02 — Senza Schivata dichiarata**
 - **Attivo:** Fusilier *(PanOceania #1)* · MUOVERE → MUOVERE
@@ -1654,7 +1754,7 @@ già sul tavolo. Nel turno PanOceania si muove il **Fusilier (Combi Rifle)**
 - **Atteso:** le domande sono bloccanti: senza una risposta non si esegue. È il modello della famiglia (DEP-02, DET-04).
 
 **ORD-02 — Cybermask**
-- **Attivo:** Interventor (Hacker Plus) *(Nomadi #8)*; Zero (Hacker, Killer Hacking Device) *(#9)*; Orc (Hacker, Hacking Device) *(PanOceania #4)* · apri il menu degli Ordini, poi HACKING
+- **Attivo:** Interventor (Hacker Plus, FastPanda) *(Nomadi #8)*; Zero (Hacker, Killer Hacking Device) *(#9)*; Orc (Hacker, Hacking Device) *(PanOceania #4)* · apri il menu degli Ordini, poi HACKING
 - **ARO:** nessuno
 - **Atteso:** CYBERMASK **non è più fra le voci del menu degli Ordini**: sta nella schermata **HACKING**, col bottone dei programmi (*Abilità Lunga · Ordine intero · nessun tiro · genera ARO*). Interventor: CYBERMASK e WHITE NOISE. Zero: solo CYBERMASK. Orc: nessuno dei due. Toccando CYBERMASK parte l'allarme ARO, e sul tabellone **ABILITÀ SENZA TIRO**; nessuna domanda sulla Linea di Tiro, e lo stato **IMP-2 lo metti tu** dall'editor degli stati. Come seconda metà il Cybermask è bloccato: è un'Abilità Lunga.
 
@@ -1830,6 +1930,8 @@ quello indicato.
 | Le novità del 18-19 ottobre: FUORI GITTATA come segmento, Burst 2 del FO, Marker col Mimetismo, allarmi ARO di Sensor, Triangulated, Supporto e Soppressione, MediKit e GizmoKit, Cybermask dall'Hacking | `test_novita_18ott.js` |
 | La scheda del bersaglio di Forward Observer e Triangulated Fire: COPERTURA −3 nel FO, nessun tasto Copertura nel Triangulated, LINEA DI TIRO NO → IDLE, OSS-03 coi suoi numeri | `test_scheda_osservazione.js` |
 | La pagina DETONAZIONE di koala e mine, e la busta che parte con AVANTI e NESSUN ARO | `test_innesco_schermata.js` |
+| Le novità del 20 ottobre: profili collegati nel database, secondo profilo e Transmutation (WIP) dall'editor e al cambio turno, moto ed Escape System (chi non può risalire), Marker numerati per segnalino, MOVIMENTO senza tiro, nomi delle armi in ARO, Fumo in ARO fino al tabellone; la Sagoma Diretta in ARO e la seconda metà filtrata (sez. 10); la Schivata contro koala e mina, e il Reset contro la Cybermine, dentro lo scontro della detonazione (sez. 11) | `test_novita_20ott.js` |
+| La Schivata contro Sagoma senza LoF (PH−3) | `test_orchestratore.js` |
 
 Una trappola da sapere scrivendo una prova nuova: la chiave di un requisito non
 è il nome del campo. `gittata` legge `fuoriGittata` (manca se **true**),

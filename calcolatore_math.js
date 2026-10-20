@@ -1,4 +1,4 @@
-// @versione 2026-10-07.4 | calcolatore_math.js | proprieta`: chat MOTORE
+// @versione 2026-10-19.1 | calcolatore_math.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧮 CALCOLATORE N5 — adattatore sopra MotoreN5
 // ------------------------------------------
@@ -140,7 +140,10 @@
         });
 
         const eff = [];
-        (s.statiFallimento || []).forEach(x => eff.push(`Fallimento = ${x}`));
+        // 19 ottobre (Paolo, MU-08): lo stato da fallimento in rosso, come
+        // le Ferite multiple: e` l'esito, non una nota.
+        // Il nome per esteso: "IMM-A" a schermo si legge male.
+        (s.statiFallimento || []).forEach(x => eff.push(`<b style="color:#ff3333;">Fallimento = ${({ 'IMM-A': 'Immobilizzato-A', 'IMM-B': 'Immobilizzato-B', 'ISOLATO': 'Isolato', 'STORDITO': 'Stordito' })[x] || x}</b>`));
         if (s.dannoPerFallimento > 1) eff.push(`<b style="color:#ff3333;">${s.dannoPerFallimento} Ferite per ogni fallimento</b>`);
         // Le note sul Marker (M.notaMarkerSuSalvezza) NON vanno in coda in
         // grigio: per decisione di Paolo sono l'UNICO avviso che un Marker
@@ -318,7 +321,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_math.js', versione: '2026-10-07.4', proprieta: 'MOTORE' };
+    var v = { file: 'calcolatore_math.js', versione: '2026-10-19.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

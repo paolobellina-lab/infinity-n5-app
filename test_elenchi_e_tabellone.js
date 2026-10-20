@@ -1,4 +1,4 @@
-// @versione 2026-10-19.4 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-20.3 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -57,6 +57,14 @@
 //      le righe che sbagliavano danno il profilo giusto, e a pari punti la
 //      riga e` ambigua e la sceglie il giocatore. 25b: la lista vera di
 //      Paolo, incollata com'e`.
+//  25d. Import (MOTORE, 20 ottobre): Zondnautica con pilota e moto rientrati,
+//      TAG con l'Operator sotto: UNA unita`.
+//  26. I lavori del 20 ottobre: SCENDI / RISALI dal menu, TAG vuoto sulla
+//      riga e all'Hub, Marker numerati per segnalino (CAMO 1, CAMO-3 1,
+//      img/camo-3_1.png; motore 2026-10-20.2), icona
+//      della Punta di Lancia nel Coordinato.
+//  27. Tabellone: il nome delle azioni (M.nomeAzione: ATTACCO CC, non
+//      CC_ATTACK) e la Sagoma Diretta come colpo automatico, attivo e reattivo.
 //
 //  NON PROVA: l'aspetto vero nel browser (altezze, colori, immagini che
 //  esistono o no). Il DOM qui e` finto: si guarda l'HTML prodotto.
@@ -1333,7 +1341,11 @@ sezione('25b. Import: la lista di collaudo di Paolo, il testo vero di Infinity A
     // capitolo 1.1 del piano: tutti i profili del piano presenti nel testo ci
     // sono. Interventor: la riga porta FastPanda, quindi e` "(Hacker Plus,
     // FastPanda)", non "(Hacker Plus)". "GROUP 51" e` il Gruppo 5.
-    const ATTESI = [[1, "Alguacil (Combi Rifle)"], [1, "Alguacil (HMG)"], [1, "Alguacil (Missile Launcher)"], [1, "Alguacil (Forward Observer)"], [1, "Alguacil (Paramedic)"], [1, "Daktari (Doctor)"], [1, "Clockmaker (Engineer)"], [1, "Interventor (Hacker Plus, FastPanda)"], [1, "Zero (Hacker, Killer Hacking Device)"], [1, "Intruder (MULTI Sniper Rifle)"], [2, "Grenzer (Marksmanship)"], [2, "Grenzer (Forward Observer, Sensor, NCO)"], [2, "Morlock (Assault Pistol)"], [2, "Chimera"], [2, "3X Pupnik"], [2, "Reaktion Zond (HMG)"], [2, "Mobile Brigada (HMG)"], [2, "Puppetbot (Red Fury)"], [2, "Zondnautica-A"], [2, "Zondnaut-A"], [2, "Zondmate (REM)"], [2, "Moran (Surprise Attack [-3], Camouflage [1 Use], Combi Rifle)"], [2, "Sin-Eater (MULTI Sniper Rifle)"], [2, "Mary Problems (Hacker)"], [3, "Puppet Masters (Minelayer)"], [3, "Intruder (HMG)"], [3, "Intruder (Hacker, Killer Hacking Device)"], [3, "Wolfgang Amadeus"], [3, "Warcor (Sixth Sense)"], [3, "Vertigo Zond (Missile Launcher)"], [3, "Triphammer (Heavy Shotgun, Heavy Rocket Launcher, Panzerfaust)"], [3, "Krakot Renegade (Boarding Shotgun)"], [3, "Bambabot-1 (Chain Rifle (ps=6))"], [3, "Bambabot-1 (Chain Rifle (ps=6))"], [4, "Kulak (Hacker, Killer Hacking Device)"], [4, "Marspider (Grenades)"], [5, "Bambadroid (Forward Observer)"], [5, "Go-Pod (MULTI Rifle)"], [5, "Go-Bot (REM)"], [5, "Racerbot Mk-I (Adhesive Launcher Rifle)"], [5, "Racerbot Mk-II (Heavy Riotstopper)"], [5, "Morlock (Kobra Pistol, DA CC)"], [5, "Clockmaker (Armed Turret)"]];
+    // RISCRITTO il 20 ottobre (MOTORE, database 20.1). Prima: 46 righe, con
+    // [2, "Zondnaut-A"] e [2, "Zondmate (REM)"] dopo la Zondnautica-A. Ora
+    // pilota e moto nascono in partita (SCENDI DALLA MOTO): la Zondnautica
+    // e` UNA unita`, e le righe attese sono 44.
+    const ATTESI = [[1, "Alguacil (Combi Rifle)"], [1, "Alguacil (HMG)"], [1, "Alguacil (Missile Launcher)"], [1, "Alguacil (Forward Observer)"], [1, "Alguacil (Paramedic)"], [1, "Daktari (Doctor)"], [1, "Clockmaker (Engineer)"], [1, "Interventor (Hacker Plus, FastPanda)"], [1, "Zero (Hacker, Killer Hacking Device)"], [1, "Intruder (MULTI Sniper Rifle)"], [2, "Grenzer (Marksmanship)"], [2, "Grenzer (Forward Observer, Sensor, NCO)"], [2, "Morlock (Assault Pistol)"], [2, "Chimera"], [2, "3X Pupnik"], [2, "Reaktion Zond (HMG)"], [2, "Mobile Brigada (HMG)"], [2, "Puppetbot (Red Fury)"], [2, "Zondnautica-A"], [2, "Moran (Surprise Attack [-3], Camouflage [1 Use], Combi Rifle)"], [2, "Sin-Eater (MULTI Sniper Rifle)"], [2, "Mary Problems (Hacker)"], [3, "Puppet Masters (Minelayer)"], [3, "Intruder (HMG)"], [3, "Intruder (Hacker, Killer Hacking Device)"], [3, "Wolfgang Amadeus"], [3, "Warcor (Sixth Sense)"], [3, "Vertigo Zond (Missile Launcher)"], [3, "Triphammer (Heavy Shotgun, Heavy Rocket Launcher, Panzerfaust)"], [3, "Turtlemek (Triphammer)"], [3, "Krakot Renegade (Boarding Shotgun)"], [3, "Coyote (Forward Deployment (+4')) - Boarding Shotgun, Bambabot-1"], [3, "Bambabot-1 (Chain Rifle (ps=6))"], [3, "Coyote (Forward Deployment (+4')) - Boarding Shotgun, Bambabot-1"], [3, "Bambabot-1 (Chain Rifle (ps=6))"], [4, "Kulak (Hacker, Killer Hacking Device)"], [4, "Marspider (Grenades)"], [5, "Bambadroid (Forward Observer)"], [5, "Go-Pod (MULTI Rifle)"], [5, "Go-Bot (REM)"], [5, "Racerbot Mk-I (Adhesive Launcher Rifle)"], [5, "Racerbot Mk-II (Heavy Riotstopper)"], [5, "Morlock (Kobra Pistol, DA CC)"], [5, "Clockmaker (Armed Turret)"]];
     const T = creaTavolo(DIR); const N = T.nomadi.g;
     N.roster = [];
     T.nomadi.el('army-import-text').value = TESTO;
@@ -1347,8 +1359,242 @@ sezione('25b. Import: la lista di collaudo di Paolo, il testo vero di Infinity A
                    'Triphammer (Heavy Shotgun, Heavy Rocket Launcher, Panzerfaust)', 'Morlock (Kobra Pistol, DA CC)', 'Marspider (Grenades)', 'Clockmaker (Armed Turret)'];
     ok(piano.every(n => letti.some(l => l[1] === n)), 'le otto righe che prima davano il profilo sbagliato (piano 4, 10, 22, 27, 30, 36, 38, 39) ora danno quello giusto');
     ok(letti.some(l => l[0] === 5), 'GROUP 51: le sue truppe stanno nel Gruppo 5, non nel 4');
+    // RISCRITTO il 19 ottobre. Prima: "tre righe ambigue, Turtlemek e i due
+    // Coyote". Ora l'import legge le righe rientrate: il Turtlemek sta sotto
+    // il Triphammer, i Coyote hanno il Bambabot-1 sotto. Nessuna resta
+    // ambigua, e le tre righe sono fra le attese qui sopra.
     const amb = (N.righeAmbigueImport || []).map(a => a.riga.slice(0, 9));
-    ok(J(amb) === J(['TURTLEMEK', 'COYOTE (F', 'COYOTE (F']), 'tre righe ambigue, da scegliere a mano: Turtlemek e i due Coyote, che il database ha doppi (' + J(amb) + ')');
+    ok(amb.length === 0, 'nessuna riga ambigua: Turtlemek e Coyote si riconoscono dalle righe rientrate vicine (' + J(amb) + ')');
+});
+
+sezione('25c. Import: i periferici sulla riga rientrata scelgono il profilo (Drummer, Turtlemek)', () => {
+    // DATABASE, 19 ottobre: tre Drummer osservatori avanzati con la stessa
+    // riga in Army, 21 pt (Drumbot_5), 47 pt (Drumbot_1 + _5), 47 pt
+    // (Drumbot_3 + _5). Quale sia lo dicono SOLO le righe rientrate sotto.
+    // Misurato sul roster_manager 19.2: tutti e tre diventavano quello da 21.
+    const DR = " DRUMMER (Forward Observer) Marksman Rifle, Flash Pulse ( | 360 Visor) / Pistol, CC Weapon. ";
+    const B1 = "\n   DRUMBOT-1 MULTI Heavy Machine Gun ( | 360 Visor) / PARA CC Weapon(-3). (0 | 0)";
+    const B3 = "\n   DRUMBOT-3 (Neurocinetics) Feuerbach(+1B) ( | 360 Visor) / PARA CC Weapon(-3). (0 | 0)";
+    const B5 = "\n   DRUMBOT-5 (Forward Observer) Heavy Flamethrower, Flash Pulse ( | 360 Visor) / PARA CC Weapon(-3). (0 | 0)";
+    const TESTO = "GROUP 18\n" + DR + "(0 | 21)" + B5 + "\n" + DR + "(1 | 47)" + B1 + B5 + "\n" + DR + "(1 | 47)" + B3 + B5 +
+        "\n SCARFACE LOADOUT ALPHA Mk12(+1B), Heavy Rocket Launcher(+1B) / DA CC Weapon(PS=4). (1.5 | 62)\n   TURTLEMEK . (- | 4)\n";
+    const T = creaTavolo(DIR); const P = T.pano.g;
+    P.roster = [];
+    T.pano.el('army-import-text').value = TESTO;
+    P.importaDaTesto();
+    const nomi = P.roster.map(u => u.name);
+    const drummer = nomi.filter(n => /^Drummer/.test(n));
+    ok(J(drummer) === J(['Drummer (Forward Observer, Drumbot_5)', 'Drummer (Forward Observer, Drumbot_1, Drumbot_5)', 'Drummer (Forward Observer, Drumbot_3, Drumbot_5)']),
+       'i tre Drummer osservatori: 21 pt col Drumbot_5, 47 pt col _1 e _5, 47 pt col _3 e _5, ciascuno dai suoi periferici (' + J(drummer) + ')');
+    ok(nomi.filter(n => /^Drumbot/.test(n)).length === 5, 'i cinque Drumbot delle righe rientrate sono importati anche loro (' + nomi.filter(n => /^Drumbot/.test(n)).length + ')');
+    ok(nomi.indexOf('Turtlemek (Scarface)') >= 0 && nomi.indexOf('Turtlemek (Triphammer)') < 0, 'il Turtlemek sotto lo Scarface e` quello dello Scarface');
+    ok(P.roster.every(u => u.combatGroup === 1) && (P.righeAmbigueImport || []).length === 0, 'tutti nel Gruppo 1, nessuna riga ambigua (' + J((P.righeAmbigueImport || []).map(a => a.riga.slice(0, 12))) + ')');
+});
+
+sezione('25d. Import: Zondnautica con pilota e moto, TAG con Operator, UNA unita` (MOTORE, 20 ottobre)', () => {
+    // Le righe come le scrive Army: la truppa, e sotto, rientrati, i profili
+    // che nascono in partita (pilota e moto; l'Operator dell'Escape System).
+    const ZOND = "GROUP 1\n ZONDNAUTICA-B undefined / undefined. (0 | 17)\n   ZONDNAUTICA-B Boarding Shotgun, Chain Rifle, Smoke Grenade Launcher / Pistol, CC Weapon. (0 | 17)\n" +
+                 "   ZONDNAUT-B Boarding Shotgun / Pistol, CC Weapon. (0 | 17)\n   ZONDMATE Chain Rifle, Smoke Grenade Launcher / PARA CC Weapon(-3). (- | 5)\n";
+    const ANA = " ANACONDA Heavy Machine Gun, Light Shotgun(+2B), Panzerfaust / DA CC Weapon(PS=4). (1.5 | 59)\n   OPERATOR Spitfire, Smoke Grenade Launcher / Boarding Pistol, CC Weapon. (- | 0)\n";
+    const ALG = " ALGUACIL Combi Rifle / Pistol, CC Weapon. (0 | 10)\n";
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g;
+        N.roster = [];
+        T.nomadi.el('army-import-text').value = ZOND + ANA + ALG;
+        N.importaDaTesto();
+        const nomi = N.roster.map(u => u.name);
+        ok(J(nomi) === J(['Zondnautica-B', 'Anaconda (Heavy Machine Gun)', 'Alguacil (Combi Rifle)']),
+           'Nomadi: Zondnautica-B, Anaconda, Alguacil. Niente Zondnaut, Zondmate, Operator a parte (' + J(nomi) + ')');
+        ok(N.righeAssorbiteImport === 3, 'le tre righe rientrate (pilota, moto, Operator) sono lette come parte della truppa sopra (' + N.righeAssorbiteImport + ')');
+        ok((N.righeAmbigueImport || []).length === 0, 'nessuna riga ambigua');
+    }
+    {
+        const T = creaTavolo(DIR); const P = T.pano.g;
+        P.roster = [];
+        T.pano.el('army-import-text').value = "GROUP 1\n MAXIMUS OPTIME E/M Carbine, AP Thunderbolt(+2B) / Heavy Pistol, AP+DA CC Weapon(PS=4). (1.5 | 80)\n" +
+            "   OPERATOR MAXIMUS E/M Carbine, AP Thunderbolt(+2B) / Heavy Pistol, AP+DA CC Weapon(PS=6). (- | 0)\n" +
+            " ANACONDA Heavy Machine Gun, Light Shotgun(+2B), Panzerfaust / DA CC Weapon(PS=4). (1.5 | 59)\n   OPERATOR Spitfire, Smoke Grenade Launcher / Boarding Pistol, CC Weapon. (- | 0)\n";
+        P.importaDaTesto();
+        const nomi = P.roster.map(u => u.name);
+        ok(nomi.length === 2 && /^Maximus Optime/.test(nomi[0]) && /^Anaconda/.test(nomi[1]), 'PanOceania: Maximus Optime e Anaconda, UNA unita` ciascuno (' + J(nomi) + ')');
+    }
+    {
+        // CONTROPROVA della regola, non del caso: se il database NON segnasse
+        // l'Operator come profilo secondario, la riga rientrata sarebbe un
+        // profilo valido. Il roster_manager 19.3 lo importava come truppa a
+        // se`; ora si scarta perche` e` il pilota dell'Anaconda sopra.
+        const T = creaTavolo(DIR); const N = T.nomadi.g;
+        const op = N.DB_NOMADI.find(u => u.id === 'operator_spitfire');
+        const primaSec = op && op.profiloSecondario;
+        if (op) op.profiloSecondario = false;
+        N.roster = [];
+        T.nomadi.el('army-import-text').value = 'GROUP 1\n' + ANA;
+        N.importaDaTesto();
+        if (op) op.profiloSecondario = primaSec;
+        const nomi = N.roster.map(u => u.name);
+        ok(!!op && J(nomi) === J(['Anaconda (Heavy Machine Gun)']), 'CONTROPROVA: Operator non secondario, sotto l Anaconda resta parte di lei (' + J(nomi) + ')');
+        N.roster = [];
+        T.nomadi.el('army-import-text').value = 'GROUP 1\n' + ALG + '   OPERATOR Spitfire, Smoke Grenade Launcher / Boarding Pistol, CC Weapon. (- | 0)\n';
+        if (op) op.profiloSecondario = false;
+        N.importaDaTesto();
+        if (op) op.profiloSecondario = primaSec;
+        ok(N.roster.length === 2, 'CONTROPROVA: la stessa riga sotto un Alguacil non e` assorbita (non e` il suo pilota) (' + J(N.roster.map(u => u.name)) + ')');
+    }
+});
+
+sezione('26. I lavori del 20 ottobre (MOTORE): moto e TAG, TAG vuoto, Marker numerati, Punta di Lancia', () => {
+    const menuIds = (h) => (String(h).match(/selectAction\('[^']+', false\)/g) || []).map(x => x.match(/'([^']+)'/)[1]);
+    const TRE = ['SCENDI DALLA MOTO', 'RISALI SULLA MOTO', 'RISALI SUL TAG'];
+    // --- 26a. SCENDI / RISALI dalla moto, dal menu del giocatore ---------
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g;
+        T.schiera([truppa(profilo(T, /^Zondnautica-A$/), { id: 'n1', alias: 'Moto' }), truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Piedi' })],
+                  [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
+        const m1 = menuIds(T.apriMenu(T.nomadi, 0));
+        ok(m1.indexOf('SCENDI DALLA MOTO') >= 0, 'Zondnautica montata: il menu offre SCENDI DALLA MOTO (' + J(m1.filter(x => TRE.indexOf(x) >= 0)) + ')');
+        ok(m1.indexOf('RISALI SULLA MOTO') < 0 && m1.indexOf('RISALI SUL TAG') < 0, 'e non RISALI (e` gia` sulla moto, non e` un pilota di TAG)');
+        const m2 = menuIds(T.apriMenu(T.nomadi, 1));
+        ok(TRE.every(x => m2.indexOf(x) < 0), 'CONTROPROVA: un Alguacil a piedi non vede nessuna delle tre voci (' + J(m2.filter(x => TRE.indexOf(x) >= 0)) + ')');
+        T.apriMenu(T.nomadi, 0); N.selectAction('SCENDI DALLA MOTO', false); T.giro();
+        const moto = N.roster.find(u => u.id === 'n1_moto'), pil = N.roster.find(u => u.id === 'n1');
+        ok(!!moto && /Zondmate/.test(moto.nome) && pil && /Zondnaut-A/.test(pil.nome),
+           'scelta la voce: il pilota (Zondnaut-A) e la moto (Zondmate) sono due unita` (' + N.roster.map(u => u.nome).join(', ') + ')');
+        ok(moto && N.gruppoDi(moto) === N.gruppoDi(pil), 'la moto sta nel Gruppo del pilota');
+        ok((T.hub.g.gameState.nomads || []).some(u => u.id === 'n1_moto'), 'l Hub vede la moto');
+        const m3 = menuIds(T.apriMenu(T.nomadi, N.roster.indexOf(pil)));
+        ok(m3.indexOf('RISALI SULLA MOTO') >= 0 && m3.indexOf('SCENDI DALLA MOTO') < 0, 'il pilota a piedi ora vede RISALI SULLA MOTO, non SCENDI (' + J(m3.filter(x => TRE.indexOf(x) >= 0)) + ')');
+        N.selectAction('RISALI SULLA MOTO', false); T.giro();
+        ok(!N.roster.some(u => u.id === 'n1_moto') && /Zondnautica-A/.test((N.roster.find(u => u.id === 'n1') || {}).nome),
+           'risalito: la moto esce dal roster, torna la Zondnautica (' + N.roster.map(u => u.nome).join(', ') + ')');
+    }
+    // --- 26b. Escape System: TAG vuoto sulla riga e all'Hub, RISALI SUL TAG
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, H = T.hub.g;
+        T.schiera([truppa(profilo(T, /^Anaconda \(Heavy/), { id: 'n1', alias: 'Ana' })],
+                  [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
+        ok(menuIds(T.apriMenu(T.nomadi, 0)).every(x => TRE.indexOf(x) < 0), 'premessa: il TAG col pilota non vede SCENDI / RISALI');
+        N.apriPaginaStati(0);
+        const btn = (String(T.nomadi.el('states-content').innerHTML).match(/onclick="(window\.espelliPilotaDaStati\(\))"/) || [])[1];
+        ok(!!btn, 'nella pagina degli stati c e il tasto ESCAPE SYSTEM');
+        if (btn) vmTocco(T.nomadi, btn);
+        T.giro();
+        const tag = N.roster.find(u => u.id === 'n1'), pil = N.roster.find(u => u.id === 'n1_pilota');
+        ok(tag && tag.states && tag.states.tagVuoto && pil && /Operator/.test(pil.nome), 'toccato: TAG vuoto, e il pilota (' + (pil && pil.nome) + ') e` un unita` nuova');
+        ok(pil && N.gruppoDi(pil) === N.gruppoDi(tag), 'il pilota sta nel Gruppo del TAG');
+        N.currentGroup = N.gruppoDi(tag); N.isCoordinated = false; N.selectedCoordinatedUnits = []; N.spearheadUnit = null;
+        N.aggiornaGraficaRoster();
+        const righe = String(T.nomadi.el('unit-buttons-container').innerHTML);
+        const rigaTag = righe.split(/(?=<button)/).find(r => /Ana/.test(testo(r)) && !/Operator/.test(testo(r))) || righe;
+        ok(/icon_tag_vuoto\.png/.test(rigaTag) && /TAG VUOTO/.test(rigaTag), 'la riga del TAG ha l icona TAG VUOTO, con la scritta di ripiego');
+        ok(/NON ATTIVABILE/.test(rigaTag), 'e resta NON ATTIVABILE (lo decide il motore)');
+        const hTag = (H.gameState.nomads || []).find(u => u.id === 'n1');
+        const scheda = hTag ? testo(H.schedaTruppa(hTag, 'NOMADI')) : '';
+        ok(/TAG VUOTO/.test(scheda), 'all Hub la scheda del TAG dice TAG VUOTO');
+        ok(!/TAGVUOTO/i.test(scheda.replace(/TAG VUOTO/g, '')) && !/❓/.test(scheda), 'e non piu` "❓ TAGVUOTO", lo stato sconosciuto (' + scheda.slice(0, 120) + ')');
+        const mP = menuIds(T.apriMenu(T.nomadi, N.roster.indexOf(pil)));
+        ok(mP.indexOf('RISALI SUL TAG') >= 0, 'il pilota uscito vede RISALI SUL TAG (' + J(mP.filter(x => TRE.indexOf(x) >= 0)) + ')');
+        N.selectAction('RISALI SUL TAG', false); T.giro();
+        const tag2 = N.roster.find(u => u.id === 'n1');
+        ok(!N.roster.some(u => u.id === 'n1_pilota') && tag2 && !(tag2.states || {}).tagVuoto, 'risalito: il pilota esce dal roster, il TAG non e` piu` vuoto');
+    }
+    // --- 26c. Marker numerati ---------------------------------------------
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+        const camo = (id, alias) => truppa(profilo(T, /^Alguacil \(Combi/), { id, alias, deployState: 'CAMO', states: { camo: true } });
+        N.roster = [camo('n1', 'Primo'), camo('n2', 'Secondo'), truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n3', alias: 'Terzo' })];
+        N.currentGroup = 1; N.isCoordinated = false; N.selectedCoordinatedUnits = [];
+        N.aggiornaGraficaRoster();
+        const righe = String(T.nomadi.el('unit-buttons-container').innerHTML).split(/(?=<button)/).filter(r => /riga-unita/.test(r));
+        const et = righe.map(r => (r.match(/class="etichetta-marker"[^>]*>([^<]*)</) || [])[1] || null);
+        ok(J(et) === J(['CAMO 1', 'CAMO 2', null]), 'nella propria app, PRIMA dell invio: CAMO 1, CAMO 2 accanto al nome, niente sulla truppa scoperta (' + J(et) + ')');
+        T.schiera(N.roster, [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
+        const nemici = P.MotoreN5.rosterNemico();
+        ok(J(nemici.map(u => u.alias)) === J(['SEGNALINO MIMETICO 1', 'SEGNALINO MIMETICO 2', 'Terzo']),
+           'l avversario riceve i numeri (' + J(nemici.map(u => u.alias)) + ')');
+        const fP = nemici.slice(0, 2).map(u => P.fotoUnita(u, 'NOMADI'));
+        ok(J(fP) === J(['img/camo_1.png', 'img/camo_2.png']), 'nell app avversaria ogni segnalino ha la sua immagine (' + J(fP) + ')');
+        const fH = (H.gameState.nomads || []).slice(0, 2).map(u => H.fotoTruppaHub(u, 'NOMADI'));
+        ok(J(fH) === J(['img/camo_1.png', 'img/camo_2.png']), 'all Hub lo stesso (' + J(fH) + ')');
+        const rigaNem = P.rigaUnitaConFoto(nemici[0], { fazione: 'NEMICA' });
+        ok(/src="img\/camo_1\.png"/.test(rigaNem) && /this\.src='img\/MARKER\.png'/.test(rigaNem), 'senza il file numerato la riga ripiega su img/MARKER.png, non sulla sigla');
+        ok(H.fotoTruppaHub({ nome: 'MARKER' }, 'NOMADI') === 'img/MARKER.png', 'CONTROPROVA: un Marker senza numero (oltre le 10 immagini) resta img/MARKER.png');
+    }
+    {
+        // 20 ottobre sera (MOTORE 20.2, Paolo): ogni segnalino ha la SUA serie.
+        // Due Alguacil (CAMO) e due Intruder (Mimetism -3: CAMO-3) contano
+        // ciascuno da 1. Prima (motore 20.1) la serie era una sola per tutti
+        // i CAMO: gli Intruder sarebbero stati CAMO 3 e CAMO 4.
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+        const camo = (re, id) => truppa(profilo(T, re), { id, alias: id, deployState: 'CAMO', states: { camo: true } });
+        N.roster = [camo(/^Alguacil \(Combi/, 'a1'), camo(/^Intruder \(HMG/, 'i1'), camo(/^Alguacil \(Combi/, 'a2'), camo(/^Intruder \(HMG/, 'i2')];
+        N.currentGroup = 1; N.isCoordinated = false; N.selectedCoordinatedUnits = [];
+        N.aggiornaGraficaRoster();
+        const righe = String(T.nomadi.el('unit-buttons-container').innerHTML).split(/(?=<button)/).filter(r => /riga-unita/.test(r));
+        const et = righe.map(r => (r.match(/class="etichetta-marker"[^>]*>([^<]*)</) || [])[1] || null);
+        ok(J(et) === J(['CAMO 1', 'CAMO-3 1', 'CAMO 2', 'CAMO-3 2']), 'CAMO e CAMO-3 hanno serie separate, sulla riga del giocatore (' + J(et) + ')');
+        T.schiera(N.roster, [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
+        const fP = P.MotoreN5.rosterNemico().map(u => P.fotoUnita(u, 'NOMADI'));
+        const fH = (H.gameState.nomads || []).map(u => H.fotoTruppaHub(u, 'NOMADI'));
+        const attese = ['img/camo_1.png', 'img/camo-3_1.png', 'img/camo_2.png', 'img/camo-3_2.png'];
+        ok(J(fP) === J(attese) && J(fH) === J(attese), 'avversario e Hub: le immagini della serie giusta (' + J(fP) + ' | ' + J(fH) + ')');
+    }
+    // --- 26d. Punta di Lancia: l'icona sulla riga ----------------------------
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g;
+        T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Capo' }), truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Gregario' })],
+                  [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
+        N.currentGroup = 1; N.isCoordinated = true; N.selectedCoordinatedUnits = []; N.spearheadUnit = null;
+        N.selezionaUnita(0); N.selezionaUnita(1);
+        const righe = String(T.nomadi.el('unit-buttons-container').innerHTML).split(/(?=<button)/).filter(r => /riga-unita/.test(r));
+        const conIcona = righe.map(r => /icon_spearhead\.png/.test(r));
+        ok(J(conIcona) === J([true, false]), 'Coordinato: la Punta di Lancia ha img/icon_spearhead.png, il gregario no (' + J(conIcona) + ')');
+        N.isCoordinated = false; N.aggiornaGraficaRoster();
+        ok(!/icon_spearhead/.test(T.nomadi.el('unit-buttons-container').innerHTML), 'CONTROPROVA: fuori dal Coordinato nessuna icona');
+    }
+});
+
+sezione('27. Tabellone: nome delle azioni e Sagoma Diretta senza tiro (MOTORE 2026-10-20.3)', () => {
+    // L'ARO di Pano contro un Alguacil che muove, dalla schermata degli ARO.
+    const aro = (arma, azione, reP) => {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+        T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Muove' })], [truppa(profilo(T, reP), { id: 'p1', alias: 'Rea' })], 'NOMADI');
+        T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
+        P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro();
+        P.selezionaAzioneAro(azione); P.selezionaArmaAro(arma); P.selezionaBersaglioAro('Muove'); P.salvaAroCorrente(); T.giro();
+        N.selectAction('MOVIMENTO', true); T.giro();
+        return T;
+    };
+    const reattivo = (t) => (t.match(/REATTIVO PANOCEANIA Rea.*?SE COLPITO/) || [''])[0];
+    {
+        const T = aro('CC Weapon', 'CC_ATTACK', /^Fusilier \(Combi/);
+        const c = reattivo(tabellone(T));
+        ok(risoluzione(T) && /Azione: ATTACCO CC/.test(c), 'ARO in Corpo a Corpo: il tabellone dice "Azione: ATTACCO CC" (' + c.slice(0, 60) + ')');
+        ok(!/CC_ATTACK/.test(tabellone(T)), 'e da nessuna parte l id interno CC_ATTACK');
+    }
+    {
+        // Prima (controller 2026-10-20.1): "Successo al: Auto (o meno)" e
+        // "Dadi da lanciare: 1" per un colpo che non si tira.
+        const T = aro('Heavy Flamethrower', 'BS_ATTACK', /^Auxbot_3$/);
+        const c = reattivo(tabellone(T));
+        ok(risoluzione(T) && /COLPO AUTOMATICO/.test(c) && /Nessun dado: colpo automatico/.test(c), 'ARO con Sagoma Diretta (Heavy Flamethrower): COLPO AUTOMATICO, nessun dado (' + c.slice(0, 120) + ')');
+        ok(!/Auto \(o meno\)/.test(c) && !/Dadi da lanciare/.test(c), 'e non "Successo al: Auto (o meno)" ne` "Dadi da lanciare"');
+    }
+    {
+        // Lo stesso dal lato attivo: aveva lo stesso difetto (misurato qui).
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+        T.schiera([truppa(profilo(T, /^Morlock \(Assault/), { id: 'n1', alias: 'Morl' })], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
+        T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Chain Rifle'); N.toggleTargetSelection('p1'); N.confirmMultiAro(false); T.giro();
+        P.annullaAro(); T.giro(); N.goToModifiersBS('IDLE'); N.eseguiCalcoloBS(); T.giro();
+        const c = (tabellone(T).match(/ATTIVO NOMADI Morl.*?REATTIVO/) || [''])[0];
+        ok(risoluzione(T) && /COLPO AUTOMATICO/.test(c) && !/Auto \(o meno\)/.test(c) && !/Dadi da lanciare/.test(c), 'attivo con Chain Rifle: COLPO AUTOMATICO, nessun dado (' + c.slice(0, 120) + ')');
+    }
+    {
+        // CONTROPROVA: un'arma che tira resta com'era.
+        const T = aro('Combi Rifle', 'BS_ATTACK', /^Fusilier \(Combi/);
+        const c = reattivo(tabellone(T));
+        ok(/Successo al: \d+ \(o meno\)/.test(c) && /Dadi da lanciare: 1/.test(c) && !/COLPO AUTOMATICO/.test(c), 'CONTROPROVA: ARO col Combi Rifle, "Successo al" e i dadi restano (' + c.slice(0, 100) + ')');
+    }
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

@@ -1,4 +1,4 @@
-CONTEGGIO DELLA SUITE — chat TEST, 19 ottobre 2026, terzo giro (ordine_osservazione 2026-10-19.1) (cartella allineata al Project, impronte ricalcolate con M.impronta)
+CONTEGGIO DELLA SUITE — chat TEST, 19 ottobre 2026, quarto giro (database 2026-10-19, import da Infinity Army) (cartella allineata al Project, impronte ricalcolate con M.impronta)
 
 PRODUZIONE
   motore_regole_n5.js         2026-10-18.1    c2e9f994.745144
@@ -6,10 +6,10 @@ PRODUZIONE
   motore_core.js              2026-10-18.1    55ee55a5.43401
   logica_stati.js             2026-10-18.1    85ea3364.30659
   logica_aro.js               2026-10-19.1    c05c17e1.84758
-  app.html                    2026-10-19.1    85ffb759.165943
+  app.html                    2026-10-19.2    067aa3b6.166316
   calcolatore_math.js         2026-10-07.4    afb03fe9.18214
   calcolatore_controller.js   2026-10-19.2    091d644c.64063
-  roster_manager.js           2026-10-15.1    c7ddf367.70600
+  roster_manager.js           2026-10-19.2    5df001e3.79642
   ordine_attacco_guidato.js   2026-10-18.1    b7c255f5.28397
   ordine_attacco_bs.js        2026-10-15.1    a16608b4.43506
   ordine_coordinato.js        2026-10-18.1    a0e2dd48.11888
@@ -23,10 +23,10 @@ PRODUZIONE
   ordine_fuoco_speculativo.js 2026-10-15.1    fd488915.37732
   calcolatore_hub.html        2026-10-18.1    193af296.12840
   database_comune.js          2026-10-10.1    734da513.70750
-  database_nomad.js           2026-10-16.2    27567927.170918
-  database_panoceania.js      2026-10-16.2    7313f75f.165585
+  database_nomad.js           2026-10-19.1    f686711d.171087
+  database_panoceania.js      2026-10-19.2    aef16168.167316
   banco_confronto.js          2026-09-14.1    e8fdec78.34151
-  PIANO_COLLAUDO_N5.md        2026-10-19.2    557a84c9.112297
+  PIANO_COLLAUDO_N5.md        2026-10-19.3    97d90bdb.113725
 
 CONVENZIONE: un file = una riga di riepilogo; si somma su TUTTI i file
 test_*.js, test_collaudo_suite.js COMPRESO. banco_confronto.js NON
@@ -44,7 +44,7 @@ banco                              prove  n.e.  versione        impronta        
 test_adattatore.js                    95        2026-10-08.1    e77f2bc6.26111    TEST
 test_allarme.js                       21        2026-09-25.1    316d6d88.6818     TEST
 test_allarme_una_volta.js             54        2026-10-08.1    a0e670d9.23582    MOTORE
-test_armi.js                          40        2026-10-16.2    25d0379d.13935    TEST
+test_armi.js                          40        2026-10-19.1    3b033e15.14231    TEST
 test_aro_filtro_repeater.js           47        2026-10-06.5    d405dfd8.16589    INTERFACCIA
 test_azioni_equivalenti.js            11        2026-09-22.1    afcf33c5.4417     TEST
 test_bersagli_piazzamento.js          10        2026-09-21.1    6d98bb51.3335     TEST
@@ -59,14 +59,14 @@ test_collaudo_node.js                 58        2026-10-06.1    721b3e48.12963  
 test_collaudo_suite.js                 7        2026-10-09.1    e5be7a72.5058     TEST
 test_confronto.js                     18        2026-09-23.1    85f1912b.4782     TEST
 test_contratto_payload.js             29        2026-09-23.2    07bb9543.9288     TEST
-test_coordinato.js                    82        2026-10-19.1    4cf0ac58.23317    TEST
+test_coordinato.js                    82        2026-10-19.2    f799b175.23583    TEST
 test_correzioni_regole.js            175        2026-10-06.1    cb7eb6fa.47017    TEST
 test_creadeployable.js                41        2026-09-23.1    eb349363.7918     TEST
 test_dado_speciale.js                 15        2026-10-15.1    5a43dc5e.6172     TEST
 test_dcharges_percorso.js             33        2026-10-12.1    cd0af229.12480    TEST
 test_deployable.js                    94        2026-09-23.1    168ab722.17037    TEST
 test_detonazione.js                   12        2026-09-29.1    12fd1900.5768     TEST
-test_elenchi_e_tabellone.js          284        2026-10-19.2    6ec97f43.111729   INTERFACCIA
+test_elenchi_e_tabellone.js          301        2026-10-19.4    3ecb41f8.123895   INTERFACCIA
 test_file_immutabili.js               16     3  2026-10-10.1    969e26ca.11217    TEST
 test_file_intestazioni.js              8        2026-10-05.1    ac73f610.3721     TEST
 test_finiture.js                     213        2026-09-23.1    918b7ab5.35864    TEST
@@ -76,12 +76,12 @@ test_giro_aggiornamento.js            56        2026-10-07.1    4744a079.28500  
 test_giro_da_selectaction.js          11        2026-10-06.1    bffe2658.10324    TEST
 test_giro_ritorno.js                  17        2026-09-29.1    1e285571.10831    TEST
 test_hacking_firewall.js              65        2026-10-12.1    a004a5ab.22258    MOTORE
-test_innesco_schermata.js             43        2026-10-19.1    b2b262dc.17878    TEST
+test_innesco_schermata.js             43        2026-10-19.2    680751cb.18200    TEST
 test_integrazione.js                  39        2026-10-09.1    fde9f835.13039    TEST
 test_marker_mimetico.js               34        2026-10-15.1    de4f4502.11355    TEST
 test_marker_salvezza.js               21        2026-10-05.1    8009613d.6636     MOTORE
 test_menu_stati.js                    27        2026-10-06.5    fa7bc13a.8360     INTERFACCIA
-test_minelayer.js                     43        2026-10-15.1    d5c395fd.12472    TEST
+test_minelayer.js                     49        2026-10-19.1    157aac4e.15820    TEST
 test_mittente_unico.js                 8        2026-09-25.1    821373bf.4844     TEST
 test_mod_attacco.js                   33        2026-09-23.1    881344b3.6321     TEST
 test_modulo_aro.js                    44        2026-10-15.2    63336190.13569    TEST
@@ -109,7 +109,7 @@ test_novita_7ott.js                  127        2026-10-07.2    4c7a6e70.37687  
 test_orchestratore.js                 31        2026-09-23.1    54e73733.6254     TEST
 test_ordini_senza_tiro.js             83        2026-10-07.1    47f53ab8.21658    MOTORE
 test_otto_decisioni.js                93     8  2026-10-09.1    cf922127.18140    TEST
-test_piano_schieramento.js            27        2026-10-19.2    04b71913.19531    TEST
+test_piano_schieramento.js            27        2026-10-19.3    1571616d.19861    TEST
 test_produttori_busta.js              21        2026-09-25.3    71d0754b.9486     TEST
 test_prosa_stati.js                   17        2026-09-24.1    7872300c.8821     TEST
 test_pulsante_calcolo.js              26        2026-09-23.1    1f742b1f.4441     TEST
@@ -140,8 +140,8 @@ test_usi_disposable.js                21        2026-09-29.1    77051b4c.7148   
 test_voce_cybermask.js                21        2026-10-19.1    47ba06ce.11379    INTERFACCIA
 test_voce_rientro_camo.js             15        2026-10-06.5    17ca4e43.8491     INTERFACCIA
 --------------------------------------------------------------------------------------------------
-TOTALE CON LE FONTI                 4881   passati su 98 file, 0 falliti, 0 non eseguite
-TOTALE COME IL PROJECT (senza)      4861   passati su 98 file, 0 falliti, 20 non eseguite
+TOTALE CON LE FONTI                 4904   passati su 98 file, 0 falliti, 0 non eseguite
+TOTALE COME IL PROJECT (senza)      4884   passati su 98 file, 0 falliti, 20 non eseguite
 
 NON ESEGUITE PER FONTE ASSENTE
   test_coerenza_dati.js             1   501.json, 101.json
@@ -150,28 +150,43 @@ NON ESEGUITE PER FONTE ASSENTE
   test_otto_decisioni.js            8   REGOLE_N5_v5_1_1.txt
 
 SPACCATO PER PROPRIETA (con le fonti)
-  TEST + MOTORE                     4379   su 89 file
-  INTERFACCIA                        502   su 9 file
+  TEST + MOTORE                     4385   su 89 file
+  INTERFACCIA                        519   su 9 file
 
 banco_confronto.js: uscita 0, "da guardare 0" in tutte e quattro le sezioni.
 File senza riga di riepilogo: nessuno.
 
+QUARTO GIRO DEL 19: DATABASE PULITI E IMPORT DA INFINITY ARMY
+  Installati e verificati: database_nomad.js 2026-10-19.1 f686711d.171087,
+  database_panoceania.js 2026-10-19.2 aef16168.167316, app.html 2026-10-19.2
+  067aa3b6.166316 (le impronte coincidono con quelle di DATABASE e MOTORE).
+  NON coincidono, perche` nel Project ci sono ancora le copie di prima:
+    roster_manager.js           atteso 2026-10-19.3 8506b356.82142,
+                                nel Project 2026-10-19.2 5df001e3.79642
+    test_elenchi_e_tabellone.js atteso 2026-10-19.5 c7f5f9cc.126556,
+                                nel Project 2026-10-19.4 3ecb41f8.123895
+  Misurato con quello che c'e`: test_elenchi_e_tabellone 19.4 301/0. Il
+  305/0 della 19.5 (sezioni 25, 25b, 25c) e la sua controprova restano da
+  misurare quando i due file arrivano.
+  Database: 747 -> 745 (Nomadi 377, PanOceania 368). Diff misurato sugli id:
+  4 tolti, 2 aggiunti, 12 rinominati, nessun altro campo cambiato.
+  Cinque premesse di conteggio riallineate (TEST): test_armi 2026-10-19.1
+  (745), test_coordinato 2026-10-19.2 (Irregular 77, Nomadi 39),
+  test_minelayer 2026-10-19.1 (D-Charges 152; nuova sezione 7: DEP-01 del
+  piano), test_innesco_schermata 2026-10-19.2 (745, piazzabili 249),
+  test_piano_schieramento 2026-10-19.3 (377 + 368, REV_MINIMA 33). Con i
+  database del 16 ognuno e` rosso sulla sola premessa.
+  PIANO_COLLAUDO_N5.md rev 33 (2026-10-19.3): #8 Interventor (Hacker Plus,
+  FastPanda), nota sull'import, DEP-01 riscritta (undici truppe: mancavano
+  gia` #4, #29, #35; ora c'e` anche il #8 col FastPanda). Le prove restano 290.
+
 TERZO GIRO DEL 19: LA SCHEDA DEL BERSAGLIO DI FO E TRIANGULATED
-  ordine_osservazione.js 2026-10-19.1, 3898a752.27560 (MOTORE). Installato:
-  nessun rosso, come annunciato.
-  Banco nuovo test_scheda_osservazione.js (TEST) 2026-10-19.1, c08af746.18733:
-  35/0. Rotto con l'ordine_osservazione di stamattina (2026-10-18.1, cmp:
-  diverso): 17 falliti, le controprove restano verdi.
-  PIANO_COLLAUDO_N5.md rev 32 (2026-10-19.2): OSS-01 e OSS-03. Le prove
-  restano 290. test_piano_schieramento.js 2026-10-19.2: REV_MINIMA 32; col
-  piano rev 31 e` rosso (1 fallito).
-  OSS-03: senza tasto Copertura il bersaglio "in copertura" non si dichiara
-  piu`: fra i MOD barrati restano Gittata -6 e Mimetismo -3, e il tiro "senza
-  Abilita`" e` 4 (prima 1).
+  ordine_osservazione.js 2026-10-19.1 (3898a752.27560). Banco nuovo
+  test_scheda_osservazione.js. Piano rev 32 (OSS-01, OSS-03). Decisione di
+  Paolo: nel Triangulated la Copertura non influisce, niente tasto.
 
 SECONDO GIRO DEL 19 (rosso chiuso)
   test_voce_cybermask.js (INTERFACCIA) 2026-10-19.1, 47ba06ce.11379: 21/0.
-  Controprova: con l'app.html del 15 ottobre e` rosso, 1 fallito.
 
 NOTA SUI CODICI DEL PIANO (rev 31): "ST-19" esisteva gia` (Prono e Scarico) e
 anche ST-20: la prova nuova "Morto all'Hub" e` ST-21. Le due prove nuove

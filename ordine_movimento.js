@@ -1,4 +1,4 @@
-// @versione 2026-10-07.2 | ordine_movimento.js | proprieta`: chat MOTORE
+// @versione 2026-10-20.2 | ordine_movimento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏃 MOVIMENTO E INSTRADAMENTO (N5) - ordine_movimento.js
 // ------------------------------------------
@@ -69,7 +69,41 @@
             if (a && a.type && String(a.type).indexOf('LONG') >= 0) window.currentOrder.isLongSkill = true;
         }
 
+        // 20 ottobre (Paolo): SCENDI / RISALI (moto, TAG) cambiano l'unita`
+        // prima del Movimento; poi l'Ordine prosegue come un Muovere.
+        if (M.AZIONI_TRASPORTO && M.AZIONI_TRASPORTO.indexOf(String(actionId).toUpperCase()) >= 0) {
+            if (!window.applicaTrasporto(actionId)) return;
+        }
         window.eseguiMovimentoAutomatico();
+    };
+
+    // Applica smonto, rimonto o risalita sul TAG: il motore calcola, qui si
+    // aggiorna il roster (unita` nuove e tolte) e si avvisa l'Hub.
+    window.applicaTrasporto = function (actionId) {
+        const M = motore(); if (!M) return false;
+        const a = String(actionId).toUpperCase();
+        const u = window.currentOrder.unit;
+        const e = a === 'SCENDI DALLA MOTO' ? M.smontaMoto(u)
+                : a === 'RISALI SULLA MOTO' ? M.rimontaMoto(u, window.roster)
+                : M.risaliSulTag(u, window.roster);
+        if (!e.possibile) { alert('⛔ ' + e.motivo); return false; }
+        const togli = (id) => { const i = (window.roster || []).findIndex(x => x && x.id === id); if (i >= 0) window.roster.splice(i, 1); };
+        let chi = u;
+        if (a === 'RISALI SUL TAG') {
+            // Chi riceve l'Ordine da qui in poi e` il TAG: il pilota sparisce.
+            chi = (window.roster || []).find(x => x && x.id === u.tagDi) || u;
+            togli(u.id);
+        } else {
+            if (e.rimuovi) togli(e.rimuovi);
+            if (e.nuova) window.roster.push(e.nuova);
+        }
+        if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(chi, e.unitaAggiornata, actionId);
+        else Object.assign(chi, e.unitaAggiornata);
+        window.currentOrder.unit = chi;
+        if (window.spearheadUnit === u) window.spearheadUnit = chi;
+        if (Array.isArray(window.coordUnits)) window.coordUnits = window.coordUnits.map(x => x === u ? chi : x);
+        alert('✅ ' + M.nomeUnita(chi) + ': ' + (e.note || []).join('\n'));
+        return true;
     };
 
     window.eseguiMovimentoAutomatico = function () {
@@ -203,9 +237,16 @@
         const cont2 = document.getElementById('second-half-buttons-container');
         if (cont2) {
             cont2.innerHTML = '';
+            // 20 ottobre (TEST, difetto 2): le voci passano per puoFareAzione,
+            // come nel ramo di app.html. Prima la seconda meta` offriva a
+            // tutti SCENDI / RISALI SULLA MOTO e RISALI SUL TAG (e ogni
+            // Abilita` Breve, anche quelle che il menu nasconde). L'unita` e`
+            // quella dell'Ordine DOPO l'eventuale trasporto: chi e` appena
+            // sceso si vede offrire RISALI, non SCENDI.
+            const offribile = (a) => typeof window.puoFareAzione !== 'function' || window.puoFareAzione(unita, a.id);
             if (window.dbAzioniN5 && typeof window.creaBottoneAzione === 'function') {
-                (window.dbAzioniN5.movimento || []).forEach(a => cont2.innerHTML += window.creaBottoneAzione(a, true, '#002244', '#00ffff'));
-                (window.dbAzioniN5.brevi || []).forEach(a => cont2.innerHTML += window.creaBottoneAzione(a, true, '#003300', '#00ff00'));
+                (window.dbAzioniN5.movimento || []).filter(offribile).forEach(a => cont2.innerHTML += window.creaBottoneAzione(a, true, '#002244', '#00ffff'));
+                (window.dbAzioniN5.brevi || []).filter(offribile).forEach(a => cont2.innerHTML += window.creaBottoneAzione(a, true, '#003300', '#00ff00'));
             }
         }
 
@@ -282,7 +323,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_movimento.js', versione: '2026-10-07.2', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_movimento.js', versione: '2026-10-20.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

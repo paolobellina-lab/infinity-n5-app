@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-19.2 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-20.1 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -588,7 +588,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-19.2', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-10-20.1', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -596,7 +596,16 @@
         // Database Azioni base per popolare i bottoni delle fasi
         window.dbAzioniN5 = {
             movimento: [
-                { id: 'MOVIMENTO', nome: 'MUOVERE', desc: 'Sposta il modello fino al suo primo valore MOV.', type: 'MOVE' }
+                { id: 'MOVIMENTO', nome: 'MUOVERE', desc: 'Sposta il modello fino al suo primo valore MOV.', type: 'MOVE' },
+                // 20 ottobre (Paolo, via MOTORE): scendere e risalire valgono
+                // meta` Ordine di Movimento e generano ARO. Chi puo` dichiararle
+                // lo decide il motore (M.azionePermessaDaStati, chiamata da
+                // puoFareAzione): qui nessuna regola, solo le voci. Prima non
+                // c'erano, e un Zondnautica o un pilota uscito dall'Escape
+                // System non avevano modo di farlo dall'app.
+                { id: 'SCENDI DALLA MOTO', nome: 'SCENDI DALLA MOTO', desc: 'Il pilota scende: la moto resta sul tavolo come Periferica.', type: 'MOVE' },
+                { id: 'RISALI SULLA MOTO', nome: 'RISALI SULLA MOTO', desc: 'Il pilota risale sulla sua moto (a contatto con lei).', type: 'MOVE' },
+                { id: 'RISALI SUL TAG', nome: 'RISALI SUL TAG', desc: 'Il pilota uscito con l\'Escape System risale sul suo TAG vuoto.', type: 'MOVE' }
             ],
             brevi: [
                 { id: 'ATTACCO BS', nome: 'ATTACCO BS', desc: 'Attacco con arma a distanza.', type: 'WEAPON' },
@@ -1050,6 +1059,14 @@
             if(s.retreat) icone += `<img src="img/icon_retreat.png" ${iconStyle} ${getOnErr('🏳️')}>`;
             if(s.foxhole) icone += `<img src="img/icon_foxhole.png" ${iconStyle} ${getOnErr('🕳️')}>`;
             if(s.unconscious) icone += `<img src="img/icon_unc.png" ${iconStyle} ${getOnErr('💤')}>`;
+            // 20 ottobre (Paolo, Escape System): il TAG vuoto resta sul tavolo
+            // e non riceve Ordini ne` ARO. Finche` img/icon_tag_vuoto.png non
+            // c'e`, la scritta TAG VUOTO. Prima la riga non lo diceva: si
+            // leggeva solo "NON ATTIVABILE", senza il perche`.
+            if (s.tagVuoto) {
+                const scrittaTV = `<span style=&quot;font-size:14px; font-weight:bold; color:#ccccff; border:1px solid #8888ff; border-radius:4px; padding:3px 5px; margin-left:5px;&quot;>TAG VUOTO</span>`;
+                icone += `<img src="img/icon_tag_vuoto.png" alt="TAG VUOTO" title="TAG vuoto: il pilota ha lasciato il TAG" ${iconStyle} onerror="this.outerHTML='${scrittaTV}'">`;
+            }
             
             if(isDead) icone = `<img src="img/icon_dead.png" ${iconStyle} ${getOnErr('☠️')}>`;
             
@@ -1178,7 +1195,10 @@
             // Senza foto assegnata non si indovina un file dal nome: torna
             // stringa vuota e la riga resta senza immagine.
             // Di un Marker il motore non manda la foto: si vede il segnalino.
-            if (String(u.nome || u.name || '') === 'MARKER') return 'img/MARKER.png';
+            // 20 ottobre (Paolo): il segnalino NUMERATO, se il motore ne da`
+            // l'immagine (img/camo_2.png...). Prima ogni Marker nemico aveva
+            // lo stesso img/MARKER.png e non si distingueva dagli altri.
+            if (String(u.nome || u.name || '') === 'MARKER') return u.immagineMarker || 'img/MARKER.png';
             return '';
         };
 
@@ -1277,8 +1297,12 @@
             // cornice. Senza foto, la sigla del tipo, libera allo stesso posto.
             const foto = window.fotoUnita(u, f);
             const sigla = String((u && u.tipo) || '').slice(0, 3) || '?';
+            // 20 ottobre: se manca l'immagine numerata del segnalino
+            // (img/camo_2.png non ancora caricata) si ripiega sul segnalino
+            // comune, non sulla sigla "MAR": prima del numero c'era quello.
+            const ripiegoFoto = (u && u.immagineMarker && foto === u.immagineMarker) ? 'img/MARKER.png' : '';
             const immagine = foto
-                ? `<img class="rup-foto" src="${foto}" alt="" onerror="this.outerHTML='<span class=&quot;rup-sigla&quot;>${sigla}</span>';">`
+                ? `<img class="rup-foto" src="${foto}" alt="" onerror="${ripiegoFoto ? `if(!this.dataset.ripiego){this.dataset.ripiego='1';this.src='${ripiegoFoto}';return;}` : ''}this.outerHTML='<span class=&quot;rup-sigla&quot;>${sigla}</span>';">`
                 : `<span class="rup-sigla">${sigla}</span>`;
 
             const ombra = 'drop-shadow(0 6px 12px rgba(0,0,0,0.6))';
@@ -1375,6 +1399,16 @@
             container.innerHTML = "";
             
             let truppeDelGruppo = window.roster.filter(u => window.gruppoDi(u) === parseInt(window.currentGroup));
+            // 20 ottobre (Paolo): i Marker numerati. Il numero si da` QUI,
+            // prima del primo invio all'Hub, perche` il giocatore legga sulla
+            // riga lo stesso "CAMO 2" che l'avversario vede sul segnalino.
+            // Prima il numero nasceva solo dentro la busta per l'Hub.
+            const MM = window.MotoreN5;
+            if (!MM || typeof MM.numeraMarker !== 'function' || typeof MM.etichettaMarker !== 'function') {
+                console.error('\u26d4 M.numeraMarker / M.etichettaMarker assenti (servono motore_regole_n5.js dalla 2026-10-20.1): righe senza numero del Marker.');
+            } else {
+                MM.numeraMarker(window.roster);
+            }
 
             truppeDelGruppo.forEach(u => {
                 let originalIndex = window.roster.indexOf(u); 
@@ -1407,6 +1441,14 @@
                         onpointercancel="if(window.cancelUnitPress) window.cancelUnitPress()"`
                 };
                 let dopoNome = '';
+                const etichettaM = (MM && typeof MM.etichettaMarker === 'function') ? MM.etichettaMarker(u) : null;
+                if (etichettaM) dopoNome += ` <span class="etichetta-marker" style="color:#ffdd66; font-size:14px; font-weight:bold; border:1px solid #ffdd66; border-radius:4px; padding:1px 5px;">${etichettaM}</span>`;
+                // 20 ottobre (Paolo): la Punta di Lancia del Coordinato si
+                // riconosceva solo dal bordo azzurro. Ora ha la sua icona
+                // (img/icon_spearhead.png; senza file, la scritta).
+                if (window.isCoordinated && isSpearhead) {
+                    dopoNome += ` <img class="icona-spearhead" src="img/icon_spearhead.png" alt="PUNTA DI LANCIA" title="Punta di Lancia" style="height:28px; vertical-align:middle;" onerror="this.outerHTML='<span class=&quot;icona-spearhead&quot; style=&quot;color:#00ffff; font-size:13px; font-weight:bold;&quot;>\u2b50 PUNTA DI LANCIA</span>';">`;
+                }
                 if (!ordinabile.ok && !pedina) {
                     if (!isDead) opzioni.opacita = '0.45';
                     opzioni.bordo = '2px dashed #777';

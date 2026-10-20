@@ -1,4 +1,4 @@
-// @versione 2026-10-18.1 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-20.5 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-18.1';
+    M.VERSIONE = '2026-10-20.5';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -94,6 +94,16 @@
     // in attacco la schivata è 'SCHIVATA', in reazione è 'DODGE'.
     // Non la sistemiamo ora (romperebbe l'Hub); la rendiamo visibile.
     // ------------------------------------------------------------------
+    // 20 ottobre (TEST): il NOME da leggere di un'azione. Alcuni id interni
+    // non sono parole (CC_ATTACK, DODGE...) e il tabellone li stampava cosi`.
+    // Chi mostra un'azione al giocatore chiami questa; gli id restano quelli.
+    M.nomeAzione = function (id) {
+        const s = String(id == null ? '' : id);
+        const N = { CC_ATTACK: 'ATTACCO CC', BS_ATTACK: 'ATTACCO BS', DODGE: 'SCHIVATA', RESET: 'RESET',
+                    PIAZZA_DEPLOYABLE: 'PIAZZARE EQUIPAGGIAMENTO', SUPPORTO_WIP: 'SUPPORTO (WIP)',
+                    SUPPORTO_BS: 'SUPPORTO (BS)', BERSERK: 'ATTACCO BERSERK', PROTHEION: 'PROTHEION' };
+        return N[s.toUpperCase()] || s;
+    };
     M.AZIONI_ARO = {
         PIAZZA_DEPLOYABLE: 'PIAZZA_DEPLOYABLE',
         BS_ATTACK: 'BS_ATTACK',
@@ -3623,7 +3633,8 @@
         const cause = [];
         if (ctx.haLoFVersoAttaccante === false) cause.push('nessuna LoF verso l\'attaccante');
         if (ctx.armaDeployable) cause.push('arma Deployable (mina)');
-        if (ctx.controSagoma && ctx.haLoFVersoAttaccante === false) cause.push('Sagoma senza LoF');
+        // (La Sagoma senza LoF e` la stessa causa della riga sopra: contarla
+        // due volte faceva comparire "piu` cause non si sommano" a vuoto.)
         if (cause.length > 0) {
             // 🔴 Il Sesto Senso ignora OGNI MOD negativo su Schivata e Reset,
             // non solo questo -3. Le sole eccezioni sono IMM-A, IMM-B e
@@ -4034,6 +4045,7 @@
             // li offre all'avversario. Annotato, non risolto qui.
             if (st.morto || st.incosciente) { nega('Stato Nullo: non può dichiarare ARO.'); return e; }
             if (st.disconnesso) { nega('Disconnessa: non può dichiarare ARO.'); return e; }
+            if (unita && unita.states && unita.states.tagVuoto) { nega('TAG vuoto: il pilota è uscito (Escape System). Non dichiara ARO finché non risale.'); return e; }
 
             // 🔴 Lo stato del REATTIVO, non solo l'attacco in arrivo.
             // Prima BS, CC e Hacking venivano offerti anche a truppe IMM-A,
@@ -4143,6 +4155,15 @@
                 // nome grezzo del profilo (MULTI Rifle, Missile Launcher...),
                 // null per l'arma a una modalita`. Lo legge M.raggruppaModiArma.
                 const conFam = Object.assign({}, p, { famiglia: varianti.length > 1 ? nome : null });
+                // 19 ottobre (Paolo, CC-02): "DA CC Weapon(PS=5)" del profilo
+                // diventava "DA CC Weapon", e l'ARO rileggeva il profilo per
+                // nome: PS 8 del generico invece del 5 del profilo (salvezza
+                // 9 invece di 6). Se il nome della lista cambia il profilo
+                // (PS, Burst, munizione), il nome resta quello della lista.
+                if (varianti.length === 1 && nome !== p.nome) {
+                    const base = M.profiloArma(p.nome);
+                    if (base.dam !== p.dam || base.burst !== p.burst || base.ammo !== p.ammo) conFam.nome = nome;
+                }
                 if (idAro === 'CC_ATTACK') {
                     if (p.isCC) dentro.push(conFam);
                 } else {
@@ -4731,6 +4752,21 @@
 
         const azione = String(attacco.azione || '').toUpperCase();
 
+        // --- Il REATTIVO attacca con una Sagoma DIRETTA ---
+        // 20 ottobre (TEST, difetto 1): righe 3657-3661 del regolamento,
+        // lette dal lato di chi riceve la Sagoma. L'attivo e` sotto la Sagoma
+        // del reattivo e lo attacca: il suo Attacco e` un Tiro Normale, e la
+        // Sagoma colpisce senza tiro (nella Risoluzione l'attivo fa il Tiro
+        // Salvezza). Prima si guardava solo attacco.arma: era un Faccia a
+        // Faccia con il reattivo senza Valore di Successo, e l'Hub scriveva
+        // "Valore di Successo non fornito dal calcolo". Vale anche contro un
+        // Attacco Intuitivo: e` un Attacco che richiede un tiro.
+        const tplReaz = (reazione.arma && String(reazione.azione || '').toUpperCase() !== 'DODGE') ? M.regoleTemplate(reazione.arma) : null;
+        if (tplReaz && tplReaz.tipo === 'DIRETTO') {
+            note.push('Sagoma Diretta del reattivo: colpisce senza tiro. L\'Attacco dell\'attivo contro di lui e` un Tiro Normale; nella Risoluzione l\'attivo fa il Tiro Salvezza (righe 3657-3661).');
+            return esito(M.CONFRONTO.NORMALE, 'Sagoma Diretta in ARO: il reattivo non tira, l\'attivo fa un Tiro Normale.');
+        }
+
         // --- Attacco Intuitivo: richiede un tiro, quindi F2F ---
         // Vale ANCHE con una Sagoma Diretta: la regola dell'Intuitivo ha la
         // precedenza su quella delle Sagome.
@@ -4799,7 +4835,9 @@
         const attFumo = usa(attacco.ammo, 'SMOKE') && !usa(attacco.ammo, 'ECLIPSE');
         const difFumo = usa(reazione.ammo, 'SMOKE') && !usa(reazione.ammo, 'ECLIPSE');
         if ((attFumo && ctx.difensoreHaMSV) || (difFumo && ctx.attaccanteHaMSV)) {
-            note.push('L\'Eclipse blocca anche i Multispectral Visor: con quello il Faccia a Faccia resterebbe.');
+            // 20 ottobre (TEST): qui c'era la nota sull'Eclipse, che usciva
+            // anche quando l'Eclipse non c'era. Si dice solo cosa succede.
+            note.push('Fumo contro Multispectral Visor: chi ha il visore vede attraverso il Fumo, quindi i due tiri non si oppongono (due Tiri Normali).');
             return esito(M.CONFRONTO.NORMALE, 'Fumo contro Multispectral Visor: i tiri non sono opposti.');
         }
 
@@ -5055,6 +5093,15 @@
             const sa = String((arma && arma.salvAttr) || '');
             const componenti = String(par.munizione || '').toUpperCase().split('+');
             const vuoleDimezzare = componenti.some(c => MU[c] && MU[c].dimezza === true);
+            // 19 ottobre (Paolo, MU-05): la nota della munizione che cambia
+            // l'esito della salvezza (SHOCK: VITA 1 -> Morto) arriva al tabellone.
+            componenti.forEach(function (c) {
+                const ns = MU[c] && MU[c].notaSalvezza;
+                if (!ns) return;
+                const conVita = bersaglio && bersaglio.w != null && bersaglio.str == null;
+                if (ns.soloVita && !conVita) return;
+                if (note.indexOf(ns.testo) < 0) note.push(ns.testo);
+            });
             if (vuoleDimezzare && sa && sa.indexOf('/2') < 0) {
                 avvisi.push(err('A86', `${(arma && arma.nome) || 'Arma'}: munizione ${par.munizione}, che dimezza, ma salvezza "${sa}" senza "/2" nel dato dell'arma. Il motore segue il dato e NON dimezza: controlla la scheda.`));
             }
@@ -6163,7 +6210,14 @@
             // arriva a contatto, quindi il -3 per assenza di LoF non c'entra.
             const modoB = attacco.arma && attacco.arma.modoRisoluzione;
             const controBoost = !!(modoB && modoB.difesa === 'SCHIVATA_NORMALE');
-            const esente = t.sestoSenso || !!tplAtt || controBoost;
+            // 🔴 20 ottobre (TPL-05): la Sagoma NON toglie il -3. La Schivata
+            // contro una Sagoma e` sempre concessa, ma senza LoF resta PH-3:
+            // "Dodging a Direct Template Weapon requires a Normal PH Roll (or
+            // PH-3 as mentioned previously)" (riga 3655) e l'esempio del
+            // Fennec 3, "Dodge (PH-3 due to the lack of LoF to his attacker)"
+            // (riga 3819). Qui la Sagoma figurava fra gli esenti, e il
+            // tabellone dava PH 10 dove la pagina dell'ARO dava 7.
+            const esente = t.sestoSenso || controBoost;
             esito = M.modSchivata(difensore, {
                 haLoFVersoAttaccante: esente ? true : ctx.hasLoF,
                 controSagoma: !!tplAtt,
@@ -6189,6 +6243,10 @@
                     : controBoost
                         ? 'Il deployable arriva a contatto: la Schivata è a PH pieno, la LoF non c\'entra.'
                         : 'Contro una Sagoma la Schivata non subisce il -3 per mancanza di LoF.');
+            }
+            // 20 ottobre (Paolo, TPL-05): cosa succede se la Schivata riesce.
+            if (tplAtt && !controBoost) {
+                esito.note.push('Se la Schivata riesce, il bersaglio esce dalla Sagoma (fino a 2"): non subisce il colpo e non fa il Tiro Salvezza.');
             }
             if (controBoost) {
                 // "Se la Schivata riesce, l'attacco e` evitato del tutto" sta
@@ -6614,7 +6672,10 @@
         // --- 3. il tipo di confronto ---
         const conf = M.tipoConfronto(
             { azione: azione, arma: arma, attaccante: attaccante, burst: burstAtt, ammo: attacco.ammo || (arma && arma.ammo) },
-            reazione ? { azione: reazione.azione, arma: reazione.arma, bersaglio: reazione.bersaglio, burst: burstDif, ammo: reazione.ammo } : null,
+            // 20 ottobre (TEST): anche per la reazione, la munizione dell'arma
+            // se la busta non la porta (come per l'attacco). Senza, una
+            // chiamata senza `ammo` perdeva la regola Fumo contro MSV.
+            reazione ? { azione: reazione.azione, arma: reazione.arma, bersaglio: reazione.bersaglio, burst: burstDif, ammo: reazione.ammo || (reazione.arma && reazione.arma.ammo) } : null,
             {
                 attaccanteHaMSV: M.trattiTiro(attaccante).msv1,
                 difensoreHaMSV: M.trattiTiro(difensore).msv1
@@ -6747,7 +6808,10 @@
                 azione: reazione.azione,
                 attributo: reaz.attributo,
                 base: reaz.base,
-                mod: reaz.valore,
+                // 20 ottobre: Sagoma Diretta in ARO, colpo senza tiro. Come
+                // per l'attivo: mod 'Auto' e automatico, invece di null.
+                mod: (reaz.automatico && !reaz.requisitoFallito) ? 'Auto' : reaz.valore,
+                automatico: !!reaz.automatico && !reaz.requisitoFallito,
                 impossibile: !!reaz.impossibile || !!reaz.requisitoFallito,
                 requisitoFallito: !!reaz.requisitoFallito,
                 repeaterNemico: !!reazione.repeaterNemico,
@@ -6816,7 +6880,7 @@
                 titolo: `${M.nomeUnita(mina)} detona su ${M.nomeUnita(bersaglio)}`,
                 motivoConfronto: 'Cybermine: Attacco Comms. Nessun tiro per colpire; si evita SOLO col Reset.',
                 attivo: conReset
-                    ? { nome: M.nomeUnita(bersaglio), azione: 'RESET (Tiro Normale)', attributo: 'WIP', mod: (rs.valore || 0) - 3, burst: 1,
+                    ? { nome: M.nomeUnita(bersaglio), azione: 'RESET (Tiro Normale)', attributo: 'WIP', base: rs.base, mod: (rs.valore || 0) - 3, burst: 1,
                         voci: (rs.voci || []).concat([{ fonte: 'cybermine', valore: -3, motivo: 'Reset contro la Cybermine: -3 WIP (riga 6240)' }]),
                         note: [], salvezzaSubita: salv, impossibile: ((rs.valore || 0) - 3) < 1 }
                     : { nome: M.nomeUnita(bersaglio), azione: 'NESSUN RESET', attributo: null, mod: '-', burst: 0, voci: [],
@@ -6863,7 +6927,9 @@
             voci.push({ fonte: 'sagoma', valore: -3, motivo: 'Schivata contro la Sagoma di un Deployable: -3 (righe 7294-7299; un solo -3)' });
             soglia -= 3;
         }
-        const difesa = { nome: M.nomeUnita(bersaglio), azione: 'SCHIVATA (Tiro Normale)', attributo: 'PH',
+        // 20 ottobre (TEST): `base` porta la riga «Statistica Base (PH)» nei
+        // dettagli. La leggeva lo scontro a parte della Schivata, tolto in 20.4.
+        const difesa = { nome: M.nomeUnita(bersaglio), azione: 'SCHIVATA (Tiro Normale)', attributo: 'PH', base: sch.base,
                          mod: soglia, burst: 1, voci: voci, note: [],
                          salvezzaSubita: M.tiroSalvezza(bersaglio, { arma: arma }), impossibile: soglia < 1 };
         if (cyber) {
@@ -7266,6 +7332,24 @@
                 // quando non trova niente e restituisce un segnaposto col solo
                 // nome. Senza, il segnaposto passava per un'unita` vera.
                 const attNonRisolto = !attObj || typeof attObj !== 'object' || attObj.nonRisolto === true;
+                // 19 ottobre (Paolo, CC-03): il COLPO DI GRAZIA non si tira. La
+                // pagina lo diceva, ma al tabellone arrivava un CC Attack
+                // normale coi suoi dadi e la salvezza. Contro un Incosciente
+                // (senza Dogged/NWI) lo scontro e` senza dadi: passa a Morto.
+                const eCC = att.azione === M.AZIONI.CC_ATTACK || att.azione === M.AZIONI.BERSERK || att.azione === M.AZIONI.PROTHEION;
+                const grazia = (eCC && dif && typeof dif === 'object') ? M.colpoDiGrazia(dif) : null;
+                if (grazia && grazia.applicabile) {
+                    const nessuna = { offensivo: false, note: ['Nessun Tiro Salvezza.'] };
+                    scontri.push({
+                        tipo: M.CONFRONTO.NESSUNO, titolo: 'COLPO DI GRAZIA',
+                        attivo: { nome: M.nomeUnita(attObj || att.attaccante), azione: 'COLPO DI GRAZIA', attributo: null, base: null, mod: null,
+                                  burst: 0, senzaTiro: true, voci: [], note: [grazia.motivo], salvezzaInflitta: nessuna },
+                        reattivo: { nome: nomeB, azione: 'INCOSCIENTE', attributo: null, base: null, mod: null, burst: 0, senzaTiro: true,
+                                    voci: [], note: [], salvezzaInflitta: nessuna },
+                        note: ['☠️ ' + nomeB + ': ' + grazia.motivo], avvisi: [], colpoDiGrazia: true
+                    });
+                    return;
+                }
                 scontri.push(M.risolviScontro({
                     attaccante: attObj,
                     azione: att.azione, arma: att.arma, bersaglio: dif,
@@ -7549,6 +7633,19 @@
                 if (x.tipo === 'NESSUNO' && x.attivo && /SCHIVATA|DODGE/i.test(String(x.attivo.azione || ''))) scontri.splice(k, 1);
             }
         }
+        // 20 ottobre (TEST): lo stesso per la DETONAZIONE. La Schivata (o il
+        // Reset contro una Cybermine) dell'attiva contro un koala o una mina e`
+        // gia` dentro lo scontro della detonazione, col suo PH: prima il
+        // tabellone la mostrava due volte («TIRO DI SUPPORTO / DIFESA» piu` la
+        // detonazione), e al tavolo sembravano due tiri.
+        const difeseInDetonazione = scontri.filter(x => x.tipo === 'DETONAZIONE' && x.attivo && !x.attivo.nessunTiro).map(x => x.attivo.nome);
+        if (difeseInDetonazione.length) {
+            for (let k = scontri.length - 1; k >= 0; k--) {
+                const x = scontri[k];
+                if (x.tipo === 'NESSUNO' && x.attivo && /SCHIVATA|DODGE|RESET/i.test(String(x.attivo.azione || '')) &&
+                    difeseInDetonazione.indexOf(x.attivo.nome) >= 0) scontri.splice(k, 1);
+            }
+        }
 
         // PIU` NEMICI SPARANO ALL'ATTIVA CHE SCHIVA: il dado della Schivata
         // resta UNO, e si confronta separatamente con ciascun tiro (riga 3543 —
@@ -7718,6 +7815,9 @@
         // dal Coordinato (E59) e dal Fireteam.
         const soloIrregolare = !!st.isolato;
         if (st.disconnesso) blocchi.push({ stato: 'disconnesso', nome: M.nomeStato('disconnesso'), motivo: A['disconnesso'] });
+        // 20 ottobre (Paolo): il TAG da cui il pilota e` uscito resta sul
+        // tavolo, vuoto: niente Ordini ne` ARO finche` il pilota non risale.
+        if (unita && unita.states && unita.states.tagVuoto) blocchi.push({ stato: 'tagVuoto', nome: 'TAG vuoto', motivo: 'TAG vuoto: il pilota è uscito (Escape System). Si riattiva quando il pilota risale.' });
         // Posseduto e Sepsitorizzato: la truppa passa sotto controllo
         // avversario. La regola e` esplicita per entrambi.
         if (unita && unita.states && unita.states.possessed) blocchi.push({ stato: 'posseduto', nome: M.nomeStato('posseduto'), motivo: A['posseduto'] });
@@ -7738,6 +7838,217 @@
 
     // Nome storico, tenuto per non rompere i chiamanti esistenti.
     M.puoEssereAttivata = function (unita) { return M.puoRicevereOrdine(unita); };
+
+    // ==================================================================
+    // 20 ottobre (Paolo): TRANSMUTATION, MOTO E ESCAPE SYSTEM
+    // ------------------------------------------------------------------
+    // UNA truppa = UNA riga in lista. Il secondo profilo sta nel database
+    // come riga secondaria, collegata alla principale (DATABASE 19 ottobre):
+    //   profiloTrasformato: "<id>"   Battle Ravaged, Enhanced, Symbiont
+    //   smonta: { pilota, periferico }   AI Motorcycle (Zondnautica)
+    //   espelle: { pilota }              Escape System (TAG -> pilota)
+    // Regole generali (REGOLE, righe 10251-10253): VITA/STR e Stati sono
+    // CONDIVISI fra i profili: cambiare profilo non azzera niente.
+    // (X) ed Escape System sono a senso unico (riga 10257). Per decisione
+    // di Paolo: smontare e rimontare sono una meta` Ordine di Movimento, e
+    // il pilota uscito con l'Escape System puo` risalire sul TAG, che resta
+    // sul tavolo vuoto (regola della casa).
+    // Ogni funzione restituisce le unita` AGGIORNATE e non tocca quelle
+    // passate: l'app le applica con window.sostituisciUnita.
+    // ==================================================================
+    const CAMPI_PROFILO = ['nome', 'tipo', 'mov', 'cc', 'bs', 'ph', 'wip', 'arm', 'bts', 'w', 'str', 's',
+                           'skills', 'weapon', 'equip', 'punti', 'swc'];
+    function profiliDb() { return [].concat(G.DB_NOMADI || [], G.DB_PANOCEANIA || []); }
+    M.profiloDaId = function (id) { return profiliDb().find(p => p && p.id === id) || null; };
+    // Il profilo del database di un'unita` del roster. Il roster non porta
+    // l'id del database: si cerca per `profiloDb` (scritto da qui) o per nome.
+    M.profiloDiDatabase = function (unita) {
+        if (!unita) return null;
+        if (unita.profiloDb) { const p = M.profiloDaId(unita.profiloDb); if (p) return p; }
+        const n = unita.nome || unita.name;
+        return profiliDb().find(p => p && p.nome === n) || null;
+    };
+    // L'unita` con gli attributi, le Abilita` e le armi di `profilo`; tiene
+    // id, soprannome, Gruppo, stati, ferite, foto.
+    function conProfilo(unita, profilo) {
+        const u = JSON.parse(JSON.stringify(unita || {}));
+        // undefined e non delete: l'app applica con Object.assign, che non
+        // toglie i campi; undefined li spegne (e JSON non li spedisce).
+        CAMPI_PROFILO.forEach(function (k) { u[k] = (profilo[k] !== undefined) ? profilo[k] : undefined; });
+        u.name = profilo.nome;
+        u.profiloDb = profilo.id;
+        return u;
+    }
+    // Il tipo di Transmutation scritto nel profilo: { tipo: 'X'|'AUTO'|'ESCAPE'|'WIP'|'HATCHING', x }
+    M.tipoTransmutation = function (unita) {
+        const m = String((unita && unita.skills) || '').match(/Transmutation\s*\(([^)]*)\)/i);
+        if (!m) return null;
+        const t = m[1].trim().toUpperCase();
+        if (/^\d+$/.test(t)) return { tipo: 'X', x: parseInt(t, 10), testo: m[0] };
+        if (t.indexOf('ESCAPE') === 0) return { tipo: 'ESCAPE', x: parseInt((t.match(/(\d+)/) || [])[1], 10) || null, testo: m[0] };
+        if (t.indexOf('AUTO') === 0) return { tipo: 'AUTO', testo: m[0] };
+        if (t.indexOf('WIP') === 0) return { tipo: 'WIP', testo: m[0] };
+        return { tipo: t, testo: m[0] };
+    };
+
+    // --- 1. Secondo profilo (Battle Ravaged, Enhanced, Symbiont) --------
+    // Lo applica il giocatore dall'editor degli stati: l'app non conta le
+    // ferite. A senso unico.
+    // Transmutation (WIP) (DATABASE 20 ottobre: i quattro Switcher, solo
+    // Nomadi): Tiro Normale di WIP, col MOD scritto dopo la skill, prima di
+    // dichiarare un Ordine o un ARO; si ripete a ogni Ordine/ARO finche` non
+    // riesce; all'inizio della Fase Stati si torna al primo profilo, da soli
+    // (righe 10281-10288). E` l'unico tipo che torna indietro.
+    M.tiroTransmutationWip = function (unita) {
+        const m = String((unita && unita.skills) || '').match(/Transmutation\s*\(\s*WIP\s*([+-]\s*\d+)?\s*\)/i);
+        const base = parseInt(unita && unita.wip, 10) || 0;
+        const mod = m && m[1] ? parseInt(m[1].replace(/\s/g, ''), 10) : 0;
+        return { attributo: 'WIP', base: base, mod: mod, valore: base + mod,
+                 voci: [{ fonte: 'base', valore: base, motivo: `WIP: ${base}` }].concat(mod ? [{ fonte: 'skill', valore: mod, motivo: `Transmutation (WIP${mod > 0 ? '+' : ''}${mod})` }] : []) };
+    };
+    M.trasformazioneDi = function (unita) {
+        if (!unita) return null;
+        if (unita.trasformato) {
+            const wip = unita.tipoTrasformazione === 'WIP';
+            const orig = unita.profiloOriginaleDb ? M.profiloDaId(unita.profiloOriginaleDb) : null;
+            return { gia: true, nome: unita.nome, reversibile: wip && !!orig, primo: orig,
+                     nota: wip ? 'Torna da solo al primo profilo all\'inizio della Fase Stati (a fine turno).' : 'Il cambio non torna indietro.' };
+        }
+        const base = M.profiloDiDatabase(unita);
+        const sec = base && base.profiloTrasformato ? M.profiloDaId(base.profiloTrasformato) : null;
+        if (!sec) return null;
+        const tr = M.tipoTransmutation(base) || {};
+        if (tr.tipo === 'WIP') {
+            const t = M.tiroTransmutationWip(base);
+            return { gia: false, secondo: sec, nome: sec.nome, tipo: 'WIP', tiro: t,
+                     quando: `${tr.testo}: Tiro Normale di WIP ${t.valore} prima di dichiarare un Ordine o un ARO; se fallisce, si ritenta al prossimo.`,
+                     nota: 'Se riesce, passa al profilo; all\'inizio della Fase Stati torna da solo al primo. Ferite e Stati restano.' };
+        }
+        const quando = tr.tipo === 'X' ? `${tr.testo}: dopo ${tr.x} ${tr.x === 1 ? 'Ferita' : 'Ferite'} ricevute, a fine Ordine.` : (tr.testo || '');
+        return { gia: false, secondo: sec, nome: sec.nome, tipo: tr.tipo || null, quando: quando,
+                 nota: 'Il cambio e` definitivo per la partita. Ferite e Stati restano.' };
+    };
+    M.trasforma = function (unita) {
+        const t = M.trasformazioneDi(unita);
+        if (!t) return { possibile: false, motivo: 'Questa truppa non ha un secondo profilo.' };
+        if (t.gia) return { possibile: false, motivo: 'Ha gia` il secondo profilo: il cambio non torna indietro.' };
+        const u = conProfilo(unita, t.secondo);
+        u.trasformato = true;
+        u.tipoTrasformazione = t.tipo || null;
+        u.profiloOriginaleDb = (M.profiloDiDatabase(unita) || {}).id || null;
+        return { possibile: true, unitaAggiornata: u, note: [t.nota] };
+    };
+    // Solo la (WIP) torna indietro: a mano, o da sola in Fase Stati.
+    M.tornaAlPrimoProfilo = function (unita) {
+        const t = M.trasformazioneDi(unita);
+        if (!t || !t.gia || !t.reversibile) return { possibile: false, motivo: 'Questo cambio di profilo non torna indietro.' };
+        const u = conProfilo(unita, t.primo);
+        u.trasformato = false; u.tipoTrasformazione = null; u.profiloOriginaleDb = null;
+        return { possibile: true, unitaAggiornata: u, note: ['Tornato al primo profilo. Ferite e Stati restano.'] };
+    };
+    // Inizio della Fase Stati (fine di ogni Turno di Giocatore): tutte le
+    // truppe in Transmutation (WIP) tornano al primo profilo.
+    //   -> [{ unita, unitaAggiornata }]
+    M.fineTurnoTransmutation = function (roster) {
+        return (roster || []).filter(u => u && u.trasformato && u.tipoTrasformazione === 'WIP').map(function (u) {
+            const e = M.tornaAlPrimoProfilo(u);
+            return e.possibile ? { unita: u, unitaAggiornata: e.unitaAggiornata } : null;
+        }).filter(Boolean);
+    };
+
+    // --- 2. AI Motorcycle: smontare e rimontare --------------------------
+    // Una meta` Ordine di Movimento (decisione di Paolo). Smontando nasce la
+    // moto (Periferica Synchronized, STR propria); rimontando sparisce.
+    M.puoSmontare = function (unita) {
+        const base = M.profiloDiDatabase(unita);
+        if (!base || !base.smonta || unita.smontato) return { puo: false, motivo: 'Non e` in sella a una AI Motorcycle.' };
+        if (!M.profiloDaId(base.smonta.pilota) || !M.profiloDaId(base.smonta.periferico)) return { puo: false, motivo: 'Profili di pilota o moto non trovati nel database.' };
+        return { puo: true };
+    };
+    M.smontaMoto = function (unita) {
+        const ok = M.puoSmontare(unita);
+        if (!ok.puo) return { possibile: false, motivo: ok.motivo };
+        const base = M.profiloDiDatabase(unita);
+        const pil = M.profiloDaId(base.smonta.pilota), per = M.profiloDaId(base.smonta.periferico);
+        const pilota = conProfilo(unita, pil);
+        const motoId = String(unita.id) + '_moto';
+        pilota.smontato = { montato: base.id, moto: motoId };
+        const moto = conProfilo({ id: motoId, alias: (unita.alias || pil.nome) + ' (moto)', combatGroup: unita.combatGroup,
+                                  states: {}, state: 'ACTIVE', deployState: 'NORMAL', proprietario: unita.id }, per);
+        return { possibile: true, unitaAggiornata: pilota, nuova: moto,
+                 note: ['Il Modello montato diventa la moto; il pilota si mette a contatto di Silhouette con lei (righe 10443-10445).'] };
+    };
+    M.puoRimontare = function (pilota, roster) {
+        if (!pilota || !pilota.smontato) return { puo: false, motivo: 'Non e` un pilota sceso dalla moto.' };
+        const moto = (roster || G.roster || []).find(x => x && x.id === pilota.smontato.moto);
+        if (!moto) return { puo: false, motivo: 'La moto non e` piu` sul tavolo.' };
+        const s = M.statoBersaglio(moto);
+        if (s.isolato || s.immA || s.immB || M.eNullo(moto) || moto.state === 'DEAD')
+            return { puo: false, motivo: 'La moto e` Isolata, Immobilizzata o in uno Stato Nullo: non si rimonta (righe 10449-10451).' };
+        return { puo: true, moto: moto };
+    };
+    M.rimontaMoto = function (pilota, roster) {
+        const ok = M.puoRimontare(pilota, roster);
+        if (!ok.puo) return { possibile: false, motivo: ok.motivo };
+        const mont = M.profiloDaId(pilota.smontato.montato);
+        if (!mont) return { possibile: false, motivo: 'Profilo montato non trovato nel database.' };
+        const u = conProfilo(pilota, mont);
+        u.smontato = null;
+        return { possibile: true, unitaAggiornata: u, rimuovi: ok.moto.id,
+                 note: ['Il pilota deve essere a contatto di Silhouette con la moto (righe 10436-10437). Un Supportware sulla moto cade (righe 10452-10455).'] };
+    };
+
+    // --- 3. Escape System: il pilota esce, e (regola della casa) risale --
+    M.puoEspellere = function (tag) {
+        const base = M.profiloDiDatabase(tag);
+        if (!base || !base.espelle || !base.espelle.pilota) return { puo: false, motivo: 'Questo TAG non ha un Escape System collegato a un pilota.' };
+        if (tag.states && tag.states.tagVuoto) return { puo: false, motivo: 'Il pilota e` gia` uscito.' };
+        if (!M.profiloDaId(base.espelle.pilota)) return { puo: false, motivo: 'Profilo del pilota non trovato nel database.' };
+        return { puo: true };
+    };
+    M.espelliPilota = function (tag) {
+        const ok = M.puoEspellere(tag);
+        if (!ok.puo) return { possibile: false, motivo: ok.motivo };
+        const base = M.profiloDiDatabase(tag);
+        const t = JSON.parse(JSON.stringify(tag));
+        t.states = Object.assign({}, t.states || {}, { tagVuoto: true });
+        const pilotaId = String(tag.id) + '_pilota';
+        t.pilotaUscito = pilotaId;
+        const pilota = conProfilo({ id: pilotaId, alias: (tag.alias || base.nome) + ' (pilota)', combatGroup: tag.combatGroup,
+                                    states: {}, state: 'ACTIVE', deployState: 'NORMAL', proprietario: tag.id, tagDi: tag.id },
+                                  M.profiloDaId(base.espelle.pilota));
+        return { possibile: true, unitaAggiornata: t, nuova: pilota,
+                 note: ['Escape System: il pilota esce, e si piazza una Sagoma Circolare di Eclipse centrata su di lui (righe 10260-10263).',
+                        'Il TAG resta sul tavolo vuoto: niente Ordini ne` ARO finche` il pilota non risale.'] };
+    };
+    M.puoRisalireSulTag = function (pilota, roster) {
+        if (!pilota || !pilota.tagDi) return { puo: false, motivo: 'Non e` un pilota uscito da un TAG.' };
+        const tag = (roster || G.roster || []).find(x => x && x.id === pilota.tagDi);
+        if (!tag) return { puo: false, motivo: 'Il TAG non e` piu` sul tavolo.' };
+        if (M.eNullo(tag) || tag.state === 'DEAD') return { puo: false, motivo: 'Il TAG e` distrutto (Stato Nullo): non si risale.' };
+        return { puo: true, tag: tag };
+    };
+    M.risaliSulTag = function (pilota, roster) {
+        const ok = M.puoRisalireSulTag(pilota, roster);
+        if (!ok.puo) return { possibile: false, motivo: ok.motivo };
+        const t = JSON.parse(JSON.stringify(ok.tag));
+        t.states = Object.assign({}, t.states || {}); delete t.states.tagVuoto; t.pilotaUscito = null;
+        return { possibile: true, unitaAggiornata: t, rimuovi: pilota.id,
+                 note: ['Il pilota deve essere a contatto di Silhouette col TAG. Il TAG torna attivo con le ferite che aveva.'] };
+    };
+
+    // Le voci del menu che una truppa puo` dichiarare (meta` Ordine di
+    // Movimento). INTERFACCIA le mette in dbAzioniN5.movimento; la regola
+    // di chi puo` sta qui (M.azionePermessaDaStati le filtra).
+    M.AZIONI_TRASPORTO = ['SCENDI DALLA MOTO', 'RISALI SULLA MOTO', 'RISALI SUL TAG'];
+    M.trasportoPossibile = function (unita, azione, roster) {
+        const a = String(azione || '').toUpperCase();
+        if (a === 'SCENDI DALLA MOTO') return M.puoSmontare(unita);
+        if (a === 'RISALI SULLA MOTO') return M.puoRimontare(unita, roster);
+        if (a === 'RISALI SUL TAG') return M.puoRisalireSulTag(unita, roster);
+        return null;
+    };
+
 
     // 18 ottobre (Paolo, ST-05): lo Stato Disconnesso e` SOLO delle
     // Periferiche (righe 13816-13836: "The Peripheral cannot be activated").
@@ -8127,6 +8438,17 @@
             // Marker mostrerebbe la pedina che c'e` sotto.
             p.imgVariant = '0';
             p.states = { camo: eCamo, impersonation: !eCamo };
+            // 20 ottobre (Paolo): il NUMERO del segnalino, e la sua immagine.
+            // 20 ottobre, sera: il numero e` del SEGNALINO (CAMO-3 2), e il
+            // nome lo dice: "SEGNALINO MIMETICO (-3) 2".
+            const tN = M.segnalinoMarker(unita) || (eCamo ? 'CAMO' : 'IMP-1');
+            if (unita.numeroMarker && unita.tipoNumeroMarker === tN) {
+                const CN = ((S.segnaliniNumerati || {})[tN]) || {};
+                p.numeroMarker = unita.numeroMarker;
+                p.tipoNumeroMarker = tN;
+                p.alias = p.alias + (CN.aliasExtra ? ' ' + CN.aliasExtra : '') + ' ' + unita.numeroMarker;
+                p.immagineMarker = M.immagineMarker(tN, unita.numeroMarker);
+            }
             // 18 ottobre (Paolo): il solo valore del Mimetismo viaggia col
             // segnalino, perche` lo Scoprire (e l'Hub) lo applichino. Niente
             // Abilita`: il resto del profilo resta nascosto.
@@ -10004,6 +10326,25 @@
     M.azionePermessaDaStati = function (unita, azione) {
         const az = M.azioneCanonica(azione) || String(azione || '').toUpperCase();
         const bloccanti = [];
+        // 19 ottobre (Paolo, LOG-02): chi e` in Riserva per lo Schieramento
+        // Aereo non e` sul tavolo: l'unico Ordine che puo` ricevere e`
+        // l'INGRESSO IN CAMPO. Prima il menu offriva tutta la lista.
+        {
+            const st = (unita && unita.states) || {};
+            const dep = String((unita && unita.deployState) || 'NORMAL').toUpperCase();
+            const inRiserva = dep === 'RESERVE' || dep === 'AD' || !!st.reserve;
+            const ingresso = az === (M.azioneCanonica('INGRESSO IN CAMPO') || 'INGRESSO IN CAMPO') || String(azione || '').toUpperCase() === 'INGRESSO IN CAMPO';
+            if (inRiserva && !ingresso) {
+                bloccanti.push({ stato: 'riserva', motivo: 'In Riserva (Schieramento Aereo): l\'unico Ordine possibile e` INGRESSO IN CAMPO.' });
+            } else if (!inRiserva && ingresso && unita && unita.deployState) {
+                bloccanti.push({ stato: 'sulTavolo', motivo: 'E` gia` sul tavolo: l\'INGRESSO IN CAMPO serve solo a chi e` in Riserva.' });
+            }
+        }
+        // 20 ottobre: SCENDI / RISALI (moto, TAG) solo a chi puo`.
+        if (M.AZIONI_TRASPORTO && M.AZIONI_TRASPORTO.indexOf(String(azione || '').toUpperCase()) >= 0) {
+            const tp = M.trasportoPossibile(unita, azione);
+            if (tp && !tp.puo) bloccanti.push({ stato: 'trasporto', motivo: tp.motivo });
+        }
         M.statiDiCatalogo(unita).forEach(function (s) {
             if (Array.isArray(s.vietaAzioni) && s.vietaAzioni.some(function (x) {
                 return M.azioneCanonica(x) === az || String(x).toUpperCase() === az;
@@ -12815,8 +13156,79 @@
     //                    chiedeva "Sostituisco?" a ogni stato salvato.
     // `token`: i Deployable sul tavolo viaggiano insieme al roster, filtrati
     // come lui (una mina mimetica diventa un segnalino).
+    // ------------------------------------------------------------------
+    // 20 ottobre (Paolo): I MARKER NUMERATI. Ogni Marker CAMO o IMP della
+    // fazione ha un numero (CAMO 1, CAMO 2...; IMP 1...), per tipo: il piu`
+    // basso libero, e lo tiene finche` resta Marker. Rivelato, il numero si
+    // libera. Il numero e` un fatto del tavolo (il segnalino che si vede),
+    // non dice chi c'e` sotto.
+    //   M.tipoMarker(unita)          -> 'CAMO' | 'IMP' | null
+    //   M.numeraMarker(roster)       -> lo stesso roster; scrive numeroMarker
+    //                                   e tipoNumeroMarker sulle unita` (sul
+    //                                   posto: e` il roster del giocatore)
+    //   M.immagineMarker(tipo, n)    -> 'img/camo_2.png', o null oltre le immagini previste
+    //   M.etichettaMarker(unita)     -> 'CAMO 2' (o null se non e` un Marker numerato)
+    // 20 ottobre, sera (Paolo): i numeri vanno PER SEGNALINO, non per
+    // famiglia: CAMO, CAMO-3, CAMO-6, IMP-1, IMP-2 hanno ciascuno la sua
+    // serie (al tavolo sono segnalini diversi).
+    //   M.segnalinoMarker(unita)     -> 'CAMO' | 'CAMO-3' | 'CAMO-6' | 'IMP-1' | 'IMP-2' | null
+    //   tipoNumeroMarker porta ora il segnalino ('CAMO-3'), non la famiglia.
+    // ------------------------------------------------------------------
+    M.tipoMarker = function (unita) {
+        if (!unita) return null;
+        const st = M.statoBersaglio(unita);
+        const dep = String(unita.deployState || 'NORMAL').toUpperCase();
+        if (st.hidden) return null;
+        if (st.camo || dep.indexOf('CAMO') === 0) return 'CAMO';
+        if (st.imp || dep.indexOf('IMP') === 0) return 'IMP';
+        return null;
+    };
+    M.segnalinoMarker = function (unita) {
+        const f = M.tipoMarker(unita);
+        if (f === 'CAMO') {
+            const mim = (typeof M.valoreMimetismo === 'function') ? (M.valoreMimetismo(unita) || 0) : 0;
+            return mim <= -6 ? 'CAMO-6' : (mim <= -3 ? 'CAMO-3' : 'CAMO');
+        }
+        if (f === 'IMP') return M.livelloImpersonation(unita) === 2 ? 'IMP-2' : 'IMP-1';
+        return null;
+    };
+    M.numeraMarker = function (roster) {
+        const lista = (roster || []).filter(Boolean);
+        const presi = {};
+        // Prima chi lo ha gia` (e valido, senza doppioni), poi i nuovi.
+        lista.forEach(function (u) {
+            const t = M.segnalinoMarker(u);
+            if (t && !presi[t]) presi[t] = {};
+            if (!t || u.state === 'DEAD') { delete u.numeroMarker; delete u.tipoNumeroMarker; return; }
+            const n = parseInt(u.numeroMarker, 10);
+            if (u.tipoNumeroMarker === t && n > 0 && !presi[t][n]) presi[t][n] = true;
+            else { delete u.numeroMarker; u.tipoNumeroMarker = t; }
+        });
+        lista.forEach(function (u) {
+            const t = M.segnalinoMarker(u);
+            if (!t || u.state === 'DEAD' || u.numeroMarker) return;
+            let n = 1; while (presi[t][n]) n++;
+            presi[t][n] = true; u.numeroMarker = n; u.tipoNumeroMarker = t;
+        });
+        return roster;
+    };
+    M.immagineMarker = function (tipo, n) {
+        const C = ((catalogo('SCHIERAMENTO') || {}).segnaliniNumerati || {})[tipo];
+        if (!C || !(n > 0) || n > (C.immagini || 0)) return null;
+        return String(C.file).replace('{n}', n);
+    };
+    M.etichettaMarker = function (unita) {
+        const t = unita && unita.tipoNumeroMarker, n = unita && unita.numeroMarker;
+        if (!t || !n || M.segnalinoMarker(unita) !== t) return null;
+        const C = ((catalogo('SCHIERAMENTO') || {}).segnaliniNumerati || {})[t] || {};
+        return (C.etichetta || t) + ' ' + n;
+    };
+
     M.bustaSchieramento = function (roster, strutture, terreni, opzioni) {
         opzioni = opzioni || {};
+        // I numeri dei Marker si danno qui, prima di ogni invio: il roster
+        // del giocatore li tiene, e l'avversario riceve il solo numero.
+        M.numeraMarker(roster);
         const motivo = opzioni.motivo === 'AGGIORNAMENTO' ? 'AGGIORNAMENTO' : 'SCHIERAMENTO';
         // Un token non si conta due volte: se sta nel roster E nell'elenco dei
         // token (copie locali di prima del 26 settembre), resta la copia del

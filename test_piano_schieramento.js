@@ -1,4 +1,14 @@
-// @versione 2026-10-19.2 | test_piano_schieramento.js | proprieta`: chat TEST
+// @versione 2026-10-20.3 | test_piano_schieramento.js | proprieta`: chat TEST
+// 2026-10-20.3: REV_MINIMA = 36 (DEP-06 e DET-01: la Schivata dentro lo scontro della detonazione). Le prove restano 299.
+// 2026-10-20.2: REV_MINIMA = 35 (TPL-10 e LOG-06: i due difetti del cap. 31 corretti). Le prove passano a 299.
+// 2026-10-20.1: REV_MINIMA = 34; roster 41 Nomadi + 16 PanOceania = 57 (nuovi Switcher #40,
+//    Anaconda (Heavy Machine Gun) #41; il #18 da Zondmate (REM) a Zondnautica-A). Nuova la
+//    sezione 1b: ogni riga del roster dev'essere SCEGLIBILE (non un profilo secondario):
+//    dal database 2026-10-20.1 lo Zondmate (REM) e` la moto della Zondnautica e non si
+//    aggiunge a mano. La rev 33 aveva il #18 Zondmate: questa sezione la rende rossa.
+// 2026-10-19.3: REV_MINIMA = 33; database 377 + 368 = 745 (2026-10-19: tolti evader_multi e
+//    warcor_flash_pulse_3 Nomadi, kaplan_blitzen e warcor_flash_pulse PanOceania, aggiunti due
+//    Drummer). Il #8 del roster e` Interventor (Hacker Plus, FastPanda).
 // 2026-10-19.2: REV_MINIMA = 32 (OSS-01 e OSS-03: la scheda del bersaglio di
 //    Forward Observer e Triangulated Fire). Le prove restano 290.
 // 2026-10-19.1: REV_MINIMA = 31. Le prove passano da 284 a 290 (SUP-02a/b, SUP-04a/b,
@@ -120,7 +130,8 @@ const altraFazione = (f) => f === 'NOMADI' ? 'PANOCEANIA' : 'NOMADI';
 const voci = leggiTabelle(fs.readFileSync(PIANO, 'utf8'));
 
 console.log('\n=== 0. Le due tabelle si leggono ===');
-ok(DB.NOMADI.length === 379 && DB.PANOCEANIA.length === 368,   // 747 dal database 2026-10-16.2: tolte 11 righe doppie (4 Nomadi, 7 PanOceania)
+ok(DB.NOMADI.length === 377 && DB.PANOCEANIA.length === 368,   // 745 dal database 2026-10-19 (Nomadi 19.1, PanOceania 19.2)
+     // 747 dal database 2026-10-16.2: tolte 11 righe doppie (4 Nomadi, 7 PanOceania)
      // 758 dal database 2026-10-16.1: cancellati anche fusilier_lt2, orc_lieutenant, orc_lieutenant_2
      // 761 dal database .12.3
   
@@ -141,7 +152,7 @@ const perFazione = voci.reduce(function (m, v) { m[v.fazione] = (m[v.fazione] ||
 // (Il 7 ottobre ho cambiato questi numeri senza alzare la versione del
 // banco, e due chat hanno letto due contenuti diversi sotto la stessa
 // 2026-10-07.1. Da qui la .2.)
-const REV_MINIMA = 32;
+const REV_MINIMA = 36;
 const testoPiano = fs.readFileSync(PIANO, 'utf8');
 const revisione = (/revisione\s+(\d+)/.exec(testoPiano) || [])[1];
 ok(revisione !== undefined && parseInt(revisione, 10) >= REV_MINIMA,
@@ -206,9 +217,9 @@ ok(dcDichiarate !== undefined && parseInt(dcDichiarate, 10) === incompiute,
 // sostituirne una avrebbe tolto il soggetto a quella prova. Aggiungere non
 // costa nessuna prova; costa solo questi due numeri.
 // 10 ottobre: da 43 a 52, sempre aggiungendo (vedi la nota in testa).
-ok(perFazione.NOMADI === 39 && perFazione.PANOCEANIA === 16,
-   `righe lette per fazione: 39 Nomadi e 16 PanOceania (${JSON.stringify(perFazione)})`);
-ok(voci.length === 55, `righe di schieramento lette dal piano: 55 (${voci.length})`);
+ok(perFazione.NOMADI === 41 && perFazione.PANOCEANIA === 16,
+   `righe lette per fazione: 41 Nomadi e 16 PanOceania (${JSON.stringify(perFazione)})`);
+ok(voci.length === 57, `righe di schieramento lette dal piano: 57 (${voci.length})`);
 ok(voci.some(v => v.fazione === 'NOMADI') && voci.some(v => v.fazione === 'PANOCEANIA'),
    'e vengono da entrambe le tabelle');
 // CONTROPROVA della lettura: se il formato della tabella cambiasse, qui si
@@ -216,6 +227,21 @@ ok(voci.some(v => v.fazione === 'NOMADI') && voci.some(v => v.fazione === 'PANOC
 // Si pretende quindi che almeno una riga nominata a mano sia stata trovata.
 ok(voci.some(v => /Alguacil \(Combi Rifle\)/.test(pulisci(v.grezzo))),
    'e fra le righe lette c e l Alguacil (Combi Rifle): la lettura funziona');
+
+console.log('\n=== 1b. Ogni riga del roster si puo` SCEGLIERE (non e` un profilo secondario) ===');
+// Dal database 2026-10-20.1 i profili secondari (Battle Ravaged, Enhanced,
+// pilota, moto, Operator) esistono ma non si aggiungono a mano: nascono in
+// partita. Una riga del roster che ne nomina uno non si puo` preparare.
+{
+    const secondari = voci.filter(v => { const p = DB[v.fazione].find(u => u.nome === pulisci(v.grezzo)); return p && p.profiloSecondario; });
+    ok(secondari.length === 0, `righe del roster con un profilo secondario: ${secondari.length}`,
+       secondari.map(v => `#${v.n} [${v.fazione}] ${pulisci(v.grezzo)}`));
+    // CONTROPROVA: il campo c'e` davvero nel database (26 + 18), quindi la
+    // prova sopra non passa a vuoto; e lo Zondmate (REM) e` uno di loro.
+    const nSec = DB.NOMADI.filter(u => u.profiloSecondario).length + DB.PANOCEANIA.filter(u => u.profiloSecondario).length;
+    ok(nSec === 44 && DB.NOMADI.some(u => u.nome === 'Zondmate (REM)' && u.profiloSecondario),
+       `CONTROPROVA: 44 profili secondari nel database, fra cui lo Zondmate (REM) (${nSec})`);
+}
 
 console.log('\n=== 1. Ogni profilo chiesto dal piano esiste nel suo database ===');
 const sbagliati = [];

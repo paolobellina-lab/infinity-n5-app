@@ -1,4 +1,4 @@
-// @versione 2026-09-23.1 | test_orchestratore.js | proprieta`: chat TEST
+// @versione 2026-10-20.1 | test_orchestratore.js | proprieta`: chat TEST
 // Test dell'orchestratore — node test_orchestratore.js
 global.window = global;
 require('./catalogo_n5.js'); require('./database_comune.js');
@@ -43,7 +43,17 @@ ok(s3.tipo === 'NORMALE', 'la reazione è un Tiro Normale, non un F2F');
 ok(s3.attivo.automatico === true && s3.attivo.mod === 'Auto', 'nessun tiro per colpire');
 ok(s3.attivo.salvezzaInflitta.valoreSuccesso === 8,
    'ma il danno c è, e la Copertura NON dà il +3 contro una Sagoma');
-ok(s3.reattivo.mod === 10, 'la Schivata contro Sagoma non subisce il -3 senza LoF');
+// Regolamento riga 3655: «Dodging a Direct Template Weapon requires a Normal PH Roll (or PH-3 as
+// mentioned previously)»; esempio riga 3819: «Dodge (PH-3 due to the lack of LoF to his attacker)».
+ok(s3.reattivo.mod === 7, `la Schivata contro Sagoma senza LoF subisce il -3: PH 10-3 = 7 (ottenuto ${s3.reattivo.mod})`);
+const s3b = sc({ attaccante: alg, azione: M.AZIONI.BS_ATTACK, arma: chain, bersaglio: fus, burst: 1, cover: true },
+               { difensore: fus, azione: 'DODGE', hasLoF: true });
+ok(s3b.reattivo.mod === 10, `controprova: con LoF la stessa Schivata resta PH 10 (ottenuto ${s3b.reattivo.mod})`);
+ok(s3b.reattivo.mod - s3.reattivo.mod === 3, 'controprova: la sola differenza fra i due casi e` la LoF, ed e` 3');
+const noteS3 = (s3.reattivo.note || []).join(' | ');
+ok(/esce dalla Sagoma/.test(noteS3) && /non fa il Tiro Salvezza/.test(noteS3),
+   'nota TPL-05: se la Schivata riesce il bersaglio esce dalla Sagoma e non fa il Tiro Salvezza', noteS3);
+ok(!/non subisce il -3/.test(noteS3), 'la vecchia nota «non subisce il -3» non esce piu`', noteS3);
 
 console.log('\n=== 4. Nessun ARO ===');
 const s4 = sc({ attaccante: alg, azione: M.AZIONI.BS_ATTACK, arma: combi, bersaglio: fus, burst: 3, rangeIndex: 1 }, null);
