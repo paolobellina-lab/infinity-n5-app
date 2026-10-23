@@ -1,6 +1,6 @@
-<!-- @versione 2026-10-23.4 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-10-23.5 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 40)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 41)
 
 Bozza scritta dalla chat MOTORE il 15 ottobre, su richiesta di Paolo, da far
 adottare a TEST. Segue il motore **2026-10-15.1**, `motore_core.js`,
@@ -94,6 +94,13 @@ riscritte: la seconda era sbagliata, la Saturazione si applica dopo la divisione
 dei dadi. Ogni «Atteso» cambiato o nuovo è misurato sulle pagine intere. Le
 prove passano a 303.
 
+**Revisione 41** (TEST, 23 ottobre, sera): segue il motore **2026-10-23.8** e
+`ordine_attacco_bs.js` **2026-10-23.4**. Nel Coordinato il bersaglio è uno già
+nella scelta: il secondo tocco sostituisce il primo, e l'allarme ARO nomina solo
+quello (CO-01). L'Idle del solo gregario porta l'avviso **A110**, una nota: niente
+finestra *«Prima di calcolare…»* (CO-10). Misurate sulle pagine intere. Le prove
+restano 303.
+
 Ogni prova dice **chi** agisce, **quale Ordine** dichiara, **con che cosa**,
 **contro chi**, **a che distanza** (in pollici) e **cosa si deve leggere**. Dove
 un dato non cambia il risultato è scelto comunque, così la prova si esegue senza
@@ -132,7 +139,7 @@ più tutti i MOD. Si tira 1d20 e serve **uguale o meno**. La salvezza si scrive
 
 **Il conteggio.** Il piano contiene **303 prove, tutte nello stesso formato**:
 tutte e 303, nelle stesse cinque righe; le convenzioni servono a non scrivere
-la stessa riga 303 volte. I codici sono uno per prova: alla revisione 40 sono 303.
+la stessa riga 303 volte. I codici sono uno per prova: alla revisione 41 sono 303.
 Prove con un campo da completare: 0 prove su 303
 Il numero lo controlla `test_piano_schieramento.js`: non si cambia a mano.
 
@@ -1484,7 +1491,7 @@ Tutte le prove: truppe dello stesso Gruppo, dove non è scritto altro. Bersaglio
 - **Con:** Heavy Machine Gun per la Punta
 - **ARO:** nessuno
 - **Atteso:** la Punta ha Burst **2**: *«Burst dell'arma Heavy Machine Gun»* e *«Punta di Lancia: metà del Burst arrotondata per eccesso»*.
-- **Poi** *(aggiunta)*: come Punta l'Alguacil (HMG) *(#2)* e come gregario l'Alguacil (Combi Rifle) *(#1)*; nella pagina dei bersagli la Punta tocca il Fusilier e l'Orc *(PanOceania #4)*, a 0-8". Dopo l'ARO resta **solo il Fusilier**, con l'avviso *«Ordine Coordinato: tutte le truppe attaccano lo STESSO UNICO bersaglio (righe 11356-11358). Resta …»*. Il gregario non sceglie: scelta l'arma è già sul Fusilier, nella pagina dei modificatori. Sul tabellone Punta **8** con 2 dadi, gregario **14** con 1, l'Orc non c'è. In console: due partecipanti su bersagli diversi → **E61**; una truppa con due bersagli → **E60**. Controprova: con una Sagoma d'Impatto il secondario sotto l'area resta ammesso. *Nota:* l'allarme ARO, partito prima dei modificatori, nomina ancora tutti e due i bersagli.
+- **Poi** *(aggiunta)*: come Punta l'Alguacil (HMG) *(#2)* e come gregario l'Alguacil (Combi Rifle) *(#1)*; nella pagina dei bersagli la Punta tocca il Fusilier, poi l'Orc *(PanOceania #4)*, a 0-8". Il secondo tocco **sostituisce** il primo: resta scelto **solo l'Orc** (ritoccandolo la scelta si svuota). L'allarme ARO nomina solo **«Orc»**, e nessun avviso di taglio compare. Il gregario non sceglie: scelta l'arma è già sull'Orc, nella pagina dei modificatori. Sul tabellone Punta **8** con 2 dadi, gregario **14** con 1, il Fusilier non c'è. In console: due partecipanti su bersagli diversi → **E61**; una truppa con due bersagli → **E60**. Controprove: nell'Ordine singolo i due tocchi danno due bersagli; nel Coordinato con una Sagoma d'Impatto il secondario si aggiunge.
 
 **CO-02 — Gregari**
 - **Attivo:** lo stesso Coordinato di CO-01
@@ -1524,7 +1531,7 @@ Tutte le prove: truppe dello stesso Gruppo, dove non è scritto altro. Bersaglio
 - **Attivo:** Coordinato con Alguacil (Missile Launcher) *(#3)* Punta e Alguacil (Combi Rifle) *(#1)* · ATTACCO BS
 - **Bersaglio:** il Fusilier a 48-56": dentro la gittata del Missile Launcher (Hit Mode, −3), **FUORI** per il Combi Rifle, che arriva a 48"
 - **ARO:** nessuno
-- **Atteso:** la Punta ha ESEGUI CALCOLO; il gregario, toccato FUORI, ha il tasto **«IDLE (SOLO QUESTA TRUPPA)»**. Premuto, parte **una** busta: la Punta tira, il gregario a Burst 0 col motivo, l'Ordine non si blocca (righe 11374-11376). Sul tabellone il tiro della Punta, **8** (11 −3), e uno scontro **IDLE (REQUISITO FALLITO)** per il gregario: *«Greg: requisito non soddisfatto contro … (fallimento automatico: fuori gittata)»*. Prima dell'invio compare la finestra *«Prima di calcolare…»* con l'avviso **A101**: con Annulla non parte niente, nemmeno il tiro della Punta. Nell'Ordine singolo, un bersaglio senza requisito mentre gli altri lo hanno dà lo stesso scontro IDLE (prima i suoi dadi sparivano senza scontro).
+- **Atteso:** la Punta ha ESEGUI CALCOLO; il gregario, toccato FUORI, ha il tasto **«IDLE (SOLO QUESTA TRUPPA)»**. Premuto, parte **una** busta: la Punta tira, il gregario a Burst 0 col motivo, l'Ordine non si blocca (righe 11374-11376). Sul tabellone il tiro della Punta, **8** (11 −3), e uno scontro **IDLE (REQUISITO FALLITO)** per il gregario: *«Greg: requisito non soddisfatto contro … (fallimento automatico: fuori gittata)»*. Nessuna finestra *«Prima di calcolare…»*: l'avviso dell'Idle del gregario è **A110**, una nota, e l'Ordine parte comunque. Nell'Ordine singolo, un bersaglio senza requisito mentre gli altri lo hanno dà lo stesso scontro IDLE (prima i suoi dadi sparivano senza scontro).
 
 **CO-11 — Coordinato in CC**
 - **Attivo:** Coordinato con Morlock (Assault Pistol) *(#13)* Punta, Chimera *(#14)* e Alguacil *(#1)* · ATTACCO CC
@@ -2000,7 +2007,7 @@ quello indicato.
 | La scheda del bersaglio di Forward Observer e Triangulated Fire: COPERTURA −3 nel FO, nessun tasto Copertura nel Triangulated, LINEA DI TIRO NO → IDLE, OSS-03 coi suoi numeri | `test_scheda_osservazione.js` |
 | La pagina DETONAZIONE di koala e mine, e la busta che parte con AVANTI e NESSUN ARO | `test_innesco_schermata.js` |
 | Le novità del 20 ottobre: profili collegati nel database, secondo profilo e Transmutation (WIP) dall'editor e al cambio turno, moto ed Escape System (chi non può risalire), Marker numerati per segnalino, MOVIMENTO senza tiro, nomi delle armi in ARO, Fumo in ARO fino al tabellone; la Sagoma Diretta in ARO e la seconda metà filtrata (sez. 10); la Schivata contro koala e mina, e il Reset contro la Cybermine, dentro lo scontro della detonazione (sez. 11) | `test_novita_20ott.js` |
-| Le otto correzioni del 23 ottobre fino al tabellone: Sagoma d'Impatto un tiro coi MOD del Principale anche con una busta diversa sul secondario, Combi Rifle e Sagoma Diretta a due bersagli invariati; eraMarker nel motore; Pitcher sul punto, finestra e Ripetitore all'Hub, Grenades sul punto E15; Fumo 13 con la Copertura nella busta e Smoke dell'attivo sul punto; Triangulated 13 sul tabellone; fasce del MediKit e IDLE dal tasto; foto collegate nel motore e filtraPerAvversario; INT-01 dalla porta del giocatore (sez. 2b) e la nota del punto; dal pomeriggio (sez. 8-14) la Sorpresa da Hidden e da CAMO, Hidden in ARO, il Coordinato contro un bersaglio (E60, E61), E49, E44 con una lista senza `chars`, l'Idle del solo gregario (A101), TER-06 e TER-07 | `test_novita_23ott.js` |
+| Le otto correzioni del 23 ottobre fino al tabellone: Sagoma d'Impatto un tiro coi MOD del Principale anche con una busta diversa sul secondario, Combi Rifle e Sagoma Diretta a due bersagli invariati; eraMarker nel motore; Pitcher sul punto, finestra e Ripetitore all'Hub, Grenades sul punto E15; Fumo 13 con la Copertura nella busta e Smoke dell'attivo sul punto; Triangulated 13 sul tabellone; fasce del MediKit e IDLE dal tasto; foto collegate nel motore e filtraPerAvversario; INT-01 dalla porta del giocatore (sez. 2b) e la nota del punto; dal pomeriggio (sez. 8-14) la Sorpresa da Hidden e da CAMO, Hidden in ARO, il Coordinato contro un bersaglio (E60, E61), E49, E44 con una lista senza `chars`, l'Idle del solo gregario (A110), TER-06 e TER-07 | `test_novita_23ott.js` |
 | La Schivata contro Sagoma senza LoF (PH−3) | `test_orchestratore.js` |
 
 Una trappola da sapere scrivendo una prova nuova: la chiave di un requisito non

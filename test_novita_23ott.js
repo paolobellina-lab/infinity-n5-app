@@ -1,9 +1,12 @@
-// @versione 2026-10-23.4 | test_novita_23ott.js | proprieta`: chat TEST
+// @versione 2026-10-23.5 | test_novita_23ott.js | proprieta`: chat TEST
+// 2026-10-23.5: sez. 9 e 12 girate (motore 2026-10-23.8, ordine_attacco_bs 2026-10-23.4):
+//    nel Coordinato il secondo tocco sostituisce il primo e l'allarme nomina un bersaglio
+//    solo; l'Idle del partecipante e` A110 (nota), niente finestra ne` UI01.
 // 2026-10-23.4: sez. 8-14, le correzioni del pomeriggio (motore 2026-10-23.7, motore_core
 //    2026-10-23.1, ordine_attacco_bs 2026-10-23.3; logica_aro e app.html 2026-10-23.2):
 //    Sorpresa da Hidden e da CAMO, Hidden in ARO, Coordinato contro UN bersaglio (E60,
 //    E61), CO-03 con E49, CO-09 con una lista vecchia senza chars, CO-10 Idle di un
-//    partecipante (A101), TER-06 e TER-07 girati.
+//    partecipante (A101; dalla .5 A110), TER-06 e TER-07 girati.
 // 2026-10-23.3: sez. 3 e 4 girate (calcolatore_controller 2026-10-23.2): il punto ha la cella
 //    neutra e niente righe delle salvezze; si cerca quella invece di «Azione non offensiva».
 // 2026-10-23.2: sez. 2b girata (motore 2026-10-23.3, ordine_attacco_intuitivo 2026-10-23.1):
@@ -522,18 +525,39 @@ sezione('9. CO-01: Ordine Coordinato contro UN solo bersaglio (E60, E61)', () =>
                      T => [tr(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Fus' }), tr(T.profilo(T.pano, /^Orc \(Hacker, Hacking Device/), { id: 'p4', alias: 'Orc' })], 'NOMADI');
     const N = coordina(T, [0, 1]), P = T.pano.g, M = N.MotoreN5;
     N.selectAction('ATTACCO BS', false); N.declareAttackBS('Heavy Machine Gun');
-    N.toggleTargetSelection('p1'); N.toggleTargetSelection('p4'); N.confirmMultiAro(false); T.giro();
+    // 🔴 GIRATA IL 23 OTTOBRE (sera), ordine_attacco_bs 2026-10-23.4: nel
+    // Coordinato il secondo tocco SOSTITUISCE il primo, gia` nella scelta.
+    // Prima restava il primo, tagliato dopo l'allarme (che nominava tutti e due).
+    N.toggleTargetSelection('p1'); N.toggleTargetSelection('p4');
+    ok(J((N.pendingTargets || []).map(t => t.id)) === '["p4"]', 'la Punta tocca Fusilier, poi Orc: nella scelta resta SOLO l Orc', (N.pendingTargets || []).map(t => t.id));
+    N.toggleTargetSelection('p4');
+    ok((N.pendingTargets || []).length === 0, 'ritoccato l Orc, la scelta si svuota');
+    N.toggleTargetSelection('p1'); N.toggleTargetSelection('p4');
+    N.confirmMultiAro(false); T.giro();
     const allarme = J((P.currentAttackData || {}).bersagli);
+    ok(allarme === '["Orc"]', 'l allarme ARO nomina solo l Orc', allarme);
     P.annullaAro(); T.giro(); secondaMeta(T, N);
-    ok(J(N.combatTargets.map(t => t.name)) === '["Fus"]' && N.alert_.some(a => /STESSO UNICO bersaglio[\s\S]*Resta Fus/.test(a)), 'la Punta ha toccato Fusilier e Orc: resta il Fusilier, con l avviso', N.combatTargets.map(t => t.name));
-    // 🔴 L'allarme partito prima dei modificatori nomina ancora tutti e due.
-    ok(allarme === '["Fus","Orc"]', 'nota: l allarme ARO, partito prima, nomina ancora Fusilier e Orc (segnalato a MOTORE)', allarme);
+    ok(J(N.combatTargets.map(t => t.name)) === '["Orc"]' && !N.alert_.some(a => /STESSO UNICO bersaglio/.test(a)), 'nei modificatori c e l Orc, e l avviso del taglio non scatta', N.alert_.map(a => a.slice(0, 60)));
     N.alert_.length = 0; N.eseguiCalcoloBS(); N.declareAttackBS('Combi Rifle');
-    ok(J(N.combatTargets.map(t => t.name)) === '["Fus"]' && T.nomadi.el('step-modifiers').style.display === 'flex', 'il gregario non sceglie: e` gia` sul Fusilier, nella pagina dei modificatori');
+    ok(J(N.combatTargets.map(t => t.name)) === '["Orc"]' && T.nomadi.el('step-modifiers').style.display === 'flex', 'il gregario non sceglie: e` gia` sull Orc, nella pagina dei modificatori');
     N.eseguiCalcoloBS(); T.giro();
     const t = tab(T);
-    ok(ris(T) && N.alert_.length === 0 && /Punta Azione: ATTACCO BS Successo al: 8 \(o meno\) Dadi da lanciare: 2/.test(t) && /Greg Azione: ATTACCO BS Successo al: 14 \(o meno\) Dadi da lanciare: 1/.test(t) && !/REATTIVO PANOCEANIA Orc/.test(t),
-       'sul tabellone: Punta B2 (8) e gregario B1 (14), tutti e due sul Fusilier; l Orc non c e', t.slice(0, 90));
+    ok(ris(T) && N.alert_.length === 0 && /Punta Azione: ATTACCO BS Successo al: 8 \(o meno\) Dadi da lanciare: 2/.test(t) && /Greg Azione: ATTACCO BS Successo al: 14 \(o meno\) Dadi da lanciare: 1/.test(t) && !/REATTIVO PANOCEANIA Fus/.test(t),
+       'sul tabellone: Punta B2 (8) e gregario B1 (14), tutti e due sull Orc; il Fusilier non c e', t.slice(0, 90));
+    // CONTROPROVE della scelta: Ordine singolo, due bersagli; Coordinato con la Sagoma d'Impatto, i secondari si aggiungono.
+    {
+        const S = tavolo(T => [tr(P_(T, /^Alguacil \(HMG/), { id: 'n2', alias: 'Solo' })],
+                         T => [tr(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Fus' }), tr(T.profilo(T.pano, /^Orc \(Hacker, Hacking Device/), { id: 'p4', alias: 'Orc' })], 'NOMADI');
+        const NS = S.nomadi.g; S.apriMenu(S.nomadi, 0); NS.selectAction('ATTACCO BS', false); NS.declareAttackBS('Heavy Machine Gun');
+        NS.toggleTargetSelection('p1'); NS.toggleTargetSelection('p4');
+        ok(J(NS.pendingTargets.map(t => t.id)) === '["p1","p4"]', 'CONTROPROVA: nell Ordine singolo i due tocchi danno due bersagli', NS.pendingTargets.map(t => t.id));
+        const K = tavolo(T => [tr(P_(T, /^Alguacil \(Missile/), { id: 'n3', alias: 'Razzo' }), tr(P_(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Greg' })],
+                         T => [tr(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Fus' }), tr(T.profilo(T.pano, /^Orc \(Hacker, Hacking Device/), { id: 'p4', alias: 'Orc' })], 'NOMADI');
+        const NK = coordina(K, [0, 1]); NK.selectAction('ATTACCO BS', false);
+        const fk = Object.keys(NK._modiBS || {})[0]; NK.declareAttackBS(NK._modiBS[fk].find(x => /Blast/.test(x)), fk);
+        NK.toggleTargetSelection('p1'); NK.toggleTargetSelection('p4');
+        ok(J(NK.pendingTargets.map(t => t.id)) === '["p1","p4"]', 'CONTROPROVA: Coordinato con la Sagoma d Impatto, il secondario si aggiunge', NK.pendingTargets.map(t => t.id));
+    }
     // La porta d'invio.
     const al = N.roster.find(u => u.id === 'n1'), hm = N.roster.find(u => u.id === 'n2');
     const fs_ = M.rosterNemico().find(u => u.id === 'p1'), orc = M.rosterNemico().find(u => u.id === 'p4');
@@ -597,9 +621,13 @@ sezione('12. CO-10: l Idle di un solo partecipante; il bersaglio senza requisito
     const t = tab(T);
     ok(ris(T) && /Razzo Azione: ATTACCO BS Successo al: 8 \(o meno\) Dadi da lanciare: 1/.test(t), 'sul tabellone il tiro della Punta: 8 (11 -3)', t.slice(0, 120));
     ok(/IDLE \(REQUISITO FALLITO\) ▶ ATTIVO NOMADI Greg Azione: ATTACCO BS IDLE/.test(t) && /Greg: requisito non soddisfatto contro Fus \(fallimento automatico: fuori gittata\)/.test(t), 'e l IDLE (REQUISITO FALLITO) del gregario, col motivo');
-    // 🔴 L'avviso A101 ha gravita` 'azione': apre la finestra «Prima di calcolare».
-    ok(dom.length === 1 && /Prima di calcolare[\s\S]*Greg: requisito non soddisfatto[\s\S]*esegue un Idle/.test(dom[0]), 'nota: l A101 apre la finestra «Prima di calcolare…» (segnalato a MOTORE: Annulla ferma tutto l Ordine)', dom.map(x => x.slice(0, 60)));
-    // E se a quella finestra si risponde Annulla: non parte niente, nemmeno il tiro della Punta.
+    // 🔴 GIRATA IL 23 OTTOBRE (sera), motore 2026-10-23.8: l'avviso dell'Idle
+    // del partecipante e` A110, gravita` 'nota': niente finestra «Prima di
+    // calcolare…». Prima era A101 con gravita` 'azione', e Annulla fermava tutto.
+    ok(dom.length === 0, 'nessuna finestra «Prima di calcolare…» (A110 e` una nota)', dom.map(x => x.slice(0, 60)));
+    ok(N.MotoreN5.gravitaAvviso('A110') === 'nota' && N.MotoreN5.gravitaAvviso('A101') === 'azione', 'gravita`: A110 nota, A101 (programma da piu` dispositivi) resta azione',
+       [N.MotoreN5.gravitaAvviso('A110'), N.MotoreN5.gravitaAvviso('A101')]);
+    // Anche se il dispositivo rispondesse Annulla a una finestra, la finestra non c'e`: l'Ordine parte.
     {
         const T2 = tavolo(T => [tr(P_(T, /^Alguacil \(Missile/), { id: 'n3', alias: 'Razzo' }), tr(P_(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Greg' })],
                           T => [tr(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Fus' })], 'NOMADI');
@@ -608,14 +636,15 @@ sezione('12. CO-10: l Idle di un solo partecipante; il bersaglio senza requisito
         N2.toggleTargetSelection('p1'); N2.confirmMultiAro(false); T2.giro(); T2.pano.g.annullaAro(); T2.giro(); secondaMeta(T2, N2);
         N2.eseguiCalcoloBS(); N2.declareAttackBS('Combi Rifle'); N2.toggleFuoriGittataBS(0);
         N2.confirm = () => false; T2.nomadi.el('btn-esegui-calcolo').onclick(); T2.giro();
-        ok(!ris(T2) && !T2.server.canale_hub_calcolo, 'nota: con Annulla l Ordine intero resta fermo (UI01), anche il tiro della Punta', N2.alert_.map(x => x.slice(0, 80)));
+        ok(ris(T2) && /Razzo Azione: ATTACCO BS Successo al: 8/.test(tab(T2)) && !N2.alert_.some(a => /UI01|annullato/i.test(a)), 'con confirm che direbbe Annulla l Ordine parte lo stesso: la Punta tira (niente UI01)', N2.alert_.map(x => x.slice(0, 80)));
     }
-    // A101 e non E20, dalla porta d'invio.
+    // A110 e non E20, dalla porta d'invio.
     const M = N.MotoreN5, f = M.rosterNemico()[0];
     const g0 = (extra) => M.creaPayload([{ attaccante: N.roster[1], azione: M.AZIONI.BS_ATTACK, arma: M.profiloArma('Combi Rifle'), burstDisponibile: 1,
         bersagli: [Object.assign({ id: f.id, name: f.alias, burst: 0, cover: false, rangeIndex: 0, rangeMod: 3, terrain: 'NESSUNO' }, extra)] }], {});
     const r1 = g0({ requisitoMancante: 'fallimento automatico: fuori gittata' }), r2 = g0({});
-    ok(r1.ok === true && (r1.avvisi || []).some(a => a.codice === 'A101') && !(r1.errori || []).length, 'zero dadi perche` a tutti i bersagli manca il requisito: avviso A101, non E20');
+    ok(r1.ok === true && (r1.avvisi || []).some(a => a.codice === 'A110' && a.gravita === 'nota') && !(r1.avvisi || []).some(a => a.codice === 'A101') && !(r1.errori || []).length,
+       'zero dadi perche` a tutti i bersagli manca il requisito: avviso A110 (nota), non A101 ne` E20', (r1.avvisi || []).map(a => a.codice + ':' + a.gravita));
     ok(r2.ok === false && (r2.errori || []).some(e => e.codice === 'E20'), 'CONTROPROVA: zero dadi senza requisito mancante resta E20');
     // Ordine singolo: un bersaglio senza Linea di Tiro, l'altro si`.
     const S = tavolo(T => [tr(P_(T, /^Alguacil \(HMG/), { id: 'n1', alias: 'Spara' })], T => [tr(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' }), tr(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p2', alias: 'Due' })], 'NOMADI');

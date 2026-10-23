@@ -1,7 +1,7 @@
-CONTEGGIO DELLA SUITE — chat TEST, 23 ottobre 2026, pomeriggio (giro 4) (cartella allineata al Project, impronte ricalcolate con M.impronta)
+CONTEGGIO DELLA SUITE — chat TEST, 23 ottobre 2026, sera (giro 5) (cartella allineata al Project, impronte ricalcolate con M.impronta)
 
 PRODUZIONE
-  motore_regole_n5.js         2026-10-23.7    0e2dc8bf.788625
+  motore_regole_n5.js         2026-10-23.8    3ad29558.788727
   catalogo_n5.js              2026-10-20.2    23dd56ed.203150
   motore_core.js              2026-10-23.1    954b1497.45251
   logica_stati.js             2026-10-20.1    25915bcb.35177
@@ -11,7 +11,7 @@ PRODUZIONE
   calcolatore_controller.js   2026-10-23.2    1c6a62b9.74718
   roster_manager.js           2026-10-23.1    898cc4be.88227
   ordine_attacco_guidato.js   2026-10-18.1    b7c255f5.28397
-  ordine_attacco_bs.js        2026-10-23.3    86e0b342.49222
+  ordine_attacco_bs.js        2026-10-23.4    39035554.50582
   ordine_coordinato.js        2026-10-20.1    8800e0b2.12127
   ordine_movimento.js         2026-10-20.2    0eba1c52.18480
   ordine_piazzamento.js       2026-10-12.1    369285bd.28485
@@ -27,7 +27,7 @@ PRODUZIONE
   database_nomad.js           2026-10-20.1    c4178b53.174021
   database_panoceania.js      2026-10-20.1    7d578a3b.169522
   banco_confronto.js          2026-09-14.1    e8fdec78.34151
-  PIANO_COLLAUDO_N5.md        2026-10-23.4    7c88d1c2.137866
+  PIANO_COLLAUDO_N5.md        2026-10-23.5    613a00cf.138249
 
 CONVENZIONE: un file = una riga di riepilogo; si somma su TUTTI i file
 test_*.js, test_collaudo_suite.js COMPRESO. banco_confronto.js NON
@@ -107,12 +107,12 @@ test_munizioni_condizionali.js        80        2026-09-23.1    f993bb3d.12716  
 test_notazioni.js                    106        2026-09-23.1    c3dd9086.17180    TEST
 test_novita_18ott.js                  73        2026-10-19.2    4e3dcaea.34685    TEST
 test_novita_20ott.js                 122        2026-10-20.4    68f6a7eb.47020    TEST
-test_novita_23ott.js                 108        2026-10-23.4    75eb5aaf.62189    TEST
+test_novita_23ott.js                 113        2026-10-23.5    55548dc8.65021    TEST
 test_novita_7ott.js                  127        2026-10-07.2    4c7a6e70.37687    TEST
 test_orchestratore.js                 35        2026-10-20.1    f8996613.7243     TEST
 test_ordini_senza_tiro.js             83        2026-10-07.1    47f53ab8.21658    MOTORE
 test_otto_decisioni.js                93     8  2026-10-09.1    cf922127.18140    TEST
-test_piano_schieramento.js            29        2026-10-23.4    fa128f18.22107    TEST
+test_piano_schieramento.js            29        2026-10-23.5    9be2d329.22231    TEST
 test_produttori_busta.js              21        2026-09-25.3    71d0754b.9486     TEST
 test_prosa_stati.js                   17        2026-09-24.1    7872300c.8821     TEST
 test_pulsante_calcolo.js              26        2026-09-23.1    1f742b1f.4441     TEST
@@ -143,8 +143,8 @@ test_usi_disposable.js                21        2026-09-29.1    77051b4c.7148   
 test_voce_cybermask.js                21        2026-10-19.1    47ba06ce.11379    INTERFACCIA
 test_voce_rientro_camo.js             15        2026-10-06.5    17ca4e43.8491     INTERFACCIA
 --------------------------------------------------------------------------------------------------
-TOTALE CON LE FONTI                 5258   passati su 100 file, 0 falliti, 0 non eseguite
-TOTALE COME IL PROJECT (senza)      5238   passati su 100 file, 0 falliti, 20 non eseguite
+TOTALE CON LE FONTI                 5263   passati su 100 file, 0 falliti, 0 non eseguite
+TOTALE COME IL PROJECT (senza)      5243   passati su 100 file, 0 falliti, 20 non eseguite
 
 NON ESEGUITE PER FONTE ASSENTE
   test_coerenza_dati.js             1   501.json, 101.json
@@ -153,7 +153,7 @@ NON ESEGUITE PER FONTE ASSENTE
   test_otto_decisioni.js            8   REGOLE_N5_v5_1_1.txt
 
 SPACCATO PER PROPRIETA (con le fonti)
-  TEST + MOTORE                     4651   su 91 file
+  TEST + MOTORE                     4656   su 91 file
   INTERFACCIA                        607   su 9 file
 
 banco_confronto.js: uscita 0, "da guardare 0" in tutte e quattro le sezioni.
