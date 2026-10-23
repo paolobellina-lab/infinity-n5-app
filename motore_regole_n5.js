@@ -1,4 +1,4 @@
-// @versione 2026-10-20.5 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-23.7 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-20.5';
+    M.VERSIONE = '2026-10-23.7';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -334,6 +334,15 @@
     // Ritorna { ok, attacco, errori: [], avvisi: [] }
     // Se ok === false, `attacco` è comunque presente per il debug ma NON va spedito.
     // ------------------------------------------------------------------
+    // 22 ottobre: armi TARGETLESS e il bersaglio "punto del tavolo".
+    M.eTargetless = function (arma) {
+        const a = (typeof arma === 'string') ? M.profiloArma(arma) : arma;
+        const tr = a && a.traits;
+        return /TARGETLESS/i.test(Array.isArray(tr) ? tr.join(',') : String(tr || ''));
+    };
+    M.bersaglioPunto = function () {
+        return { id: 'punto', name: 'PUNTO SUL TAVOLO', nome: 'PUNTO SUL TAVOLO', punto: true };
+    };
     M.creaAttacco = function (input) {
         const errori = [];
         const avvisi = [];
@@ -454,7 +463,8 @@
                     `L'azione "${azione}" richiede almeno un bersaglio, ma non ne è stato selezionato nessuno.`,
                     'Torna alla selezione bersagli.'));
             }
-            if (nemici.length === 0 && bersagli.length > 0) {
+            // Un lancio su un PUNTO (arma Targetless) non chiede nemici sul tavolo.
+            if (nemici.length === 0 && bersagli.some(function (b) { return !(b && b.punto === true); })) {
                 errori.push(eScenico
                     ? err('E05b',
                         'Nessun elemento scenico o dispositivo risulta sul tavolo.',
@@ -468,6 +478,19 @@
             bersagli.forEach((b, i) => {
                 const nomeB = M.nomeUnita(b);
                 const etichetta = nomeB || `bersaglio #${i + 1}`;
+
+                // 22 ottobre (Paolo, SPEC-06): un'arma TARGETLESS (Pitcher,
+                // Disco Baller, Drop Bear in modo BS, Smoke) si lancia su un
+                // PUNTO del tavolo, non su un nemico (righe 3760-3763 e la
+                // scheda del Pitcher). Il punto non e` un'unita`: niente
+                // controllo sul roster nemico ne` sulla validita` del bersaglio.
+                if (b && b.punto === true) {
+                    if (!M.eTargetless(arma)) {
+                        errori.push(err('E15', `${arma ? arma.nome : 'Quest\'arma'} non e\` Targetless: non si lancia su un punto del tavolo.`,
+                            'Serve un bersaglio nemico.'));
+                    }
+                    return;
+                }
 
                 // Una munizione incoerente con l'arma si RIFIUTA qui, invece di
                 // essere ignorata dopo. (Chat TEST: "rifiutato invece che ignorato".)
@@ -506,7 +529,8 @@
                         // della prima meta` (lo scrive ordine_attacco_bs.js).
                         scoprendo: input.scoprendo,
                         scoprireGiaDichiarato: !!(input.regole && (input.regole.poiAttacco || input.regole.giaDichiarato)),
-                        ruolo: (i === 0) ? 'primario' : 'secondario'
+                        ruolo: (i === 0) ? 'primario' : 'secondario',
+                        eraMarker: !!b.eraMarker
                     })[0];
                     if (giudizio && !giudizio.ammesso) {
                         errori.push(err('E15', `"${etichetta}" non è un bersaglio valido per ${azione}.`, giudizio.motivo));
@@ -564,7 +588,14 @@
                 ? bersagli.reduce((m, b) => Math.max(m, parseInt(b.burst, 10) || 0), 0)
                 : bersagli.reduce((s, b) => s + (parseInt(b.burst, 10) || 0), 0);
 
-            if (allocato === 0) {
+            // 23 ottobre (Paolo, CO-10): zero dadi perche` a TUTTI i bersagli
+            // manca un requisito (fuori gittata, senza LoF) non e` una busta
+            // sbagliata: e` un Idle di questa truppa. In un Coordinato gli
+            // altri agiscono normalmente (righe 11374-11376).
+            const tuttiSenzaRequisito = bersagli.length > 0 && bersagli.every(function (b) { return b && b.requisitoMancante; });
+            if (allocato === 0 && tuttiSenzaRequisito) {
+                avvisi.push(err('A101', `${nomeAtt || 'La truppa'}: requisito non soddisfatto (${bersagli[0].requisitoMancante}): esegue un Idle, non tira.`));
+            } else if (allocato === 0) {
                 errori.push(err('E20',
                     'Nessun dado assegnato ai bersagli.',
                     `Hai ${disponibile} dadi da distribuire.`));
@@ -596,6 +627,14 @@
             arma: arma,
             bersagli: bersagli
         };
+        // 23 ottobre (AR-10): nascosta all'inizio dell'Ordine (lo segna
+        // motore_core quando la dichiarazione la rivela). Serve al Surprise
+        // Attack, che guarda lo stato a inizio Ordine; viaggia fino all'Hub.
+        {
+            const idA = attacco.attaccanteId;
+            const nI = (G.currentOrder && G.currentOrder.nascostiAInizio) || null;
+            if (input.nascostoAInizioOrdine === true || (idA != null && nI && nI[idA])) attacco.nascostoAInizioOrdine = true;
+        }
 
         // Senza id l'Hub deve ripiegare sulla ricerca per nome: funziona,
         // ma con due omonimi trova il primo. Si dice, invece di lasciare
@@ -673,6 +712,35 @@
         })();
         if (opzioni.isCoordinated && truppeCoord > 4) {
             errori.push(err('E31', `Ordine Coordinato con ${truppeCoord} unità: il massimo è 4.`));
+        }
+        // 23 ottobre (Paolo, CO-01): "If one of the Skills of the Coordinated
+        // Order demands a Trooper, a Marker, or a mission objective as a
+        // target, all Troopers must act against the same single target"
+        // (righe 11356-11358). Un bersaglio SOLO, lo stesso per tutti. Sotto
+        // una Sagoma d'Impatto i secondari restano (sono colpiti, non scelti).
+        if (opzioni.isCoordinated) {
+            const chiave = function (b) { return b ? String(b.id != null && b.id !== '' ? b.id : M.nomeUnita(b)).toUpperCase() : ''; };
+            const principali = [];
+            attacchi.forEach(function (a) {
+                if (!a || !Array.isArray(a.bersagli) || !a.bersagli.length) return;
+                const spec = M.SPEC[a.azione] || {};
+                if (spec.bersagli === 'segnaposto' || spec.bersagli === 'nessuno') return;
+                const veri = a.bersagli.filter(function (b) { return b && !(b.ruolo && /^second/i.test(String(b.ruolo))); });
+                const armaA = (typeof a.arma === 'string') ? M.profiloArma(a.arma) : a.arma;
+                const tplA = (armaA && armaA.isTemplate) ? M.regoleTemplate(armaA) : null;
+                // Sagoma d'Impatto: dopo il Principale vengono quelli sotto l'area.
+                const scelti = (tplA && tplA.tipo === 'IMPATTO') ? veri.slice(0, 1) : veri;
+                if (scelti.length > 1) {
+                    errori.push(err('E60', `${M.nomeUnita(a.attaccante) || 'Una truppa'}: in un Ordine Coordinato si attacca UN solo bersaglio (qui ${scelti.length}).`,
+                        'Tutte le truppe agiscono contro lo stesso unico bersaglio (righe 11356-11358).'));
+                }
+                if (scelti[0]) principali.push({ k: chiave(scelti[0]), nome: M.nomeUnita(scelti[0]), chi: M.nomeUnita(a.attaccante) });
+            });
+            const diversi = principali.filter(function (p, i) { return principali.findIndex(function (q) { return q.k === p.k; }) === i; });
+            if (diversi.length > 1) {
+                errori.push(err('E61', `Ordine Coordinato contro bersagli diversi: ${diversi.map(function (p) { return p.nome; }).join(', ')}.`,
+                    'Tutte le truppe agiscono contro lo stesso unico bersaglio (righe 11356-11358).'));
+            }
         }
 
         const payload = {
@@ -1552,7 +1620,16 @@
     // in anticipo (DATABASE, 10 ottobre). Campo assente: false, cioe`
     // "non dichiarato", e chi chiama decide cosa vale in sua assenza.
     M.caratteristicheDi = function (u) {
-        const c = u && u.chars;
+        let c = u && u.chars;
+        // 23 ottobre (Paolo, CO-09): una lista salvata PRIMA che il database
+        // avesse `chars` (Regular/Irregular, Cube, Impetuous) porta unita`
+        // senza il campo: il Morlock risultava Regolare e il Coordinato con
+        // la Mobile Brigada passava. Se manca, si legge dal profilo del
+        // database (per id o per nome).
+        if ((c === undefined || c === null || c === '') && u && typeof M.profiloDiDatabase === 'function') {
+            const p = M.profiloDiDatabase(u);
+            if (p && p.chars) c = p.chars;
+        }
         const lista = Array.isArray(c) ? c : M.dividiLista(c || '');
         return lista.map(function (x) { return String(x).replace(/\u00a0/g, ' ').trim().toUpperCase(); }).filter(Boolean);
     };
@@ -1724,6 +1801,15 @@
                     // 🔴 MAI contro un Marker Impersonation, ne` IMP-1 ne` IMP-2
                     // (riga 14210). Prima passava: "in forma di Marker" bastava.
                     if (s.imp) nega((catalogo('IMPERSONATION') || {}).intuitivo || 'Attacco Intuitivo vietato contro un Marker Impersonation (riga 14210).');
+                    // 22 ottobre (Paolo, INT-01): il requisito si guarda alla
+                    // DICHIARAZIONE. Se il Marker si e` rivelato dopo, con il
+                    // suo ARO (la Schivata cancella il CAMO, riga 13634),
+                    // l'Attacco dichiarato resta. Il modulo segna il bersaglio
+                    // con eraMarker quando lo sceglie; prima l'invio veniva
+                    // bloccato con "questo e` visibile".
+                    else if (!marker && !opzioni.fuoriLoF && opzioni.eraMarker) {
+                        esito.note.push('Era un Marker quando l\'Attacco Intuitivo e` stato dichiarato: si e` rivelato dopo (con il suo ARO), e l\'Attacco resta valido.');
+                    }
                     else if (!marker && !opzioni.fuoriLoF) {
                         nega('L\'Attacco Intuitivo richiede un bersaglio in forma di Marker o fuori LoF per Zona di Visibilità Zero. Questo è visibile: usa un Attacco BS normale.');
                     }
@@ -5494,6 +5580,14 @@
                 // (Segnalato dalla chat REGOLE, giro del 20 settembre.)
                 aggiungi('speculativo', -6, 'Fuoco Speculativo: -6 fisso');
                 note.push('Fuoco Speculativo: ignora i MOD NEGATIVI di Copertura, Mimetismo e Zone di Visibilità.');
+            } else if (M.eTargetless && M.eTargetless(arma)) {
+                // 22-23 ottobre (Paolo, DIF-14 e SPEC-06): un'arma TARGETLESS
+                // (Smoke, Pitcher, Disco Baller, Drop Bear lanciato) si tira su
+                // un PUNTO del tavolo, non su una truppa: "it does not require
+                // an enemy—or, in fact, any trooper at all—as a target" (righe
+                // 5789-5791). Copertura, Mimetismo e Albedo sono del bersaglio:
+                // qui non c'e`, e non entrano. La gittata (fino al punto) resta.
+                note.push('Arma Targetless: si tira su un punto del tavolo, non su una truppa. Copertura e Mimetismo non entrano nel tiro.');
             } else {
                 // Copertura Parziale del bersaglio. Chi e` in FOXHOLE ce l'ha
                 // SEMPRE, da ogni direzione (riga 13865): non dipende da cio`
@@ -6366,7 +6460,10 @@
         // applicare il -3 anche a un Intruder scoperto da tre turni.
         const sA = (attaccante && attaccante.states) || {};
         const nascosto = !!(sA.camo || sA.impersonation || sA.hidden ||
-                            sA.holoecho || sA.holomask);
+                            sA.holoecho || sA.holomask) ||
+                         // 23 ottobre: nascosta all'inizio dell'Ordine e rivelata
+                         // dalla dichiarazione (righe 10125-10128).
+                         !!(ctx.attacco && ctx.attacco.nascostoAInizioOrdine);
         const haSorpresa = M.trattiTiro(attaccante).attaccoSorpresa;
         if (haSorpresa && !nascosto && !ctx.attaccoASorpresa) {
             esito.note.push('Surprise Attack: non si applica, l\'attaccante non è in uno stato che lo nasconde.');
@@ -6568,6 +6665,21 @@
         const att = (azione === M.AZIONI.SCOPRIRE)
             ? M.regoleScoprire(attaccante, difensore, ctxAtt)
             : M.modAttacco(attaccante, difensore, arma, azione, ctxAtt);
+        // 22 ottobre (Paolo, OSS-03): il TRIANGULATED FIRE tira sul BS NUDO
+        // (riga 7854): la schermata lo diceva (13), l'Hub ricalcolava con
+        // gittata e Mimetismo e scriveva 4. Si usa la stessa funzione della
+        // schermata; dal calcolo normale resta solo il MOD al Burst.
+        if (azione === M.AZIONI.TRIANGULATED) {
+            const tri = M.regoleTriangulated(attaccante, difensore, arma, ctxAtt);
+            if (tri && tri.valido) {
+                att.valore = tri.valore; att.base = tri.base; att.mod = 0;
+                att.attributo = tri.attributo; att.voci = tri.voci;
+                att.impossibile = tri.impossibile; att.critici = tri.critici;
+                att.modIgnorati = tri.modIgnorati; att.valoreConMod = tri.valoreConMod;
+                att.note = (tri.note || []).slice();
+                (tri.avvisi || []).forEach(a => avvisi.push(a));
+            }
+        }
         att.avvisi.forEach(a => avvisi.push(a));
         // Hacking via Repeater nemico contro chi non e` Hacker: il Requisito
         // manca, Idle. Nessun tiro (righe 4799-4802).
@@ -6608,7 +6720,8 @@
             reaz = M.modReazione(difensore, reazione, {
                 // `bersaglio`: in questo scontro l'attacco colpisce il difensore.
                 // Serve a modReazione per sapere se il reattivo E` il bersaglio.
-                attacco: { azione: azione, arma: arma, attaccante: attaccante, bersaglio: difensore },
+                attacco: { azione: azione, arma: arma, attaccante: attaccante, bersaglio: difensore,
+                           nascostoAInizioOrdine: !!attacco.nascostoAInizioOrdine },
                 rangeIndex: reazione.rangeIndex,
                 rangeMod: reazione.rangeMod,
                 cover: reazione.cover,
@@ -6822,8 +6935,12 @@
                 salvezzaSubita: salvDifensore
             } : {
                 nome: M.nomeUnita(difensore),
+                // 23 ottobre (TEST): il PUNTO del tavolo (arma Targetless) non
+                // e` una truppa: niente fazione, niente reazione, niente danno.
+                // Il segno serve al tabellone per dirlo.
+                punto: !!(difensore && difensore.punto) || undefined,
                 azione: M.AZIONI_ARO.NESSUNO,
-                mod: null, burst: 0, voci: [], note: ['Nessun ARO dichiarato.'],
+                mod: null, burst: 0, voci: [], note: [(difensore && difensore.punto) ? 'Punto del tavolo: non e` una truppa, non reagisce e non subisce danno.' : 'Nessun ARO dichiarato.'],
                 salvezzaInflitta: { offensivo: false, note: [] },
                 salvezzaSubita: salvDifensore
             },
@@ -7189,7 +7306,11 @@
                                 attributo: null, base: null, mod: null, burst: 0, senzaTiro: true,
                                 voci: [], note: ['In contatto di Silhouette non si tira per colpire.'],
                                 salvezzaInflitta: { offensivo: false, note: ['Tiro non offensivo.'] } },
-                        reattivo: { nome: nomeB, azione: 'TIRO DEL BERSAGLIO (' + (Rd.strumento || 'SUPPORTO') + ')',
+                        // 22 ottobre (Paolo, SUP-02a): il bersaglio del Supporto e`
+                        // un ALLEATO di chi soccorre. Senza questo segno il
+                        // tabellone lo metteva sotto l'altra fazione (il Morlock
+                        // in azzurro, fra i PanOceania).
+                        reattivo: { nome: nomeB, alleato: true, azione: 'TIRO DEL BERSAGLIO (' + (Rd.strumento || 'SUPPORTO') + ')',
                                     attributo: e.attributo, base: e.base, mod: e.valore, burst: 1,
                                     impossibile: !!e.impossibile, voci: e.voci, note: e.note || [],
                                     salvezzaInflitta: { offensivo: false, note: ['Tiro non offensivo.'] } },
@@ -7274,6 +7395,21 @@
             const rispostaColpo = unColpo
                 ? (bersagli.find(function (x) { return x && typeof x.alleatoNellaSagoma === 'boolean'; }) || {}).alleatoNellaSagoma
                 : undefined;
+            // 22 ottobre (Paolo, TPL): SAGOMA D'IMPATTO, UN COLPO SOLO, PIU`
+            // BERSAGLI. Il tiro dell'attaccante e` UNO, e i suoi MOD si
+            // prendono dal Bersaglio Principale: "All MODs applied to the
+            // attacker's Roll are determined using a valid Main Target as the
+            // basis" (righe 3745-3749). Gittata, Copertura, terreno, zona,
+            // Linea di Tiro e munizione dei secondari si leggono quindi dal
+            // Principale, qualunque cosa porti la busta. Il secondario resta
+            // suo per tutto il resto: la sua reazione, il suo Tiro Salvezza
+            // (dove la Copertura non da` il +3: e` una Sagoma), gli alleati
+            // in mischia.
+            const tplUno = (unColpo && bersagli.length > 1) ? M.regoleTemplate(armaUno) : null;
+            const impattoUnico = !!(tplUno && tplUno.tipo === 'IMPATTO');
+            const iPrinc = impattoUnico ? Math.max(0, bersagli.findIndex(function (x) { return x && x.ruolo && /^princip|^primar/i.test(String(x.ruolo)); })) : -1;
+            const CAMPI_DEL_PRINCIPALE = ['rangeIndex', 'rangeMod', 'cover', 'copertura', 'terrain', 'zona', 'lof', 'fuoriGittata', 'ammo'];
+            const gruppoTiro = impattoUnico ? ('sagoma_' + scontri.length + '_' + M.nomeUnita(att.attaccante)) : null;
             const perBersaglio = function (b, iB) {
                 // 🔴 ZERO DADI E "BURST NON SCRITTO" NON SONO LA STESSA COSA.
                 // Zero e` una scelta (nessun dado su questo bersaglio, o dadi
@@ -7283,7 +7419,28 @@
                 // (chat TEST, 7 ottobre). Ora lo scontro si calcola col Burst
                 // dell'arma, e lo dice.
                 const burstNonScritto = (b.burst == null);
+                // 23 ottobre (CO-10): dadi tolti perche` manca un requisito
+                // (M.bersagliConRequisiti): lo scontro c'e`, ed e` un IDLE col
+                // motivo. Prima spariva, e il tabellone non diceva niente.
+                if (!burstNonScritto && !b.burst && b.requisitoMancante) {
+                    scontri.push({
+                        tipo: M.CONFRONTO.NESSUNO, titolo: 'IDLE (REQUISITO FALLITO)', requisitoMancante: b.requisitoMancante,
+                        attivo: { nome: M.nomeUnita(att.attaccante), azione: att.azione, attributo: null, base: null, mod: null,
+                                  burst: 0, requisitoFallito: true, impossibile: true, voci: [],
+                                  note: [`Contro ${M.nomeUnita(b)}: ${b.requisitoMancante}. Requisito non soddisfatto: i suoi dadi non si tirano (righe 1244-1247).`],
+                                  salvezzaInflitta: { offensivo: false, note: [] } },
+                        reattivo: { nome: M.nomeUnita(b), azione: M.AZIONI_ARO.NESSUNO, mod: null, burst: 0, voci: [], note: [],
+                                    salvezzaInflitta: { offensivo: false, note: [] }, salvezzaSubita: { offensivo: false, note: ['Non colpito: l\'attacco non si esegue.'] } },
+                        note: [`${M.nomeUnita(att.attaccante)}: requisito non soddisfatto contro ${M.nomeUnita(b)} (${b.requisitoMancante}).`], avvisi: []
+                    });
+                    return;
+                }
                 if (!burstNonScritto && !b.burst) return;   // bersaglio senza dadi assegnati
+                if (impattoUnico && iB !== iPrinc && bersagli[iPrinc]) {
+                    const P = bersagli[iPrinc];
+                    b = Object.assign({}, b);
+                    CAMPI_DEL_PRINCIPALE.forEach(function (k) { if (P[k] !== undefined) b[k] = P[k]; else delete b[k]; });
+                }
                 // 🔴 Il nome del bersaglio si legge con M.nomeUnita, che accetta
                 // nome, alias e name. L'app scrive `name` (app.html ~1100), il
                 // motore e creaAttacco usano `nome`: leggendo solo b.name, un
@@ -7291,7 +7448,13 @@
                 // FACCIA A FACCIA diventava due TIRI NORMALI — cambia chi vince.
                 // Quinto caso di "un fatto, due campi". (Chat TEST, 23 sett.)
                 const nomeB = M.nomeUnita(b);
-                const dif = ctx.trovaUnita ? ctx.trovaUnita(nomeB, b.id) : b;
+                // 22 ottobre (SPEC-06): il PUNTO del tavolo di un'arma
+                // Targetless non e` un'unita` da cercare. Nessuna statistica,
+                // nessun Tiro Salvezza: il tiro dell'attaccante e` un Tiro
+                // Normale, e chi reagisce tira per conto suo.
+                const dif = (b && b.punto === true)
+                    ? { alias: nomeB || 'PUNTO SUL TAVOLO', nome: nomeB || 'PUNTO SUL TAVOLO', punto: true, tipo: 'PUNTO', state: 'ACTIVE', states: {} }
+                    : (ctx.trovaUnita ? ctx.trovaUnita(nomeB, b.id) : b);
                 const rTrovata = trovaReazione(nomeB || M.nomeUnita(dif), (dif && typeof dif === 'object') ? dif : null, b);
                 // 🔴 SCOPRIRE + ATTACCO (righe 6817-6829). Se il Marker ha
                 // dichiarato un ARO si e` RIVELATO da solo (riga 13634: ogni ARO
@@ -7355,6 +7518,7 @@
                     azione: att.azione, arma: att.arma, bersaglio: dif,
                     burst: b.burst, ammo: b.ammo, cover: b.cover,
                     sagomaAnnullataDa: sagomaAnnullataDa,
+                    nascostoAInizioOrdine: !!att.nascostoAInizioOrdine,
                     // `copertura`: DA QUALE copertura ('VITROFERRO', 'CUTTING_FOAM').
                     // Viaggia col cover: senza questa riga l'interfaccia lo scriveva
                     // e nessuno lo leggeva — il caso "un fatto, un campo" al rovescio.
@@ -7368,7 +7532,7 @@
                     // ottobre NESSUNO lo leggeva: MISURATO, uno Scoprire e un
                     // Forward Observer uscivano sull'Hub con un Tiro Salvezza
                     // su ARM per il bersaglio.
-                    nonOffensivo: !!(att.regole && att.regole.nonOffensivo)
+                    nonOffensivo: !!(att.regole && att.regole.nonOffensivo) || !!(b && b.punto === true)
                 }, r ? Object.assign({ difensore: dif }, senzaCoperturaSuAttivo(r)) : null, ctx));
                 if (attNonRisolto) {
                     const sNR = scontri[scontri.length - 1];
@@ -7468,6 +7632,10 @@
                     const ultimoSag = scontri[scontri.length - 1];
                     const principale = (b.ruolo ? /^princip|^primar/i.test(String(b.ruolo)) : iB === 0);
                     ultimoSag.bersaglioDiSagoma = principale ? 'PRINCIPALE' : 'SECONDARIO';
+                    // 22 ottobre: gli scontri dello stesso tiro portano lo
+                    // stesso `tiroUnico`, perche` il tabellone li mostri come UN
+                    // tiro dell'attaccante contro piu` bersagli.
+                    if (gruppoTiro) ultimoSag.tiroUnico = { gruppo: gruppoTiro, principale: principale, bersagli: bersagli.length };
                     // Burst 2+ con una Sagoma: ogni punto e` una Sagoma, e il
                     // bersaglio fa un Tiro Salvezza per ogni Sagoma che lo prende
                     // (il numero lo dichiara il giocatore, ordine_attacco_bs).
@@ -7476,7 +7644,8 @@
                         (quanteSag > 1
                             ? `Sagome: ${quanteSag} Sagome, ognuna è un colpo che vale per tutti quelli sotto la sua area. Questo bersaglio è preso da ${parseInt(b.burst, 10) || 1}: un Tiro Salvezza per ciascuna. `
                             : `Sagoma: UN SOLO tiro vale per tutti i ${bersagli.length} bersagli sotto l'area. `) +
-                        (principale ? 'Questo \u00e8 il Bersaglio Principale.' : 'Questo \u00e8 un bersaglio secondario.')]);
+                        (principale ? 'Questo \u00e8 il Bersaglio Principale.' : 'Questo \u00e8 un bersaglio secondario.') +
+                        (gruppoTiro && !principale ? ' Il tiro dell\'attaccante \u00e8 quello del Principale, con i suoi MOD: non si tira di nuovo, si confronta lo stesso dado.' : '')]);
                 }
             };
             bersagli.forEach(perBersaglio);
@@ -7956,6 +8125,37 @@
         }).filter(Boolean);
     };
 
+    // --- Le FOTO delle unita` che nascono da un'altra ------------------
+    // 23 ottobre (Paolo): il pilota che scende dalla moto, la moto, il pilota
+    // uscito con l'Escape System sono miniature a parte, e la foto si sceglie
+    // GIA` allo schieramento, insieme a quella dell'unita` di partenza. La
+    // sceglie l'app (galleria delle foto, INTERFACCIA) e la scrive in
+    //   unita.fotoCollegate = { pilota: 'zondnaut_1.png', moto: 'zondmate_1.png' }
+    // (il solo nome del file, come imgVariant). Il motore la usa quando
+    // l'unita` nasce. Senza foto scelta: il pilota resta senza (la sigla), la
+    // moto prende quella dell'unita` montata (il Modello montato DIVENTA la
+    // moto, righe 10443-10445).
+    //   M.fotoCollegateDa(unita) -> [{ chiave, nome, profilo }] le foto da chiedere
+    M.fotoCollegateDa = function (unita) {
+        const base = M.profiloDiDatabase(unita);
+        if (!base) return [];
+        const out = [];
+        if (base.smonta) {
+            const pil = M.profiloDaId(base.smonta.pilota), per = M.profiloDaId(base.smonta.periferico);
+            if (pil) out.push({ chiave: 'pilota', nome: pil.nome, profilo: pil.id, perche: 'il pilota quando scende dalla moto' });
+            if (per) out.push({ chiave: 'moto', nome: per.nome, profilo: per.id, perche: 'la moto quando il pilota scende' });
+        }
+        if (base.espelle && base.espelle.pilota) {
+            const pil = M.profiloDaId(base.espelle.pilota);
+            if (pil) out.push({ chiave: 'pilota', nome: pil.nome, profilo: pil.id, perche: 'il pilota uscito con l\'Escape System' });
+        }
+        return out;
+    };
+    function fotoCollegata(unita, chiave) {
+        const f = unita && unita.fotoCollegate && unita.fotoCollegate[chiave];
+        return (typeof f === 'string' && f) ? f : undefined;
+    }
+
     // --- 2. AI Motorcycle: smontare e rimontare --------------------------
     // Una meta` Ordine di Movimento (decisione di Paolo). Smontando nasce la
     // moto (Periferica Synchronized, STR propria); rimontando sparisce.
@@ -7972,9 +8172,12 @@
         const pil = M.profiloDaId(base.smonta.pilota), per = M.profiloDaId(base.smonta.periferico);
         const pilota = conProfilo(unita, pil);
         const motoId = String(unita.id) + '_moto';
-        pilota.smontato = { montato: base.id, moto: motoId };
+        // La foto dell'unita` montata si tiene, per quando risale.
+        pilota.smontato = { montato: base.id, moto: motoId, fotoMontato: unita.imgVariant };
+        pilota.imgVariant = fotoCollegata(unita, 'pilota');
         const moto = conProfilo({ id: motoId, alias: (unita.alias || pil.nome) + ' (moto)', combatGroup: unita.combatGroup,
-                                  states: {}, state: 'ACTIVE', deployState: 'NORMAL', proprietario: unita.id }, per);
+                                  states: {}, state: 'ACTIVE', deployState: 'NORMAL', proprietario: unita.id,
+                                  imgVariant: fotoCollegata(unita, 'moto') || unita.imgVariant }, per);
         return { possibile: true, unitaAggiornata: pilota, nuova: moto,
                  note: ['Il Modello montato diventa la moto; il pilota si mette a contatto di Silhouette con lei (righe 10443-10445).'] };
     };
@@ -7993,6 +8196,8 @@
         const mont = M.profiloDaId(pilota.smontato.montato);
         if (!mont) return { possibile: false, motivo: 'Profilo montato non trovato nel database.' };
         const u = conProfilo(pilota, mont);
+        // Risale: torna la foto dell'unita` montata.
+        if (pilota.smontato.fotoMontato !== undefined) u.imgVariant = pilota.smontato.fotoMontato;
         u.smontato = null;
         return { possibile: true, unitaAggiornata: u, rimuovi: ok.moto.id,
                  note: ['Il pilota deve essere a contatto di Silhouette con la moto (righe 10436-10437). Un Supportware sulla moto cade (righe 10452-10455).'] };
@@ -8015,7 +8220,8 @@
         const pilotaId = String(tag.id) + '_pilota';
         t.pilotaUscito = pilotaId;
         const pilota = conProfilo({ id: pilotaId, alias: (tag.alias || base.nome) + ' (pilota)', combatGroup: tag.combatGroup,
-                                    states: {}, state: 'ACTIVE', deployState: 'NORMAL', proprietario: tag.id, tagDi: tag.id },
+                                    states: {}, state: 'ACTIVE', deployState: 'NORMAL', proprietario: tag.id, tagDi: tag.id,
+                                    imgVariant: fotoCollegata(tag, 'pilota') },
                                   M.profiloDaId(base.espelle.pilota));
         return { possibile: true, unitaAggiornata: t, nuova: pilota,
                  note: ['Escape System: il pilota esce, e si piazza una Sagoma Circolare di Eclipse centrata su di lui (righe 10260-10263).',
@@ -8873,10 +9079,17 @@
         // Il MediKit/GizmoKit a distanza e` un BS Attack: serve colpire prima.
         let tiroPerColpire = null;
         if (!ctx.inContatto && R.tipo === 'EQUIPAGGIAMENTO') {
-            const bs = M.modAttacco(utente, bersaglio, M.armaScoprire(), M.AZIONI.SUPPORTO_BS, {
+            // 22 ottobre (Paolo, SUP-02b): le gittate sono quelle del MediKit
+            // o del GizmoKit (+3 fino a 8", 0 fino a 16", -6 fino a 24"). Qui
+            // si usava l'"arma" dello Scoprire, con le fasce dello Scoprire,
+            // e la pagina non aveva la barra per sceglierle.
+            const nomeKit = (R.nome && /gizmo/i.test(R.nome)) ? 'GizmoKit' : (/gizmo/i.test(id) ? 'GizmoKit' : 'MediKit');
+            const kit = M.profiloArma(nomeKit);
+            const armaKit = (kit && !kit.nonTrovata && Array.isArray(kit.bands) && kit.bands.length) ? kit : M.armaScoprire();
+            const bs = M.modAttacco(utente, bersaglio, armaKit, M.AZIONI.SUPPORTO_BS, {
                 rangeIndex: ctx.rangeIndex, cover: false
             });
-            tiroPerColpire = { attributo: 'BS', valore: bs.valore, base: bs.base, voci: bs.voci };
+            tiroPerColpire = { attributo: 'BS', valore: bs.valore, base: bs.base, voci: bs.voci, bande: armaKit.bands || [] };
             note.push('A distanza il MediKit/GizmoKit e` un BS Attack: prima si colpisce, poi il bersaglio tira.');
         } else if (R.tipo === 'EQUIPAGGIAMENTO') {
             note.push(R.modalita ? R.modalita.contatto : 'In contatto non serve tirare per colpire.');

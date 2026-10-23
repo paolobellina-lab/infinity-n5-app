@@ -1,4 +1,6 @@
-// @versione 2026-10-15.1 | test_modulo_speculativo.js | proprieta`: chat TEST
+// @versione 2026-10-23.1 | test_modulo_speculativo.js | proprieta`: chat TEST
+// 2026-10-23.1: sezione 8 girata (SPEC-06, MOTORE 23 ott): col Pitcher il solo
+//    PUNTO SUL TAVOLO; controprove Smoke (punto + nemici) e Grenades (niente punto).
 // 2026-10-15.1: sezione 8a girata (ordine_fuoco_speculativo 2026-10-15.1, Paolo):
 //    i secondari sotto la Sagoma non si scelgono piu` in un riquadro della
 //    pagina della gittata, ma nella pagina dei bersagli: il primo toccato e` il
@@ -275,13 +277,52 @@ ok(/onclick="window\.toggleFuoriGittataSpeculativo\(\)">FUORI</.test(gittata), '
 } catch (e) {
     ok(false, 'la pagina della gittata non si costruisce con questi bersagli', e.message);
 }
-// Controprova: senza Sagoma (Pitcher) un solo bersaglio, il secondo sostituisce il primo.
+// 🔴 GIRATA IL 23 OTTOBRE (MOTORE/INTERFACCIA, SPEC-06). Fino alla .1 qui
+// c'era "col Pitcher il secondo tocco sostituisce il primo": il Pitcher
+// sceglieva un nemico. Ora il Pitcher e` Targetless con segnalino: il suo
+// unico bersaglio e` il PUNTO SUL TAVOLO, e i nemici non si offrono piu`.
+// La vecchia controprova non ha piu` un'arma su cui stare: nel catalogo le
+// armi da Fuoco Speculativo senza Sagoma sono solo quelle col segnalino.
+// Quindi si prova la regola nuova, e le controprove sono Smoke e Grenades.
 nuovo(lanciatore);
 window.currentOrder.weapon = 'Pitcher';
 window.setupTargetSelectionSpeculativo();
+let pagP = nodo('enemy-target-buttons').innerHTML;
+ok(/PUNTO SUL TAVOLO/.test(pagP) && !/toccaBersaglioSpeculativo\('p\d'\)/.test(pagP),
+   'col Pitcher la pagina offre SOLO il PUNTO SUL TAVOLO, nessun nemico');
 window.pendingTargets = [];
-(typeof window.toccaBersaglioSpeculativo === 'function' ? window.toccaBersaglioSpeculativo : () => {})('p1'); (typeof window.toccaBersaglioSpeculativo === 'function' ? window.toccaBersaglioSpeculativo : () => {})('p3');
-ok(window.pendingTargets.map(u => u.id).join(',') === 'p3', 'CONTROPROVA: col Pitcher (senza Sagoma) il secondo tocco sostituisce il primo');
+window.toccaBersaglioSpeculativo('p1');
+ok(window.pendingTargets.length === 0, `col Pitcher toccare un nemico non lo prende (${window.pendingTargets.length} scelti)`);
+window.toccaBersaglioSpeculativo('punto');
+ok(window.pendingTargets.length === 1 && window.pendingTargets[0].punto === true && window.pendingTargets[0].id === 'punto',
+   'toccato il punto: un bersaglio, segnato punto');
+ok(/\[ SCELTO \]/.test(nodo('enemy-target-buttons').innerHTML), 'e la pagina lo scrive: [ SCELTO ]');
+window.toccaBersaglioSpeculativo('punto');
+ok(window.pendingTargets.length === 0, 'toccato di nuovo: il punto si toglie');
+// Anche senza schieramento avversario la scelta si apre (prima: "Nessuna unita` nemica").
+const nemiciPrima = M._rosterNemico; M._rosterNemico = [];
+nuovo(lanciatore); window.currentOrder.weapon = 'Pitcher'; alertUltimo = null;
+nodo('enemy-target-buttons').innerHTML = '';
+window.setupTargetSelectionSpeculativo();
+ok(alertUltimo === null && /PUNTO SUL TAVOLO/.test(nodo('enemy-target-buttons').innerHTML),
+   `col Pitcher e nessun nemico sul tavolo: niente avviso, c'è il punto (avviso: ${alertUltimo})`);
+M._rosterNemico = nemiciPrima;
+// CONTROPROVA 1: Smoke Grenades, Targetless SENZA segnalino: il punto PIU` i nemici.
+nuovo(lanciatore); window.currentOrder.weapon = 'Smoke Grenades';
+window.setupTargetSelectionSpeculativo();
+pagP = nodo('enemy-target-buttons').innerHTML;
+ok(/PUNTO SUL TAVOLO/.test(pagP) && /toccaBersaglioSpeculativo\('p1'\)/.test(pagP),
+   'CONTROPROVA: con le Smoke Grenades il punto E i nemici');
+window.pendingTargets = []; window.toccaBersaglioSpeculativo('punto'); window.toccaBersaglioSpeculativo('p1');
+ok(window.pendingTargets.map(u => u.id).join(',') === 'p1', 'e un nemico toccato dopo il punto lo sostituisce (il lancio e` uno)');
+// CONTROPROVA 2: Grenades, non Targetless: nessun punto.
+nuovo(lanciatore); window.currentOrder.weapon = 'Grenades';
+window.setupTargetSelectionSpeculativo();
+pagP = nodo('enemy-target-buttons').innerHTML;
+ok(!/PUNTO SUL TAVOLO/.test(pagP) && /toccaBersaglioSpeculativo\('p1'\)/.test(pagP),
+   'CONTROPROVA: con le Grenades nessun punto, solo i nemici');
+window.pendingTargets = []; window.toccaBersaglioSpeculativo('punto');
+ok(window.pendingTargets.length === 0, 'e toccare "punto" a mano non prende niente');
 
 console.log('\n--- 8b. CONTROPROVA: senza Sagoma Circolare, nessun riquadro ---');
 // Il Pitcher ha il Tratto Speculative Attack ma NON una Sagoma: se il

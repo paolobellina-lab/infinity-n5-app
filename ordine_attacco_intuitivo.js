@@ -1,4 +1,4 @@
-// @versione 2026-10-15.1 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
+// @versione 2026-10-23.1 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
 // ==========================================
 // 👻 ATTACCO INTUITIVO (N5) - ordine_attacco_intuitivo.js
 // ------------------------------------------
@@ -195,8 +195,16 @@
         window.combatTargets = [{
             id: u.id, name: M.nomeUnita(u), burst: 1,
             cover: false, rangeIndex: 0, rangeMod: 0, terrain: 'NESSUNO',
-            ruolo: 'principale'
+            ruolo: 'principale',
+            // 22 ottobre (INT-01): com'era alla dichiarazione. Se poi il
+            // Marker si rivela con il suo ARO, l'Attacco resta valido.
+            eraMarker: !!(M.inFormaMarker && M.inFormaMarker(M.statoBersaglio(u)))
         }];
+        // 23 ottobre (TEST, INT-01 dalla porta del giocatore): app.html,
+        // confirmMultiAro, ricostruisce combatTargets con campi fissi e perde
+        // eraMarker e ruolo. Si tengono qui, e preparaModificatoriIntuitivo li
+        // rimette dopo la conferma.
+        window._sceltaIntuitivo = { id: u.id, eraMarker: window.combatTargets[0].eraMarker, ruolo: 'principale' };
         // 🔴 PRIMA il ridisegno, POI la selezione. setupTargetSelectionIntuitivo
         // azzera pendingTargets (riparte dalla scelta): chiamata dopo aver
         // scritto la selezione la svuotava, e confirmMultiAro rispondeva
@@ -223,6 +231,13 @@
         }
         if (window.combatTargets.length > 1) {
             window.combatTargets = [window.combatTargets[0]];
+        }
+        {
+            const s = window._sceltaIntuitivo, t0 = window.combatTargets[0];
+            if (s && t0 && String(t0.id) === String(s.id)) {
+                if (t0.eraMarker === undefined) t0.eraMarker = s.eraMarker;
+                if (!t0.ruolo) t0.ruolo = s.ruolo;
+            }
         }
 
         const arma = M.profiloArma(window.currentOrder.weapon);
@@ -348,7 +363,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-10-15.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-10-23.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

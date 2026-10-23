@@ -1,4 +1,4 @@
-// @versione 2026-10-15.1 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
+// @versione 2026-10-22.1 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
 // ==========================================
 // ☄️ FUOCO SPECULATIVO (N5) - ordine_fuoco_speculativo.js
 // ------------------------------------------
@@ -126,7 +126,13 @@
         window.pendingTargets = [];
 
         const nemici = M.rosterNemico();
-        if (nemici.length === 0) return alert('⚠️ Nessuna unità nemica sul tavolo.');
+        // 22 ottobre (Paolo, SPEC-06): un'arma TARGETLESS si lancia su un
+        // PUNTO del tavolo. Per Pitcher, Disco Baller e Drop Bear in modo BS
+        // il punto e` l'unica scelta (lasciano un segnalino dove cadono); per
+        // le altre Targetless (Smoke) il punto si aggiunge ai nemici.
+        const armaT = M.profiloArma(window.currentOrder.weapon);
+        const targetless = !!(M.eTargetless && M.eTargetless(armaT));
+        if (nemici.length === 0 && !targetless) return alert('⚠️ Nessuna unità nemica sul tavolo.');
 
         // Lo Speculativo non richiede LoF: i Marker sono bersagli validi,
         // ed è proprio uno degli usi tipici (evita Mimetismo e Copertura).
@@ -134,7 +140,7 @@
         window.validTargets = M.soloAmmessi(giudizi);
         window.targetsScartati = giudizi.filter(g => !g.ammesso).map(g => ({ nome: g.nome, motivo: g.motivo }));
 
-        if (window.validTargets.length === 0) {
+        if (window.validTargets.length === 0 && !targetless) {
             alert('❌ Nessun bersaglio valido.\n\n' + window.targetsScartati.map(t => `• ${t.nome}: ${t.motivo}`).join('\n'));
             return window.goToStep('step-weapon');
         }
@@ -156,13 +162,16 @@
         const sagoma = !!(tpl && tpl.forma === 'Circular');
         const prin = M.bersagliValidi(M.AZIONI.SPECULATIVO, M.rosterNemico(), { attaccante: unita });
         const sec = sagoma ? M.bersagliValidi(M.AZIONI.SPECULATIVO, M.rosterNemico(), { attaccante: unita, ruolo: 'secondario' }) : [];
+        const targetless = !!(M.eTargetless && M.eTargetless(arma));
+        const soloPunto = targetless && !!(M.lancioConSegnalino && M.lancioConSegnalino(arma));
         const voci = [];
+        if (soloPunto) return { voci: voci, sagoma: false, targetless: true, soloPunto: true };
         prin.forEach(function (g) {
             if (!g.unita) return;
             const s = sec.find(function (x) { return x.unita && String(x.unita.id) === String(g.unita.id); });
             if (g.ammesso || (s && s.ammesso)) voci.push({ unita: g.unita, principale: !!g.ammesso, secondario: !!(sagoma && s && s.ammesso), motivo: g.motivo });
         });
-        return { voci: voci, sagoma: sagoma };
+        return { voci: voci, sagoma: sagoma, targetless: targetless, soloPunto: false };
     }
 
     window.renderBersagliSpeculativo = function () {
@@ -176,6 +185,13 @@
             <span style="font-size:13px; color:#ccc;">${G.sagoma
                 ? 'Il primo che tocchi è il <b>Bersaglio Principale</b>. Poi tocca chi altro sta sotto la Sagoma: un Marker è ammesso, ma non come Principale.'
                 : 'Un solo bersaglio: quest\'arma non ha una Sagoma Circolare.'}</span></div>`;
+        // Il PUNTO del tavolo, per le armi Targetless.
+        if (G.targetless) {
+            const preso = scelti.indexOf('punto') === 0;
+            html += `<button type="button" class="huge-btn bersaglio-punto" style="width:100%; min-height:70px; margin-bottom:10px; background:${preso ? '#553300' : '#111'}; border-color:${COL.bordo}; color:#fff;" onclick="window.toccaBersaglioSpeculativo('punto')">
+                📍 PUNTO SUL TAVOLO${preso ? ' <span style="color:#ff66ff; font-size:15px;">[ SCELTO ]</span>' : ''}
+                <span>${G.soloPunto ? 'Arma Targetless: si lancia su un punto, non su un nemico. Se il tiro riesce, il segnalino si piazza lì.' : 'Arma Targetless: puoi lanciarla su un punto invece che su un nemico.'}</span></button>`;
+        }
         G.voci.forEach(function (v) {
             const k = scelti.indexOf(String(v.unita.id));
             const etichetta = k === 0 ? ' <span style="color:#ff66ff; font-size:15px;">[ PRINCIPALE ]</span>'
@@ -196,9 +212,17 @@
     window.toccaBersaglioSpeculativo = function (id) {
         const M = motore(); if (!M) return;
         const G = giudiziSpeculativo(M);
+        window.pendingTargets = window.pendingTargets || [];
+        if (String(id) === 'punto') {
+            if (!G.targetless) return;
+            const giaPreso = window.pendingTargets.length && window.pendingTargets[0].punto;
+            window.pendingTargets = giaPreso ? [] : [M.bersaglioPunto()];
+            return window.renderBersagliSpeculativo();
+        }
+        // Un nemico dopo il punto: il punto esce (il lancio e` uno).
+        if (window.pendingTargets.length && window.pendingTargets[0].punto) window.pendingTargets = [];
         const v = G.voci.find(function (x) { return String(x.unita.id) === String(id); });
         if (!v) return;
-        window.pendingTargets = window.pendingTargets || [];
         const k = window.pendingTargets.findIndex(function (t) { return String(t.id) === String(id); });
         if (k >= 0) {
             window.pendingTargets.splice(k, 1);
@@ -252,6 +276,11 @@
         }
 
         const arma = M.profiloArma(window.currentOrder.weapon);
+        // Il punto del tavolo passa per confirmMultiAro, che tiene solo id e
+        // nome: qui torna il segno `punto`, e niente secondari.
+        if (String(window.combatTargets[0].id) === 'punto' && M.bersaglioPunto) {
+            window.combatTargets = [Object.assign(window.combatTargets[0], M.bersaglioPunto())];
+        }
 
         // Burst 1 per regolamento, e un solo Bersaglio Principale: il primo.
         // Gli altri sono i secondari sotto la Sagoma, scelti nella pagina dei
@@ -556,6 +585,10 @@
             return window.startUnitSpeculativoLoop();
         }
 
+        // Copia PRIMA dell'invio: l'uscita dopo l'invio (app.html) azzera
+        // coordPayloads e currentOrder.
+        const inviati = window.coordPayloads.slice();
+        const ordineIdInviato = window.currentOrder && window.currentOrder.id;
         const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode });
         if (!spedito) {
             window.coordIndex--;
@@ -570,9 +603,9 @@
         // (riga 14999): un lancio fallito costa un uso e non lascia niente.
         // Vale per tutta la famiglia dei lanci con segnalino: Drop Bear in modo
         // BS, Pitcher (Ripetitore), Disco Baller (Disco Ball).
-        const lanciati = window.coordPayloads.filter(p => M.lancioConSegnalino(p.arma));
+        const lanciati = inviati.filter(p => M.lancioConSegnalino(p.arma));
         window._dropBearInSospeso = lanciati.length
-            ? { lanci: lanciati.map(p => ({ unita: p.attaccante, arma: p.arma })), ordineId: window.currentOrder && window.currentOrder.id,
+            ? { lanci: lanciati.map(p => ({ unita: p.attaccante, arma: p.arma })), ordineId: ordineIdInviato,
                 nomeArma: String(lanciati[0].arma.nome).replace(/ \(BS Mode\)/i, '') }
             : null;
 
@@ -589,6 +622,21 @@
                     <button onclick="window.esitoDropBearBS(false)" style="padding:10px 18px; margin:4px;">NO, FALLITO</button>
                 </div>` : '');
             calcDiv.style.display = 'block';
+        }
+        // 22 ottobre (SPEC-06): nell'app il riquadro qui sopra non si vedeva.
+        // Subito dopo l'invio l'app torna al radar e svuota calc-result
+        // (app.html, agganciaUscitaDopoInvio), quindi la domanda spariva e il
+        // Ripetitore del Pitcher (o il Drop Bear, la Disco Ball) non nasceva
+        // mai. Ora la domanda si fa con una finestra, che aspetta il tiro al
+        // tavolo. Il riquadro resta per chi carica il modulo da solo.
+        if (window._dropBearInSospeso && typeof window.confirm === 'function') {
+            const sosp = window._dropBearInSospeso;
+            const si = window.confirm('🎯 ' + sosp.nomeArma + ': tira al tavolo.\n\nIl tiro è RIUSCITO?\n\nOK = sì, piazza il segnalino dove è caduto.\nAnnulla = no, fallito (l\'uso è comunque speso).');
+            const esito = window.esitoDropBearBS(!!si);
+            if (typeof window.alert === 'function') {
+                window.alert(si ? ('✅ ' + sosp.nomeArma + ': segnalino piazzato' + (esito && esito.piazzati ? '' : ' (nessun segnalino creato: controlla il roster)') + '.')
+                                : ('❌ ' + sosp.nomeArma + ': tiro fallito, nessun segnalino. L\'uso è comunque speso.'));
+            }
         }
     };
 
@@ -630,7 +678,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-15.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-22.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

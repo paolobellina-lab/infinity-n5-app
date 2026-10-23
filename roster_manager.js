@@ -1,4 +1,4 @@
-// @versione 2026-10-20.1 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-23.1 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -885,11 +885,51 @@ window.fotoAssegnata = (u) => {
     return (typeof v === 'string' && /\.(png|jpe?g|webp)$/i.test(v)) ? v : null;
 };
 
+// 23 ottobre (Paolo, via MOTORE): le FOTO COLLEGATE. Il pilota che scende
+// dalla moto, la moto, il pilota uscito con l'Escape System sono miniature a
+// parte: la loro foto si sceglie allo schieramento, subito dopo quella
+// dell'unita`, e sta in u.fotoCollegate[chiave] (solo il nome del file, come
+// imgVariant). Quali chiedere lo dice il motore (M.fotoCollegateDa). Anche
+// queste sono miniature: una foto sta su UNA sola, quindi contano fra le
+// prese.
+window.fotoCollegateDi = (u) => {
+    const M = window.MotoreN5;
+    if (!M || typeof M.fotoCollegateDa !== 'function') {
+        console.error('\u26d4 M.fotoCollegateDa assente (serve motore_regole_n5.js dalla 2026-10-23.2): non si chiedono le foto di pilota e moto.');
+        return [];
+    }
+    return M.fotoCollegateDa(u) || [];
+};
+// Tutte le foto che un'unita` tiene: la sua e quelle collegate.
+// `salvo` (facoltativo): la chiave da NON contare ('' = la foto principale).
+window.fotoDiUnita = (u, salvo) => {
+    const out = [];
+    if (salvo !== '' && window.fotoAssegnata(u)) out.push(window.fotoAssegnata(u));
+    const c = (u && u.fotoCollegate) || {};
+    Object.keys(c).forEach(k => { if (k !== salvo && typeof c[k] === 'string' && c[k]) out.push(c[k]); });
+    return out;
+};
+
 // Le foto ancora libere per quest'unita`: tutte, meno quelle che stanno gia`
-// su un'ALTRA unita` del roster.
-window.fotoLibere = (u) => {
-    const prese = (window.roster || []).filter(x => x && x !== u).map(window.fotoAssegnata).filter(Boolean);
+// su un'ALTRA unita` del roster o su un altro posto della stessa (la foto
+// principale e le collegate). `chiave`: il posto che si sta scegliendo
+// (undefined = la foto dell'unita`).
+// Prima contava solo la foto principale delle altre unita`.
+window.fotoLibere = (u, chiave) => {
+    const prese = [];
+    (window.roster || []).filter(x => x && x !== u).forEach(x => prese.push.apply(prese, window.fotoDiUnita(x)));
+    // Della stessa unita` contano gli ALTRI posti: scegliendo la foto
+    // principale le collegate, scegliendo una collegata la principale e le
+    // altre collegate.
+    prese.push.apply(prese, window.fotoDiUnita(u, chiave === undefined ? '' : chiave));
     return (window.elencoFoto() || []).filter(f => prese.indexOf(f) < 0);
+};
+// Chi tiene gia` questa foto, fuori dal posto che si sta scegliendo.
+window.chiTieneFoto = (u, chiave, file) => {
+    const altra = (window.roster || []).find(x => x && x !== u && window.fotoDiUnita(x).indexOf(file) >= 0);
+    if (altra) return altra.alias || altra.nome;
+    if (window.fotoDiUnita(u, chiave === undefined ? '' : chiave).indexOf(file) >= 0) return (u.alias || u.nome) + ' (un altro posto della stessa unita`)';
+    return null;
 };
 
 window.assegnaFoto = (index, file) => {
@@ -897,10 +937,36 @@ window.assegnaFoto = (index, file) => {
     if (!u) return false;
     if (file) {
         if ((window.elencoFoto() || []).indexOf(file) < 0) { alert('⛔ "' + file + '" non e` nell\'elenco delle foto.'); return false; }
-        const altra = (window.roster || []).find(x => x && x !== u && window.fotoAssegnata(x) === file);
-        if (altra) { alert('⛔ Questa foto e` gia` su ' + (altra.alias || altra.nome) + ': una miniatura sta su una sola unita`.'); return false; }
+        const chi = window.chiTieneFoto(u, undefined, file);
+        if (chi) { alert('⛔ Questa foto e` gia` su ' + chi + ': una miniatura sta su una sola unita`.'); return false; }
     }
     u.imgVariant = file || '0';
+    // Subito dopo, le foto collegate (pilota, moto), se l'unita` ne ha.
+    const coll = window.fotoCollegateDi(u);
+    if (coll.length) { window.apriGalleriaFoto(index, coll[0].chiave); return true; }
+    window.chiudiGalleriaFoto();
+    window.renderDeployUnits();
+    return true;
+};
+
+// La foto di un'unita` collegata (u.fotoCollegate[chiave]). Poi la prossima
+// collegata, o si chiude. file null = nessuna foto: il motore lascia il
+// pilota senza e da` alla moto la foto dell'unita` montata.
+window.assegnaFotoCollegata = (index, chiave, file) => {
+    const u = window.roster[index];
+    if (!u) return false;
+    const coll = window.fotoCollegateDi(u);
+    const k = coll.findIndex(c => c.chiave === chiave);
+    if (k < 0) { console.error('\u26d4 assegnaFotoCollegata: "' + chiave + '" non e` una foto collegata di ' + (u.alias || u.nome)); return false; }
+    if (file) {
+        if ((window.elencoFoto() || []).indexOf(file) < 0) { alert('⛔ "' + file + '" non e` nell\'elenco delle foto.'); return false; }
+        const chi = window.chiTieneFoto(u, chiave, file);
+        if (chi) { alert('⛔ Questa foto e` gia` su ' + chi + ': una miniatura sta su una sola unita`.'); return false; }
+    }
+    const nuove = Object.assign({}, u.fotoCollegate || {});
+    if (file) nuove[chiave] = file; else delete nuove[chiave];
+    u.fotoCollegate = nuove;
+    if (k + 1 < coll.length) { window.apriGalleriaFoto(index, coll[k + 1].chiave); return true; }
     window.chiudiGalleriaFoto();
     window.renderDeployUnits();
     return true;
@@ -917,9 +983,14 @@ window.chiudiGalleriaFoto = () => {
 // qualcuno le ricompone: stessa versione, due impronte diverse, e
 // l'impronta non identificava piu` il file. Ora quelle lettere sono entita`
 // HTML (&egrave;, &agrave;): solo caratteri ASCII, nessuna ricomposizione.
-window.apriGalleriaFoto = (index) => {
+// `chiave` (facoltativa): una foto collegata ('pilota', 'moto'), chiesta
+// subito dopo quella dell'unita` (vedi window.fotoCollegateDi).
+window.apriGalleriaFoto = (index, chiave) => {
     const u = window.roster[index];
     if (!u) return;
+    const coll = (chiave !== undefined) ? window.fotoCollegateDi(u) : [];
+    const posto = (chiave !== undefined) ? coll.find(c => c.chiave === chiave) : null;
+    if (chiave !== undefined && !posto) { console.error('\u26d4 apriGalleriaFoto: "' + chiave + '" non e` una foto collegata di ' + (u.alias || u.nome)); return; }
     let g = document.getElementById('galleria-foto');
     if (!g || !g.style) {
         g = document.createElement('div');
@@ -930,7 +1001,11 @@ window.apriGalleriaFoto = (index) => {
     g.style.display = 'block';
 
     const elenco = window.elencoFoto();
-    const chi = (u.alias || u.nome || '');
+    const chi = (u.alias || u.nome || '') + (posto ? ' \u2014 ' + posto.nome : '');
+    const sottotitolo = posto
+        ? `<div class="foto-collegata" style="color:#ffcc66; font-size:14px; margin-bottom:10px;">Miniatura a parte: ${posto.perche || posto.nome} (${coll.indexOf(posto) + 1} di ${coll.length}). Senza foto: ${posto.chiave === 'moto' ? 'la moto prende la foto dell\'unit&agrave; montata' : 'il pilota resta senza foto'}.</div>`
+        : '';
+    const comando = posto ? `window.assegnaFotoCollegata(${index}, '${posto.chiave}', ` : `window.assegnaFoto(${index}, `;
     // 15 ottobre: le foto di questo giocatore stanno nella SUA cartella
     // (img/nomadi/ o img/panoceania/, vedi CARTELLA_FOTO in app.html). Prima
     // la galleria le cercava in img/, dove ora restano solo le icone comuni.
@@ -943,19 +1018,19 @@ window.apriGalleriaFoto = (index) => {
             ⚠️ L'elenco delle foto non &egrave; stato caricato (manca <b>${cartella}elenco_foto.js</b>).<br>
             Si genera con la pagina <b>avvia_elenco_foto.html</b> e va messo nella cartella <b>${cartella}</b>, insieme alle foto.</div>`;
     } else {
-        const mia = window.fotoAssegnata(u);
-        const libere = window.fotoLibere(u);
-        const tessera = (f) => `<button onclick="window.assegnaFoto(${index}, '${f.replace(/'/g, "\\'")}')" style="width:104px; padding:4px; background:${f === mia ? '#553300' : '#111'}; border:2px solid ${f === mia ? '#ffaa00' : '#444'}; border-radius:6px; color:#aaa; font-size:11px; overflow:hidden;">
+        const mia = posto ? ((u.fotoCollegate || {})[posto.chiave] || null) : window.fotoAssegnata(u);
+        const libere = window.fotoLibere(u, posto ? posto.chiave : undefined);
+        const tessera = (f) => `<button onclick="${comando}'${f.replace(/'/g, "\\'")}')" style="width:104px; padding:4px; background:${f === mia ? '#553300' : '#111'}; border:2px solid ${f === mia ? '#ffaa00' : '#444'}; border-radius:6px; color:#aaa; font-size:11px; overflow:hidden;">
                 <img src="${cartella}${f}" style="width:92px; height:92px; object-fit:contain; display:block;" alt="">
                 ${f.replace(/\.[a-z]+$/i, '')}</button>`;
         corpo = `<div style="color:#888; font-size:13px; margin-bottom:10px;">${libere.length} foto libere su ${elenco.length}. Quelle gi&agrave; su un'altra unit&agrave; non compaiono.</div>
             <div style="display:flex; flex-wrap:wrap; gap:8px;">${libere.map(tessera).join('')}</div>
-            <button class="btn-status" style="margin-top:14px;" onclick="window.assegnaFoto(${index}, null)">NESSUNA FOTO</button>`;
+            <button class="btn-status" style="margin-top:14px;" onclick="${comando}null)">NESSUNA FOTO</button>`;
     }
     g.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <b style="color:#fff; font-size:20px;">📷 Foto per ${chi}</b>
             <button class="btn-status" style="width:auto; margin:0;" onclick="window.chiudiGalleriaFoto()">CHIUDI</button>
-        </div>${corpo}`;
+        </div>${sottotitolo}${corpo}`;
 };
 
 // Il tocco sulla foto, nella schermata di schieramento: apre la galleria.
@@ -1622,7 +1697,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-10-20.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-10-23.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

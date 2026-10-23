@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-20.1 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-23.2 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -221,7 +221,11 @@
         .btn-status { width: 100%; background: #222; color: var(--nomad-red); border: 2px solid var(--nomad-red); padding: 15px; margin-top: 15px; font-family: 'Teko', sans-serif; font-size: 22px; font-weight: bold; cursor: pointer; }
         .btn-small { padding: 10px; font-size: 18px; margin-top: 5px; clip-path: none; border-radius: 3px; }
         
-        .grid-buttons { display: flex; flex-direction: column; gap: 10px; flex-grow: 1; overflow-y: auto; padding-bottom: 10px;}
+        /* 23 ottobre (Paolo, foto del FastPanda con IMM-A): con overflow-y:auto
+           anche l'asse x diventa auto, e le icone di stato che sporgevano di
+           2px a destra (.rup-icone right:-2px) facevano comparire la barra di
+           scorrimento ORIZZONTALE. Le righe non devono mai scorrere di lato. */
+        .grid-buttons { display: flex; flex-direction: column; gap: 10px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 10px;}
         .huge-btn { flex: 1; min-height: 80px; background: #1a0000; border: 2px solid var(--nomad-red); color: #fff; font-family: 'Teko', sans-serif; font-size: 32px; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; transition: 0.2s; border-radius: 5px; padding: 10px; text-align: center; line-height: 1.1; }
         .huge-btn:active { background: var(--nomad-orange); color: #000; transform: scale(0.98); }
         .huge-btn span { font-family: 'Share Tech Mono', monospace; font-size: 14px; color: var(--nomad-orange); font-weight: normal; margin-top: 5px; }
@@ -304,7 +308,7 @@
         /* Le icone le disegna window.generaIconeStati con stili in linea da
            45px: qui si fanno grandi quanto le due bande insieme, a destra,
            sopra le bande. Se il file manca c'e` l'emoji (uno <span>). */
-        .riga-unita-foto .rup-icone { position:absolute; right:-2px; top:50%; transform:translateY(-50%); z-index:6; display:flex;
+        .riga-unita-foto .rup-icone { position:absolute; right:0; top:50%; transform:translateY(-50%); z-index:6; display:flex;
             flex-direction:row-reverse; align-items:center; pointer-events:none; }
         .riga-unita-foto .rup-icone img { width:64px !important; height:64px !important; margin:0 0 0 -8px !important;
             filter:drop-shadow(0 3px 6px rgba(0,0,0,.9)) !important; }
@@ -588,7 +592,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-20.1', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-10-23.2', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -1278,7 +1282,9 @@
             const nomePuro = window.nomeInElenco(u);
             let nome = (opz.nome !== undefined) ? opz.nome : (morto ? `<s>${nomePuro}</s>` : nomePuro);
             if (opz.dopoNome) nome += opz.dopoNome;
-            if (s.fireteam) nome += ` <span style="color:#9ff; font-size:15px;">[ TEAM ${s.fireteam} ]</span>`;
+            // 23 ottobre (Paolo): il Leader del Fireteam non si riconosceva
+            // dalla riga, che diceva solo la squadra. Ora porta il segno.
+            if (s.fireteam) nome += ` <span class="segno-fireteam" style="color:#9ff; font-size:15px;">[ TEAM ${s.fireteam}${s.isFireteamLeader === true ? ' · ⭐ LEADER' : ''} ]</span>`;
             const alias = (u && u.alias && u.alias !== nomePuro) ? `<div class="rup-alias">"${u.alias}"</div>` : '';
             const destra = (opz.destra !== undefined) ? opz.destra : window.generaIconeStati(u);
             const attributi = `${opz.id ? `id="${opz.id}" ` : ''}data-fazione="${f}" data-scelta="${opz.scelta ? 'si' : 'no'}" oncontextmenu="return false;" ${opz.attributi || ''}`;
@@ -1576,6 +1582,18 @@
                 // Controlla se il bersaglio è già stato cliccato
                 window.pendingTargets = window.pendingTargets || [];
                 let isSelected = window.pendingTargets.some(pt => pt.id === t.id);
+                // 23 ottobre (MOTORE, DIF-14): un'arma TARGETLESS in Ordine
+                // Coordinato ha come solo "bersaglio" il PUNTO del tavolo
+                // (M.bersaglioPunto). Passava dalla riga di una truppa nemica:
+                // sigla "?", "[LI]", il colore della fazione avversaria e la
+                // fascia vuota dell'alias. Non e` una truppa: riga sua, come
+                // il tasto del Fuoco Speculativo.
+                if (t && t.punto) {
+                    container.innerHTML += `<button type="button" class="huge-btn bersaglio-punto" data-scelta="${isSelected ? 'si' : 'no'}" style="width:100%; min-height:70px; margin-bottom:12px; background:${isSelected ? '#553300' : '#111'}; border-color:${isSelected ? '#ffaa33' : '#888'}; color:#fff; font-size:20px;" onclick="window.toggleTargetSelection('punto')">
+                        \ud83d\udccd ${t.name || 'PUNTO SUL TAVOLO'}${isSelected ? ' <span style="color:#ffaa33; font-size:15px;">[ SCELTO ]</span>' : ''}<br>
+                        <span style="color:#aaa; font-size:13px;">Arma Targetless: si tira su un punto del tavolo, non su una truppa.</span></button>`;
+                    return;
+                }
                 
                 // 7 ottobre: stessa riga degli altri elenchi, con la foto che
                 // l'AVVERSARIO ha dato alla sua unita` e lo stesso carattere.

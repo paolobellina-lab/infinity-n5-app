@@ -1,4 +1,4 @@
-// @versione 2026-10-20.3 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-23.3 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -65,6 +65,14 @@
 //      della Punta di Lancia nel Coordinato.
 //  27. Tabellone: il nome delle azioni (M.nomeAzione: ATTACCO CC, non
 //      CC_ATTACK) e la Sagoma Diretta come colpo automatico, attivo e reattivo.
+//  28-31. I lavori del 23 ottobre: foto collegate (pilota, moto), un
+//      riquadro per il tiro unico della Sagoma d'Impatto, BERSAGLIO nel
+//      Supporto, niente Copertura in ARO con un'arma Targetless.
+//  32. Il PUNTO del tavolo sul tabellone: cella neutra, senza salvezze.
+//  33. Dal collaudo del 23 ottobre: chi e` in Hidden Deployment reagisce
+//      (etichetta NASCOSTO, poi NORMAL e AGGIORNAMENTO), la Riserva no; i
+//      bersagli dell'ARO con la riga con la foto (anche nel Coordinato); il
+//      Leader del Fireteam sulla riga; niente scorrimento orizzontale.
 //
 //  NON PROVA: l'aspetto vero nel browser (altezze, colori, immagini che
 //  esistono o no). Il DOM qui e` finto: si guarda l'HTML prodotto.
@@ -1595,6 +1603,202 @@ sezione('27. Tabellone: nome delle azioni e Sagoma Diretta senza tiro (MOTORE 20
         const c = reattivo(tabellone(T));
         ok(/Successo al: \d+ \(o meno\)/.test(c) && /Dadi da lanciare: 1/.test(c) && !/COLPO AUTOMATICO/.test(c), 'CONTROPROVA: ARO col Combi Rifle, "Successo al" e i dadi restano (' + c.slice(0, 100) + ')');
     }
+});
+
+sezione('28. Foto collegate: pilota e moto si scelgono con la foto dell unita` (MOTORE 2026-10-23.2)', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g;
+    T.schiera([truppa(profilo(T, /^Zondnautica-A$/), { id: 'n1', alias: 'Moto' }), truppa(profilo(T, /^Anaconda \(Heavy/), { id: 'n2', alias: 'Ana' }), truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n3', alias: 'Alg' })],
+              [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+    N.FOTO_MINIATURE = ['zondnautica.png', 'zondnaut.png', 'zondmate.png', 'anaconda.png', 'operator.png', 'alguacil.png'];
+    N.deployGroup = 1;
+    const galleria = () => String(T.nomadi.el('galleria-foto').innerHTML);
+    // Dalla porta del giocatore: il tocco sulla foto, poi le tessere.
+    N.cambiaIconaDeploy(null, 0);
+    vmTocco(T.nomadi, (galleria().match(/onclick="(window\.assegnaFoto\(0, 'zondnautica\.png'\))"/) || [])[1] || 'void 0');
+    ok(N.roster[0].imgVariant === 'zondnautica.png' && /Zondnaut-A/.test(galleria()) && /assegnaFotoCollegata\(0, 'pilota', /.test(galleria()),
+       'scelta la foto della Zondnautica, la galleria chiede SUBITO quella del pilota (Zondnaut-A)');
+    ok(!/'zondnautica\.png'/.test(galleria()), 'fra le tessere del pilota non c e la foto gia` data alla Zondnautica');
+    vmTocco(T.nomadi, (galleria().match(/onclick="(window\.assegnaFotoCollegata\(0, 'pilota', 'zondnaut\.png'\))"/) || [])[1] || 'void 0');
+    ok(/assegnaFotoCollegata\(0, 'moto', /.test(galleria()) && /Zondmate/.test(galleria()), 'poi quella della moto (Zondmate)');
+    vmTocco(T.nomadi, (galleria().match(/onclick="(window\.assegnaFotoCollegata\(0, 'moto', 'zondmate\.png'\))"/) || [])[1] || 'void 0');
+    ok(J(N.roster[0].fotoCollegate) === J({ pilota: 'zondnaut.png', moto: 'zondmate.png' }) && T.nomadi.el('galleria-foto').style.display === 'none',
+       'le due foto stanno in fotoCollegate (solo il nome del file) e la galleria si chiude (' + J(N.roster[0].fotoCollegate) + ')');
+    // Anaconda: il solo pilota. NESSUNA FOTO e` una risposta.
+    N.cambiaIconaDeploy(null, 1);
+    vmTocco(T.nomadi, (galleria().match(/onclick="(window\.assegnaFoto\(1, 'anaconda\.png'\))"/) || [])[1] || 'void 0');
+    ok(/Operator/.test(galleria()) && !/'zondnaut\.png'|'zondmate\.png'/.test(galleria()), 'Anaconda: chiede il pilota (Operator), senza le foto gia` prese da pilota e moto della Zondnautica');
+    vmTocco(T.nomadi, (galleria().match(/onclick="(window\.assegnaFotoCollegata\(1, 'pilota', 'operator\.png'\))"/) || [])[1] || 'void 0');
+    ok(J(N.roster[1].fotoCollegate) === J({ pilota: 'operator.png' }), 'Anaconda: fotoCollegate.pilota (' + J(N.roster[1].fotoCollegate) + ')');
+    // CONTROPROVA: un Alguacil non ha foto collegate, la galleria si chiude.
+    N.cambiaIconaDeploy(null, 2);
+    vmTocco(T.nomadi, (galleria().match(/onclick="(window\.assegnaFoto\(2, 'alguacil\.png'\))"/) || [])[1] || 'void 0');
+    ok(!N.roster[2].fotoCollegate && T.nomadi.el('galleria-foto').style.display === 'none', 'CONTROPROVA: Alguacil, nessuna foto collegata da chiedere');
+    ok(N.assegnaFoto(2, 'zondnaut.png') === false, 'una foto data al pilota non si assegna a un altra unita`');
+    // Salvata con la lista, e usata dal motore quando l'unita` nasce.
+    T.nomadi.el('saveName').value = 'PROVA'; N.saveRoster();
+    const salvata = JSON.parse(T.nomadi.memoria[N.getStorageKey()] || '{}').PROVA;
+    ok(salvata && J(salvata.unita[0].fotoCollegate) === J({ pilota: 'zondnaut.png', moto: 'zondmate.png' }), 'SALVA LISTA porta fotoCollegate');
+    N.inviaSchieramentoAllHub('NOMADI', { roster: N.roster, strutture: [], terreni: [], motivo: 'AGGIORNAMENTO' }); T.giro();
+    const pub = JSON.parse(T.server.global_game_state).nomads.find(u => u.id === 'n1');
+    ok(pub && pub.fotoCollegate === undefined, 'all Hub e all avversario fotoCollegate non arriva (scelta privata)');
+    T.apriMenu(T.nomadi, 0); N.selectAction('SCENDI DALLA MOTO', false); T.giro();
+    const pil = N.roster.find(u => u.id === 'n1'), moto = N.roster.find(u => u.id === 'n1_moto');
+    ok(pil && moto && N.fotoUnita(pil) === 'img/nomadi/zondnaut.png' && N.fotoUnita(moto) === 'img/nomadi/zondmate.png',
+       'sceso dalla moto: il pilota ha la sua foto, la moto la sua (' + (pil && N.fotoUnita(pil)) + ', ' + (moto && N.fotoUnita(moto)) + ')');
+});
+
+sezione('29. Tabellone: Sagoma d Impatto, UN tiro e piu` bersagli (MOTORE 2026-10-23.2)', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+    T.schiera([truppa(profilo(T, /^Alguacil \(Missile/), { id: 'n1', alias: 'Lancia' })],
+              [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' }), truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p2', alias: 'Due' }), truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p3', alias: 'Tre' })], 'NOMADI');
+    T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.startUnitAllocationLoopBS();
+    const fam = Object.keys(N._modiBS || {})[0];
+    N.declareAttackBS((N._modiBS[fam] || []).find(x => /Blast/i.test(x)), fam);
+    ['p1', 'p2', 'p3'].forEach(id => N.toggleTargetSelection(id)); N.confirmMultiAro(false); T.giro();
+    P.apriSelezioneAro(); ['p1', 'p2'].forEach(id => P.toggleAroUnit(id)); P.confermaSelezioneAro();
+    P.selezionaAzioneAro('DODGE'); P.salvaAroCorrente(); P.selezionaAzioneAro('DODGE'); P.salvaAroCorrente(); T.giro();
+    N.goToModifiersBS('IDLE'); N.eseguiCalcoloBS(); T.giro();
+    const sc = H.ultimiScontri || [];
+    ok(risoluzione(T) && sc.length === 3, 'premessa: tre scontri, uno per bersaglio sotto la Sagoma (' + sc.length + ')');
+    if (!sc.some(s => s.tiroUnico)) {
+        // calcolatore_math 2026-10-22.1 non copia scontro.tiroUnico nello
+        // scontro che arriva al tabellone (il campo c'e` nel motore).
+        // Segnalato a MOTORE il 23 ottobre: finche` non arriva, qui non si
+        // conta ne` passato ne` fallito.
+        console.log('  ⏸ IN ATTESA DI MOTORE: lo scontro non porta tiroUnico (calcolatore_math), il riquadro unico non si puo` provare dalla porta del giocatore');
+        return;
+    }
+    const h = String(T.hub.el('clash-container').innerHTML);
+    ok((h.match(/class="riquadro-tiro-unico"/g) || []).length === 1, 'UN riquadro solo per i tre bersagli');
+    ok((h.match(/class="bersaglio-tiro-unico"/g) || []).length === 3 && /data-ruolo="PRINCIPALE"/.test(h) && (h.match(/data-ruolo="SECONDARIO"/g) || []).length === 2,
+       'dentro, una riga per truppa colpita: il Principale e due secondari');
+    const t = testo(h);
+    ok((t.match(/Successo al: 8 \(o meno\)/g) || []).length === 1 && /UN SOLO TIRO contro 3/.test(t), 'il tiro dell attaccante compare UNA volta (' + (t.match(/Successo al: 8/g) || []).length + ')');
+    ok((t.match(/SE COLPITO DALL'ATTACCANTE/g) || []).length === 3, 'e ogni truppa ha la sua salvezza');
+});
+
+sezione('30. Tabellone: il bersaglio del Supporto e` BERSAGLIO, non REATTIVO (SUP-02a)', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+    T.schiera([truppa(profilo(T, /^Alguacil \(Paramedic/), { id: 'n1', alias: 'Medico' }), truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Ferito', states: { unconscious: true } })],
+              [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+    T.apriMenu(T.nomadi, 0); N.selectAction('MEDICO_INGEGNERE', false);
+    const st = (String(T.nomadi.el('weapon-buttons-container').innerHTML).match(/scegliStrumentoSupporto\('([^']+)'\)/) || [])[1];
+    N.scegliStrumentoSupporto(st); N.scegliBersaglioSupporto('n2'); N.eseguiCalcoloSupporto(); T.giro();
+    P.annullaAro(); T.giro();
+    const t = tabellone(T);
+    ok(risoluzione(T) && /BERSAGLIO NOMADI Ferito/.test(t), 'il Ferito e` "BERSAGLIO", della sua fazione (' + (t.match(/(REATTIVO|BERSAGLIO) \S+ Ferito/) || ['?'])[0] + ')');
+    ok(!/REATTIVO/.test(t), 'e nessuno e` "REATTIVO" in un Supporto senza ARO');
+    // CONTROPROVA: in uno scontro vero il reattivo resta REATTIVO.
+    const T2 = creaTavolo(DIR); const N2 = T2.nomadi.g;
+    T2.schiera([truppa(profilo(T2, /^Alguacil \(HMG/), { id: 'n1', alias: 'Spara' })], [truppa(profilo(T2, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+    T2.apriMenu(T2.nomadi, 0); N2.selectAction('ATTACCO BS', false); N2.declareAttackBS('Heavy Machine Gun'); N2.toggleTargetSelection('p1'); N2.confirmMultiAro(false); T2.giro();
+    T2.pano.g.annullaAro(); T2.giro(); N2.goToModifiersBS('IDLE'); N2.eseguiCalcoloBS(); T2.giro();
+    ok(/REATTIVO PANOCEANIA Uno/.test(tabellone(T2)) && !/BERSAGLIO PANOCEANIA/.test(tabellone(T2)), 'CONTROPROVA: contro un nemico resta REATTIVO');
+});
+
+sezione('31. ARO con arma Targetless: niente tasto Copertura (DIF-14)', () => {
+    const prova = (arma) => {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+        T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Muove' })], [truppa(profilo(T, /^Yuan Yuan \(Rifle/), { id: 'p1', alias: 'Rea' })], 'NOMADI');
+        T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
+        P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro();
+        P.selezionaAzioneAro('BS_ATTACK'); P.selezionaArmaAro(arma); P.selezionaBersaglioAro('Muove');
+        return String(T.pano.el('aro-modifiers-content').innerHTML);
+    };
+    const h = prova('Smoke Grenades');
+    ok(!/toggleAroCover/.test(h) && /nota-targetless/.test(h), 'Smoke Grenades in ARO: niente tasto Copertura, e la nota che dice perche`');
+    ok(/tasto-lof-aro/.test(h) && /range-seg/.test(h), 'restano la Linea di Tiro e la gittata');
+    const h2 = prova('Rifle');
+    ok(/toggleAroCover/.test(h2) && !/nota-targetless/.test(h2), 'CONTROPROVA: col Rifle il tasto Copertura c e');
+    // Ordine Coordinato con le Smoke Grenades: la scelta del bersaglio resta,
+    // con il solo PUNTO (MOTORE: "controllate che si veda bene").
+    const T = creaTavolo(DIR); const N = T.nomadi.g;
+    T.schiera([truppa(profilo(T, /^Morlock \(Assault/), { id: 'n1', alias: 'M1' }), truppa(profilo(T, /^Morlock \(Assault/), { id: 'n2', alias: 'M2' })],
+              [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+    N.currentGroup = 1; N.isCoordinated = true; N.selectedCoordinatedUnits = []; N.spearheadUnit = null;
+    N.selezionaUnita(0); N.selezionaUnita(1); N.confermaCoordinato(); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Smoke Grenades');
+    const lista = String(T.nomadi.el('enemy-target-buttons').innerHTML);
+    ok(/class="huge-btn bersaglio-punto"/.test(lista) && /PUNTO SUL TAVOLO/.test(lista), 'Coordinato con Smoke: la riga del PUNTO SUL TAVOLO, sua');
+    ok(!/rup-sigla/.test(lista) && !/\[LI\]/.test(lista) && !/data-fazione="PANOCEANIA"/.test(lista), 'senza la sigla "?", senza "[LI]" e senza i colori della fazione nemica (prima: la riga di una truppa)');
+    vmTocco(T.nomadi, (lista.match(/onclick="(window\.toggleTargetSelection\('punto'\))"/) || [])[1] || 'void 0');
+    ok(/data-scelta="si"/.test(String(T.nomadi.el('enemy-target-buttons').innerHTML)) && (N.pendingTargets || []).length === 1 && N.pendingTargets[0].punto, 'toccata, il punto e` scelto');
+});
+
+sezione('32. Tabellone: il PUNTO del tavolo e` una cella neutra (MOTORE 2026-10-23.3)', () => {
+    const giro = (conAro) => {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+        T.schiera([truppa(profilo(T, /^Morlock \(Assault/), { id: 'n1', alias: 'Morl' })], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Smoke Grenades'); T.giro();
+        if (conAro) { P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro(); P.selezionaAzioneAro('BS_ATTACK'); P.selezionaArmaAro('Combi Rifle'); P.selezionaBersaglioAro('Morl'); P.salvaAroCorrente(); }
+        else P.annullaAro();
+        T.giro(); N.goToModifiersBS('IDLE'); N.eseguiCalcoloBS(); T.giro();
+        return T;
+    };
+    const T = giro(false);
+    const t = tabellone(T);
+    ok(risoluzione(T) && /class="cella-punto"/.test(T.hub.el('clash-container').innerHTML) && /📍 PUNTO SUL TAVOLO/.test(t), 'Smoke Grenades sul punto: la cella del punto, neutra (📍 PUNTO SUL TAVOLO)');
+    ok(!/REATTIVO PANOCEANIA PUNTO/.test(t) && !/SE COLPITO DAL NEMICO/.test(t) && !/SE COLPITO DALL'ATTACCANTE/.test(t),
+       'niente "REATTIVO PANOCEANIA", niente righe delle salvezze (prima: la cella di una truppa nemica)');
+    ok(/ATTIVO NOMADI Morl Azione: ATTACCO BS Successo al: \d+/.test(t), 'il tiro dell attivo resta com era');
+    // CONTROPROVA: se il Fusilier reagisce, il SUO scontro e` uno scontro vero.
+    const T2 = giro(true);
+    const t2 = tabellone(T2);
+    ok(/REATTIVO PANOCEANIA Uno Azione: ATTACCO BS/.test(t2) && /SE COLPITO DAL NEMICO/.test(t2) && (T2.hub.el('clash-container').innerHTML.match(/class="cella-punto"/g) || []).length === 1,
+       'CONTROPROVA: il Fusilier che reagisce ha cella e salvezze sue; il punto resta uno solo');
+});
+
+sezione('33. Dal collaudo di Paolo, 23 ottobre (MOTORE): Hidden in ARO, bersagli dell ARO con la foto, Leader del Fireteam, niente scorrimento orizzontale', () => {
+    // --- 33a. AR-10: chi e` in Hidden Deployment reagisce, e reagendo si rivela ---
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+    const croc = truppa(T.profilo(T.pano, /^Croc Man \(MULTI Sniper/), { id: 'p6', alias: 'Ombra', deployState: 'HIDDEN', states: { hidden: true } });
+    const riserva = truppa(T.profilo(T.pano, /^Fusilier \(Missile/), { id: 'p2', alias: 'Lontano', deployState: 'RESERVE', states: { reserve: true } });
+    T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Muove' })],
+              [croc, riserva, truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+    ok(!T.hub.g.gameState.panoceania.some(u => u.id === 'p6'), 'premessa: l Hub non vede il Croc Man nascosto');
+    T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
+    P.apriSelezioneAro();
+    const lista = String(T.pano.el('aro-selection-list').innerHTML);
+    ok(/id="aro-btn-p6"/.test(lista) && /class="etichetta-nascosto"[^>]*>👁️ NASCOSTO: reagendo si rivela/.test(lista),
+       'il Croc Man in Hidden Deployment e` fra chi puo` reagire, con «NASCOSTO: reagendo si rivela» (prima: saltato)');
+    ok(!/aro-btn-p2/.test(lista) && !/Lontano/.test(lista), 'CONTROPROVA: chi e` in Riserva non compare, nemmeno fra gli esclusi: non e` sul tavolo');
+    ok(!/etichetta-nascosto/.test(lista.replace(/[\s\S]*?(id="aro-btn-p1"[\s\S]*?<\/button>)[\s\S]*/, '$1')), 'CONTROPROVA: il Fusilier a vista non porta l etichetta');
+    P.toggleAroUnit('p6'); P.confermaSelezioneAro(); P.selezionaAzioneAro('BS_ATTACK');
+    P.selezionaArmaAro('MULTI Sniper Rifle (AP Mode)');
+    // --- 33b. il passo BERSAGLIO: la riga con la foto, nei colori della fazione nemica ---
+    const tl = String(T.pano.el('aro-target-list').innerHTML);
+    ok(/class="huge-btn riga-unita riga-unita-foto"/.test(tl) && /data-fazione="NOMADI"/.test(tl) && /\[LI\]/.test(tl) && /selezionaBersaglioAro\('Muove'\)/.test(tl),
+       'passo BERSAGLIO: la riga con la foto (rigaUnitaConFoto), colori dei Nomads, [LI], tocco su selezionaBersaglioAro');
+    ok(!/\[BERSAGLIO\]/.test(tl), 'niente piu` il bottone di testo «[BERSAGLIO] …»');
+    P.selezionaBersaglioAro('Muove'); P.salvaAroCorrente(); T.giro();
+    ok(P.roster.find(u => u.id === 'p6').deployState === 'NORMAL', 'dichiarato l ARO, il Croc Man torna NORMAL nel suo roster');
+    ok((T.hub.g.gameState.panoceania.find(u => u.id === 'p6') || {}).deployState === 'NORMAL', 'e l Hub lo vede (AGGIORNAMENTO), come per un CAMO che reagisce');
+    const m = String(T.nomadi.el('second-half-buttons-container').innerHTML).match(/window\.selectAction\('([^']+)', true\)/);
+    if (m) N.selectAction(m[1], true); T.giro();
+    ok(risoluzione(T) && /REATTIVO PANOCEANIA Ombra Azione: ATTACCO BS Successo al: \d+/.test(tabellone(T)), 'sul tabellone il suo ARO: REATTIVO PANOCEANIA Ombra, ATTACCO BS', tabellone(T).slice(0, 140));
+    // --- 33b (Coordinato, CO-12): restano tutti i partecipanti, se ne sceglie uno ---
+    const T2 = creaTavolo(DIR); const N2 = T2.nomadi.g, P2 = T2.pano.g;
+    T2.schiera([truppa(profilo(T2, /^Alguacil \(Combi/), { id: 'n1', alias: 'Primo' }), truppa(profilo(T2, /^Alguacil \(HMG/), { id: 'n2', alias: 'Secondo' })],
+               [truppa(T2.profilo(T2.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+    N2.currentGroup = 1; N2.isCoordinated = true; N2.selectedCoordinatedUnits = []; N2.spearheadUnit = null;
+    N2.selezionaUnita(0); N2.selezionaUnita(1); N2.confermaCoordinato(); N2.selectAction('MOVIMENTO', false); T2.giro();
+    P2.apriSelezioneAro(); P2.toggleAroUnit('p1'); P2.confermaSelezioneAro(); P2.selezionaAzioneAro('BS_ATTACK'); P2.selezionaArmaAro('Combi Rifle');
+    const tl2 = String(T2.pano.el('aro-target-list').innerHTML);
+    ok((tl2.match(/riga-unita-foto/g) || []).length === 2 && /selezionaBersaglioAro\('Primo'\)/.test(tl2) && /selezionaBersaglioAro\('Secondo'\)/.test(tl2),
+       'Coordinato (CO-12): due righe con la foto, una per partecipante', (tl2.match(/selezionaBersaglioAro\('[^']+'\)/g) || []));
+    P2.selezionaBersaglioAro('Secondo');
+    ok(P2.aroCurrentConfig.bersaglio === 'Secondo', 'e se ne sceglie uno solo');
+    // --- 33c. il Leader del Fireteam si riconosce dalla riga ---
+    const T3 = creaTavolo(DIR); const N3 = T3.nomadi.g;
+    const capo = truppa(profilo(T3, /^Alguacil \(Combi/), { id: 'n1', alias: 'Capo', states: { fireteam: 'A', isFireteamLeader: true } });
+    const membro = truppa(profilo(T3, /^Alguacil \(HMG/), { id: 'n2', alias: 'Membro', states: { fireteam: 'A', isFireteamLeader: false } });
+    const rC = String(N3.rigaUnitaConFoto(capo, {})), rM = String(N3.rigaUnitaConFoto(membro, {}));
+    ok(/\[ TEAM A · ⭐ LEADER \]/.test(rC), 'il Leader: «[ TEAM A · ⭐ LEADER ]» sulla riga');
+    ok(/\[ TEAM A \]/.test(rM) && !/LEADER/.test(rM), 'CONTROPROVA: il membro resta «[ TEAM A ]»');
+    // --- 33d. negli elenchi niente scorrimento ORIZZONTALE ---
+    const css = fs.readFileSync(DIR + 'app.html', 'utf8');
+    const regola = (sel) => ((css.match(new RegExp(sel.replace(/[.]/g, '\\.') + '\\s*\\{([^}]*)\\}')) || [])[1] || '');
+    ok(/overflow-x:\s*hidden/.test(regola('.grid-buttons')), '.grid-buttons ha overflow-x:hidden (con overflow-y:auto l asse x diventava auto)', regola('.grid-buttons'));
+    ok(/right:0;/.test(regola('.riga-unita-foto .rup-icone')) && !/right:-/.test(regola('.riga-unita-foto .rup-icone')), 'le icone di stato non sporgono a destra (right:0, prima -2px)', regola('.riga-unita-foto .rup-icone'));
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

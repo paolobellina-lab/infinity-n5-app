@@ -1,4 +1,4 @@
-// @versione 2026-10-15.1 | ordine_attacco_bs.js | proprieta`: chat MOTORE
+// @versione 2026-10-23.3 | ordine_attacco_bs.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎯 ATTACCO BS (TIRO A DISTANZA) - ordine_attacco_bs.js
 // ------------------------------------------
@@ -248,6 +248,32 @@
 
         window.pendingTargets = [];
 
+        // 23 ottobre (Paolo, DIF-14): un'arma TARGETLESS (Smoke Grenades,
+        // Smoke Grenade Launcher...) si tira su un PUNTO del tavolo: nessun
+        // bersaglio da scegliere (righe 5789-5791). Il punto diventa il solo
+        // "bersaglio" e si passa dritti all'allarme ARO, come dopo la scelta.
+        // In Ordine Coordinato la schermata resta, con il solo punto.
+        const armaSel = M.profiloArma(window.currentOrder.weapon);
+        if (M.eTargetless && M.eTargetless(armaSel) && !window.scoprireInCorso()) {
+            window.validTargets = [M.bersaglioPunto()];
+            window.targetsScartati = [];
+            if (!window.coordMode && typeof window.confirmMultiAro === 'function') {
+                window.pendingTargets = [M.bersaglioPunto()];
+                return window.confirmMultiAro(false);
+            }
+            if (window.renderTargetButtons) window.renderTargetButtons();
+            return window.goToStep('step-wait-aro');
+        }
+
+        // 23 ottobre (Paolo, CO-01): nell'Ordine Coordinato tutti attaccano
+        // LO STESSO UNICO bersaglio (righe 11356-11358). Il primo partecipante
+        // lo sceglie; gli altri lo ricevono e non scelgono.
+        const bc = window.coordMode && window.coordIndex > 0 && window.currentOrder && window.currentOrder.bersaglioCoordinato;
+        if (bc) {
+            window.combatTargets = [Object.assign({ burst: 0, rangeIndex: 0, rangeMod: 0, cover: false, terrain: 'NESSUNO' }, bc)];
+            return window.goToModifiersBS();
+        }
+
         const nemici = M.rosterNemico();
         if (nemici.length === 0) {
             return alert('⚠️ Nessuna unità nemica sul tavolo.\n\nL\'avversario non ha ancora inviato lo schieramento all\'Hub.');
@@ -323,6 +349,23 @@
         window.burstDettaglio = burst;
 
         if (scGo) window.combatTargets.forEach(function (t) { if (String(t.id) === String(scGo.bersaglio.id)) t.dopoScoprire = true; });
+        // Coordinato: UN solo bersaglio (righe 11356-11358). Con una Sagoma
+        // d'Impatto restano i secondari sotto l'area. Il primo partecipante lo
+        // fissa per gli altri.
+        if (window.coordMode) {
+            const tplC = (arma && arma.isTemplate && M.regoleTemplate) ? (M.regoleTemplate(arma) || {}) : {};
+            if (window.combatTargets.length > 1 && tplC.tipo !== 'IMPATTO') {
+                alert('⚠️ Ordine Coordinato: tutte le truppe attaccano lo STESSO UNICO bersaglio (righe 11356-11358).\n\nResta ' + window.combatTargets[0].name + '.');
+                window.combatTargets = [window.combatTargets[0]];
+            }
+            if (window.coordIndex === 0) {
+                const t0 = window.combatTargets[0];
+                window.currentOrder.bersaglioCoordinato = { id: t0.id, name: t0.name };
+            }
+        }
+        // Il punto del tavolo passa per confirmMultiAro, che tiene solo id e
+        // nome: qui torna il segno `punto`.
+        window.combatTargets.forEach(function (t) { if (String(t.id) === 'punto' && M.bersaglioPunto) Object.assign(t, M.bersaglioPunto(), { cover: false }); });
 
         // I dadi non ancora assegnati vanno tutti sul primo bersaglio.
         // 🔴 15 ottobre (TPL-07, Paolo dal tavolo): UN'ARMA A SAGOMA NON
@@ -400,9 +443,27 @@
                 `🎲 +${sd} Dado Speciale: tira ${sd} dado in più su UN bersaglio (il primo), poi scartane ${sd}. Non è un dado di Burst.</div>`;
         }
 
+        // 22 ottobre (Paolo): SAGOMA D'IMPATTO, un colpo, piu` bersagli. Il
+        // tiro e` uno e i MOD vengono dal Principale (righe 3745-3749): sui
+        // secondari la gittata, la Copertura, la Linea di Tiro, la munizione e
+        // il terreno non servono (la Copertura non da` nemmeno il +3 alla
+        // salvezza: e` una Sagoma). Restano il nome e gli alleati in mischia.
+        const impattoUnico = impattoUnicoBS(M, arma);
         const STILE_SI = 'background:#004400; border-color:#00ff00; color:#00ff00;';
         const STILE_NO = 'background:#554400; border-color:#ffcc00; color:#ffcc00;';
         window.combatTargets.forEach(function (tgt, index) {
+            if (impattoUnico && index > 0) {
+                html += `
+            <div class="target-card bersaglio-secondario" style="border-left: 4px solid ${bordo}; margin-bottom: 20px; background: rgba(255,255,255,0.03); padding: 15px; overflow: hidden;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <b style="color:var(--nomad-orange); font-size:20px;">${tgt.name}</b>
+                    <span style="font-size:14px; font-weight:bold; color:#ffcc66;">SECONDARIO</span>
+                </div>
+                <div style="color:#bbb; font-size:13px;">Sotto la Sagoma del Principale. Lo stesso tiro vale anche per lui: gittata, copertura e munizione sono quelle del Principale. Reagisce e fa il suo Tiro Salvezza.</div>
+                ${window.htmlAlleatiInMischiaBS(tgt, index)}
+            </div>`;
+                return;
+            }
             const coverStyle = tgt.cover
                 ? `background:var(--nomad-orange); color:#000;`
                 : `background:${sfondo}; color:#fff;`;
@@ -449,7 +510,7 @@
             html += `
             <div class="target-card" style="border-left: 4px solid ${bordo}; margin-bottom: 20px; background: rgba(255,255,255,0.03); padding: 15px; overflow: hidden;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <b style="color:var(--nomad-orange); font-size:20px;">${tgt.name}${tgt.dopoScoprire ? ' <span style="font-size:12px; color:#66ff66;">🔍 dopo lo Scoprire</span>' : ''}</b>
+                    <b style="color:var(--nomad-orange); font-size:20px;">${tgt.name}${tgt.dopoScoprire ? ' <span style="font-size:12px; color:#66ff66;">🔍 dopo lo Scoprire</span>' : ''}${(impattoUnico && index === 0) ? ' <span class="etichetta-principale" style="font-size:13px; color:#ffcc66;">PRINCIPALE</span>' : ''}</b>
                     ${(sagome && window.totalBurst <= 1) ? `<span style="font-size:18px; font-weight:bold; color:#00ff00;">1 Sagoma</span>` : `<div class="burst-ctrl">
                         <button class="burst-btn" style="opacity:${(sagome ? tgt.burst > 1 : tgt.burst > 0) ? 1 : 0.3}" onclick="window.adjustTargetBurstBS(${index}, -1)">-</button>
                         <span style="margin: 0 10px; font-size:22px; font-weight:bold; color:${tgt.burst > 0 ? '#00ff00' : '#888'}">${tgt.burst} ${sagome ? (tgt.burst === 1 ? 'Sagoma' : 'Sagome') : 'B'}</span>
@@ -457,8 +518,9 @@
                     </div>`}
                 </div>
                 ${rangeHtml}
+                ${tgt.punto ? `<div class="nota-punto" style="color:#bbb; font-size:13px; margin-top:10px;">Arma Targetless: si tira su un punto del tavolo, non su una truppa. Niente Copertura né Mimetismo; la gittata è quella fino al punto, e serve la Linea di Tiro verso il punto.</div>` : ''}
                 <div style="display:flex; gap:10px; margin-top: 15px;">
-                    <button class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; ${coverStyle}" onclick="window.toggleTargetCoverBS(${index})">${tgt.cover ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverSi') : ''}IN COPERTURA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverNo') : ''}NO COPERTURA`}</button>
+                    ${tgt.punto ? '' : `<button class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; ${coverStyle}" onclick="window.toggleTargetCoverBS(${index})">${tgt.cover ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverSi') : ''}IN COPERTURA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverNo') : ''}NO COPERTURA`}</button>`}
                     <button class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; ${tgt.lof === false ? STILE_NO : STILE_SI}" onclick="window.toggleLineaDiTiroBS(${index})">${tgt.lof === false ? 'LINEA DI TIRO NO' : 'LINEA DI TIRO SÌ'}</button>
                 </div>
                 ${window.htmlAlleatiInMischiaBS(tgt, index)}
@@ -497,8 +559,9 @@
             // "Requisito non soddisfatto" della pagina. (Proposta di Paolo, 7
             // ottobre.)
             const req = window.requisitiAttaccoBS();
-            nuovo.onclick = function () { return req.idle ? window.idleDaAttaccoBS() : window.eseguiCalcoloBS(); };
-            nuovo.innerText = req.idle ? 'IDLE' : 'ESEGUI CALCOLO';
+            // Coordinato: l'Idle e` di questa truppa sola (vedi eseguiCalcoloBS).
+            nuovo.onclick = function () { return (req.idle && !window.coordMode) ? window.idleDaAttaccoBS() : window.eseguiCalcoloBS(); };
+            nuovo.innerText = req.idle ? (window.coordMode ? 'IDLE (SOLO QUESTA TRUPPA)' : 'IDLE') : 'ESEGUI CALCOLO';
             nuovo.style.background = req.idle ? M.COLORE_TASTO.idle : M.COLORE_TASTO.valido;
         }
     };
@@ -514,9 +577,19 @@
         // Scoprire e` mancato il requisito (campo nonScoperto).
         return (sagomaDiretta(M, arma) ? ['lof', 'sagoma'] : ['lof', 'gittata']).concat(['scoperto']);
     }
+    // Sagoma d'Impatto, un colpo, piu` bersagli: il tiro e` del Principale.
+    function impattoUnicoBS(M, arma) {
+        const t = window.combatTargets || [];
+        if (!arma || !arma.isTemplate || t.length < 2 || (window.totalBurst || 1) > 1) return false;
+        return ((M.regoleTemplate && M.regoleTemplate(arma)) || {}).tipo === 'IMPATTO';
+    }
     window.requisitiAttaccoBS = function () {
         const M = motore(); if (!M) return { mancanti: [], idle: false, motivo: '' };
-        return M.requisitiDichiarati(window.combatTargets, chiaviBS(M));
+        // I requisiti (Linea di Tiro, gittata) sono del Principale: un
+        // secondario sotto la Sagoma non ne ha (righe 3736-3738).
+        const arma = M.profiloArma(window.currentOrder.weapon);
+        const quali = impattoUnicoBS(M, arma) ? window.combatTargets.slice(0, 1) : window.combatTargets;
+        return M.requisitiDichiarati(quali, chiaviBS(M));
     };
     window.idleDaAttaccoBS = function () { const M = motore(); return M ? M.idleDaRequisito(window.requisitiAttaccoBS()) : false; };
 
@@ -672,7 +745,12 @@
         // non si tirano (righe 3111-3114, vedi requisitiAttaccoBS). Restano
         // nella busta a Burst 0, con il motivo, cosi` il tabellone lo dice.
         const req = window.requisitiAttaccoBS();
-        if (req.idle) return window.idleDaAttaccoBS();
+        // 23 ottobre (Paolo, CO-10): in un Ordine Coordinato chi non soddisfa il
+        // requisito fa un Idle DA SOLO, "while the others may act normally"
+        // (righe 11374-11376). Prima l'Idle chiudeva tutto l'Ordine e saltava
+        // anche il tiro della Punta. Ora la sua voce va nella busta a Burst 0,
+        // col motivo, e si passa al prossimo partecipante.
+        if (req.idle && !window.coordMode) return window.idleDaAttaccoBS();
         const bersagli = M.bersagliConRequisiti(window.combatTargets, req);
 
         // SCOPRIRE + ATTACCO: prima la voce dello Scoprire, poi l'Attacco.
@@ -735,7 +813,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-15.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-23.3', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-19.1 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-23.2 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -181,7 +181,16 @@
         }
         inOrdine.forEach(function (u) {
             const st = M.statoBersaglio(u);
-            if (st.hidden) return;   // non è sul tavolo: nemmeno da mostrare
+            // 23 ottobre (Paolo, AR-10): prima qui si saltava chiunque avesse
+            // st.hidden, che nel motore vale sia per lo Schieramento Nascosto
+            // sia per la Riserva (RESERVE, AD). Era sbagliato per il primo:
+            // chi e` in Hidden Deployment PUO` reagire (si guarda la posizione
+            // scritta, righe 13893-13894) e l'ARO lo rivela (riga 13915). Chi
+            // e` in Riserva invece non e` sul tavolo: resta fuori dall'elenco.
+            const depU = String(u.deployState || 'NORMAL').toUpperCase();
+            const inRiserva = depU === 'RESERVE' || depU === 'AD' || !!(u.states && u.states.reserve);
+            if (inRiserva) return;   // non è sul tavolo: nemmeno da mostrare
+            const nascosto = !!st.hidden;
 
             // Chi aveva RITARDATO in questo stesso Ordine non riparte da capo:
             // la sua dichiarazione dipende da cosa ha fatto l'attiva con la
@@ -212,6 +221,9 @@
 
             const sopp = st.suppressive ? ` <span style="color:#ff6600; font-size:14px;">🔥 SF MODE</span>` : '';
             const rit = haRitardato ? ` <span style="color:#ffcc66; font-size:13px;">⏳ aveva ritardato</span>` : '';
+            // Il rivelarsi lo fa spedisci(), come per un CAMO che reagisce:
+            // M.statoDopoAbilita (inAro) lo riporta NORMAL e parte l'AGGIORNAMENTO.
+            const nasc = nascosto ? ` <span class="etichetta-nascosto" style="color:#66ccff; font-size:13px;">👁️ NASCOSTO: reagendo si rivela</span>` : '';
             if (piuGruppi && gruppoScritto !== gruppoDi(u) && typeof window.intestazioneGruppo === 'function') {
                 gruppoScritto = gruppoDi(u);
                 container.innerHTML += window.intestazioneGruppo(gruppoScritto,
@@ -225,14 +237,14 @@
                 container.innerHTML += window.rigaUnitaConFoto(u, {
                     id: 'aro-btn-' + u.id, fazione: 'PROPRIA', opacita: '1',
                     scelta: (window.selectedAroUnits || []).indexOf(u.id) >= 0,
-                    dopoNome: sopp + rit, attributi: tocco
+                    dopoNome: sopp + rit + nasc, attributi: tocco
                 });
             } else {
                 container.innerHTML += `
                 <button id="aro-btn-${u.id}" class="huge-btn" style="background:${bg}; border-color:${bordo}; min-height:70px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; text-align:left; width:100%;"
                     ${tocco}>
                     <div style="font-size:22px; line-height:1; color:#fff; font-weight:bold; margin-left:10px;">
-                        🛡️ ${M.nomeUnita(u)}${sopp}${rit}
+                        🛡️ ${M.nomeUnita(u)}${sopp}${rit}${nasc}
                     </div>
                 </button>`;
             }
@@ -907,9 +919,38 @@
                 🔥 In Soppressione il Burst pieno va su <b>UN SOLO</b> bersaglio: scegli quale.</div>`;
         }
 
+        // 23 ottobre (Paolo): i bersagli dell'ARO hanno la riga con la foto,
+        // come quelli del turno attivo (window.renderTargetButtons). Prima
+        // erano bottoni di solo testo, "[BERSAGLIO] ALGUACIL (COMBI RIFLE)",
+        // senza foto ne` colore di fazione. L'allarme porta i NOMI: l'unita`
+        // si cerca nel roster nemico ricevuto dall'Hub.
+        const Mt = motore();
+        const rosterN = (Mt && typeof Mt.rosterNemico === 'function') ? (Mt.rosterNemico() || []) : [];
+        const trovaNemico = function (n) {
+            const k = String(n).toUpperCase();
+            return rosterN.find(u => u && Mt.nomeUnita(u).toUpperCase() === k)
+                || rosterN.find(u => u && (String(u.alias || '').toUpperCase() === k || String(u.nome || '').toUpperCase() === k))
+                || null;
+        };
         nemici.forEach(function (n) {
-            container.innerHTML += `<button class="huge-btn" style="background:#111; border:2px solid var(--nomad-red); min-height:70px; font-size:24px;"
-                onclick="window.selezionaBersaglioAro('${String(n).replace(/'/g, "\\'")}')">[BERSAGLIO] ${n}</button>`;
+            const tocco = `onclick="window.selezionaBersaglioAro('${String(n).replace(/'/g, "\\'")}')"`;
+            const u = trovaNemico(n);
+            if (typeof window.rigaUnitaConFoto === 'function') {
+                // Un nome che non e` nel roster nemico (allarme e schieramento
+                // disallineati, o un attaccante ancora in forma di Marker): si
+                // dice in console, e la riga si disegna col solo nome.
+                if (!u) console.warn('Bersaglio ARO "' + n + '" non trovato nel roster nemico: riga senza foto.');
+                container.innerHTML += window.rigaUnitaConFoto(u || { alias: n, nome: n }, {
+                    fazione: 'NEMICA', opacita: '1',
+                    scelta: window.aroCurrentConfig && window.aroCurrentConfig.bersaglio === n,
+                    dopoNome: ` <span style="color:#aaa; font-size:14px; font-weight:normal;">[${(u && u.tipo) || 'LI'}]</span>`,
+                    attributi: tocco
+                });
+            } else {
+                console.error('⛔ window.rigaUnitaConFoto manca (app.html non caricato?): bersaglio ARO col bottone di solo testo.');
+                container.innerHTML += `<button class="huge-btn" style="background:#111; border:2px solid var(--nomad-red); min-height:70px; font-size:24px;"
+                ${tocco}>[BERSAGLIO] ${n}</button>`;
+            }
         });
         window.goToAroStep('step-aro-target');
     };
@@ -1091,6 +1132,19 @@
         // c'e` e al suo posto sta il motivo, col testo del motore.
         const copNeg = (window.currentAttackData && window.currentAttackData.coperturaNegata) || null;
         if (copNeg) { cfg.cover = false; cfg.copertura = null; }
+        // 23 ottobre (MOTORE, DIF-14): un'arma TARGETLESS (Smoke Grenades...)
+        // si tira su un punto del tavolo: la Copertura del bersaglio non
+        // conta e il motore la ignora. Prima il tasto c'era lo stesso, e la
+        // Copertura scelta spariva dal calcolo senza che si sapesse perche`.
+        // Restano gittata e Linea di Tiro (per reagire serve la LoF verso
+        // l'attivo). Un motore senza M.eTargetless (prima della 2026-10-23.2)
+        // lo dice in console e lascia il tasto.
+        let senzaCopertura = false;
+        if (arma && cfg.azione === 'BS_ATTACK') {
+            if (typeof M.eTargetless === 'function') senzaCopertura = !!M.eTargetless(arma);
+            else console.error('\u26d4 M.eTargetless assente (serve motore_regole_n5.js dalla 2026-10-23.2): tasto Copertura lasciato anche per le armi Targetless.');
+        }
+        if (senzaCopertura) { cfg.cover = false; cfg.copertura = null; }
 
         // ATTACCO BS: le righe nello stesso ordine della scheda del
         // bersaglio dell'attivo (ordine_attacco_bs.js): [COPERTURA | LINEA DI
@@ -1105,7 +1159,7 @@
             const noLoF = M.requisitoManca(cfg, 'lof');
             const tastoLoF = `<button type="button" class="huge-btn tasto-lof-aro" style="flex:1; margin:0; min-height:55px; font-size:15px; ${noLoF ? STILE_REQ_NO : STILE_REQ_SI}"
                 onclick="window.toggleAroRequisito('lof')">${noLoF ? ((RQ.lof || {}).no || 'LINEA DI TIRO NO') : ((RQ.lof || {}).si || 'LINEA DI TIRO SÌ')}</button>`;
-            const tastoCover = copNeg ? '' : `<button type="button" class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:15px; ${cfg.cover ? 'background:#003300; color:#00ff00; border-color:#00ff00;' : 'background:#111; color:#aaa; border-color:#555;'}"
+            const tastoCover = (copNeg || senzaCopertura) ? '' : `<button type="button" class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:15px; ${cfg.cover ? 'background:#003300; color:#00ff00; border-color:#00ff00;' : 'background:#111; color:#aaa; border-color:#555;'}"
                 onclick="window.toggleAroCover()">${cfg.cover
                     ? window.iconaInterruttore('coverSi', 22) + 'IN COPERTURA'
                     : window.iconaInterruttore('coverNo', 22) + 'NO COPERTURA'}</button>`;
@@ -1116,6 +1170,7 @@
                 ${(cfg.cover && !copNeg) ? window.sceltaCopertura(cfg.copertura, 'window.setAroCopertura') : ''}
                 ${(cfg.cover && !copNeg) ? '<div style="color:#888; font-size:12px; margin-top:4px;">-3 al tuo tiro, +3 alla sua ARM.</div>' : ''}
                 ${copNeg ? '<div style="color:#ff9900; font-size:13px; margin-top:8px; padding:8px; border:1px solid #ff9900; border-radius:5px;">⛔ NIENTE COPERTURA per il bersaglio: ' + (copNeg.motivo || copNeg.nome || copNeg.azione || '') + '</div>' : ''}
+                ${(senzaCopertura && !copNeg) ? '<div class="nota-targetless" style="color:#bbb; font-size:13px; margin-top:8px;">Arma Targetless: si tira su un punto del tavolo. Niente Copertura né Mimetismo; restano la gittata e la Linea di Tiro verso l\'attivo.</div>' : ''}
                 <div style="display:flex; gap:10px; margin-top:10px; align-items:flex-end;">
                     ${sceltaMunizioni}
                     <div class="bs-terreno" style="flex:1; min-width:0;">${terreno}</div>
@@ -1407,7 +1462,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-10-19.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-10-23.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

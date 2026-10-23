@@ -1,6 +1,6 @@
-<!-- @versione 2026-10-20.3 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-10-23.4 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 36)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 40)
 
 Bozza scritta dalla chat MOTORE il 15 ottobre, su richiesta di Paolo, da far
 adottare a TEST. Segue il motore **2026-10-15.1**, `motore_core.js`,
@@ -56,6 +56,44 @@ sta **dentro** lo scontro della detonazione: sul tabellone c'è uno scontro solo
 non più un «TIRO DI SUPPORTO / DIFESA» a parte. Cambiano DEP-06 e DET-01,
 misurate sulle pagine intere. Le prove restano 299.
 
+**Revisione 37** (TEST, 23 ottobre): segue il motore **2026-10-23.2**,
+`calcolatore_math.js` e `ordine_attacco_bs.js` **2026-10-23.1**,
+`ordine_supporto.js`, `ordine_attacco_intuitivo.js` e
+`ordine_fuoco_speculativo.js` **2026-10-22.1**, e le pagine di INTERFACCIA
+**2026-10-23.1**. La Sagoma d'Impatto su più bersagli è **un** tiro coi MOD del
+Principale, in **un** riquadro del tabellone (nuova TPL-11, cambia TPL-06).
+SPEC-06 è riscritta: col Pitcher c'è il solo **PUNTO SUL TAVOLO**. Cambiano
+INT-01 (con un difetto aperto, cap. 31), OSS-03, SUP-02a, SUP-02b e DIF-14;
+nuove DIF-15 (le Smoke dell'attivo sul punto) e LOG-07 (foto collegate). Ogni
+«Atteso» cambiato o nuovo è stato misurato sulle pagine intere prima di
+scriverlo. Le prove passano a 302.
+
+**Revisione 38** (TEST, 23 ottobre, mattina): segue il motore **2026-10-23.3** e
+`ordine_attacco_intuitivo.js` **2026-10-23.1**. Il difetto di INT-01 è
+corretto: dopo la Schivata del Croc Man l'invio parte (F2F 14 contro 12,
+misurato sulle pagine intere). Sul tabellone il lato del punto dice *«Punto del
+tavolo: non è una truppa, non reagisce e non subisce danno.»* (SPEC-06,
+DIF-15). Le prove restano 302.
+
+**Revisione 39** (TEST, 23 ottobre, mattina): segue `calcolatore_controller.js`
+**2026-10-23.2**. Sul tabellone il punto del tavolo è una cella neutra,
+*«📍 PUNTO SUL TAVOLO — Non è una truppa: non reagisce e non subisce danno.»*,
+senza fazione, senza reazione e senza la riga delle salvezze. Cambiano SPEC-06 e
+DIF-15, misurate sulle pagine intere; si chiude la voce del cap. 31. Le prove
+restano 302.
+
+**Revisione 40** (TEST, 23 ottobre, pomeriggio): segue il motore
+**2026-10-23.7**, `motore_core.js` **2026-10-23.1**, `ordine_attacco_bs.js`
+**2026-10-23.3**, `logica_aro.js` e `app.html` **2026-10-23.2**. Chi è in Hidden
+Deployment reagisce in ARO e si rivela (AR-10 riscritta); la Sorpresa vale anche
+da Hidden e da CAMO, perché conta lo stato a inizio Ordine (nuova BS-28). Il
+Coordinato attacca UN bersaglio (CO-01, E60 ed E61); un membro di un Fireteam
+non partecipa (CO-03 riscritta: E49, e si chiude la voce del cap. 31); CO-09 con
+una lista salvata senza `chars`; CO-10 è l'Idle del solo gregario. TER-06 e TER-07
+riscritte: la seconda era sbagliata, la Saturazione si applica dopo la divisione
+dei dadi. Ogni «Atteso» cambiato o nuovo è misurato sulle pagine intere. Le
+prove passano a 303.
+
 Ogni prova dice **chi** agisce, **quale Ordine** dichiara, **con che cosa**,
 **contro chi**, **a che distanza** (in pollici) e **cosa si deve leggere**. Dove
 un dato non cambia il risultato è scelto comunque, così la prova si esegue senza
@@ -92,10 +130,10 @@ casella della barra.
 più tutti i MOD. Si tira 1d20 e serve **uguale o meno**. La salvezza si scrive
 **ARM VS 8 ×1**: ARM (o BTS, o PH) più il PS dell'arma, un dado.
 
-**Il conteggio.** Il piano contiene **299 prove, tutte nello stesso formato**:
-tutte e 299, nelle stesse cinque righe; le convenzioni servono a non scrivere
-la stessa riga 299 volte. I codici sono uno per prova: alla revisione 36 sono 299.
-Prove con un campo da completare: 0 prove su 299
+**Il conteggio.** Il piano contiene **303 prove, tutte nello stesso formato**:
+tutte e 303, nelle stesse cinque righe; le convenzioni servono a non scrivere
+la stessa riga 303 volte. I codici sono uno per prova: alla revisione 40 sono 303.
+Prove con un campo da completare: 0 prove su 303
 Il numero lo controlla `test_piano_schieramento.js`: non si cambia a mano.
 
 **Se un numero non torna**, guarda prima la scheda ufficiale della miniatura e
@@ -509,6 +547,13 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 - **Atteso:** nella scelta dell'arma c'è **un solo** bottone MULTI Sniper Rifle. Nella pagina della gittata la tendina accanto al bersaglio offre *«Munizioni: AP · B2»*, *«Munizioni: SHOCK · B2»* e *«Munizioni: DA · B2»*. Scegliendo DA i dadi si riassegnano e la salvezza diventa **ARM VS 6 ×2**.
 - **Lo stesso per le armi a Sagoma e a gittata:** Alguacil (Missile Launcher) *(Nomadi #3)* ha **un** bottone Missile Launcher; la tendina offre *«Munizioni: EXP · B1 · Sagoma d'Impatto»* e *«Munizioni: AP+EXP · B1»*, e tutte e due hanno la barra delle gittate.
 
+**BS-28 — Attacco a Sorpresa da Hidden e da CAMO** *(nuova)*
+- **Attivo:** Croc Man (MULTI Sniper Rifle) *(PanOceania #6)* in **Hidden Deployment** · ATTACCO BS (si rivela dichiarandolo)
+- **Con:** MULTI Sniper Rifle, munizione AP
+- **Bersaglio:** Alguacil (Combi Rifle) *(Nomadi #1)*, a 8-16", senza copertura
+- **ARO:** Alguacil → ATTACCO BS, Combi Rifle, a 8-16", contro il Croc Man
+- **Atteso:** **TIRO FACCIA A FACCIA**. Croc Man **12** B2. L'Alguacil tira **5** (11 +3 −6 Mimetismo −3), con la voce *«Attacco a Sorpresa: -3»*: la Sorpresa guarda lo stato a **inizio** Ordine, anche se la dichiarazione ha già rivelato la truppa (righe 10125-10128). Lo stesso con il Croc Man schierato come **Marker CAMO**: 5. Controprova: un secondo ATTACCO BS nell'Ordine dopo, col Croc Man già rivelato, dà **8** e nessuna voce di Sorpresa.
+
 ---
 
 # 5. Blocco C — Munizioni e Tiri Salvezza
@@ -682,7 +727,7 @@ Bersagli di riferimento: **Fusilier (Combi Rifle)** *(PanOceania #1: ARM 1, BTS
 - **Con:** Missile Launcher, Sagoma d'Impatto
 - **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* come primo bersaglio, Fusilier (Missile Launcher) *(PanOceania #2)* come secondo, tutti e due a 16-24", senza copertura
 - **ARO:** nessuno
-- **Atteso:** due scontri. Il primo porta la nota *«Questo è il Bersaglio Principale»*, il secondo *«Questo è un bersaglio secondario»*. Il Critico vale come Critico **solo** sul Principale.
+- **Atteso:** sul tabellone **un** riquadro, *«SAGOMA D'IMPATTO: UN TIRO, 2 BERSAGLI»*: l'Alguacil **11** una volta sola, poi una riga per Fusilier. Il primo porta la nota *«Questo è il Bersaglio Principale»*, il secondo *«Questo è un bersaglio secondario»*. Il Critico vale come Critico **solo** sul Principale.
 
 **TPL-07 — Una Sagoma, due bersagli**
 - **Attivo:** Grenzer (Forward Observer, Sensor, NCO) *(Nomadi #12)* · ATTACCO BS
@@ -711,6 +756,13 @@ Bersagli di riferimento: **Fusilier (Combi Rifle)** *(PanOceania #1: ARM 1, BTS
 - **ARO:** Morlock → ATTACCO BS, **Chain Rifle**, contro il Fusilier
 - **Atteso:** **TIRO NORMALE** (righe 3657-3661): il Fusilier tira **15** con 3 dadi; il Morlock **COLPO AUTOMATICO**, nessun dado. Tutti e due infliggono la salvezza: **ARM VS 8 ×1** a ciascuno. Nota *«Sagoma Diretta del reattivo: colpisce senza tiro…»*. Mai *«Valore di Successo non fornito dal calcolo»*. Controprova: lo stesso ARO con l'**Assault Pistol** è un **Faccia a Faccia**.
 
+**TPL-11 — Sagoma d'Impatto, tre Fusilier** *(nuova)*
+- **Attivo:** Alguacil (Missile Launcher) *(Nomadi #3, BS 11)* · ATTACCO BS
+- **Con:** Missile Launcher, *«Munizioni: EXP · B1 · Sagoma d'Impatto»*
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* toccato per primo, a 8-16" **in Copertura**; poi Fusilier (Missile Launcher) *(#2)* e Fusilier (Forward Observer) *(#3)*
+- **ARO:** Fusilier #2 → SCHIVATA; gli altri nessuno
+- **Atteso:** nella pagina della gittata il #1 è **PRINCIPALE** con barra, Copertura e LINEA DI TIRO; il #2 e il #3 hanno la scheda ridotta **SECONDARIO** (*«Sotto la Sagoma del Principale. Lo stesso tiro vale anche per lui…»*), **senza** gittata, Copertura, LoF e munizione. Sul tabellone **un** riquadro, *«SAGOMA D'IMPATTO: UN TIRO, 3 BERSAGLI»*: l'Alguacil **8** (11 −3 Copertura del Principale) **una volta sola**, con *«UN SOLO TIRO contro 3 bersagli sotto la Sagoma»*; tre righe: #1 *PRINCIPALE · TIRO NORMALE*, #2 *SECONDARIO · TIRO FACCIA A FACCIA* con la Schivata **PH 10**, #3 *SECONDARIO · TIRO NORMALE*. Salvezza **ARM VS 7 ×3** per ognuno. Controprova: togli la Copertura al #1 → **11**, sempre una volta sola, per tutti e tre.
+
 ---
 
 # 7. Blocco E — Attacco Intuitivo
@@ -720,7 +772,7 @@ Bersagli di riferimento: **Fusilier (Combi Rifle)** *(PanOceania #1: ARM 1, BTS
 - **Con:** Chain Rifle
 - **Bersaglio:** Croc Man (MULTI Sniper Rifle) *(PanOceania #6)*, schierato come **Marker CAMO**. Nella pagina dei bersagli lascia *HO LINEA DI TIRO (solo Marker bersagliabili)*
 - **ARO:** Croc Man → SCHIVATA
-- **Atteso:** **F2F**. Attivo **WIP 14**, Burst 1, nessuna voce di MOD, con la nota *«nessun MOD si applica, da nessuna fonte»*. Reattivo **PH 12**.
+- **Atteso:** la Schivata rivela il Croc Man, e l'Attacco **resta valido** (era un Marker quando l'hai dichiarato): l'invio parte. **F2F**. Attivo **WIP 14**, Burst 1, nessuna voce di MOD, con la nota *«nessun MOD si applica, da nessuna fonte»*. Reattivo **PH 12**. Se leggi *«INVIO BLOCCATO — … Questo è visibile»*, è tornato il difetto corretto alla revisione 38.
 
 **INT-02 — Bersaglio visibile**
 - **Attivo:** Morlock (Assault Pistol) *(Nomadi #13)* · ATTACCO INTUITIVO
@@ -777,11 +829,12 @@ Bersagli di riferimento: **Fusilier (Combi Rifle)** *(PanOceania #1: ARM 1, BTS
 - **Atteso:** le righe hanno la foto, come negli altri elenchi. Il primo tocco sul Zulu-Cobra è **rifiutato**: *«non può essere il Bersaglio Principale»*. Il Fusilier diventa **[ PRINCIPALE ]**, il Zulu-Cobra e l'Orc **[ SOTTO LA SAGOMA ]**. Nella pagina della gittata non c'è più la scelta dei secondari, solo il promemoria *«ANCHE SOTTO LA SAGOMA: …»*. Sul tabellone **tre** scontri con lo stesso tiro **9** (PH 12 +3 −6); sul Zulu-Cobra nessuna voce di Mimetismo.
 - **Controprova:** togliendo il Principale, diventa Principale l'Orc, non il Marker.
 
-**SPEC-06 — Arma senza Sagoma: un bersaglio solo** *(nuova)*
-- **Attivo:** Mary Problems *(Nomadi #21)* · FUOCO SPECULATIVO
+**SPEC-06 — Pitcher: il PUNTO SUL TAVOLO**
+- **Attivo:** Mary Problems (Hacker) *(Nomadi #21, BS 12)* · FUOCO SPECULATIVO
 - **Con:** Pitcher
-- **Bersaglio:** Fusilier #1, poi Orc #4
-- **Atteso:** in testa *«Un solo bersaglio: quest'arma non ha una Sagoma Circolare»*; toccando l'Orc, il Fusilier esce.
+- **Bersaglio:** il **PUNTO SUL TAVOLO**, a 0-8" (sul tavolo ci sono Fusilier #1 e Orc #4)
+- **ARO:** nessuno
+- **Atteso:** nella pagina dei bersagli **solo** *«📍 PUNTO SUL TAVOLO»* (*«Arma Targetless: si lancia su un punto, non su un nemico. Se il tiro riesce, il segnalino si piazza lì.»*): il Fusilier e l'Orc **non ci sono**. Nella pagina della gittata *«TIRO SU BS 12»*, *«Fuoco Speculativo: -6 fisso»*. Sul tabellone **TIRO NORMALE**, Mary **6**; il lato del punto è una cella neutra, *«📍 PUNTO SUL TAVOLO — Non è una truppa: non reagisce e non subisce danno.»*, senza fazione e senza righe delle salvezze. Subito dopo l'invio una **finestra**: *«🎯 Pitcher: tira al tavolo. Il tiro è RIUSCITO?»*. **OK** → *«✅ Pitcher: segnalino piazzato.»*, nel roster c'è **Deployable Repeater #1** e l'Hub lo vede. Controprova: **Annulla** → *«❌ Pitcher: tiro fallito, nessun segnalino. L'uso è comunque speso.»*, nessun Ripetitore. Con un ARO del Fusilier (ATTACCO BS) il suo è un **Tiro Normale**, non un Faccia a Faccia.
 
 ---
 
@@ -1009,7 +1062,7 @@ Il bersaglio delle prove SCO è il **Croc Man (MULTI Sniper Rifle)**
 - **Con:** Combi Rifle
 - **Bersaglio:** Intruder (HMG) *(Nomadi #24, Mimetismo −3)*, rivelato, a 32-40"
 - **ARO:** nessuno
-- **Atteso:** la schermata ha **un bottone per arma** (Combi Rifle, Jammer, Assault Pistol). Al tiro, in cima la **scheda del bersaglio**: il **nome del bersaglio**, **Burst 1**, la barra delle gittate e **solo** il tasto **LINEA DI TIRO**: **nessun tasto Copertura**, perché il Triangulated la ignora (riga 10340). Il tiro è su **BS 13 pieno**, MOD 0. I MOD ignorati compaiono **barrati**: *«Gittata: -6»*, *«Mimetismo del bersaglio: -3»*; con quei MOD il tiro sarebbe stato **4**. **LINEA DI TIRO NO** → IDLE. Controprova: Alguacil (Combi Rifle) *(Nomadi #1)* non ha la voce, *«Serve l'Abilità Triangulated Fire.»*
+- **Atteso:** la schermata ha **un bottone per arma** (Combi Rifle, Jammer, Assault Pistol). Al tiro, in cima la **scheda del bersaglio**: il **nome del bersaglio**, **Burst 1**, la barra delle gittate e **solo** il tasto **LINEA DI TIRO**: **nessun tasto Copertura**, perché il Triangulated la ignora (riga 10340). Il tiro è su **BS 13 pieno**, MOD 0. I MOD ignorati compaiono **barrati**: *«Gittata: -6»*, *«Mimetismo del bersaglio: -3»*; con quei MOD il tiro sarebbe stato **4**. **LINEA DI TIRO NO** → IDLE. Sul tabellone *«Successo al: 13»*, con la nota *«MOD ignorati dal Triangulated Fire: Gittata: -6 (-6); Mimetismo del bersaglio: -3 (-3).»* Controprova: un ATTACCO BS normale dello stesso Zulu-Cobra contro lo stesso Intruder a 32-40" resta **4**. Alguacil (Combi Rifle) *(Nomadi #1)* non ha la voce, *«Serve l'Abilità Triangulated Fire.»*
 
 ---
 
@@ -1025,13 +1078,13 @@ Il bersaglio delle prove SCO è il **Croc Man (MULTI Sniper Rifle)**
 - **Attivo:** Alguacil (Paramedic) *(Nomadi #5)* · MEDIKIT, **IN CONTATTO DI SILHOUETTE**
 - **Bersaglio:** Morlock (Assault Pistol) *(Nomadi #13, PH 13)* messo **Incosciente**
 - **ARO:** nessuno
-- **Atteso:** l'Alguacil **non tira**. Tira il **Morlock** su **PH 13** (il PH del bersaglio, non dell'utente). Nessun Tiro Salvezza. Fallimento: Morto.
+- **Atteso:** l'Alguacil **non tira**. Tira il **Morlock** su **PH 13** (il PH del bersaglio, non dell'utente). Sul tabellone sopra il Morlock *«🩺 BERSAGLIO NOMADI»*, nel colore dei Nomadi (non *REATTIVO*, non azzurro). Nessun Tiro Salvezza. Fallimento: Morto.
 
 **SUP-02b — MediKit a distanza**
 - **Attivo:** Alguacil (Paramedic) *(Nomadi #5, BS 11)* · MEDIKIT, **A DISTANZA**
 - **Bersaglio:** Morlock (Assault Pistol) *(Nomadi #13, PH 13)* messo **Incosciente**, a 0-8"
 - **ARO:** nessuno
-- **Atteso:** due tiri in ordine: l'Alguacil colpisce su **BS 11 + la banda** (a 0-8" **14**), **Burst 1**; poi il **Morlock** tira su **PH 13**. Nessun Tiro Salvezza. Fallimento: Morto.
+- **Atteso:** la barra è quella **del MediKit**: **0-8" +3 · 8-16" 0 · 16-24" −6 · FUORI**, e sotto il tasto **LINEA DI TIRO SÌ**. Due tiri in ordine: l'Alguacil colpisce su **BS 11 + la banda**, **Burst 1** — sul tabellone *«MediKit: TIRO PER COLPIRE»* **14** a 0-8", **11** a 8-16", **5** a 16-24"; poi il **Morlock** tira su **PH 13**. Nessun Tiro Salvezza. Fallimento: Morto. **FUORI** → il tasto dice **IDLE** (*«fallimento automatico: fuori gittata»*); **LINEA DI TIRO NO** → **IDLE** (*«dadi persi: nessuna Linea di Tiro»*).
 
 **SUP-03 — Ingegnere**
 - **Attivo:** Clockmaker (Engineer) *(Nomadi #7, WIP 15)* · INGEGNERE
@@ -1138,7 +1191,14 @@ attacca l'**Interventor (Hacker Plus, FastPanda)** *(Nomadi #8)* con HACKING, CA
 - **Con:** Combi Rifle
 - **Bersaglio:** Morlock (Assault Pistol) *(Nomadi #13)* a **0-8"**
 - **ARO:** Morlock → ATTACCO BS, **Smoke Grenades**, contro il Fusilier
-- **Atteso:** **TIRO FACCIA A FACCIA**: Morlock **13** con 1 dado (*«Smoke Grenades: Tratto "BS Weapon (PH)" — si tira su PH, non su BS.»*), Fusilier **15** con 3 dadi. Per il Fusilier *«Nessun Tiro Salvezza: azione non offensiva.»*; il Morlock, se perde, **ARM VS 8 ×1**. Controprova: lo stesso ARO contro l'ATTACCO BS dell'Aquila *(PanOceania #11, Multispectral Visor L3)* dà **TIRO NORMALE** per tutti e due (righe 5810-5812: chi ha un Multispectral Visor non fa Faccia a Faccia contro il Fumo).
+- **Atteso:** **TIRO FACCIA A FACCIA**: Morlock **13** con 1 dado (*«Smoke Grenades: Tratto "BS Weapon (PH)" — si tira su PH, non su BS.»*), Fusilier **15** con 3 dadi. Per il Fusilier *«Nessun Tiro Salvezza: azione non offensiva.»*; il Morlock, se perde, **ARM VS 8 ×1**. Nella scheda ARO del Morlock con le Smoke: la barra delle gittate, **LINEA DI TIRO** e la nota *«Arma Targetless: si tira su un punto del tavolo…»*, **nessun** tasto Copertura: il Fumo ignora Copertura e Mimetismo, e il 13 non cambia. Controprova: con l'**Assault Pistol** il tasto Copertura c'è: il Morlock tira **14**, segnata la Copertura **11** (−3). Controprova: lo stesso ARO contro l'ATTACCO BS dell'Aquila *(PanOceania #11, Multispectral Visor L3)* dà **TIRO NORMALE** per tutti e due (righe 5810-5812: chi ha un Multispectral Visor non fa Faccia a Faccia contro il Fumo).
+
+**DIF-15 — Smoke Grenades dell'attivo: il punto** *(nuova)*
+- **Attivo:** Morlock (Assault Pistol) *(Nomadi #13, PH 13)* · ATTACCO BS
+- **Con:** Smoke Grenades
+- **Bersaglio:** nessuno da scegliere (sul tavolo c'è Fusilier (Combi Rifle) *(PanOceania #1)*)
+- **ARO:** nessuno
+- **Atteso:** scelta l'arma **non** c'è la pagina dei bersagli: all'avversario parte l'allarme ARO su **«PUNTO SUL TAVOLO»**. Nella scheda il **PUNTO SUL TAVOLO**, la barra delle gittate, **LINEA DI TIRO** e la nota *«Arma Targetless: si tira su un punto del tavolo, non su una truppa. Niente Copertura né Mimetismo…»*; **nessun** tasto Copertura. Sul tabellone **TIRO NORMALE**, Morlock **13**; il lato del punto è la cella neutra *«📍 PUNTO SUL TAVOLO — Non è una truppa…»*, senza *REATTIVO PANOCEANIA* e senza righe delle salvezze. Controprova: con l'**Assault Pistol** c'è la pagina dei bersagli, si sceglie il Fusilier e la scheda ha il tasto Copertura.
 
 ---
 
@@ -1270,9 +1330,10 @@ contro l'Orc; oppure, dove la prova dice HACKING, **Interventor (Hacker Plus, Fa
 **AR-09 — Incosciente**
 - **Atteso:** l'Orc non compare fra i reattivi; è nell'elenco *«non possono reagire»*, col motivo. Ripeti con Morto e Disconnesso: lo stesso.
 
-**AR-10 — Nascosto o in Riserva**
-- **Attivo:** come sopra, ma il reattivo è il Croc Man (MULTI Sniper Rifle) *(PanOceania #6)* in **Hidden Deployment**, poi il Fusilier (Missile Launcher) *(#2)* in **Riserva**
-- **Atteso:** nessuno dei due compare nell'elenco dei reattivi: chi è nascosto o in Riserva non è sul tavolo.
+**AR-10 — Nascosto o in Riserva** *(riscritta)*
+- **Attivo:** come sopra (Alguacil · ATTACCO BS, Combi Rifle a 8-16", contro l'Orc); sul tavolo anche il Croc Man (MULTI Sniper Rifle) *(PanOceania #6)* in **Hidden Deployment** e il Fusilier (Missile Launcher) *(#2)* in **Riserva**
+- **ARO:** Croc Man → ATTACCO BS, MULTI Sniper Rifle munizione AP, a 8-16", contro l'Alguacil
+- **Atteso:** il Croc Man **compare** fra chi può reagire, con l'etichetta *«👁️ NASCOSTO: reagendo si rivela»* (si guarda la posizione scritta, righe 13893-13894). Il Fusilier in Riserva **non** c'è, nemmeno fra gli esclusi: non è sul tavolo. Dichiarato l'ARO, il Croc Man torna **Modello** nel suo roster e all'Hub (AGGIORNAMENTO, riga 13915). Sul tabellone l'Alguacil tira **14** sull'Orc e il Croc Man **12** sull'Alguacil, con la nota *«reagisce senza essere bersaglio dell'attacco: il suo è un Tiro Normale a sé»*. In ARO nessuna Sorpresa: vale solo nel Turno Attivo (righe 10125-10130).
 
 **AR-11 — Soppressione, contro un ATTACCO BS**
 - **Atteso:** tutte le voci di AR-01, col badge **SF MODE** e l'arma col profilo SF.
@@ -1369,6 +1430,12 @@ contro l'Orc; oppure, dove la prova dice HACKING, **Interventor (Hacker Plus, Fa
 - **ARO:** nessuno
 - **Atteso:** l'Alguacil **non** ha SCENDI DALLA MOTO, RISALI SULLA MOTO né RISALI SUL TAG, e nemmeno HACKING; ATTACCO BS sì. Il pilota appena sceso ha **RISALI SULLA MOTO**, e non SCENDI né RISALI SUL TAG.
 
+**LOG-07 — Foto collegate: pilota, moto, Escape** *(nuova)*
+- **Attivo:** in schieramento, Zondnautica-A *(Nomadi #18)* e Anaconda (Heavy Machine Gun) *(Nomadi #41)*; poi in partita Zondnautica-A · SCENDI DALLA MOTO, RISALI SULLA MOTO; Anaconda · editor degli stati → ESCAPE SYSTEM
+- **Con:** le foto delle miniature, dalla galleria dello schieramento
+- **Bersaglio:** nessuno
+- **Atteso:** scelta la foto della Zondnautica, la galleria chiede **subito** quella del pilota (**Zondnaut-A**), poi quella della moto (**Zondmate**), senza le foto già prese; per l'Anaconda chiede il solo pilota (**Operator**). **NESSUNA FOTO** è una risposta valida. In partita: SCENDI → il pilota e la moto hanno **le loro** foto; RISALI → torna la foto della Zondnautica montata; ESCAPE SYSTEM → il pilota con la sua, il TAG vuoto tiene la sua. Senza scelta: il pilota **senza** foto, la moto con quella della montata. L'avversario vede la foto in uso, mai le scelte. Controprova: un Alguacil (Combi Rifle) *(#1)* non chiede nessuna foto collegata.
+
 ---
 
 # 19. Blocco Q — Fireteam
@@ -1417,16 +1484,16 @@ Tutte le prove: truppe dello stesso Gruppo, dove non è scritto altro. Bersaglio
 - **Con:** Heavy Machine Gun per la Punta
 - **ARO:** nessuno
 - **Atteso:** la Punta ha Burst **2**: *«Burst dell'arma Heavy Machine Gun»* e *«Punta di Lancia: metà del Burst arrotondata per eccesso»*.
+- **Poi** *(aggiunta)*: come Punta l'Alguacil (HMG) *(#2)* e come gregario l'Alguacil (Combi Rifle) *(#1)*; nella pagina dei bersagli la Punta tocca il Fusilier e l'Orc *(PanOceania #4)*, a 0-8". Dopo l'ARO resta **solo il Fusilier**, con l'avviso *«Ordine Coordinato: tutte le truppe attaccano lo STESSO UNICO bersaglio (righe 11356-11358). Resta …»*. Il gregario non sceglie: scelta l'arma è già sul Fusilier, nella pagina dei modificatori. Sul tabellone Punta **8** con 2 dadi, gregario **14** con 1, l'Orc non c'è. In console: due partecipanti su bersagli diversi → **E61**; una truppa con due bersagli → **E60**. Controprova: con una Sagoma d'Impatto il secondario sotto l'area resta ammesso. *Nota:* l'allarme ARO, partito prima dei modificatori, nomina ancora tutti e due i bersagli.
 
 **CO-02 — Gregari**
 - **Attivo:** lo stesso Coordinato di CO-01
 - **Con:** Combi Rifle per il #1, Missile Launcher (Blast Mode) per il #3
 - **Atteso:** tutti e due Burst **1**, *«Gregario in Ordine Coordinato: Burst 1»*.
 
-**CO-03 — Leader di Fireteam gregario**
-- **Attivo:** Fireteam con gli Alguacil #1, #3, #4, #5, Leader il #1. Coordinato con Alguacil (HMG) *(#2)* Punta di Lancia e il #1 gregario · ATTACCO BS
-- **Con:** HMG per la Punta, Combi Rifle per il #1
-- **Atteso:** per regola il Leader del Fireteam ha il Burst pieno, **3**. **Difetto aperto** (blocco V): oggi leggi **1**.
+**CO-03 — Un membro di un Fireteam non si coordina** *(riscritta)*
+- **Attivo:** Fireteam con gli Alguacil #1, #3, #4, #5, Leader il #1. Coordinato con Alguacil (HMG) *(#2)* Punta di Lancia e il #1, poi CONFERMA SQUADRA
+- **Atteso:** **E49**: *«⛔ ORDINE COORDINATO NON VALIDO — … fa parte del Fireteam A, non partecipa a un Ordine Coordinato.»* (riga 11552: *members of a Fireteam cannot be part of a Coordinated Order*), e il menu degli Ordini non si apre. Controprova: tolto il #1 dal Fireteam, il Coordinato parte e il #1 gregario ha **Burst 1** (*«Gregario in Ordine Coordinato: Burst 1»*): con il Combi Rifle a 0-8" **14**, un dado.
 
 **CO-04 — Cinque unità**
 - **Attivo:** Coordinato con gli Alguacil #1-#5
@@ -1451,11 +1518,13 @@ Tutte le prove: truppe dello stesso Gruppo, dove non è scritto altro. Bersaglio
 **CO-09 — Gruppi e Addestramento**
 - **Attivo:** (a) #1 nel Gruppo 1 e #2 nel Gruppo 2, Punta il #1; (b) Morlock (Kobra Pistol, DA CC) *(#36, Irregolare)* e Alguacil #1, Punta l'Alguacil; (c) i due Morlock *(#13 e #36)*
 - **Atteso:** (a) **E43**, *«Le unità appartengono a 2 Gruppi di Combattimento diversi»*. (b) **E44**, *«Le unità hanno Addestramento diverso: Regolari e Irregolari non possono coordinarsi.»* (c) passa: due Irregolari hanno lo stesso Addestramento.
+- **Poi** *(aggiunta)*: con una **lista salvata prima** che il database avesse il campo `chars`, Morlock (Assault Pistol) *(#13)* e Mobile Brigada (HMG) *(#16)* → **E44** (Paolo l'aveva visto passare); i due Morlock *(#13 e #36)* passano.
 
 **CO-10 — Fuori gittata in un Coordinato**
 - **Attivo:** Coordinato con Alguacil (Missile Launcher) *(#3)* Punta e Alguacil (Combi Rifle) *(#1)* · ATTACCO BS
-- **Bersaglio:** il Fusilier a 48-56": dentro la gittata del Missile Launcher (−3), **FUORI** per il Combi Rifle, che arriva a 48"
-- **Atteso:** il #1 va a **Idle** col motivo (Burst 0), la Punta tira. L'Ordine non si blocca e l'ARO resta.
+- **Bersaglio:** il Fusilier a 48-56": dentro la gittata del Missile Launcher (Hit Mode, −3), **FUORI** per il Combi Rifle, che arriva a 48"
+- **ARO:** nessuno
+- **Atteso:** la Punta ha ESEGUI CALCOLO; il gregario, toccato FUORI, ha il tasto **«IDLE (SOLO QUESTA TRUPPA)»**. Premuto, parte **una** busta: la Punta tira, il gregario a Burst 0 col motivo, l'Ordine non si blocca (righe 11374-11376). Sul tabellone il tiro della Punta, **8** (11 −3), e uno scontro **IDLE (REQUISITO FALLITO)** per il gregario: *«Greg: requisito non soddisfatto contro … (fallimento automatico: fuori gittata)»*. Prima dell'invio compare la finestra *«Prima di calcolare…»* con l'avviso **A101**: con Annulla non parte niente, nemmeno il tiro della Punta. Nell'Ordine singolo, un bersaglio senza requisito mentre gli altri lo hanno dà lo stesso scontro IDLE (prima i suoi dadi sparivano senza scontro).
 
 **CO-11 — Coordinato in CC**
 - **Attivo:** Coordinato con Morlock (Assault Pistol) *(#13)* Punta, Chimera *(#14)* e Alguacil *(#1)* · ATTACCO CC
@@ -1530,19 +1599,19 @@ sulla riga Terreno della scheda del bersaglio. Senza terreno i tre tirano a
 **TER-05 — Tempesta (TER_15)**
 - **Atteso:** Alguacil **11 B3**, voce *«Bassa Visibilità (dalla Tempesta…): -3 BS.»*, e **nessun** −1 al Burst; Grenzer **16 B3**; Intruder **13 B4**. La Tempesta non è una Zona di Saturazione.
 
-**TER-06 — Lo Speculativo ignora la Visibilità**
+**TER-06 — Lo Speculativo ignora la Visibilità** *(riscritta)*
 - **Attivo:** Marspider (Grenades) *(Nomadi #38, PH 13, nessun visore)* · FUOCO SPECULATIVO; poi lo stesso · ATTACCO BS
-- **Con:** Grenades
-- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* a 0-8", terreno **TER_10 Bosco**, copertura no
+- **Con:** Grenades(+1B)
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* a 0-8", copertura no; nell'ATTACCO BS il terreno **TER_10 Bosco**
 - **ARO:** nessuno
-- **Atteso:** Speculativo **10** = 13 +3 −6 fisso, voci *«Gittata: +3»* e *«Fuoco Speculativo: -6 fisso»*: il −3 della Bassa Visibilità **non** c'è. ATTACCO BS **13** = 13 +3 −3, voce *«Zona di Saturazione: -1 B. Bassa Visibilità: -3 BS.»*.
+- **Atteso:** nella pagina del FUOCO SPECULATIVO la casella del terreno **non c'è**, ed è voluto: si applicano solo il −6 e la gittata (*«Other negative MODs … are not applied»*, riga 3920). Tiro **10** = 13 +3 −6, con la nota *«Fuoco Speculativo: ignora i MOD NEGATIVI di Copertura, Mimetismo e Zone di Visibilità.»* e nessuna voce di Bassa Visibilità. ATTACCO BS nel Bosco: la casella c'è, **13** = 13 +3 −3, Burst 2 → **1** dado, voce *«Zona di Saturazione: -1 B. Bassa Visibilità: -3 BS.»*.
 
-**TER-07 — Saturazione prima dell'allocazione**
+**TER-07 — Saturazione dopo la divisione** *(riscritta)*
 - **Attivo:** Alguacil (HMG) *(Nomadi #2)* · ATTACCO BS
 - **Con:** Heavy Machine Gun
-- **Bersaglio:** Fusilier (Combi Rifle) *(#1)* e Fusilier (Missile Launcher) *(#2)*, a 8-16", terreno **TER_10 Bosco**
+- **Bersaglio:** Fusilier (Combi Rifle) *(#1)* e Fusilier (Missile Launcher) *(#2)*, a 8-16", tutti e due in **TER_10 Bosco**
 - **ARO:** nessuno
-- **Atteso:** i dadi da dividere sono **3**, non 4: la Saturazione toglie il dado prima.
+- **Atteso:** i dadi da dividere sono **4**, non 3: la Saturazione si applica DOPO la divisione, al Burst di ogni bersaglio, mai sotto 1 (righe 12640-12644). 2+2 → **1+1**; 3+1 → **2+1**. Controprova: il #2 senza terreno, 2+2 → **1+2**. Bosco + Giungla su tutti e due: **1+1**, una sola Saturazione per bersaglio (righe 12645-12648).
 
 **TER-08 — Fumo contro MSV**
 - **Attivo:** Intruder (HMG) *(Nomadi #24, MSV L2)* · ATTACCO BS
@@ -1931,6 +2000,7 @@ quello indicato.
 | La scheda del bersaglio di Forward Observer e Triangulated Fire: COPERTURA −3 nel FO, nessun tasto Copertura nel Triangulated, LINEA DI TIRO NO → IDLE, OSS-03 coi suoi numeri | `test_scheda_osservazione.js` |
 | La pagina DETONAZIONE di koala e mine, e la busta che parte con AVANTI e NESSUN ARO | `test_innesco_schermata.js` |
 | Le novità del 20 ottobre: profili collegati nel database, secondo profilo e Transmutation (WIP) dall'editor e al cambio turno, moto ed Escape System (chi non può risalire), Marker numerati per segnalino, MOVIMENTO senza tiro, nomi delle armi in ARO, Fumo in ARO fino al tabellone; la Sagoma Diretta in ARO e la seconda metà filtrata (sez. 10); la Schivata contro koala e mina, e il Reset contro la Cybermine, dentro lo scontro della detonazione (sez. 11) | `test_novita_20ott.js` |
+| Le otto correzioni del 23 ottobre fino al tabellone: Sagoma d'Impatto un tiro coi MOD del Principale anche con una busta diversa sul secondario, Combi Rifle e Sagoma Diretta a due bersagli invariati; eraMarker nel motore; Pitcher sul punto, finestra e Ripetitore all'Hub, Grenades sul punto E15; Fumo 13 con la Copertura nella busta e Smoke dell'attivo sul punto; Triangulated 13 sul tabellone; fasce del MediKit e IDLE dal tasto; foto collegate nel motore e filtraPerAvversario; INT-01 dalla porta del giocatore (sez. 2b) e la nota del punto; dal pomeriggio (sez. 8-14) la Sorpresa da Hidden e da CAMO, Hidden in ARO, il Coordinato contro un bersaglio (E60, E61), E49, E44 con una lista senza `chars`, l'Idle del solo gregario (A101), TER-06 e TER-07 | `test_novita_23ott.js` |
 | La Schivata contro Sagoma senza LoF (PH−3) | `test_orchestratore.js` |
 
 Una trappola da sapere scrivendo una prova nuova: la chiave di un requisito non
@@ -1946,7 +2016,6 @@ Una trappola da sapere scrivendo una prova nuova: la chiave di un requisito non
 | Il Burst reattivo in Soppressione esce 1 invece di 3 quando il reattivo è bersaglio di un attacco | BS-12 | MOTORE |
 | Il +1 SD del Fireteam di Livello 2 non arriva al Burst | FT-03 | MOTORE |
 | Il filtro del Supporto non distingue VITA da STR | SUP-05 | MOTORE |
-| Il Leader di un Fireteam gregario di un Coordinato va a Burst 1 | CO-03 | MOTORE |
 | A58 non elenca gli strumenti attesi | SUP-06 | MOTORE |
 | Deployable Cover (Cutting Foam) e (Vitroferro) disegnano lo stesso bottone | — (`test_bottone_arma.js` sez. 11) | MOTORE |
 | `M.esitoTerreni` ha due implementazioni che non danno lo stesso esito | — (`test_terreni_combinati.js` sez. 8) | MOTORE |

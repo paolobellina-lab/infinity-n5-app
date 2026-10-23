@@ -1,4 +1,5 @@
-// @versione 2026-10-08.1 | test_adattatore.js | proprieta`: chat TEST
+// @versione 2026-10-23.1 | test_adattatore.js | proprieta`: chat TEST
+// 2026-10-23.1: l'elenco dei campi copiati sale a 11 (tiroUnico, calcolatore_math 23.1).
 // Test dell'adattatore calcolatore_math.js — node test_adattatore.js
 global.window = global;
 require('./catalogo_n5.js'); require('./database_comune.js');
@@ -375,7 +376,11 @@ ok(/Munizione/.test(String((bfz.reattivo || {}).salvezza || '')),
 const campiCopiati = ['coperturaNegata', 'reattivoNonBersagliato', 'bersaglioDiSagoma',
                       'attaccanteNonRisolto', 'bersaglioNonRisolto',
                       'scoprirePoiAttacco', 'scoprireSuperato', 'dopoScoprire',
-                      'condizionatoDaScoprire', 'scoprirePoiPiazzare'];
+                      'condizionatoDaScoprire', 'scoprirePoiPiazzare',
+                      // 23 ottobre (calcolatore_math 23.1, TPL): la Sagoma
+                      // d'Impatto con piu` bersagli e` UN tiro; il tabellone
+                      // ne fa un riquadro solo leggendo questo campo.
+                      'tiroUnico'];
 campiCopiati.forEach(k => ok(new RegExp("'" + k + "'").test(srcMath),
     `l adattatore nomina il campo ${k}`));
 const elenco = (/\[([^\]]*)\]\.forEach\(k => \{ if \(s\[k\]\)/.exec(srcMath) || [])[1] || '';

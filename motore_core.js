@@ -1,4 +1,4 @@
-// @versione 2026-10-20.1 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-23.1 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -428,6 +428,17 @@ window.applicaStatoDaAbilita = function (unita, azione) {
         vP.camo === vD.camo && vP.imp === vD.imp && vP.hidden === vD.hidden) return esito;
     esito.cambiato = true;
     window.ultimoCambioStato = esito;
+    // 23 ottobre (Paolo, AR-10): la truppa era NASCOSTA (Marker, Hidden
+    // Deployment...) all'inizio di quest'Ordine. Il Surprise Attack lo chiede
+    // proprio cosi` ("in Marker form ... or in Hidden Deployment at the start
+    // of the Order in which they are activated", righe 10125-10128), ma la
+    // dichiarazione la rivela PRIMA del calcolo, e il calcolo non lo sapeva
+    // piu`: la Sorpresa non si applicava mai. Il motore lo legge da qui.
+    if (vP.camo || vP.imp || vP.hidden || vP.holoecho || vP.holomask || vP.decoy) {
+        window.currentOrder = window.currentOrder || {};
+        window.currentOrder.nascostiAInizio = window.currentOrder.nascostiAInizio || {};
+        if (unita.id != null) window.currentOrder.nascostiAInizio[unita.id] = true;
+    }
     window.sostituisciUnita(unita, r.unitaAggiornata, azione);
     return esito;
 };
@@ -806,7 +817,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-20.1', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-23.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

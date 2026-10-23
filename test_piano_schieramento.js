@@ -1,4 +1,8 @@
-// @versione 2026-10-20.3 | test_piano_schieramento.js | proprieta`: chat TEST
+// @versione 2026-10-23.4 | test_piano_schieramento.js | proprieta`: chat TEST
+// 2026-10-23.4: REV_MINIMA = 40 (AR-10, CO-01, CO-03, CO-09, CO-10, TER-06, TER-07; nuova BS-28). Le prove passano a 303.
+// 2026-10-23.3: REV_MINIMA = 39 (il punto del tavolo, cella neutra: SPEC-06 e DIF-15). Le prove restano 302.
+// 2026-10-23.2: REV_MINIMA = 38 (INT-01 corretto, nota del punto in SPEC-06 e DIF-15). Le prove restano 302.
+// 2026-10-23.1: REV_MINIMA = 37 (TPL-11, DIF-15, LOG-07 nuove; SPEC-06 riscritta). Le prove passano a 302.
 // 2026-10-20.3: REV_MINIMA = 36 (DEP-06 e DET-01: la Schivata dentro lo scontro della detonazione). Le prove restano 299.
 // 2026-10-20.2: REV_MINIMA = 35 (TPL-10 e LOG-06: i due difetti del cap. 31 corretti). Le prove passano a 299.
 // 2026-10-20.1: REV_MINIMA = 34; roster 41 Nomadi + 16 PanOceania = 57 (nuovi Switcher #40,
@@ -152,7 +156,7 @@ const perFazione = voci.reduce(function (m, v) { m[v.fazione] = (m[v.fazione] ||
 // (Il 7 ottobre ho cambiato questi numeri senza alzare la versione del
 // banco, e due chat hanno letto due contenuti diversi sotto la stessa
 // 2026-10-07.1. Da qui la .2.)
-const REV_MINIMA = 36;
+const REV_MINIMA = 40;
 const testoPiano = fs.readFileSync(PIANO, 'utf8');
 const revisione = (/revisione\s+(\d+)/.exec(testoPiano) || [])[1];
 ok(revisione !== undefined && parseInt(revisione, 10) >= REV_MINIMA,

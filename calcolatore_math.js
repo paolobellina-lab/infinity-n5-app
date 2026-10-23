@@ -1,4 +1,4 @@
-// @versione 2026-10-19.1 | calcolatore_math.js | proprieta`: chat MOTORE
+// @versione 2026-10-23.1 | calcolatore_math.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧮 CALCOLATORE N5 — adattatore sopra MotoreN5
 // ------------------------------------------
@@ -280,7 +280,9 @@
                 }),
                 reattivo: dx ? {
                     nome: dx.nome,
-                    fazione: fazReattiva,
+                    // 22 ottobre (SUP-02a): il bersaglio del Supporto e` della
+                    // fazione ATTIVA (lo segna il motore con `alleato`).
+                    fazione: dx.alleato ? fazAttiva : fazReattiva,
                     // L'etichetta leggibile: dal 23 settembre le reazioni
                     // viaggiano come id ('BS_ATTACK'), e il tabellone lo
                     // mostrava cosi` al giocatore.
@@ -306,7 +308,7 @@
             // (Chat INTERFACCIA, 6 ottobre: non poteva mostrarli.)
             // bersaglioDiSagoma mancava dall'elenco (chat INTERFACCIA, 6 ottobre):
             // un campo nuovo dello scontro va aggiunto QUI, o non arriva.
-            ['coperturaNegata', 'reattivoNonBersagliato', 'bersaglioDiSagoma', 'attaccanteNonRisolto', 'bersaglioNonRisolto', 'scoprirePoiAttacco', 'scoprireSuperato', 'dopoScoprire', 'condizionatoDaScoprire', 'scoprirePoiPiazzare'].forEach(k => { if (s[k]) out[k] = s[k]; });
+            ['coperturaNegata', 'reattivoNonBersagliato', 'bersaglioDiSagoma', 'tiroUnico', 'attaccanteNonRisolto', 'bersaglioNonRisolto', 'scoprirePoiAttacco', 'scoprireSuperato', 'dopoScoprire', 'condizionatoDaScoprire', 'scoprirePoiPiazzare'].forEach(k => { if (s[k]) out[k] = s[k]; });
             if (s.note && s.note.length) out.note = s.note;
             return out;
         });
@@ -321,7 +323,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_math.js', versione: '2026-10-19.1', proprieta: 'MOTORE' };
+    var v = { file: 'calcolatore_math.js', versione: '2026-10-23.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

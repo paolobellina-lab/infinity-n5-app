@@ -1,4 +1,4 @@
-// @versione 2026-10-20.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-23.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -954,6 +954,14 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
         return;
     }
 
+    // 23 ottobre (Paolo, via MOTORE): SAGOMA D'IMPATTO con piu` bersagli.
+    // Il tiro dell'attaccante e` UNO (righe 3745-3749) e il motore lo dice con
+    // scontro.tiroUnico = { gruppo, principale, bersagli }. Prima ogni
+    // bersaglio aveva il suo riquadro, con il tiro dell'attaccante ripetuto
+    // tre volte, come se fossero tre tiri. Ora ogni scontro si disegna come
+    // prima, ma si TIENE da parte; alla fine quelli dello stesso gruppo
+    // diventano un riquadro solo (window.riquadroTiroUnico).
+    const disegnati = [];
     scontri.forEach((scontro, index) => {
         // 20 ottobre (MOTORE 20.3): Sagoma Diretta, colpo senza tiro. Il motore
         // la segna con automatico: true e mod 'Auto', all'attivo e ora anche al
@@ -1041,7 +1049,10 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
         const sfondo = (fazione, aDestra) => 'linear-gradient(' + (aDestra ? '-90deg' : '90deg') + ', ' +
             ((fazione === 'NOMADI') ? '#330000' : '#001a33') + ', #000)';
         const SPENTO = 'rgba(255,255,255,0.02)';
-        const ruolo = (attivo) => `<span style="color:#888; font-size:11px; letter-spacing:1px;">${attivo ? '▶ ATTIVO' : '🛡️ REATTIVO'}</span><br>`;
+        // 23 ottobre (SUP-02a): il bersaglio del MediKit / GizmoKit e` un
+        // ALLEATO (il motore lo segna con alleato). Sopra c'era scritto
+        // REATTIVO, come per un nemico che reagisce.
+        const ruolo = (attivo, lato) => `<span style="color:#888; font-size:11px; letter-spacing:1px;">${attivo ? '▶ ATTIVO' : ((lato && lato.dati && lato.dati.alleato) ? '🩺 BERSAGLIO' : '🛡️ REATTIVO')}</span><br>`;
         // Una riga a due colonne. Si passano SEMPRE la cella dell'attivo e
         // quella del reattivo, in quest'ordine: dove finiscono lo decide il
         // posto a sedere. `acceso` false = la cella grigia di chi in quel
@@ -1066,7 +1077,7 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
             return id;
         };
         const allineaDalLatoDi = (fazione) => (window.latoDi(fazione) === 'DX') ? 'right' : 'left';
-        const testa = (lato, attivo) => ruolo(attivo) +
+        const testa = (lato, attivo) => ruolo(attivo, lato) +
             `<b style="color:${colore(lato.fazione)}; font-size:22px;">${lato.fazione} ${lato.nome}</b><br>`;
         const cellaPiena = (lato, attivo, modHtml, dadiHtml) => ({ fazione: lato.fazione, html: testa(lato, attivo) +
             `<span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${nomeAzioneTab(lato.azione)}</span><br>
@@ -1082,7 +1093,21 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
 
         let htmlScontro = "";
 
-        if (isF2F || !bothActing) {
+        // 23 ottobre (MOTORE 23.3, osservazione di TEST): un'arma TARGETLESS
+        // tirata su un PUNTO del tavolo. Il lato del punto porta dati.punto:
+        // non e` una truppa, non ha fazione, non reagisce e non subisce danno.
+        // Prima aveva la cella di una truppa nemica ("REATTIVO PANOCEANIA
+        // PUNTO SUL TAVOLO", "Nessun ARO") e la riga delle salvezze ("SE
+        // COLPITO DAL NEMICO: il reattivo non infligge danno").
+        const ePunto = (lato) => !!(lato && lato.dati && lato.dati.punto);
+        const cellaPunto = (lato) => ({ html: `<div class="cella-punto" style="padding-top:6px;"><b style="color:#fff; font-size:22px;">\ud83d\udccd ${lato.nome || 'PUNTO SUL TAVOLO'}</b><br>` +
+            `<span style="color:#aaa; font-size:13px;">Non è una truppa: non reagisce e non subisce danno.</span></div>` });
+        if (ePunto(scontro.attivo) || ePunto(scontro.reattivo)) {
+            htmlScontro =
+                riga(ePunto(scontro.attivo) ? cellaPunto(scontro.attivo) : cellaPiena(scontro.attivo, true, modAttaccanteHtml, dadiAttaccanteHtml),
+                     ePunto(scontro.reattivo) ? cellaPunto(scontro.reattivo) : cellaPiena(scontro.reattivo, false, modDifensoreHtml, dadiDifensoreHtml),
+                     'background:#000; border-radius:8px; overflow:hidden;', DUE);
+        } else if (isF2F || !bothActing) {
             htmlScontro =
                 riga(cellaPiena(scontro.attivo, true, modAttaccanteHtml, dadiAttaccanteHtml),
                      cellaPiena(scontro.reattivo, false, modDifensoreHtml, dadiDifensoreHtml),
@@ -1125,24 +1150,78 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
               (scontro.coperturaNegata ? '<b>⛔ COPERTURA PARZIALE NEGATA</b><br>' : '') + noteScontro.join('<br>') + `</div>`
             : '';
 
-        container.innerHTML += `
+        const dettagliHtml = (i) => `<div style="text-align:center; margin-top:15px;">
+                    <button onclick="window.toggleDettagli('dettagli-${i}')" style="background:#222; border:1px dashed #555; color:#aaa; font-family:'Share Tech Mono'; padding:5px 15px; cursor:pointer; font-size:12px; border-radius:5px;">🔍 MOSTRA DETTAGLI CALCOLI</button>
+                </div>
+                <div id="dettagli-${i}" style="display:none; margin-top:10px; padding:10px; background:#0a0a0a; border:1px solid #333; border-radius:5px; font-size:14px;">
+                    ${riga({ html: scontro.attivo.dettagliMod || "-" }, { html: scontro.reattivo.dettagliMod || "-" }, '',
+                           { sx: 'border-right:1px solid #333; padding-right:10px; color:#ddd;', dx: 'padding-left:10px; color:#ddd;' })}
+                </div>`;
+        disegnati.push({ scontro, index, parti: { riga, cellaPiena, testa, DUE, isF2F, modAttaccanteHtml, dadiAttaccanteHtml,
+            modDifensoreHtml, dadiDifensoreHtml, noteScontro, noteScontroHtml, nomeAzioneTab, dettagli: dettagliHtml(index) }, html: `
             <div style="background:#111; border:2px solid #444; border-radius:10px; padding:15px; margin-bottom:20px; box-shadow: 0 0 15px rgba(255,255,255,0.05);">
                 <h3 style="color:${isF2F ? '#00ff00' : '#ffcc00'}; text-align:center; margin-top:0; font-family:'Teko'; font-size:32px; letter-spacing:1px;">${scontro.titolo}</h3>
                 
                 ${htmlScontro}
                 ${noteScontroHtml}
 
-                <div style="text-align:center; margin-top:15px;">
-                    <button onclick="window.toggleDettagli('dettagli-${index}')" style="background:#222; border:1px dashed #555; color:#aaa; font-family:'Share Tech Mono'; padding:5px 15px; cursor:pointer; font-size:12px; border-radius:5px;">🔍 MOSTRA DETTAGLI CALCOLI</button>
-                </div>
-
-                <div id="dettagli-${index}" style="display:none; margin-top:10px; padding:10px; background:#0a0a0a; border:1px solid #333; border-radius:5px; font-size:14px;">
-                    ${riga({ html: scontro.attivo.dettagliMod || "-" }, { html: scontro.reattivo.dettagliMod || "-" }, '',
-                           { sx: 'border-right:1px solid #333; padding-right:10px; color:#ddd;', dx: 'padding-left:10px; color:#ddd;' })}
-                </div>
+                ${dettagliHtml(index)}
             </div>
-        `;
+        ` });
     });
+
+    // Un riquadro per scontro, tranne quelli dello stesso tiro unico: un
+    // riquadro per gruppo, dove compare il primo del gruppo.
+    const fatti = {};
+    disegnati.forEach(d => {
+        const tu = d.scontro.tiroUnico;
+        if (!tu || tu.gruppo === undefined || tu.gruppo === null) { container.innerHTML += d.html; return; }
+        if (fatti[tu.gruppo]) return;
+        fatti[tu.gruppo] = true;
+        const membri = disegnati.filter(x => x.scontro.tiroUnico && x.scontro.tiroUnico.gruppo === tu.gruppo);
+        container.innerHTML += (membri.length > 1) ? window.riquadroTiroUnico(membri) : d.html;
+    });
+};
+
+// Il riquadro di un TIRO UNICO (Sagoma d'Impatto, piu` bersagli): in alto il
+// tiro dell'attaccante, una volta; sotto una riga per ogni truppa colpita,
+// con la sua reazione e la sua salvezza. Il tiro e` quello del Principale
+// (lo scontro con tiroUnico.principale); se per un bersaglio il motore
+// dice altro (un colpo annullato, un requisito), si scrive su quella riga.
+window.riquadroTiroUnico = (membri) => {
+    const pr = membri.find(m => m.scontro.tiroUnico.principale) || membri[0];
+    const P = pr.parti, sa = pr.scontro;
+    const ordinati = [pr].concat(membri.filter(m => m !== pr));
+    const attaccante = P.riga(P.cellaPiena(sa.attivo, true, P.modAttaccanteHtml, P.dadiAttaccanteHtml),
+        { fazione: sa.reattivo.fazione, acceso: false, html: `<div style="color:#bbb; font-size:15px; padding-top:18px;">UN SOLO TIRO contro <b style="color:#fff;">${membri.length}</b> bersagli sotto la Sagoma.<br><span style="font-size:13px; color:#888;">Si tira una volta; ogni bersaglio confronta lo stesso dado.</span></div>` },
+        'background:#000; border-radius:8px; overflow:hidden;', P.DUE);
+    // Le note: quelle uguali in tutti gli scontri del gruppo una volta sola,
+    // in fondo; quelle di un bersaglio solo, sulla sua riga.
+    const comuni = (pr.parti.noteScontro || []).filter(n => membri.every(m => (m.parti.noteScontro || []).indexOf(n) >= 0));
+    const riquadroNote = (lista) => lista.length ? `<div style="margin-top:10px; padding:10px; background:#221500; border:1px solid #ff9900; border-radius:5px; color:#ffbb55; font-size:14px;">${lista.join('<br>')}</div>` : '';
+    const righe = ordinati.map(m => {
+        const s = m.scontro, q = m.parti;
+        const eti = s.tiroUnico.principale ? 'PRINCIPALE' : 'SECONDARIO';
+        const diverso = q.modAttaccanteHtml !== P.modAttaccanteHtml
+            ? `<div class="tiro-diverso" style="margin-bottom:8px; color:#ffbb55; font-size:13px;">Per questo bersaglio:</div>${q.modAttaccanteHtml}` : '';
+        const titolo = `<div style="color:${q.isF2F ? '#00ff00' : '#ffcc00'}; font-size:13px; letter-spacing:1px; margin-bottom:6px;">${eti} · ${s.titolo}</div>`;
+        return `<div class="bersaglio-tiro-unico" data-ruolo="${eti}" style="margin-top:12px; border:1px solid #333; border-radius:8px; overflow:hidden;">` +
+            q.riga({ fazione: s.attivo.fazione, acceso: false, html: diverso + `<b style="color:#aaa; font-size:14px;">🛡️ SE COLPITO DA ${s.reattivo.nome}:</b><br>${s.attivo.salvezza}` },
+                   { fazione: s.reattivo.fazione, html: titolo + q.testa(s.reattivo, false) +
+                       `<span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${q.nomeAzioneTab(s.reattivo.azione)}</span><br>` +
+                       q.modDifensoreHtml + q.dadiDifensoreHtml +
+                       `<div style="margin-top:10px; font-size:14px;"><b style="color:#aaa;">🛡️ SE COLPITO DALL'ATTACCANTE:</b><br>${s.reattivo.salvezza}</div>` },
+                   'background:#000;', q.DUE) +
+            `<div style="padding:0 15px 10px;">${(s.attaccanteNonRisolto || s.bersaglioNonRisolto || s.coperturaNegata) ? q.noteScontroHtml : riquadroNote((q.noteScontro || []).filter(n => comuni.indexOf(n) < 0))}${q.dettagli}</div></div>`;
+    }).join('');
+    const noteHtml = riquadroNote(comuni);
+    return `
+            <div class="riquadro-tiro-unico" style="background:#111; border:2px solid #444; border-radius:10px; padding:15px; margin-bottom:20px; box-shadow: 0 0 15px rgba(255,255,255,0.05);">
+                <h3 style="color:#ffcc00; text-align:center; margin-top:0; font-family:'Teko'; font-size:32px; letter-spacing:1px;">SAGOMA D'IMPATTO: UN TIRO, ${membri.length} BERSAGLI</h3>
+                ${attaccante}
+                ${righe}
+                ${noteHtml}
+            </div>`;
 };
 
 window.chiudiRisoluzione = () => {
@@ -1179,7 +1258,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-10-20.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-10-23.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

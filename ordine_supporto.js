@@ -1,4 +1,4 @@
-// @versione 2026-10-18.1 | ordine_supporto.js | proprieta`: chat MOTORE
+// @versione 2026-10-22.1 | ordine_supporto.js | proprieta`: chat MOTORE
 // ==========================================
 // 🩺 SUPPORTO: MEDICO E INGEGNERE (N5) - ordine_supporto.js
 // ------------------------------------------
@@ -202,7 +202,8 @@
         if (e.tiroPerColpire) {
             colpire = `<div style="margin-bottom:12px; padding:10px; background:#001a2a; border:1px solid ${COL.bordo}; border-radius:5px;">
                 <div style="text-align:center; color:${COL.bordo}; font-size:13px;">Uso a distanza: prima serve colpire</div>
-                <div style="text-align:center; color:#fff;">BS ${e.tiroPerColpire.base} → <b style="font-size:20px;">${e.tiroPerColpire.valore}</b></div></div>`;
+                <div style="text-align:center; color:#fff;">BS ${e.tiroPerColpire.base} → <b style="font-size:20px;">${e.tiroPerColpire.valore}</b></div>
+                ${window.barraGittataSupporto(t, e.tiroPerColpire.bande || [])}</div>`;
         }
 
         const stileContatto = window.supportoInContatto !== false
@@ -238,14 +239,53 @@
             // nascosto il clone nasceva invisibile. Etichetta giusta,
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
-            nuovo.onclick = function () { window.eseguiCalcoloSupporto(); };
-            nuovo.innerText = 'ESEGUI ' + e.strumento.toUpperCase();
+            // A distanza i requisiti sono quelli di un BS Attack: Linea di
+            // Tiro e gittata. Se mancano, il tasto diventa IDLE.
+            const req = window.requisitiSupporto();
+            nuovo.onclick = function () { return (req && req.idle) ? M.idleDaRequisito(req) : window.eseguiCalcoloSupporto(); };
+            nuovo.innerText = (req && req.idle) ? 'IDLE' : 'ESEGUI ' + e.strumento.toUpperCase();
+            if (M.COLORE_TASTO) nuovo.style.background = (req && req.idle) ? M.COLORE_TASTO.idle : M.COLORE_TASTO.valido;
         }
     };
 
     // MediKit e GizmoKit hanno le due modalità; Dottore e Ingegnere no.
     window.supportoEquipaggiamento = function (e) {
         return e && (e.strumento === 'MediKit' || e.strumento === 'GizmoKit');
+    };
+    // 22 ottobre (Paolo, SUP-02b): a distanza la barra delle gittate del
+    // MediKit / GizmoKit, con FUORI in coda, e il tasto della Linea di Tiro:
+    // come nella scheda dell'Attacco BS.
+    window.barraGittataSupporto = function (t, bande) {
+        if (!t || !bande.length) return '';
+        let seg = '', et = '';
+        bande.forEach(function (b, i) {
+            let cls = 'seg-2';
+            if (b.mod > 0) cls = 'seg-1'; else if (b.mod === -3) cls = 'seg-3'; else if (b.mod < -3) cls = 'seg-4';
+            const attivo = (!t.fuoriGittata && (t.rangeIndex || 0) === i) ? 'active' : '';
+            seg += `<div class="range-seg ${cls} ${attivo}" onclick="window.setTargetRangeSupporto(${i})">${b.mod > 0 ? '+' + b.mod : b.mod}</div>`;
+            et += `<span>${b.label}</span>`;
+        });
+        seg += `<div class="range-seg ${t.fuoriGittata ? 'active' : ''}" style="background:${t.fuoriGittata ? '#ffcc00' : '#332b00'}; color:${t.fuoriGittata ? '#000' : '#ffcc00'}; font-size:12px;" onclick="window.toggleRequisitoSupporto('gittata')">FUORI</div>`;
+        et += `<span>oltre</span>`;
+        const lofNo = t.lof === false;
+        return `<div style="margin-top:10px;"><div class="range-bar">${seg}</div>
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${et}</div></div>
+            <button class="huge-btn" style="width:100%; margin:10px 0 0; min-height:48px; font-size:15px; ${lofNo ? 'background:#554400; border-color:#ffcc00; color:#ffcc00;' : 'background:#004400; border-color:#00ff00; color:#00ff00;'}" onclick="window.toggleRequisitoSupporto('lof')">${lofNo ? 'LINEA DI TIRO NO' : 'LINEA DI TIRO SÌ'}</button>`;
+    };
+    window.setTargetRangeSupporto = function (i) {
+        const t = window.combatTargets && window.combatTargets[0]; if (!t) return;
+        t.rangeIndex = i; t.fuoriGittata = false;
+        window.renderSupporto();
+    };
+    window.toggleRequisitoSupporto = function (chiave) {
+        const M = motore(); if (!M) return;
+        if (M.invertiRequisito(window.combatTargets && window.combatTargets[0], chiave)) window.renderSupporto();
+    };
+    window.requisitiSupporto = function () {
+        const M = motore(); if (!M || window.supportoInContatto !== false) return null;
+        const e = window.supportoEsito;
+        if (!e || !e.tiroPerColpire) return null;
+        return M.requisitiDichiarati((window.combatTargets || []).slice(0, 1), ['lof', 'gittata']);
     };
     window.toggleContattoSupporto = function () {
         window.supportoInContatto = (window.supportoInContatto === false);
@@ -330,7 +370,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_supporto.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_supporto.js', versione: '2026-10-22.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
