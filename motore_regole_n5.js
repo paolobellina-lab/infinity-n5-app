@@ -1,4 +1,4 @@
-// @versione 2026-10-23.7 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-23.8 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-23.7';
+    M.VERSIONE = '2026-10-23.8';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -239,6 +239,7 @@
     // disturba per un avviso innocuo invece di nascondere una scelta.
     const AVVISI_NOTA = [
         'A13',   // gittata riallineata alla banda scelta
+        'A110',  // Idle di una truppa del Coordinato (requisito mancante): gia` scelto dal giocatore
         'A15',   // nota sullo stato del bersaglio (Bersagliato, in mischia...)
         'A20',   // burst forzato a 1 per regolamento
         'A30', 'A31', 'A32', 'A33',  // bande di gittata anomale nel database
@@ -594,7 +595,7 @@
             // altri agiscono normalmente (righe 11374-11376).
             const tuttiSenzaRequisito = bersagli.length > 0 && bersagli.every(function (b) { return b && b.requisitoMancante; });
             if (allocato === 0 && tuttiSenzaRequisito) {
-                avvisi.push(err('A101', `${nomeAtt || 'La truppa'}: requisito non soddisfatto (${bersagli[0].requisitoMancante}): esegue un Idle, non tira.`));
+                avvisi.push(err('A110', `${nomeAtt || 'La truppa'}: requisito non soddisfatto (${bersagli[0].requisitoMancante}): esegue un Idle, non tira.`));
             } else if (allocato === 0) {
                 errori.push(err('E20',
                     'Nessun dado assegnato ai bersagli.',

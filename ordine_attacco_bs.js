@@ -1,4 +1,4 @@
-// @versione 2026-10-23.3 | ordine_attacco_bs.js | proprieta`: chat MOTORE
+// @versione 2026-10-23.4 | ordine_attacco_bs.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎯 ATTACCO BS (TIRO A DISTANZA) - ordine_attacco_bs.js
 // ------------------------------------------
@@ -292,6 +292,26 @@
             const motivi = window.targetsScartati.map(t => `• ${t.nome}: ${t.motivo}`).join('\n');
             alert('❌ Nessun bersaglio valido per un Attacco BS.\n\n' + motivi);
             return window.goToStep('step-weapon');
+        }
+
+        // 23 ottobre (TEST, CO-01): nel Coordinato il bersaglio e` UNO gia`
+        // nella scelta, perche` l'allarme ARO parte alla conferma: prima il
+        // taglio avveniva dopo, e il reattivo vedeva nominato anche un
+        // bersaglio che poi non c'era. Il secondo tocco SOSTITUISCE il primo
+        // (con una Sagoma d'Impatto no: i secondari sono sotto l'area).
+        const tplSel = (armaSel && armaSel.isTemplate && M.regoleTemplate) ? (M.regoleTemplate(armaSel) || {}) : {};
+        window._bsUnicoBersaglio = !!window.coordMode && tplSel.tipo !== 'IMPATTO';
+        if (typeof window.toggleTargetSelection === 'function' && !window.toggleTargetSelection._unicoBS) {
+            const orig = window.toggleTargetSelection;
+            const avvolta = function (id) {
+                if (!window._bsUnicoBersaglio) return orig.apply(this, arguments);
+                const gia = (window.pendingTargets || []).some(function (t) { return String(t.id) === String(id); });
+                const t = (window.validTargets || []).find(function (u) { return String(u.id) === String(id); });
+                window.pendingTargets = gia ? [] : (t ? [t] : []);
+                if (window.renderTargetButtons) window.renderTargetButtons();
+            };
+            avvolta._unicoBS = true;
+            window.toggleTargetSelection = avvolta;
         }
 
         if (window.renderTargetButtons) window.renderTargetButtons();
@@ -813,7 +833,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-23.3', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-23.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
