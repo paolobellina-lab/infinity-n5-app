@@ -1,4 +1,4 @@
-// @versione 2026-10-23.1 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
+// @versione 2026-10-26.1 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
 // ==========================================
 // 👻 ATTACCO INTUITIVO (N5) - ordine_attacco_intuitivo.js
 // ------------------------------------------
@@ -96,7 +96,13 @@
                 // d'arma che passano da qui.
                 const nomeEsc = (p.nomeRichiesto || p.nome).replace(/'/g, "\\'");
                 // 9 ottobre: il bottone e` quello approvato da Paolo (M.bottoneArma).
-                container.innerHTML += M.bottoneArma(p, { attributi: `onclick="window.declareIntuitivoAttack('${nomeEsc}')"` });
+                // 26 ottobre: gli usi Disposable dentro il bottone (M.bottoneArma, opzione usi).
+                // A usi finiti il tocco spiega e non sceglie l'arma.
+                const usiP = M.usiResidui ? M.usiResidui(unita, p) : null;
+                const esaurita = !!(usiP && usiP.residui <= 0);
+                container.innerHTML += M.bottoneArma(p, { usi: usiP, attributi: esaurita
+                    ? `onclick="alert(window.MotoreN5.messaggioScarico(window.coordUnits[window.coordIndex], window.MotoreN5.profiloArma('${nomeEsc}')))"`
+                    : `onclick="window.declareIntuitivoAttack('${nomeEsc}')"` });
             });
         }
 
@@ -110,6 +116,9 @@
     };
 
     window.declareIntuitivoAttack = function (nomeArma) {
+        const M0 = window.MotoreN5, u0 = window.coordUnits && window.coordUnits[window.coordIndex];
+        const usi0 = (M0 && M0.usiResidui && u0) ? M0.usiResidui(u0, M0.profiloArma(nomeArma)) : null;
+        if (usi0 && usi0.residui <= 0) return alert('⛔ ' + M0.messaggioScarico(u0, M0.profiloArma(nomeArma)));
         window.currentOrder.weapon = nomeArma;
         window.setupTargetSelectionIntuitivo();
     };
@@ -363,7 +372,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-10-23.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-10-26.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

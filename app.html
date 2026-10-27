@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-23.2 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-26.1 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -592,7 +592,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-23.2', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-10-26.1', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -609,7 +609,11 @@
                 // System non avevano modo di farlo dall'app.
                 { id: 'SCENDI DALLA MOTO', nome: 'SCENDI DALLA MOTO', desc: 'Il pilota scende: la moto resta sul tavolo come Periferica.', type: 'MOVE' },
                 { id: 'RISALI SULLA MOTO', nome: 'RISALI SULLA MOTO', desc: 'Il pilota risale sulla sua moto (a contatto con lei).', type: 'MOVE' },
-                { id: 'RISALI SUL TAG', nome: 'RISALI SUL TAG', desc: 'Il pilota uscito con l\'Escape System risale sul suo TAG vuoto.', type: 'MOVE' }
+                // 26 ottobre (MOTORE 26.1, LOG-05): il pilota scende dal TAG
+                // anche senza Escape System. Chi puo` lo dice il motore
+                // (M.trasportoPossibile, via puoFareAzione).
+                { id: 'SCENDI DAL TAG', nome: 'SCENDI DAL TAG', desc: 'Il pilota scende dal TAG: il TAG resta sul tavolo vuoto.', type: 'MOVE' },
+                { id: 'RISALI SUL TAG', nome: 'RISALI SUL TAG', desc: 'Il pilota risale sul suo TAG vuoto (a contatto con lui).', type: 'MOVE' }
             ],
             brevi: [
                 { id: 'ATTACCO BS', nome: 'ATTACCO BS', desc: 'Attacco con arma a distanza.', type: 'WEAPON' },
@@ -1016,15 +1020,53 @@
         // ==========================================
 
         // 1. FUNZIONE ICONE STATI
-        window.generaIconeStati = (u) => {
+        // 26 ottobre (Paolo, MOTORE 26.1): OGNI ESERCITO HA LE SUE IMMAGINI.
+        // Icone degli stati e segnalini stanno in img/nomadi/ e
+        // img/panoceania/, con lo stesso nome della copia comune in img/. La
+        // fazione e` quella del PROPRIETARIO della truppa: accanto alle tue
+        // truppe le tue immagini, accanto a quelle dell'avversario le sue. Il
+        // percorso lo da` il motore (M.iconaDellaFazione); qui si sceglie solo
+        // l'ordine dei ripieghi: prima l'esercito, poi la copia comune in img/,
+        // poi la scritta o l'emoji di sempre. Cosi` Paolo puo` caricare un
+        // esercito alla volta senza perdere niente.
+        let avvisoIconeFazione = false;
+        window.imgDellaFazione = (percorso, fazione) => {
+            const M = window.MotoreN5;
+            if (!M || typeof M.iconaDellaFazione !== 'function') {
+                if (!avvisoIconeFazione) { console.error('\u26d4 M.iconaDellaFazione assente (serve motore_regole_n5.js dalla 2026-10-26.1): icone dalla cartella comune img/.'); avvisoIconeFazione = true; }
+                return percorso;
+            }
+            return M.iconaDellaFazione(percorso, fazione) || percorso;
+        };
+        // src e onerror di un'immagine con i suoi ripieghi. `ripieghi` e`
+        // l'elenco dei file da provare se il primo manca; `finale` e` l'HTML
+        // che prende il posto dell'immagine quando non ne resta nessuno
+        // (scritto con &quot;, perche` sta dentro l'attributo).
+        window.attributiImmagine = (src, ripieghi, finale) => {
+            const lista = (ripieghi || []).filter(x => x && x !== src);
+            const passo = lista.length
+                ? `var l=(this.dataset.rip||'').split('|').filter(Boolean);if(l.length){this.dataset.rip=l.slice(1).join('|');this.src=l[0];return;}`
+                : '';
+            return `src="${src}"${lista.length ? ` data-rip="${lista.join('|')}"` : ''} onerror="${passo}this.outerHTML='${finale}'"`;
+        };
+        // L'icona di uno stato: prima quella dell'esercito, poi la comune.
+        window.attributiIconaStato = (file, fazione, finale) => {
+            const comune = 'img/' + file + '.png';
+            return window.attributiImmagine(window.imgDellaFazione(comune, fazione), [comune], finale);
+        };
+
+        window.generaIconeStati = (u, fazione) => {
             if (!u) return "";
             let s = u.states || {};
             let isDead = u.state === 'DEAD';
             let icone = "";
+            // Senza fazione, quella di chi usa l'app: le sue truppe.
+            const f = (fazione === 'NOMADI' || fazione === 'PANOCEANIA') ? fazione : window.fazionePropria();
             
             // Icone più grandi (45px) e allineate. Corretto l'errore degli apici in onerror.
             const iconStyle = `style="width: 45px; height: 45px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(0,0,0,0.8)); margin-left: 5px; margin-bottom: 5px;"`;
-            const getOnErr = (emoji) => `onerror="this.outerHTML='<span style=&quot;font-size:30px; margin-left:5px;&quot;>${emoji}</span>'"`;
+            const emoji = (e) => `<span style=&quot;font-size:30px; margin-left:5px;&quot;>${e}</span>`;
+            const ic = (file, finale, extra) => `<img ${window.attributiIconaStato(file, f, finale)} ${extra || ''} ${iconStyle}>`;
 
             // Due stati distinti, due icone. Prima la condizione era
             // "immobilizedA || immobilizedB" e pescava icon_imma.png per
@@ -1032,13 +1074,13 @@
             // mancava — semplicemente non esisteva la riga che la cercava.
             // Il motore li tiene separati (Immobilizzato-A e -B) e anche il
             // tabellone dell'Hub ha due simboli diversi.
-            if(s.immobilizedA) icone += `<img src="img/icon_imma.png" ${iconStyle} ${getOnErr('🛑')}>`;
-            if(s.immobilizedB) icone += `<img src="img/icon_immb.png" ${iconStyle} ${getOnErr('⛓️')}>`;
-            if(s.isolated) icone += `<img src="img/icon_isolated.png" ${iconStyle} ${getOnErr('📵')}>`;
-            if(s.targeted) icone += `<img src="img/icon_targeted.png" ${iconStyle} ${getOnErr('🎯')}>`;
-            if(s.stunned) icone += `<img src="img/icon_stunned.png" ${iconStyle} ${getOnErr('😵')}>`;
-            if(s.suppressive) icone += `<img src="img/icon_suppressive.png" ${iconStyle} ${getOnErr('🔥')}>`;
-            if(s.camo) icone += `<img src="img/icon_camo.png" ${iconStyle} ${getOnErr('👻')}>`;
+            if(s.immobilizedA) icone += ic('icon_imma', emoji('🛑'));
+            if(s.immobilizedB) icone += ic('icon_immb', emoji('⛓️'));
+            if(s.isolated) icone += ic('icon_isolated', emoji('📵'));
+            if(s.targeted) icone += ic('icon_targeted', emoji('🎯'));
+            if(s.stunned) icone += ic('icon_stunned', emoji('😵'));
+            if(s.suppressive) icone += ic('icon_suppressive', emoji('🔥'));
+            if(s.camo) icone += ic('icon_camo', emoji('👻'));
             // Impersonation (6 ottobre): lo stato non sta in u.states ma in
             // deployState ('IMP_1'/'IMP_2'), quindi questa funzione non lo
             // vedeva e un Hacker in Cybermask appariva identico a prima. Il
@@ -1052,27 +1094,27 @@
                 const liv = (Mi && typeof Mi.livelloImpersonation === 'function') ? Mi.livelloImpersonation(u) : null;
                 if (liv) {
                     const scritta = `<span style=&quot;font-size:14px; font-weight:bold; color:#cc99ff; border:1px solid #cc99ff; border-radius:4px; padding:3px 5px; margin-left:5px;&quot;>IMP-${liv}</span>`;
-                    icone += `<img src="img/icon_imp${liv}.png" alt="IMP-${liv}" ${iconStyle} onerror="this.outerHTML='${scritta}'">`;
+                    icone += ic('icon_imp' + liv, scritta, `alt="IMP-${liv}"`);
                 }
             }
-            if(s.disconnected) icone += `<img src="img/icon_disconnected.png" ${iconStyle} ${getOnErr('🔌')}>`;
-            if(s.possessed) icone += `<img src="img/icon_possessed.png" ${iconStyle} ${getOnErr('👾')}>`;
-            if(s.sepsitorized) icone += `<img src="img/icon_sepsitorized.png" ${iconStyle} ${getOnErr('👽')}>`;
+            if(s.disconnected) icone += ic('icon_disconnected', emoji('🔌'));
+            if(s.possessed) icone += ic('icon_possessed', emoji('👾'));
+            if(s.sepsitorized) icone += ic('icon_sepsitorized', emoji('👽'));
             
-            if(s.engaged) icone += `<img src="img/icon_engaged.png" ${iconStyle} ${getOnErr('⚔️')}>`;
-            if(s.retreat) icone += `<img src="img/icon_retreat.png" ${iconStyle} ${getOnErr('🏳️')}>`;
-            if(s.foxhole) icone += `<img src="img/icon_foxhole.png" ${iconStyle} ${getOnErr('🕳️')}>`;
-            if(s.unconscious) icone += `<img src="img/icon_unc.png" ${iconStyle} ${getOnErr('💤')}>`;
+            if(s.engaged) icone += ic('icon_engaged', emoji('⚔️'));
+            if(s.retreat) icone += ic('icon_retreat', emoji('🏳️'));
+            if(s.foxhole) icone += ic('icon_foxhole', emoji('🕳️'));
+            if(s.unconscious) icone += ic('icon_unc', emoji('💤'));
             // 20 ottobre (Paolo, Escape System): il TAG vuoto resta sul tavolo
             // e non riceve Ordini ne` ARO. Finche` img/icon_tag_vuoto.png non
             // c'e`, la scritta TAG VUOTO. Prima la riga non lo diceva: si
             // leggeva solo "NON ATTIVABILE", senza il perche`.
             if (s.tagVuoto) {
                 const scrittaTV = `<span style=&quot;font-size:14px; font-weight:bold; color:#ccccff; border:1px solid #8888ff; border-radius:4px; padding:3px 5px; margin-left:5px;&quot;>TAG VUOTO</span>`;
-                icone += `<img src="img/icon_tag_vuoto.png" alt="TAG VUOTO" title="TAG vuoto: il pilota ha lasciato il TAG" ${iconStyle} onerror="this.outerHTML='${scrittaTV}'">`;
+                icone += ic('icon_tag_vuoto', scrittaTV, 'alt="TAG VUOTO" title="TAG vuoto: il pilota ha lasciato il TAG"');
             }
             
-            if(isDead) icone = `<img src="img/icon_dead.png" ${iconStyle} ${getOnErr('☠️')}>`;
+            if(isDead) icone = ic('icon_dead', emoji('☠️'));
             
             return icone;
         };
@@ -1160,6 +1202,21 @@
             return null;
         };
 
+        // La vista di una truppa in HoloMask per chi NON la possiede:
+        // nome, armi, abilita`, tipo e statistiche del Modello imitato
+        // (u.mostraCome, dal motore), e nessuna foto (la foto direbbe chi e`).
+        // Il soprannome resta, tranne se contiene il nome vero.
+        window.vistaMascherata = (u) => {
+            const mc = u && u.mostraCome;
+            if (!mc) return u;
+            const vero = String(u.nome || u.name || '').split('(')[0].trim().toUpperCase();
+            const v = Object.assign({}, u, { nome: mc.nome, name: mc.nome, weapon: mc.weapon || '', equip: mc.equip || '',
+                                             skills: mc.skills || '', tipo: mc.tipo || u.tipo, imgVariant: '0', mascherata: true });
+            ['cc', 'bs', 'ph', 'wip', 'arm', 'bts', 'w', 'str', 's', 'mov'].forEach(k => { if (mc[k] !== undefined) v[k] = mc[k]; });
+            if (vero && String(u.alias || '').toUpperCase().indexOf(vero) >= 0) v.alias = mc.nome;
+            return v;
+        };
+
         window.nomeInElenco = (u) => String((u && (u.nome || u.name)) || '').split('(')[0].trim();
 
         // La cartella delle foto di una fazione (vedi CARTELLA_FOTO in testa).
@@ -1171,8 +1228,20 @@
 
         // window.fotoUnita(u, fazione): fazione e` quella del giocatore che
         // ha schierato la pedina (NOMADI | PANOCEANIA); senza, la propria.
-        window.fotoUnita = (u, fazione) => {
-            if (!u) return '';
+        window.fotoUnita = (u, fazione) => window.fotoUnitaConRipieghi(u, fazione).src;
+
+        // La foto e i suoi ripieghi (26 ottobre): un segnalino o un Marker
+        // cercano prima l'immagine del LORO esercito, poi la copia comune in
+        // img/. Una foto di miniatura (imgVariant) un ripiego non ce l'ha: sta
+        // solo nella cartella di chi l'ha scelta.
+        window.fotoUnitaConRipieghi = (u, fazione) => {
+            const nessuna = { src: '', ripieghi: [] };
+            if (!u) return nessuna;
+            const f = (fazione === 'NOMADI' || fazione === 'PANOCEANIA') ? fazione : window.fazionePropria();
+            const conRipiego = (comune) => {
+                const mia = window.imgDellaFazione(comune, f);
+                return { src: mia, ripieghi: mia !== comune ? [comune] : [] };
+            };
             // 🔴 7 ottobre, il modello delle foto di Paolo: la foto e` quella
             // ASSEGNATA nello schieramento (roster_manager.js), cioe` il file
             // scritto in imgVariant. Prima il file si RICAVAVA dal nome
@@ -1187,14 +1256,18 @@
             // mostrava "DEP" nell'app.
             window.fotoInSequenza(u);
             const v = u.imgVariant;
-            if (typeof v === 'string' && /\.(png|jpe?g|webp)$/i.test(v)) return window.cartellaFoto(fazione) + v;
+            if (typeof v === 'string' && /\.(png|jpe?g|webp)$/i.test(v)) return { src: window.cartellaFoto(fazione) + v, ripieghi: [] };
             // Un segnalino senza foto assegnata ha la SUA immagine comune,
             // col nome stabile del database: img/<id>.png. Prima cadeva
             // nella regola del nome ("Mina_Shock_#1.png"), un file diverso
             // per ogni segnalino, che non poteva esistere.
+            // SCH-06 (26 ottobre): un Marker si guarda PRIMA del segnalino. Una
+            // mina schierata in CAMO e` un Marker: si vede il segnalino
+            // numerato (camo_N), non l'immagine della mina.
+            if (String(u.nome || u.name || '') === 'MARKER') return window.fotoMarker(u, f);
             if (u.deployable) {
                 const voce = window.voceDeployableDi(u);
-                if (voce) return 'img/' + voce.id + '.png';
+                if (voce) return conRipiego('img/' + voce.id + '.png');
             }
             // Senza foto assegnata non si indovina un file dal nome: torna
             // stringa vuota e la riga resta senza immagine.
@@ -1202,8 +1275,24 @@
             // 20 ottobre (Paolo): il segnalino NUMERATO, se il motore ne da`
             // l'immagine (img/camo_2.png...). Prima ogni Marker nemico aveva
             // lo stesso img/MARKER.png e non si distingueva dagli altri.
-            if (String(u.nome || u.name || '') === 'MARKER') return u.immagineMarker || 'img/MARKER.png';
-            return '';
+            return nessuna;
+        };
+
+        // Il segnalino di un Marker. immagineMarker lo manda il motore gia`
+        // nella cartella dell'esercito del proprietario (img/nomadi/camo_2.png);
+        // se manca si prova la copia comune (img/camo_2.png), poi il segnalino
+        // senza numero dell'esercito, poi quello comune.
+        window.fotoMarker = (u, f) => {
+            const generico = 'img/MARKER.png';
+            const genericoMio = window.imgDellaFazione(generico, f);
+            const im = u && u.immagineMarker;
+            const comuneDi = (p) => String(p || '').replace(/^img\/(nomadi|panoceania)\//, 'img/');
+            // Prima quello che manda il motore (gia` nella cartella del
+            // proprietario); poi lo stesso file nella cartella che sappiamo
+            // noi, se il motore e` di prima del 26 ottobre e manda img/camo_2.png.
+            const lista = im ? [im, window.imgDellaFazione(comuneDi(im), f), comuneDi(im), genericoMio, generico] : [genericoMio, generico];
+            const unici = lista.filter((x, i) => x && lista.indexOf(x) === i);
+            return { src: unici[0], ripieghi: unici.slice(1) };
         };
 
         // Il Gruppo di Combattimento di un'unita`. Un segnalino piazzato dal
@@ -1273,6 +1362,11 @@
             const f = (opz.fazione === 'NEMICA') ? window.fazioneNemica()
                     : (opz.fazione === 'NOMADI' || opz.fazione === 'PANOCEANIA') ? opz.fazione
                     : window.fazionePropria();
+            // 26 ottobre (MOTORE 26.1): una truppa dell'AVVERSARIO in HoloMask
+            // si mostra come il Modello imitato (mostraCome): nome, tipo e
+            // niente foto. I dati veri restano nell'oggetto per i calcoli;
+            // cambia solo cio` che si disegna.
+            if (u && u.mostraCome && f !== window.fazionePropria()) u = window.vistaMascherata(u);
             const c = window.COLORI_FAZIONE[f];
             const t = c.riga;
             const s = (u && u.states) || {};
@@ -1286,7 +1380,7 @@
             // dalla riga, che diceva solo la squadra. Ora porta il segno.
             if (s.fireteam) nome += ` <span class="segno-fireteam" style="color:#9ff; font-size:15px;">[ TEAM ${s.fireteam}${s.isFireteamLeader === true ? ' · ⭐ LEADER' : ''} ]</span>`;
             const alias = (u && u.alias && u.alias !== nomePuro) ? `<div class="rup-alias">"${u.alias}"</div>` : '';
-            const destra = (opz.destra !== undefined) ? opz.destra : window.generaIconeStati(u);
+            const destra = (opz.destra !== undefined) ? opz.destra : window.generaIconeStati(u, f);
             const attributi = `${opz.id ? `id="${opz.id}" ` : ''}data-fazione="${f}" data-scelta="${opz.scelta ? 'si' : 'no'}" oncontextmenu="return false;" ${opz.attributi || ''}`;
 
             if (!M || typeof M.formaBottone !== 'function') {
@@ -1301,14 +1395,14 @@
 
             // La foto e` un png senza sfondo: sta libera, intera, senza
             // cornice. Senza foto, la sigla del tipo, libera allo stesso posto.
-            const foto = window.fotoUnita(u, f);
+            const fr = window.fotoUnitaConRipieghi(u, f);
+            const foto = fr.src;
             const sigla = String((u && u.tipo) || '').slice(0, 3) || '?';
-            // 20 ottobre: se manca l'immagine numerata del segnalino
-            // (img/camo_2.png non ancora caricata) si ripiega sul segnalino
-            // comune, non sulla sigla "MAR": prima del numero c'era quello.
-            const ripiegoFoto = (u && u.immagineMarker && foto === u.immagineMarker) ? 'img/MARKER.png' : '';
+            // 20 ottobre: se manca l'immagine numerata del segnalino si
+            // ripiega sul segnalino comune, non sulla sigla "MAR". 26 ottobre:
+            // i ripieghi li elenca fotoUnitaConRipieghi (esercito, poi comune).
             const immagine = foto
-                ? `<img class="rup-foto" src="${foto}" alt="" onerror="${ripiegoFoto ? `if(!this.dataset.ripiego){this.dataset.ripiego='1';this.src='${ripiegoFoto}';return;}` : ''}this.outerHTML='<span class=&quot;rup-sigla&quot;>${sigla}</span>';">`
+                ? `<img class="rup-foto" ${window.attributiImmagine(foto, fr.ripieghi, `<span class=&quot;rup-sigla&quot;>${sigla}</span>`)} alt="">`
                 : `<span class="rup-sigla">${sigla}</span>`;
 
             const ombra = 'drop-shadow(0 6px 12px rgba(0,0,0,0.6))';
@@ -1399,6 +1493,29 @@
         };
 
         // 4. ROSTER ATTIVO (QUANDO CLICCHI UN GRUPPO)
+        // 26 ottobre: una replica (Decoy, Holoecho) esce dal tavolo. La regola
+        // e` del motore (M.togliReplica): con l'Holoecho, quando cade l'ultima
+        // copia, cade anche lo stato della truppa vera. Poi l'Hub lo sa.
+        window.togliReplicaDalTavolo = (id) => {
+            const M = window.MotoreN5;
+            if (!M || typeof M.togliReplica !== 'function') return alert('\u26d4 M.togliReplica assente: serve motore_regole_n5.js dalla 2026-10-26.1.');
+            const r = (window.roster || []).find(x => x && String(x.id) === String(id));
+            if (!r || !M.eReplica(r)) return;
+            if (!window.confirm('Togliere dal tavolo ' + M.nomeUnita(r) + (r.numeroReplica ? ' (' + r.numeroReplica + ')' : '') + '?\n\nUna replica esce se viene Scoperta, se un Attacco riuscito la colpisce (senza Tiro Salvezza) o se un nemico la tocca.')) return;
+            const e = M.togliReplica(window.roster, r.id);
+            let avvisato = false;
+            if (e.veraAggiornata) {
+                const vera = window.roster.find(x => x && x.id === e.veraAggiornata.id);
+                if (vera && typeof window.sostituisciUnita === 'function') avvisato = window.sostituisciUnita(vera, e.veraAggiornata, 'Holoecho caduto');
+            }
+            if (!avvisato && typeof window.inviaSchieramentoAllHub === 'function') {
+                window.inviaSchieramentoAllHub(window.fazionePropria(), { roster: window.roster, strutture: window.activeStructures || [],
+                    terreni: window.activeTerrains || [], motivo: 'AGGIORNAMENTO' });
+            } else if (!avvisato && typeof window.salvaPartitaLocale === 'function') window.salvaPartitaLocale();
+            window.aggiornaGraficaRoster();
+            alert('\ud83e\ude9e ' + (e.note || []).join('\n'));
+        };
+
         window.aggiornaGraficaRoster = () => {
             const container = document.getElementById('unit-buttons-container'); 
             if(!container) return;
@@ -1449,6 +1566,12 @@
                 let dopoNome = '';
                 const etichettaM = (MM && typeof MM.etichettaMarker === 'function') ? MM.etichettaMarker(u) : null;
                 if (etichettaM) dopoNome += ` <span class="etichetta-marker" style="color:#ffdd66; font-size:14px; font-weight:bold; border:1px solid #ffdd66; border-radius:4px; padding:1px 5px;">${etichettaM}</span>`;
+                // 26 ottobre (MOTORE 26.1): Decoy e Holoecho. Solo il
+                // proprietario sa chi e` la truppa vera: la riga lo dice, col
+                // numero che l'avversario vede sul segnalino.
+                const eReplica = !!(MM && typeof MM.eReplica === 'function' && MM.eReplica(u));
+                if (eReplica) dopoNome += ` <span class="etichetta-replica" style="color:#99ffff; font-size:14px; font-weight:bold; border:1px dashed #99ffff; border-radius:4px; padding:1px 5px;">\ud83e\ude9e REPLICA${u.numeroReplica ? ' ' + u.numeroReplica : ''}</span>`;
+                else if (u.gruppoRepliche && (u.states || {})[u.tipoRepliche === 'DECOY' ? 'decoy' : 'holoecho']) dopoNome += ` <span class="etichetta-replica" style="color:#99ffff; font-size:14px; font-weight:bold; border:1px solid #99ffff; border-radius:4px; padding:1px 5px;">\u2605 VERA${u.numeroReplica ? ' ' + u.numeroReplica : ''}</span>`;
                 // 20 ottobre (Paolo): la Punta di Lancia del Coordinato si
                 // riconosceva solo dal bordo azzurro. Ora ha la sua icona
                 // (img/icon_spearhead.png; senza file, la scritta).
@@ -1487,8 +1610,14 @@
                 // anche il lungo; al suo posto c'era un pulsante. Ora il
                 // gesto e` uno solo e vale sempre: il breve lo blocca
                 // finePressioneUnita, il lungo apre gli stati.
-                if (!ordinabile.ok) {
+                if (!ordinabile.ok && !eReplica) {
                     container.innerHTML += `<div style="color:#888; font-size:13px; margin:-6px 0 12px 4px;">Tieni premuto per modificarne gli stati${pedina ? ': esce dal tavolo passando a Morto' : ''}.</div>`;
+                }
+                // Una replica non riceve Ordini e non fa Tiri Salvezza: esce
+                // dal tavolo se la Scoprono, se un Attacco la colpisce o se un
+                // nemico la tocca. Lo decide chi la possiede, guardando il tavolo.
+                if (eReplica) {
+                    container.innerHTML += `<button type="button" class="btn-status togli-replica" style="margin:-4px 0 12px 0; border-color:#99ffff; color:#99ffff;" onclick="window.togliReplicaDalTavolo('${String(u.id).replace(/'/g, "\\'")}')">\ud83e\ude9e TOGLI LA REPLICA (Scoperta, colpita o toccata)</button>`;
                 }
 
                 // Un token sul tavolo si toglie quando esplode o viene

@@ -1,4 +1,6 @@
-// @versione 2026-09-23.1 | test_modulo_difesa.js | proprieta`: chat TEST
+// @versione 2026-10-26.1 | test_modulo_difesa.js | proprieta`: chat TEST
+// .1 (26 ott): sez. 3 girata (ordine_difesa 2026-10-26.1): il tasto «sto schivando una
+//    Sagoma» e` tolto, la funzione resta.
 // Test end-to-end del modulo Difesa — node test_modulo_difesa.js
 global.window = global;
 let passati = 0, falliti = 0;
@@ -73,7 +75,12 @@ window.avviaFaseDifesa('SCHIVATA', true);
 let h = nodo('targets-allocation-container').innerHTML;
 ok(h.includes('PH 10 →') && h.includes('10'), 'mostra base e valore finale');
 ok(h.includes('LINEA DI TIRO'), 'interruttore LoF presente');
-ok(h.includes('Sagoma'), 'interruttore "sto schivando una Sagoma" presente (era assente)');
+// 🔴 GIRATA IL 26 OTTOBRE (ordine_difesa 2026-10-26.1): il tasto "sto
+// schivando una Sagoma" e` TOLTO. All'Hub la Schivata si ricalcola contro
+// l'arma vera dell'ARO; qui dava solo una nota. Si pretende che non ci sia
+// ne` il testo ne` il gestore, e che la funzione resti per le buste vecchie.
+ok(!/STO SCHIVANDO UNA SAGOMA/i.test(h) && !/toggleDifesaSagoma/.test(h), 'il tasto "sto schivando una Sagoma" non c e piu` (tolto il 26 ottobre)');
+ok(typeof window.toggleDifesaSagoma === 'function', '  ma toggleDifesaSagoma resta, per le buste vecchie');
 window.toggleDifesaLoF(0, 'SCHIVATA');
 h = nodo('targets-allocation-container').innerHTML;
 ok(h.includes('-3'), 'togliendo la LoF compare il -3 nel dettaglio');

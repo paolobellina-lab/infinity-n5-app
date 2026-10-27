@@ -1,4 +1,6 @@
-// @versione 2026-10-20.1 | test_minelayer.js | proprieta`: chat TEST
+// @versione 2026-10-26.1 | test_minelayer.js | proprieta`: chat TEST
+// 2026-10-26.1: sezione 7 — il roster del piano (rev 42) ha 46 righe Nomadi; DEP-01
+//    nomina tredici truppe (nuovo il Gator Pilot #45, D-Charges).
 // 2026-10-20.1: sezione 7 — il roster del piano (rev 34) ha 41 righe Nomadi; DEP-01
 //    nomina dodici truppe (nuovo lo Switcher #40, Madtraps).
 // 2026-10-19.1: sezione 7 — DEP-01 del piano (rev 33) nomina chi del roster piazza, e cosa.
@@ -184,7 +186,7 @@ console.log('\n=== 7. DEP-01 del piano dice chi del roster piazza, e cosa (piano
             if (/^\*\*PanOceania\*\*/.test(t) || /^#{1,3}\s/.test(t)) { fz = null; return; }
             const m = t.match(/^\|\s*(\d+)\s*\|\s*(.+?)\s*\|/);
             if (fz && m) roster.push({ n: +m[1], nome: m[2].replace(/\*\*/g, '').replace(/`/g, '') }); });
-        ok(roster.length === 41, `premessa: il roster Nomadi del piano ha 41 righe (${roster.length})`);
+        ok(roster.length === 46, `premessa: il roster Nomadi del piano ha 46 righe (${roster.length})`);
         const chi = roster.map(r => ({ n: r.n, nome: r.nome, armi: nomiArmi(M.armiPiazzabili(pronto(r.nome))).map(a => a.split(' (')[0]) }))
                           .filter(r => r.armi.length);
         const dep = (testo.match(/\*\*DEP-01 — [\s\S]*?(?=\n\*\*DEP-02 —)/) || [''])[0];

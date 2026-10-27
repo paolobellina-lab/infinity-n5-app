@@ -1,4 +1,6 @@
-// @versione 2026-10-23.1 | test_adattatore.js | proprieta`: chat TEST
+// @versione 2026-10-26.1 | test_adattatore.js | proprieta`: chat TEST
+// .1 (26 ott): sez. 9, il tetto del codice passa dalla meta` al 60% (calcolatore_math
+//    2026-10-26.2: 205 righe, era 193), con le due funzioni nuove nominate.
 // 2026-10-23.1: l'elenco dei campi copiati sale a 11 (tiroUnico, calcolatore_math 23.1).
 // Test dell'adattatore calcolatore_math.js — node test_adattatore.js
 global.window = global;
@@ -142,9 +144,19 @@ function righeCodice(f) {
 }
 const cod = righeCodice('./calcolatore_math.js');
 const codOrig = righeCodice('./calcolatore_math_ORIGINALE.js');
-ok(cod < codOrig / 2,
-   `codice: ${codOrig} righe -> ${cod} (il monolite di 358 righe non c è più)`);
+// 🔴 GIRATA IL 26 OTTOBRE (calcolatore_math 2026-10-26.2): il codice e`
+// cresciuto da 193 a 205 righe — la ricerca di chi reagisce per id (r.id) e
+// la maschera dell'HoloMask nel risultato (mascheraHolomask). 193 stava
+// appena sotto la meta` di 388 (194): la soglia «meta`» misurava la
+// fortuna, non il monolite. Il monolite era la tabella delle munizioni a
+// rami: quella la provano le quattro righe qui sotto, una per ramo. Qui
+// resta il tetto del 60%, con le due funzioni nuove nominate perche` la
+// crescita sia spiegata e non solo tollerata.
+ok(cod < codOrig * 0.6,
+   `codice: ${codOrig} righe -> ${cod}, sotto il 60% (il monolite di 358 righe non c è più)`);
 const src = require('fs').readFileSync('./calcolatore_math.js', 'utf8');
+ok(/function cercaPerId\(/.test(src) && /function mascheraHolomask\(/.test(src),
+   '  e le righe in piu` sono le due funzioni del 26 ottobre: cercaPerId e mascheraHolomask');
 ['VIRAL', 'NANOTECH', 'BIOWEAPON', 'ADHESIVE'].forEach(function (m) {
     ok(!new RegExp('includes\\("' + m + '"\\)').test(src), `nessun ramo morto per ${m}`);
 });

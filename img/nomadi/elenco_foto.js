@@ -1,4 +1,4 @@
-// Generato da avvia_elenco_foto.html il 2026-10-15. Non modificare a mano: rigeneralo.
+// Generato da avvia_elenco_foto.html il 2026-10-26. Non modificare a mano: rigeneralo.
 // Le foto delle miniature presenti in questa cartella, una per file.
 window.FOTO_MINIATURE = [
   "Alguacil_1.png",
@@ -26,10 +26,6 @@ window.FOTO_MINIATURE = [
   "Interventor_2.png",
   "Intruder.png",
   "Jazz.png",
-  "Krazy_Koala_1.png",
-  "Krazy_Koala_2.png",
-  "Krazy_Koala_3.png",
-  "Krazy_Koala_4.png",
   "Kriza_Borac.png",
   "Mary_Problems.png",
   "Mobile_Brigada.png",

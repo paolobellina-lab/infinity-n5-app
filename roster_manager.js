@@ -1,4 +1,4 @@
-// @versione 2026-10-23.1 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-26.2 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -1161,8 +1161,34 @@ window.pannelloTiriSchieramento = () => {
         </div>`;
 };
 
+// 26 ottobre (Paolo, via MOTORE 26.1): i PILOTI DI LISTA di Gator,
+// Szalamandra e Gecko partono A BORDO del loro TAG: non si piazzano, restano
+// nel roster (stessi usi, stessi stati), l'avversario non li vede e non
+// ricevono Ordini. Lo stato (M.mettiABordo) e il TAG giusto (M.tagDelPilota:
+// il nome del pilota senza "Pilot", stesso Gruppo preferito, non occupato) li
+// da` il motore; qui si applicano soltanto.
+window.mettiABordoPilotiDiLista = () => {
+    const M = window.MotoreN5;
+    if (!M || typeof M.mettiABordo !== 'function' || typeof M.tagDelPilota !== 'function') {
+        console.error('\u26d4 M.mettiABordo o M.tagDelPilota assente (serve motore_regole_n5.js dalla 2026-10-26.2): i piloti di lista restano da schierare.');
+        return [];
+    }
+    const fatti = [];
+    (window.roster || []).forEach(p => {
+        if (!p || p.pilotaDiLista || p.deployable) return;
+        // Quale TAG lo dice il motore (M.tagDelPilota, dal 26.2): prima la
+        // ricerca stava qui, in roster_manager.
+        const tag = M.tagDelPilota(p, window.roster);
+        if (!tag) return;
+        Object.assign(p, M.mettiABordo(p, tag));
+        fatti.push({ pilota: p, tag: tag });
+    });
+    return fatti;
+};
+
 window.renderDeployUnits = () => {
     const container = document.getElementById('deploy-units-container');
+    window.mettiABordoPilotiDiLista();
     // Gli stati di schieramento si aprivano SOLO col tocco lungo: un gesto
     // che sul telefono si annulla appena la lista scorre di un pixel, e che
     // nessuno indovina. Ora ogni unita` ha il suo pulsante, e il tocco lungo
@@ -1210,6 +1236,18 @@ window.renderDeployUnits = () => {
         if(u.deployState === "HOLOMASK") stateLabel += `<br><span style='color:#cc00ff; font-size:14px;'>[ HOLOMASK ]</span>`;
 
         if(u.tipo === "HOLOECHO") stateLabel += `<br><span style='color:#00ffff; font-size:14px;'>[ OLO-ECO ]</span>`;
+        // 26 ottobre: piloti a bordo, repliche (Decoy, Holoecho) e HoloMask.
+        if (String(u.deployState || '').toUpperCase() === 'A_BORDO') {
+            const tag = (window.roster || []).find(t => t && t.id === u.aBordoDi);
+            stateLabel += `<br><span class='etichetta-a-bordo' style='color:#ccccff; font-size:14px;'>[ A BORDO ${tag ? 'DEL ' + String(tag.nome || tag.name || 'TAG').split('(')[0].trim().toUpperCase() : 'DEL TAG'}: NON SI SCHIERA ]</span>`;
+        }
+        const Mr = window.MotoreN5;
+        if (u.replica) stateLabel += `<br><span class='etichetta-replica' style='color:#99ffff; font-size:14px;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'COPIA OLOGRAFICA'} ${u.numeroReplica || ''} \u2014 REPLICA ]</span>`;
+        else if (u.gruppoRepliche) stateLabel += `<br><span class='etichetta-replica' style='color:#99ffff; font-size:14px;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'} ${u.numeroReplica || ''} \u2014 VERA ]</span>`;
+        if (u.states && u.states.holomask && Mr && typeof Mr.mostraComeHolomask === 'function') {
+            const mc = Mr.mostraComeHolomask(u);
+            stateLabel += `<br><span class='etichetta-holomask' style='color:#cc00ff; font-size:14px;'>[ HOLOMASK: SEMBRA ${mc ? String(mc.nome).toUpperCase() : '?'} ]</span>`;
+        }
 
         container.innerHTML += `
             <button class="huge-btn" style="background:#111; border:2px solid ${btnBorder}; padding:10px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; width:100%; max-height:120px; overflow:hidden;"
@@ -1424,15 +1462,16 @@ window.apriDeployStati = (index) => {
         html += `<button class="huge-btn" style="background:${st === 'SEED' ? '#004422' : '#222'}; border-color:${st === 'SEED' ? '#00ff66' : '#555'}; margin-top:10px;" onclick="window.setDeployState(${index}, 'SEED')">SEED-EMBRYO</button>`;
     }
 
-    // HOLOMASK
-    if (skills.includes('holomask')) {
-        html += `<button class="huge-btn" style="background:${st === 'HOLOMASK' ? '#220044' : '#222'}; border-color:${st === 'HOLOMASK' ? '#cc00ff' : '#555'}; margin-top:10px;" onclick="window.setDeployState(${index}, 'HOLOMASK')">HOLOMASK</button>`;
-    }
+    // HOLOMASK (26 ottobre, MOTORE 26.1): si sceglie il Modello da imitare
+    // fra quelli che il motore ammette (M.profiliImitabili: stessa fazione,
+    // stessa Silhouette). Chi ha HoloMask lo dice il motore (M.applicaHolomask
+    // rifiuta chi non ce l'ha); qui si guarda equip e skill per mostrare il
+    // tasto, perche` il profilo la scrive fra gli equipaggiamenti.
+    html += window.bottoniHolomask(index);
 
-    // OLO-ECO / DECOY 
-    if (skills.includes('holoprojector') || skills.includes('decoy') || skills.includes('ologramma')) {
-        html += `<button class="huge-btn" style="background:#004444; border-color:#00ffff; margin-top:10px;" onclick="window.generaOloEco(${index})">GENERA OLO-ECO / DECOY</button>`;
-    }
+    // DECOY / HOLOECHO (26 ottobre): le repliche le crea il motore
+    // (M.creaRepliche), identiche alla vera e numerate a caso.
+    html += window.bottoniRepliche(index);
     
     // HIDDEN DEPLOYMENT
     if (skills.includes('hidden deployment') || skills.includes('schieramento nascosto')) {
@@ -1476,7 +1515,148 @@ window.setDeployState = (index, state) => {
     window.renderDeployUnits();
 };
 
+// --- HoloMask ---------------------------------------------------------
+window.bottoniHolomask = (index) => {
+    const M = window.MotoreN5;
+    const u = (window.roster || [])[index];
+    if (!u || u.replica) return '';
+    if (!/\bholomask\b/i.test(String(u.skills || '') + ',' + String(u.equip || ''))) return '';
+    if (!M || typeof M.applicaHolomask !== 'function' || typeof M.profiliImitabili !== 'function') {
+        return `<p style="color:#ff6666;">\u26d4 HoloMask: serve motore_regole_n5.js dalla 2026-10-26.1.</p>`;
+    }
+    const mc = (typeof M.mostraComeHolomask === 'function') ? M.mostraComeHolomask(u) : null;
+    if (u.states && u.states.holomask) {
+        return `<div class="riquadro-holomask" style="margin-top:10px; padding:10px; border:1px solid #cc00ff; border-radius:6px; background:#1a0022;">
+            <div style="color:#e6aaff; font-size:15px;">\ud83c\udfad HOLOMASK: l'avversario vede <b>${mc ? mc.nome : '?'}</b>.</div>
+            <button class="huge-btn" style="background:#222; border-color:#cc00ff; margin-top:8px; min-height:50px;" onclick="window.apriSceltaHolomask(${index})">CAMBIA MODELLO IMITATO</button>
+            <button class="huge-btn" style="background:#222; border-color:#555; margin-top:8px; min-height:50px;" onclick="window.togliHolomask(${index})">TOGLI HOLOMASK</button>
+        </div>`;
+    }
+    return `<button class="huge-btn" style="background:#222; border-color:#cc00ff; margin-top:10px;" onclick="window.apriSceltaHolomask(${index})">HOLOMASK: SCEGLI IL MODELLO DA IMITARE</button>`;
+};
+// 26 ottobre (motore 26.2): la scelta in DUE passi, come dice la regola
+// ("declaring which weapon option it is duplicating", pag. 161): prima la
+// truppa, poi l'opzione d'arma. I gruppi li da` il motore
+// (M.profiliImitabiliRaggruppati); con una sola opzione il secondo passo si
+// salta. Prima l'elenco era piatto: 290 voci per un Bashi Bazouk.
+window.apriSceltaHolomask = (index) => {
+    const M = window.MotoreN5;
+    const u = (window.roster || [])[index];
+    if (!u || !M) return;
+    const box = document.getElementById('deploy-states-content');
+    if (!box) return;
+    if (typeof M.profiliImitabiliRaggruppati !== 'function') {
+        box.innerHTML = `<p style="color:#ff6666; text-align:center;">\u26d4 HoloMask: serve motore_regole_n5.js dalla 2026-10-26.2 (M.profiliImitabiliRaggruppati).</p>` +
+            `<button class="huge-btn" style="background:#222; border-color:#555; margin-top:12px;" onclick="window.apriDeployStati(${index})">INDIETRO</button>`;
+        return;
+    }
+    const gruppi = M.profiliImitabiliRaggruppati(u) || [];
+    window._gruppiHolomask = gruppi;
+    const righe = gruppi.map((g, k) => {
+        const una = g.varianti.length === 1;
+        const tocco = una ? `window.scegliHolomask(${index}, '${String(g.varianti[0].id).replace(/'/g, "\\'")}')` : `window.apriVariantiHolomask(${index}, ${k})`;
+        return `<button class="huge-btn scelta-holomask-unita" style="background:#1a0022; border-color:#cc00ff; margin-bottom:8px; min-height:55px;" onclick="${tocco}">${g.unita} <span style="color:#aaa; font-size:13px;">${una ? '' : '(' + g.varianti.length + ' opzioni d\'arma)'}</span></button>`;
+    }).join('');
+    box.innerHTML = `<p style="color:#e6aaff; text-align:center;">HOLOMASK \u2014 ${String(u.nome || '').split('(')[0].trim()}: chi deve vedere l'avversario?<br><span style="color:#aaa; font-size:13px;">Una truppa della tua fazione con la stessa Silhouette. Poi l'opzione d'arma.</span></p>` +
+        (righe || `<p style="color:#888; text-align:center;">Nessun Modello imitabile.</p>`) +
+        `<button class="huge-btn" style="background:#222; border-color:#555; margin-top:12px;" onclick="window.apriDeployStati(${index})">INDIETRO</button>`;
+};
+window.apriVariantiHolomask = (index, k) => {
+    const u = (window.roster || [])[index];
+    const g = (window._gruppiHolomask || [])[k];
+    const box = document.getElementById('deploy-states-content');
+    if (!u || !g || !box) return;
+    const righe = g.varianti.map(v => `<button class="huge-btn scelta-holomask" style="background:#1a0022; border-color:#cc00ff; margin-bottom:8px; min-height:55px;"
+            onclick="window.scegliHolomask(${index}, '${String(v.id).replace(/'/g, "\\'")}')">${v.nome}</button>`).join('');
+    box.innerHTML = `<p style="color:#e6aaff; text-align:center;">HOLOMASK \u2014 sembra <b>${g.unita}</b>: quale opzione d'arma?</p>` + righe +
+        `<button class="huge-btn" style="background:#222; border-color:#555; margin-top:12px;" onclick="window.apriSceltaHolomask(${index})">INDIETRO</button>`;
+};
+window.scegliHolomask = (index, idProfilo) => {
+    const M = window.MotoreN5;
+    const u = (window.roster || [])[index];
+    if (!u || !M) return;
+    const e = M.applicaHolomask(u, idProfilo);
+    if (!e.possibile) return alert('\u26d4 HoloMask: ' + (e.motivo || 'non applicabile.'));
+    window.sostituisciUnita(u, e.unitaAggiornata, 'HoloMask allo schieramento', { senzaInvio: true });
+    alert('\ud83c\udfad ' + (e.note || []).join('\n\n'));
+    window.apriDeployStati(index);
+    if (window.renderDeployUnits) window.renderDeployUnits();
+};
+window.togliHolomask = (index) => {
+    const u = (window.roster || [])[index];
+    if (!u) return;
+    const agg = Object.assign({}, u, { holomaskImita: null, states: Object.assign({}, u.states || {}, { holomask: false }) });
+    if (String(agg.deployState || '').toUpperCase() === 'HOLOMASK') agg.deployState = 'NORMAL';
+    window.sostituisciUnita(u, agg, 'HoloMask tolto allo schieramento', { senzaInvio: true });
+    window.apriDeployStati(index);
+    if (window.renderDeployUnits) window.renderDeployUnits();
+};
+
+// --- Decoy e Holoecho ---------------------------------------------------
+window.bottoniRepliche = (index) => {
+    const M = window.MotoreN5;
+    const u = (window.roster || [])[index];
+    if (!u || u.replica || u.deployable) return '';
+    if (!M || typeof M.puoReplicare !== 'function' || typeof M.creaRepliche !== 'function') {
+        return /holoprojector|decoy/i.test(String(u.skills || '') + ',' + String(u.equip || ''))
+            ? `<p style="color:#ff6666;">\u26d4 Decoy / Holoecho: serve motore_regole_n5.js dalla 2026-10-26.1.</p>` : '';
+    }
+    const gia = (typeof M.replicheDi === 'function') ? M.replicheDi(window.roster, u.id) : [];
+    if (gia.length) {
+        return `<div class="riquadro-repliche" style="margin-top:10px; padding:10px; border:1px solid #00ffff; border-radius:6px; background:#002222;">
+            <div style="color:#99ffff; font-size:15px;">\ud83e\ude9e ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'}: ${gia.length} replica/e schierate. Questa \u00e8 la VERA (numero ${u.numeroReplica || '?'}).</div>
+            <button class="huge-btn" style="background:#222; border-color:#555; margin-top:8px; min-height:50px;" onclick="window.togliRepliche(${index})">TOGLI LE REPLICHE</button>
+        </div>`;
+    }
+    let html = '';
+    ['HOLOECHO', 'DECOY'].forEach(tipo => {
+        const ok = M.puoReplicare(u, tipo);
+        if (!ok.puo) return;
+        const testo = tipo === 'DECOY' ? `DECOY: ${ok.n} BERSAGLI DECOY` : `HOLOECHO: ${ok.n} COPIE OLOGRAFICHE`;
+        html += `<button class="huge-btn bottone-repliche" style="background:#004444; border-color:#00ffff; margin-top:10px;" onclick="window.creaRepliche(${index}, '${tipo}')">${testo}</button>`;
+    });
+    return html;
+};
+window.creaRepliche = (index, tipo) => {
+    const M = window.MotoreN5;
+    const u = (window.roster || [])[index];
+    if (!u || !M) return;
+    const e = M.creaRepliche(u, tipo);
+    if (!e.possibile) return alert('\u26d4 ' + (e.motivo || 'Repliche non possibili.'));
+    // La vera si aggiorna sul posto (stesso oggetto), le repliche entrano nel
+    // roster subito dopo di lei. SENZA INVIO: siamo in schieramento.
+    window.sostituisciUnita(u, e.unitaAggiornata, tipo + ' allo schieramento', { senzaInvio: true });
+    const i = window.roster.indexOf(u);
+    window.roster.splice(i + 1, 0, ...e.repliche);
+    alert('\ud83e\ude9e ' + (e.note || []).join('\n\n'));
+    window.apriDeployStati(window.roster.indexOf(u));
+    if (window.renderDeployUnits) window.renderDeployUnits();
+};
+window.togliRepliche = (index) => {
+    const M = window.MotoreN5;
+    const u = (window.roster || [])[index];
+    if (!u || !M || typeof M.togliRepliche !== 'function') return;
+    M.togliRepliche(window.roster, u.id);
+    const flag = u.tipoRepliche === 'DECOY' ? 'decoy' : 'holoecho';
+    const agg = Object.assign({}, u, { gruppoRepliche: undefined, tipoRepliche: undefined, numeroReplica: undefined,
+                                       states: Object.assign({}, u.states || {}, { [flag]: false }) });
+    window.sostituisciUnita(u, agg, 'Repliche tolte allo schieramento', { senzaInvio: true });
+    window.apriDeployStati(window.roster.indexOf(u));
+    if (window.renderDeployUnits) window.renderDeployUnits();
+};
+
+// Il vecchio GENERA OLO-ECO (prima del 26 ottobre): copiava la truppa a mano
+// col tipo HOLOECHO. Ora passa dal motore; resta il nome per chi lo chiama.
 window.generaOloEco = (index) => {
+    const M = window.MotoreN5;
+    const u = (window.roster || [])[index];
+    if (M && u && typeof M.puoReplicare === 'function') {
+        const tipo = M.puoReplicare(u, 'HOLOECHO').puo ? 'HOLOECHO' : 'DECOY';
+        return window.creaRepliche(index, tipo);
+    }
+    return window.generaOloEcoVecchio(index);
+};
+window.generaOloEcoVecchio = (index) => {
     let genitore = window.roster[index];
     let num = prompt("Quanti Olo-Eco vuoi generare?\n(Inserisci 1 o 2)", "2");
     num = parseInt(num);
@@ -1543,6 +1723,13 @@ window.bottoniDeployables = (index) => {
     const M = window.MotoreN5;
     const u = window.roster[index];
     if (!u) return '';
+    // 26 ottobre (DEP-10, Paolo: "ne piazzava 3 e nessuna domanda"): chi ha
+    // MINELAYER piazza in schieramento dal percorso del motore
+    // (window.faseSchieramento.minelayer): il limite (1, o il numero fra
+    // parentesi) e le due domande dei requisiti. Il percorso qui sotto non li
+    // conosceva.
+    const ml = window.opzioniMinelayerDi(u);
+    if (ml && ml.ha) return window.bottoniMinelayer(index, ml);
     if (!M || typeof M.armiPiazzabili !== 'function' || typeof M.creaDeployable !== 'function') {
         return `<p style="color:#ff6666; text-align:center;">\u26d4 Motore assente: impossibile sapere cosa piazza questa truppa.</p>`;
     }
@@ -1567,6 +1754,64 @@ window.bottoniDeployables = (index) => {
     });
 
     return html;
+};
+
+// --- Minelayer ----------------------------------------------------------
+window.opzioniMinelayerDi = (u) => {
+    const F = window.faseSchieramento && window.faseSchieramento.minelayer;
+    if (!u || !F || typeof F.opzioni !== 'function') return null;
+    try { return F.opzioni(u.id); } catch (e) { window.ultimaEccezione = e; console.error('\u26d4 minelayer.opzioni ha sollevato:', e); return null; }
+};
+window.bottoniMinelayer = (index, ml) => {
+    const u = window.roster[index];
+    window._minelayerMostrati = window._minelayerMostrati || {};
+    window._minelayerMostrati[index] = ml.armi || [];
+    let html = `<div class="riquadro-minelayer" style="color:#ffcc66; font-size:15px; text-align:center; margin-bottom:8px;">\ud83d\udca3 MINELAYER: piazzati ${ml.usati} su ${ml.pezzi}${ml.restanti > 0 ? ` \u2014 ne resta${ml.restanti > 1 ? 'no' : ''} ${ml.restanti}` : ' \u2014 nessuno da piazzare'}</div>`;
+    (ml.armi || []).forEach((a, k) => {
+        const attivo = ml.restanti > 0 && a.disponibile;
+        const usi = (a.usiResidui != null) ? `<br><span style="font-size:12px; color:#aaa;">Usi residui: ${a.usiResidui}</span>` : '';
+        html += `<button class="huge-btn bottone-minelayer" style="background:#222; border-color:${attivo ? '#ffaa00' : '#444'}; color:${attivo ? '#fff' : '#666'}; margin-bottom:8px; min-height:60px;" ${attivo ? `onclick="window.piazzaConMinelayer(${index}, ${k})"` : 'disabled'}>${a.nome}${usi}</button>`;
+    });
+    if (!(ml.armi || []).length) html += `<p style="color:#888; text-align:center;">Nessuna arma da piazzare col Minelayer.</p>`;
+    return html;
+};
+window.piazzaConMinelayer = (index, k) => {
+    const u = window.roster[index];
+    const a = ((window._minelayerMostrati || {})[index] || [])[k];
+    const F = window.faseSchieramento && window.faseSchieramento.minelayer;
+    if (!u || !a || !F) return;
+    const op = window.opzioniMinelayerDi(u) || {};
+    const dom = op.domande || [];
+    // Le due domande dei requisiti (il tavolo lo vede il giocatore). Quella
+    // sull'area solo se l'arma ne ha una (E54: armi[i].chiedeArea).
+    const risposte = {};
+    if (a.chiedeArea) {
+        risposte.nemiciNellArea = window.confirm((dom[0] || 'Ci sono truppe nemiche o Marker Mimetici nell\'Area d\'Innesco?') + '\n\nOK = S\u00cc, ci sono   \u00b7   Annulla = NO');
+        if (risposte.nemiciNellArea) return alert('\u26d4 ' + a.nome + ' non si piazza: nell\'Area d\'Innesco non devono esserci nemici n\u00e9 Marker Mimetici.');
+    }
+    risposte.dentroZona = window.confirm((dom[1] || 'Il punto scelto \u00e8 dentro la tua Zona di Schieramento?') + '\n\nOK = S\u00cc   \u00b7   Annulla = NO');
+    if (!risposte.dentroZona) return alert('\u26d4 ' + a.nome + ' non si piazza: il punto deve stare dove il Minelayer pu\u00f2 schierarsi.');
+    const r = F.piazza(u.id, a.nome, risposte);
+    if (!r || !r.token) {
+        return alert('\u26d4 ' + (((r && r.errori) || []).map(x => x.messaggio).join('\n') || 'Piazzamento non riuscito.'));
+    }
+    // Il gettone del motore entra nel roster cosi` com'e`: si aggiungono i
+    // campi che la lista dello schieramento legge, come per il percorso di
+    // prima (schieraPiazzabile).
+    const g = r.token;
+    Object.assign(g, {
+        name: g.name || g.nome,
+        weapon: g.weapon || g.armi || '-',
+        combatGroup: g.combatGroup || (window.roster.find(x => x && x.id === u.id) || u).combatGroup,
+        imgVariant: g.imgVariant || '0',
+        deployState: g.deployState || (g.isCamo ? 'CAMO' : 'NORMAL'),
+        state: g.state || 'ACTIVE',
+        tipo: g.tipo || 'DEPLOYABLE'
+    });
+    alert('\u2705 ' + (g.nome || a.nome) + ' piazzato col Minelayer.' + ((r.avvisi || []).length ? '\n\n' + r.avvisi.map(x => x.messaggio || x).join('\n') : ''));
+    const i = window.roster.findIndex(x => x && x.id === u.id);
+    window.apriDeployStati(i);
+    if (window.renderDeployUnits) window.renderDeployUnits();
 };
 
 window.schieraPiazzabile = (index, k) => {
@@ -1697,7 +1942,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-10-23.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-10-26.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

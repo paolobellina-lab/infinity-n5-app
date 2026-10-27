@@ -1,4 +1,4 @@
-// @versione 2026-10-23.3 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-27.2 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -73,6 +73,33 @@
 //      (etichetta NASCOSTO, poi NORMAL e AGGIORNAMENTO), la Riserva no; i
 //      bersagli dell'ARO con la riga con la foto (anche nel Coordinato); il
 //      Leader del Fireteam sulla riga; niente scorrimento orizzontale.
+//  34a-f. I lavori del 26 ottobre (MOTORE 2026-10-26.1): SCENDI DAL TAG e i
+//      piloti di lista a bordo (Gator, Szalamandra, Gecko); icone degli stati
+//      e segnalini per esercito, con la copia comune come ripiego; SCH-06 (una
+//      mina in CAMO mostra il segnalino camo_N, app e Hub); HoloMask (app
+//      avversaria e Hub vedono il Modello imitato); Holoecho e Decoy
+//      (repliche, etichette VERA / REPLICA, TOGLI LA REPLICA, nota nell'ARO).
+//  35a-d. Minelayer allo schieramento (limite e domande), RICARICA forzata
+//      dall'Hub, usi residui nell'ARO, usiSpesi nel salvataggio (DIS-02).
+//      RISCRITTI il 26 ottobre (prima / dopo): in 7 e 26c le immagini erano
+//      img/icon_targeted.png e img/camo_N.png; ora sono quelle dell'esercito
+//      (img/nomadi/...), e la copia comune e` il primo ripiego.
+//  35a, 35b, 35c leggono armi e deployable da database_comune.js.
+//
+//      26 ottobre sera (motore 26.2), RISCRITTI: in 34e la scelta dell'HoloMask
+//      e` in due passi (truppa, poi opzione d'arma); in 35c gli usi stanno
+//      DENTRO il bottone dell'arma (M.bottoneArma), non in una riga sotto.
+//      27 ottobre, RISCRITTI col file database_comune.js: in 5 e 24 le immagini
+//      dei segnalini sono per esercito (img/nomadi/mina_shock.png,
+//      img/nomadi/crazykoala.png); in 24 i koala si piazzano col MINELAYER, uno
+//      per Taskmaster (prima schieraPiazzabile, senza limite), con la
+//      controprova che il secondo non passa.
+//
+//  36a-b. ARO (MOTORE 27.2-27.3): il nome grezzo dell'arma, con le notazioni
+//      ("Thunderbolt(+1B)"); col Total Reaction la scelta BURST PIENO / B1,
+//      r.burstPieno nella risposta e gli usi del Panzerfaust (+1B) contati sulla scelta.
+//
+//  SOLO=34a,35a node test_elenchi_e_tabellone.js  gira solo quelle sezioni.
 //
 //  NON PROVA: l'aspetto vero nel browser (altezze, colori, immagini che
 //  esistono o no). Il DOM qui e` finto: si guarda l'HTML prodotto.
@@ -94,7 +121,10 @@ if (!fs.existsSync(DIR + 'app.html')) {
     process.exit(1);
 }
 // Una sezione che cade non deve portarsi via le altre: conta come fallita.
+// SOLO=26,33 (o SOLO=3b): gira solo le sezioni con quel numero in testa.
+const SOLO = (process.env.SOLO || '').split(',').map(x => x.trim()).filter(Boolean);
 function sezione(titolo, fn) {
+    if (SOLO.length && !SOLO.some(n => titolo.indexOf(n + '.') === 0)) return;
     console.log('\n=== ' + titolo + ' ===');
     try { fn(); } catch (e) { falliti++; console.log('  ✗ la sezione e` caduta: ' + e.message + ' ' + ((e.stack || '').split('\n')[1] || '').trim()); }
 }
@@ -384,7 +414,10 @@ sezione('5. Un segnalino piazzato e` una pedina', () => {
     const tok = N.roster.find(u => u.deployable);
     ok(!!tok, 'il segnalino e` nel roster di chi l ha piazzato (' + (tok && tok.nome) + ')');
     ok(N.gruppoDi(tok) === 2, 'sta nel Gruppo di chi l ha piazzato (' + N.gruppoDi(tok) + ')');
-    ok(N.fotoUnita(tok) === 'img/mina_shock.png', 'ha la SUA immagine, col nome stabile del database (' + N.fotoUnita(tok) + ')');
+    // RISCRITTO il 27 ottobre (icone per esercito, MOTORE 26.1): prima
+    // img/mina_shock.png; ora la cartella dell'esercito, con la comune come ripiego.
+    ok(N.fotoUnita(tok) === 'img/nomadi/mina_shock.png' && J(N.fotoUnitaConRipieghi(tok).ripieghi) === J(['img/mina_shock.png']),
+       'ha la SUA immagine, col nome stabile del database, dalla cartella dell esercito (' + N.fotoUnita(tok) + ')');
     N.currentGroup = 2; N.aggiornaGraficaRoster();
     const h = T.nomadi.el('unit-buttons-container').innerHTML;
     const rigaTok = (h.match(/<button[^>]*riga-unita[\s\S]*?<\/button>/g) || []).find(r => /mina_shock\.png/.test(r)) || '';
@@ -441,7 +474,11 @@ sezione('7. Hub: icone degli stati, e il turno ripreso', () => {
     const T = creaTavolo(DIR); const H = T.hub.g;
     T.schiera([truppa(profilo(T, /^Intruder \(HMG/), { id: 'n1', alias: 'Spara', states: { targeted: true } })], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'PANOCEANIA');
     const riga = T.hub.el('status-nomads').innerHTML;
-    ok(/<img src="img\/icon_targeted\.png"/.test(riga), 'uno stato si mostra con la sua icona (' + ((riga.match(/<img src="[^"]*"/) || ['nessuna immagine'])[0]) + ')');
+    // RISCRITTO il 26 ottobre (MOTORE 26.1, icone per esercito): prima
+    // l'icona era img/icon_targeted.png; ora e` quella dell'esercito della
+    // truppa, con la comune come primo ripiego.
+    ok(/<img src="img\/nomadi\/icon_targeted\.png"/.test(riga) && /this\.src='img\/icon_targeted\.png'/.test(riga),
+       'uno stato si mostra con l icona del suo esercito, la comune come ripiego (' + ((riga.match(/<img src="[^"]*"/) || ['nessuna immagine'])[0]) + ')');
     ok(/onerror=/.test(riga) && /<span style="display:none;">[^<]*Targeted|<span style="display:none;">[^<]*BERSAGLIATO/i.test(riga), 'e se il file manca torna la scritta: lo stato non sparisce');
     ok(/mostraDettaglioStato\('targeted'/.test(riga), 'toccandola si apre ancora il dettaglio');
     ok(JSON.parse(T.server[H.MotoreN5.CANALI.STATO_PARTITA]).activeFaction === 'PANOCEANIA',
@@ -1218,18 +1255,27 @@ sezione('24. Le foto dei deployable: koala in sequenza, mine in ARO come i koala
         const T = creaTavolo(DIR); const N = T.nomadi.g;
         const task = truppa(profilo(T, /^Taskmaster \(Red Fury/), { id: 'n1', alias: 'Task' });
         const task2 = truppa(profilo(T, /^Taskmaster \(Red Fury/), { id: 'n2', alias: 'Task2' });
-        N.roster = [task, task2];
+        const task3 = truppa(profilo(T, /^Taskmaster \(Red Fury/), { id: 'n3', alias: 'Task3' });
+        N.roster = [task, task2, task3];
         // Dalla porta del giocatore: pagina di schieramento del Taskmaster,
-        // tasto del CrazyKoala (lo stesso che tocca Paolo), finche` ce n'e`.
-        const piazzaKoala = (i) => {
+        // tasto del CrazyKoala (lo stesso che tocca Paolo).
+        // RISCRITTO il 27 ottobre (DEP-10, MOTORE 26.1): il Taskmaster ha
+        // Minelayer, e il koala in schieramento si piazza col Minelayer, UNO
+        // per truppa (prima schieraPiazzabile, senza limite: se ne posavano 3
+        // da una truppa sola). Per tre koala servono tre Taskmaster. Le due
+        // domande: nell'area nessun nemico (NO), dentro la Zona (SI`).
+        N.confirm = (m) => !/nemiche|Marker Mimetici/i.test(String(m));
+        const piazzaKoala = (id) => {
+            const i = N.roster.findIndex(u => u.id === id);
             N.apriDeployStati(i);
             const h = T.nomadi.el('deploy-states-content').innerHTML;
-            const m = h.match(/window\.schieraPiazzabile\((\d+), (\d+)\)"[^>]*>\s*Crazy/i);
+            const m = h.match(/window\.piazzaConMinelayer\((\d+), (\d+)\)"[^>]*>\s*Crazy/i);
             if (!m) return false;
-            N.schieraPiazzabile(+m[1], +m[2]); return true;
+            N.piazzaConMinelayer(+m[1], +m[2]); return true;
         };
         let posati = 0;
-        for (let giro = 0; giro < 6 && posati < 3; giro++) { if (piazzaKoala(0)) posati++; else if (piazzaKoala(1)) posati++; else break; }
+        ['n1', 'n2'].forEach(id => { if (piazzaKoala(id)) posati++; });
+        ok(!piazzaKoala('n1'), 'CONTROPROVA: lo stesso Taskmaster non ne piazza un secondo (limite del Minelayer)');
         const koala = () => N.roster.filter(u => u.deployable && /koala/i.test(u.nome || ''));
         ok(koala().length >= 2, 'premessa: dallo schieramento ci sono almeno due CrazyKoala (' + koala().length + ')');
         const foto = koala().map(k => N.fotoUnita(k));
@@ -1239,7 +1285,7 @@ sezione('24. Le foto dei deployable: koala in sequenza, mine in ARO come i koala
         // Il primo esce dal tavolo (Morto): il prossimo prende la sua miniatura.
         koala()[0].state = 'DEAD';
         const prima = koala().length;
-        if (piazzaKoala(0) || piazzaKoala(1)) {
+        if (piazzaKoala('n3')) {
             const nuovo = koala()[koala().length - 1];
             ok(koala().length === prima + 1 && N.fotoUnita(nuovo) === 'img/nomadi/crazykoala_1.png',
                'koala 1 Morto: il nuovo prende la foto 1, rimasta libera (' + N.fotoUnita(nuovo) + ')');
@@ -1265,11 +1311,12 @@ sezione('24. Le foto dei deployable: koala in sequenza, mine in ARO come i koala
         const T = creaTavolo(DIR); const N = T.nomadi.g;
         const estraneo = { id: 'dep_crazykoala_9_1', deployable: true, chiaveArma: 'CrazyKoalas', nome: 'CrazyKoala #9', imgVariant: '0' };
         N.roster = [];
-        ok(N.fotoUnita(estraneo) === 'img/crazykoala.png' && estraneo.imgVariant === '0', 'CONTROPROVA: un koala fuori dal proprio roster resta con l immagine comune e non viene toccato');
+        // RISCRITTI il 27 ottobre (per esercito): prima img/crazykoala.png.
+        ok(N.fotoUnita(estraneo) === 'img/nomadi/crazykoala.png' && estraneo.imgVariant === '0', 'CONTROPROVA: un koala fuori dal proprio roster resta con l immagine comune e non viene toccato');
         // All'Hub arriva la vista pubblica, senza il campo deployable: il
         // segnalino si riconosce dall'id (prima: nessuna immagine, la sigla).
         const pubblico = { id: 'dep_crazykoala_9_1', nome: 'CrazyKoala #9', imgVariant: '0' };
-        ok(T.hub.g.fotoTruppaHub(pubblico, 'NOMADI') === 'img/crazykoala.png', 'Hub: un segnalino senza foto assegnata ha l immagine del suo tipo (' + T.hub.g.fotoTruppaHub(pubblico, 'NOMADI') + ')');
+        ok(T.hub.g.fotoTruppaHub(pubblico, 'NOMADI') === 'img/nomadi/crazykoala.png' && J(T.hub.g.fotoTruppaHubConRipieghi(pubblico, 'NOMADI').ripieghi) === J(['img/crazykoala.png']), 'Hub: un segnalino senza foto assegnata ha l immagine del suo tipo (' + T.hub.g.fotoTruppaHub(pubblico, 'NOMADI') + ')');
     }
 
     // --- Le mine in ARO: riga con l'immagine del tipo, pagina DETONAZIONE ---
@@ -1521,12 +1568,17 @@ sezione('26. I lavori del 20 ottobre (MOTORE): moto e TAG, TAG vuoto, Marker num
         ok(J(nemici.map(u => u.alias)) === J(['SEGNALINO MIMETICO 1', 'SEGNALINO MIMETICO 2', 'Terzo']),
            'l avversario riceve i numeri (' + J(nemici.map(u => u.alias)) + ')');
         const fP = nemici.slice(0, 2).map(u => P.fotoUnita(u, 'NOMADI'));
-        ok(J(fP) === J(['img/camo_1.png', 'img/camo_2.png']), 'nell app avversaria ogni segnalino ha la sua immagine (' + J(fP) + ')');
+        // RISCRITTI il 26 ottobre (MOTORE 26.1): i segnalini stanno nella
+        // cartella dell'esercito del PROPRIETARIO (img/nomadi/camo_1.png);
+        // prima erano in img/. La comune resta come ripiego.
+        ok(J(fP) === J(['img/nomadi/camo_1.png', 'img/nomadi/camo_2.png']), 'nell app avversaria ogni segnalino ha la sua immagine, dalla cartella dei Nomads (' + J(fP) + ')');
         const fH = (H.gameState.nomads || []).slice(0, 2).map(u => H.fotoTruppaHub(u, 'NOMADI'));
-        ok(J(fH) === J(['img/camo_1.png', 'img/camo_2.png']), 'all Hub lo stesso (' + J(fH) + ')');
+        ok(J(fH) === J(['img/nomadi/camo_1.png', 'img/nomadi/camo_2.png']), 'all Hub lo stesso (' + J(fH) + ')');
         const rigaNem = P.rigaUnitaConFoto(nemici[0], { fazione: 'NEMICA' });
-        ok(/src="img\/camo_1\.png"/.test(rigaNem) && /this\.src='img\/MARKER\.png'/.test(rigaNem), 'senza il file numerato la riga ripiega su img/MARKER.png, non sulla sigla');
-        ok(H.fotoTruppaHub({ nome: 'MARKER' }, 'NOMADI') === 'img/MARKER.png', 'CONTROPROVA: un Marker senza numero (oltre le 10 immagini) resta img/MARKER.png');
+        ok(/src="img\/nomadi\/camo_1\.png"/.test(rigaNem) && /data-rip="img\/camo_1\.png\|img\/nomadi\/MARKER\.png\|img\/MARKER\.png"/.test(rigaNem),
+           'senza il file numerato la riga ripiega sulla copia comune, poi sul MARKER dell esercito, poi su img/MARKER.png: mai la sigla');
+        ok(H.fotoTruppaHub({ nome: 'MARKER' }, 'NOMADI') === 'img/nomadi/MARKER.png' && J(H.fotoTruppaHubConRipieghi({ nome: 'MARKER' }, 'NOMADI').ripieghi) === J(['img/MARKER.png']),
+           'CONTROPROVA: un Marker senza numero (oltre le 10 immagini) e` il MARKER dell esercito, poi img/MARKER.png');
     }
     {
         // 20 ottobre sera (MOTORE 20.2, Paolo): ogni segnalino ha la SUA serie.
@@ -1544,7 +1596,7 @@ sezione('26. I lavori del 20 ottobre (MOTORE): moto e TAG, TAG vuoto, Marker num
         T.schiera(N.roster, [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
         const fP = P.MotoreN5.rosterNemico().map(u => P.fotoUnita(u, 'NOMADI'));
         const fH = (H.gameState.nomads || []).map(u => H.fotoTruppaHub(u, 'NOMADI'));
-        const attese = ['img/camo_1.png', 'img/camo-3_1.png', 'img/camo_2.png', 'img/camo-3_2.png'];
+        const attese = ['img/nomadi/camo_1.png', 'img/nomadi/camo-3_1.png', 'img/nomadi/camo_2.png', 'img/nomadi/camo-3_2.png'];   // 26 ottobre: per esercito
         ok(J(fP) === J(attese) && J(fH) === J(attese), 'avversario e Hub: le immagini della serie giusta (' + J(fP) + ' | ' + J(fH) + ')');
     }
     // --- 26d. Punta di Lancia: l'icona sulla riga ----------------------------
@@ -1799,6 +1851,323 @@ sezione('33. Dal collaudo di Paolo, 23 ottobre (MOTORE): Hidden in ARO, bersagli
     const regola = (sel) => ((css.match(new RegExp(sel.replace(/[.]/g, '\\.') + '\\s*\\{([^}]*)\\}')) || [])[1] || '');
     ok(/overflow-x:\s*hidden/.test(regola('.grid-buttons')), '.grid-buttons ha overflow-x:hidden (con overflow-y:auto l asse x diventava auto)', regola('.grid-buttons'));
     ok(/right:0;/.test(regola('.riga-unita-foto .rup-icone')) && !/right:-/.test(regola('.riga-unita-foto .rup-icone')), 'le icone di stato non sporgono a destra (right:0, prima -2px)', regola('.riga-unita-foto .rup-icone'));
+});
+
+// 34: i lavori del 26 ottobre (MOTORE 2026-10-26.1 e .2), una sezione per lavoro.
+const menuIds34 = (h) => (String(h).match(/selectAction\('[^']+', false\)/g) || []).map(x => x.match(/'([^']+)'/)[1]);
+sezione('34a. SCENDI DAL TAG nel menu, accanto a RISALI SUL TAG', () => {
+    const menuIds = menuIds34;
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g;
+        const mov = ((N.dbAzioniN5 || {}).movimento || []).map(a => a.id);
+        const iS = mov.indexOf('SCENDI DAL TAG'), iR = mov.indexOf('RISALI SUL TAG');
+        ok(iS >= 0 && iR > iS, 'dbAzioniN5.movimento ha SCENDI DAL TAG, subito prima di RISALI SUL TAG (' + J(mov.filter(x => /TAG|MOTO/.test(x))) + ')');
+    }
+});
+sezione('34b. Piloti di lista: a bordo, invisibili, poi SCENDI DAL TAG', () => {
+    const menuIds = menuIds34;
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+        const gator = truppa(profilo(T, /^Gator \(TAG\)/), { id: 'n1', alias: 'Gator' });
+        const pil = truppa(profilo(T, /^Gator Pilot/), { id: 'n2', alias: 'Pilota' });
+        const altro = truppa(profilo(T, /^Gator Pilot/), { id: 'n3', alias: 'Secondo' });
+        const fante = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n4', alias: 'Fante' });
+        N.roster = [gator, pil, altro, fante];
+        const fatti = N.mettiABordoPilotiDiLista();
+        const p2 = N.roster.find(u => u.id === 'n2'), p3 = N.roster.find(u => u.id === 'n3'), f4 = N.roster.find(u => u.id === 'n4');
+        ok(p2.deployState === 'A_BORDO' && p2.aBordoDi === 'n1' && p2.pilotaDiLista === true, 'il Gator Pilot sale sul Gator: A_BORDO, aBordoDi = id del TAG (' + p2.deployState + ', ' + p2.aBordoDi + ')');
+        ok(p3.deployState === 'NORMAL' && !p3.aBordoDi, 'CONTROPROVA: un secondo Gator Pilot non trova posto (il Gator e` occupato) e resta da schierare');
+        ok(f4.deployState === 'NORMAL' && !f4.aBordoDi, 'CONTROPROVA: un Alguacil non e` un pilota di lista');
+        ok(fatti.length === 1, 'una sola salita (' + fatti.length + ')');
+        N.mettiABordoPilotiDiLista();
+        ok(N.roster.filter(u => u.deployState === 'A_BORDO').length === 1, 'una seconda chiamata non cambia niente (il pilota gia` a bordo resta com e`)');
+        N.deployGroup = 1; N.renderDeployUnits();
+        const lista = testo(T.nomadi.el('deploy-units-container').innerHTML);
+        ok(/A BORDO DEL GATOR: NON SI SCHIERA/.test(lista), 'nella lista dello schieramento: «[ A BORDO DEL GATOR: NON SI SCHIERA ]»');
+        N.roster = N.roster.filter(u => u.id !== 'n3');
+        T.schiera(N.roster, [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        ok(!P.MotoreN5.rosterNemico().some(u => u.id === 'n2'), 'l avversario non vede il pilota a bordo');
+        ok(!(H.gameState.nomads || []).some(u => u.id === 'n2'), 'e nemmeno l Hub');
+        const m = menuIds(T.apriMenu(T.nomadi, N.roster.findIndex(u => u.id === 'n1')));
+        ok(m.indexOf('SCENDI DAL TAG') >= 0 && m.indexOf('RISALI SUL TAG') < 0, 'il menu del Gator col pilota a bordo offre SCENDI DAL TAG (' + J(m.filter(x => /TAG/.test(x))) + ')');
+        const mF = menuIds(T.apriMenu(T.nomadi, N.roster.findIndex(u => u.id === 'n4')));
+        ok(mF.indexOf('SCENDI DAL TAG') < 0, 'CONTROPROVA: l Alguacil no');
+        T.apriMenu(T.nomadi, N.roster.findIndex(u => u.id === 'n1')); N.selectAction('SCENDI DAL TAG', false); T.giro();
+        const tag = N.roster.find(u => u.id === 'n1'), sceso = N.roster.find(u => u.id === 'n2');
+        ok(tag && tag.states && tag.states.tagVuoto && sceso && sceso.deployState === 'NORMAL', 'sceso: il TAG e` vuoto, il pilota (lo STESSO, n2) e` sul tavolo (' + (sceso && sceso.deployState) + ')');
+        ok(N.roster.filter(u => /Pilot/.test(u.nome)).length === 1, 'e non nasce un secondo pilota');
+        ok((H.gameState.nomads || []).some(u => u.id === 'n2'), 'l Hub ora lo vede');
+    }
+});
+sezione('34c. Icone degli stati per esercito, con la comune come ripiego', () => {
+    const menuIds = menuIds34;
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, H = T.hub.g;
+        const u = { states: { targeted: true } };
+        const iN = N.generaIconeStati(u, 'NOMADI'), iP = N.generaIconeStati(u, 'PANOCEANIA');
+        ok(/src="img\/nomadi\/icon_targeted\.png" data-rip="img\/icon_targeted\.png"/.test(iN), 'app: la truppa nomade ha img/nomadi/icon_targeted.png, ripiego img/icon_targeted.png');
+        ok(/src="img\/panoceania\/icon_targeted\.png"/.test(iP), 'CONTROPROVA: quella di PanOceania la cartella di PanOceania');
+        ok(/onerror="var l=\(this\.dataset\.rip/.test(iN) && /this\.outerHTML='<span/.test(iN), 'manca anche la comune: torna l emoji di sempre');
+        T.schiera([truppa(profilo(T, /^Intruder \(HMG/), { id: 'n1', alias: 'Spara', states: { targeted: true } })], [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno', states: { targeted: true } })], 'NOMADI');
+        const rN = String(T.hub.el('status-nomads').innerHTML), rP = String(T.hub.el('status-pano').innerHTML);
+        ok(/src="img\/nomadi\/icon_targeted\.png"/.test(rN) && /this\.src='img\/icon_targeted\.png'/.test(rN), 'Hub: le icone dei Nomads dalla loro cartella, con la comune come ripiego');
+        ok(/src="img\/panoceania\/icon_targeted\.png"/.test(rP), 'Hub: quelle di PanOceania dalla loro');
+    }
+});
+sezione('34d. SCH-06: una mina in CAMO e` un Marker, non la mina', () => {
+    const menuIds = menuIds34;
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, H = T.hub.g;
+        const mina = { id: 'dep_mina_shock_1_123', nome: 'MARKER', deployable: true, modelId: 'mina_shock', immagineMarker: 'img/nomadi/camo_1.png' };
+        const fH = H.fotoTruppaHubConRipieghi(mina, 'NOMADI'), fA = N.fotoUnitaConRipieghi(mina, 'NOMADI');
+        ok(fH.src === 'img/nomadi/camo_1.png', 'Hub: il segnalino numerato del CAMO, non l immagine della mina (' + fH.src + ')');
+        ok(fA.src === 'img/nomadi/camo_1.png', 'app: lo stesso (' + fA.src + ')');
+        ok(J(fH.ripieghi) === J(['img/camo_1.png', 'img/nomadi/MARKER.png', 'img/MARKER.png']) && J(fA.ripieghi) === J(fH.ripieghi),
+           'i ripieghi: la comune, poi il Marker senza numero dell esercito, poi il comune (' + J(fH.ripieghi) + ')');
+        const vecchio = H.fotoTruppaHubConRipieghi({ id: 'x', nome: 'MARKER', immagineMarker: 'img/camo_2.png' }, 'PANOCEANIA');
+        ok(vecchio.src === 'img/camo_2.png' && vecchio.ripieghi[0] === 'img/panoceania/camo_2.png', 'un motore di prima (img/camo_2.png) funziona ancora, e prova anche la cartella dell esercito (' + J(vecchio) + ')');
+        const scoperta = Object.assign({}, mina, { nome: 'Shock Mine', immagineMarker: undefined });
+        ok(H.fotoTruppaHub(scoperta, 'NOMADI') === 'img/nomadi/mina_shock.png', 'CONTROPROVA: la stessa mina scoperta mostra la sua immagine, dalla cartella dell esercito (' + H.fotoTruppaHub(scoperta, 'NOMADI') + ')');
+    }
+});
+sezione('34e. HoloMask: l avversario e l Hub vedono il Modello imitato', () => {
+    const menuIds = menuIds34;
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+        const bashi = truppa(profilo(T, /^Bashi Bazouk/), { id: 'n1', alias: 'Bashi Bazouk 1' });
+        N.roster = [bashi];
+        const imitabili = N.MotoreN5.profiliImitabili(bashi);
+        ok(imitabili.length > 0, 'premessa: il motore da` i Modelli imitabili (' + imitabili.length + ')');
+        N.apriDeployStati(0);
+        ok(/HOLOMASK: SCEGLI IL MODELLO DA IMITARE/.test(T.nomadi.el('deploy-states-content').innerHTML), 'pagina degli stati: il tasto HOLOMASK');
+        // RISCRITTO il 26 ottobre sera (motore 26.2): prima un bottone per
+        // ogni profilo imitabile (290 per un Bashi Bazouk); ora due passi,
+        // la truppa (M.profiliImitabiliRaggruppati) e poi l'opzione d'arma.
+        const gruppi = N.MotoreN5.profiliImitabiliRaggruppati(bashi);
+        N.apriSceltaHolomask(0);
+        const pag1 = String(T.nomadi.el('deploy-states-content').innerHTML);
+        const scelte = (pag1.match(/class="huge-btn scelta-holomask-unita"/g) || []).length;
+        ok(scelte === gruppi.length && gruppi.length < imitabili.length, 'primo passo: un bottone per TRUPPA (' + scelte + ' truppe, non ' + imitabili.length + ' profili)');
+        ok(!/class="huge-btn scelta-holomask"/.test(pag1), 'e nessuna opzione d arma, ancora');
+        const k = gruppi.findIndex(g => g.varianti.length > 1);
+        ok(k >= 0 && new RegExp('apriVariantiHolomask\\(0, ' + k + '\\)').test(pag1), 'una truppa con piu` opzioni porta al secondo passo');
+        const k1 = gruppi.findIndex(g => g.varianti.length === 1);
+        if (k1 >= 0) ok(pag1.indexOf("window.scegliHolomask(0, '" + gruppi[k1].varianti[0].id + "')") >= 0, 'CONTROPROVA: una truppa con una sola opzione si sceglie subito (' + gruppi[k1].unita + ')');
+        N.apriVariantiHolomask(0, k);
+        const pag2 = String(T.nomadi.el('deploy-states-content').innerHTML);
+        ok((pag2.match(/class="huge-btn scelta-holomask"/g) || []).length === gruppi[k].varianti.length && /apriSceltaHolomask\(0\)/.test(pag2),
+           'secondo passo: le opzioni d arma di ' + gruppi[k].unita + ' (' + gruppi[k].varianti.length + '), e INDIETRO alla scelta della truppa');
+        const im = Object.assign({}, gruppi[k].varianti[0]);
+        N.scegliHolomask(0, im.id);
+        ok(N.roster[0].states.holomask === true && N.roster[0].holomaskImita === im.id, 'scelto: holomask attivo, holomaskImita = ' + im.id);
+        ok(/HOLOMASK: l'avversario vede/.test(T.nomadi.el('deploy-states-content').innerHTML), 'la pagina dice chi vede l avversario');
+        T.schiera(N.roster, [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        const nem = P.MotoreN5.rosterNemico().find(u => u.id === 'n1');
+        ok(nem && nem.mostraCome && nem.mostraCome.nome === im.nome, 'premessa: l avversario riceve mostraCome (' + (nem && nem.mostraCome && nem.mostraCome.nome) + ')');
+        const rigaP = testo(P.rigaUnitaConFoto(nem, { fazione: 'NEMICA' }));
+        const vero = 'Bashi Bazouk', finto = String(im.nome).split('(')[0].trim();
+        ok(rigaP.indexOf(finto) >= 0 && rigaP.indexOf(vero) < 0, 'app avversaria: la riga dice ' + finto + ', non ' + vero + ' (' + rigaP.slice(0, 80) + ')');
+        const hB = (H.gameState.nomads || []).find(u => u.id === 'n1');
+        const scheda = testo(H.schedaTruppa(hB, 'NOMADI'));
+        ok(scheda.indexOf(finto) >= 0 && scheda.indexOf(vero) < 0, 'Hub: la scheda dice ' + finto + ', non ' + vero);
+        ok(!/HOLOMASK/i.test(scheda), 'e l Hub non scrive lo stato HOLOMASK (direbbe la maschera)');
+        const rigaN = testo(N.rigaUnitaConFoto(N.roster[0], {}));
+        ok(rigaN.indexOf(vero) >= 0, 'CONTROPROVA: nella propria app la truppa resta ' + vero);
+        N.apriDeployStati(0); N.togliHolomask(0);
+        ok(!N.roster[0].states.holomask && !N.roster[0].holomaskImita, 'TOGLI HOLOMASK: torna la truppa vera');
+    }
+});
+sezione('34f. Holoecho e Decoy: repliche, etichette, togli, nota in ARO', () => {
+    const menuIds = menuIds34;
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+        const vera = truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Eco' });
+        vera.equip = String(vera.equip || '') + ', Holoprojector';
+        P.roster = [vera];
+        P.apriDeployStati(0);
+        const pag = String(T.pano.el('deploy-states-content').innerHTML);
+        ok(/HOLOECHO: 2 COPIE OLOGRAFICHE/.test(pag) && !/DECOY:/.test(pag), 'pagina degli stati: HOLOECHO (2 copie), niente DECOY senza Decoy');
+        P.creaRepliche(0, 'HOLOECHO');
+        const rep = P.roster.filter(u => u.replica);
+        ok(P.roster.length === 3 && rep.length === 2 && rep.every(r => r.replicaDi === 'p1'), 'create: la vera e due repliche, subito dopo di lei (' + P.roster.map(u => u.replica ? 'R' : 'V').join('') + ')');
+        ok(P.roster[0].states.holoecho === true && /HOLOECHO: 2 replica/.test(T.pano.el('deploy-states-content').innerHTML), 'la vera ha holoecho, e la pagina dice quante repliche ci sono');
+        T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Spara' })], P.roster, 'PANOCEANIA');
+        P.currentGroup = 1; P.isCoordinated = false; P.selectedCoordinatedUnits = []; P.aggiornaGraficaRoster();
+        const righe = String(T.pano.el('unit-buttons-container').innerHTML);
+        ok((righe.match(/🪞 REPLICA \d/g) || []).length === 2 && /★ VERA \d/.test(righe), 'nella propria app: «★ VERA n» e due «🪞 REPLICA n»');
+        ok((righe.match(/class="btn-status togli-replica"/g) || []).length === 2, 'e il tasto TOGLI LA REPLICA solo sulle repliche (2)');
+        const nem = N.MotoreN5.rosterNemico();
+        const rigaN = nem.map(u => testo(N.rigaUnitaConFoto(u, { fazione: 'NEMICA' }))).join(' | ');
+        ok(nem.length === 3 && !/REPLICA|VERA/.test(rigaN), 'l avversario vede tre truppe uguali, senza etichette (' + nem.length + ')');
+        // l ARO del proprietario: un attacco sulla replica
+        const r0 = P.roster.find(u => u.replica);
+        const pubblica = nem.find(u => u.id === r0.id) || {};
+        P.currentAttackData = { azione: 'BS_ATTACK', bersagli: [N.MotoreN5.nomeUnita(pubblica)] };
+        P.apriSelezioneAro();
+        ok(/class="nota-replica-bersaglio"/.test(T.pano.el('aro-selection-list').innerHTML), 'ARO del proprietario: la nota «E` una REPLICA» quando l attacco la prende');
+        P.currentAttackData = { azione: 'BS_ATTACK', bersagli: ['Spara'] };
+        P.apriSelezioneAro();
+        ok(!/nota-replica-bersaglio/.test(T.pano.el('aro-selection-list').innerHTML), 'CONTROPROVA: un attacco su altri, nessuna nota');
+        // togli le repliche una a una: con l ultima cade l Holoecho della vera
+        P.togliReplicaDalTavolo(r0.id); T.giro();
+        ok(P.roster.length === 2 && P.roster.find(u => u.id === 'p1').states.holoecho === true, 'tolta una replica: la vera resta in Holoecho');
+        ok((H.gameState.panoceania || []).length === 2, 'e l Hub lo sa (' + (H.gameState.panoceania || []).length + ' truppe)');
+        P.togliReplicaDalTavolo(P.roster.find(u => u.replica).id); T.giro();
+        ok(P.roster.length === 1 && P.roster[0].states.holoecho === false, 'tolta l ultima: cade anche l Holoecho della vera (pag. 160)');
+        ok((H.gameState.panoceania || []).length === 1, 'e l Hub vede una truppa sola');
+        // Decoy (1): una replica sola
+        const T2 = creaTavolo(DIR); const P2 = T2.pano.g;
+        const knauf = truppa(T2.profilo(T2.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'K' });
+        knauf.skills = String(knauf.skills || '') + ', Decoy (1)';
+        P2.roster = [knauf]; P2.apriDeployStati(0);
+        ok(/DECOY: 1 BERSAGLI DECOY/.test(T2.pano.el('deploy-states-content').innerHTML), 'Decoy (1): il tasto dice un bersaglio');
+        P2.creaRepliche(0, 'DECOY');
+        ok(P2.roster.length === 2 && P2.roster[0].states.decoy === true, 'una replica sola, e la vera ha decoy');
+        P2.togliRepliche(0);
+        ok(P2.roster.length === 1 && !P2.roster[0].states.decoy, 'TOGLI LE REPLICHE allo schieramento: tornano via tutte');
+    }
+});
+
+// 35: i lavori del 26 ottobre (MOTORE 2026-10-26.1), una sezione per lavoro.
+sezione('35a. Minelayer allo schieramento: il limite e la domanda sull area (DEP-10)', () => {
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g;
+        const zero = truppa(profilo(T, /^Zero \(Minelayer\)/), { id: 'n1', alias: 'Zero' });
+        N.roster = [zero];
+        const op = N.opzioniMinelayerDi(zero);
+        ok(op && op.ha && op.pezzi === 1, 'premessa: il motore da` il Minelayer, un pezzo (' + J(op && { pezzi: op.pezzi, armi: (op.armi || []).map(a => a.nome) }) + ')');
+        N.apriDeployStati(0);
+        const pag = String(T.nomadi.el('deploy-states-content').innerHTML);
+        ok(/MINELAYER: piazzati 0 su 1/.test(testo(pag)), 'pagina degli stati: «MINELAYER: piazzati 0 su 1»');
+        const bott = (pag.match(/class="huge-btn bottone-minelayer"[^>]*onclick="window\.piazzaConMinelayer\(0, \d+\)"/g) || []).length;
+        ok(bott === (op.armi || []).filter(a => a.disponibile).length && bott > 0, 'un bottone per arma da piazzare (' + bott + ')');
+        const domande = [];
+        N.confirm = (m) => { domande.push(m); return /Zona di Schieramento|dentro/i.test(m); };
+        const k = (op.armi || []).findIndex(a => a.disponibile);
+        if (k < 0) throw new Error('il motore non da` armi da piazzare per lo Zero (manca database_comune.js?)');
+        N.piazzaConMinelayer(0, k);
+        const quante = op.armi[k].chiedeArea ? 2 : 1;
+        ok(domande.length === quante, 'le domande: ' + quante + ' (quella sull area solo se chiedeArea) (' + domande.length + ')');
+        ok(N.roster.length === 2 && N.roster[1].deployable, 'piazzata: il gettone entra nel roster');
+        N.apriDeployStati(0);
+        const pag2 = String(T.nomadi.el('deploy-states-content').innerHTML);
+        ok(/MINELAYER: piazzati 1 su 1 — nessuno da piazzare/.test(testo(pag2)) && !/onclick="window\.piazzaConMinelayer/.test(pag2), 'al limite: «piazzati 1 su 1», i bottoni spenti (prima: ne piazzava 3)');
+        N.piazzaConMinelayer(0, k);
+        ok(N.roster.length === 2 || !N.roster[0].minelayerUsati || N.roster[0].minelayerUsati <= 1, 'CONTROPROVA: un altro tentativo non piazza niente (' + N.roster.length + ')');
+    }
+});
+sezione('35b. RICARICA forzata dall Hub, per truppa e per esercito', () => {
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, H = T.hub.g;
+        const pf = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Panzer' });
+        pf.weapon = String(pf.weapon || '') + ', Panzerfaust';
+        const nulla = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Nulla' });
+        T.schiera([pf, nulla], [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        const hP = (H.gameState.nomads || []).find(u => u.id === 'n1'), hN = (H.gameState.nomads || []).find(u => u.id === 'n2');
+        ok(H.haArmiUsaGetta(hP) && !H.haArmiUsaGetta(hN), 'chi ha il Panzerfaust ha armi Disposable, l Alguacil liscio no');
+        ok(/class="bottone-ricarica"/.test(H.schedaTruppa(hP, 'NOMADI')) && !/bottone-ricarica/.test(H.schedaTruppa(hN, 'NOMADI')), 'il bottone 🔄 RICARICA c e solo sulla scheda del Panzerfaust');
+        ok(/class="bottone-ricarica-fazione"[^>]*>🔄 RICARICA TUTTO NOMADI/.test(H.elencoFazioneHub(H.gameState.nomads, 'NOMADI')), 'e in testa all elenco «🔄 RICARICA TUTTO NOMADI»');
+        ok(!/bottone-ricarica-fazione/.test(H.elencoFazioneHub(H.gameState.panoceania, 'PANOCEANIA')), 'CONTROPROVA: PanOceania senza armi Disposable non ha il bottone');
+        N.roster.find(u => u.id === 'n1').usiSpesi = { 'PANZERFAUST': 2 };
+        H.inviaRicaricaForzata('NOMADI', 'n1', 'Panzer'); T.giro();
+        const c = JSON.parse(T.server[H.MotoreN5.CANALI.HUB_RICARICA] || '{}');
+        ok(c.tipo === 'RICARICA_FORZATA' && c.fazione === 'NOMADI' && c.unitaId === 'n1', 'il comando va sul canale hub_ricarica_usi (' + J({ tipo: c.tipo, fazione: c.fazione, unitaId: c.unitaId }) + ')');
+        const spesi = N.roster.find(u => u.id === 'n1').usiSpesi || {};
+        ok(!Object.keys(spesi).some(k => spesi[k] > 0), 'l app dei Nomads azzera gli usi spesi (' + J(spesi) + ')');
+        ok(N.alert_.some(m => /Ricarica forzata dall'Hub/.test(m)), 'e lo dice al giocatore');
+    }
+});
+sezione('35c. ARO: gli usi residui dentro il bottone, l arma esaurita spenta', () => {
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+        const pf = truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Panzer' });
+        pf.weapon = String(pf.weapon || '') + ', Panzerfaust';
+        T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Muove' })], [pf], 'NOMADI');
+        T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
+        P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro(); P.selezionaAzioneAro('BS_ATTACK');
+        const armi = String(T.pano.el('aro-weapon-list').innerHTML || T.pano.el('weapon-buttons-container').innerHTML);
+        // RISCRITTI il 26 ottobre sera (motore 26.2): la riga degli usi era
+        // un <div> SOTTO il bottone, disegnato da logica_aro; ora sta DENTRO
+        // il bottone (M.bottoneArma, opzione usi), una volta sola.
+        ok(/class="bottone-arma[^"]*"[\s\S]*class="usi-arma"[^>]*>Usi residui: 2 su 2/.test(armi), 'ARO: dentro il bottone del Panzerfaust «Usi residui: 2 su 2»');
+        ok((armi.match(/Usi residui/g) || []).length === 1, 'una volta sola: la copia di logica_aro e` tolta');
+        P.roster[0].usiSpesi = { 'PANZERFAUST': 2 };
+        P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro(); P.selezionaAzioneAro('BS_ATTACK');
+        const armi2 = String(T.pano.el('aro-weapon-list').innerHTML || T.pano.el('weapon-buttons-container').innerHTML);
+        ok(/class="bottone-arma bottone-arma-esaurito"/.test(armi2) && (armi2.match(/USI ESAURITI \(2\/2\)/g) || []).length === 1, 'esaurito: il bottone spento (bottone-arma-esaurito) e «⛔ USI ESAURITI (2/2) — serve un Reload», una volta');
+        ok(!/selezionaArmaAro\('Panzerfaust/.test(armi2), 'e toccarlo non sceglie l arma: spiega');
+    }
+});
+sezione('35d. DIS-02: il salvataggio locale tiene gli usi spesi', () => {
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g;
+        const pf = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Panzer', usiSpesi: { 'PANZERFAUST': 1 } });
+        T.schiera([pf], [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        N.salvaPartitaLocale();
+        N.roster = [];
+        const ripresa = N.riprendiPartita ? N.riprendiPartita() : null;
+        const u = (N.roster || []).find(x => x.id === 'n1');
+        ok(u && u.usiSpesi && u.usiSpesi.PANZERFAUST === 1, 'salvata e ripresa la partita, usiSpesi resta {PANZERFAUST: 1} (' + J(u && u.usiSpesi) + ')');
+    }
+});
+
+sezione('36a. ARO: si passa il nome GREZZO dell arma, con la notazione (TEST, MOTORE 2026-10-27.2)', () => {
+    // Un tavolo per truppa: la selezione dell'ARO resta per lo stesso allarme.
+    const nomi = (re) => {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+        T.schiera([truppa(profilo(T, re), { id: 'n1', alias: 'Reagisce' })], [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'PANOCEANIA');
+        T.apriMenu(T.pano, 0); P.selectAction('MOVIMENTO', false); T.giro();
+        N.apriSelezioneAro(); N.toggleAroUnit('n1'); N.confermaSelezioneAro(); N.selezionaAzioneAro('BS_ATTACK');
+        return (String(T.nomadi.el('aro-weapon-list').innerHTML).match(/selezionaArmaAro\('([^']+)'/g) || []).map(x => x.slice(18, -1)); };
+    const nZ = nomi(/^Reaktion Zond \(Thunderbolt\)/);
+    ok(nZ.some(n => /^Thunderbolt ?\(\+1B\)$/.test(n)), 'il bottone del Thunderbolt passa il nome grezzo, col (+1B) (' + J(nZ) + ')');
+    ok(!nZ.some(n => n === 'Thunderbolt'), 'e non piu` «Thunderbolt» spogliato');
+    const nF = nomi(/^Alguacil \(Combi/);
+    ok(nF.indexOf('Combi Rifle') >= 0, 'CONTROPROVA: un arma senza notazione resta il suo nome (' + J(nF) + ')');
+});
+
+sezione('36b. ARO col Total Reaction: BURST PIENO o B1, a scelta (REGOLE riga 10224, MOTORE 2026-10-27.3)', () => {
+    const giro = (arma, scelta) => {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+        const zond = truppa(profilo(T, /^Reaktion Zond \(Thunderbolt\)/), { id: 'n1', alias: 'Zond' });
+        if (arma) zond.weapon = arma;
+        T.schiera([zond], [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'PANOCEANIA');
+        T.apriMenu(T.pano, 0); P.selectAction('MOVIMENTO', false); T.giro();
+        N.apriSelezioneAro(); N.toggleAroUnit('n1'); N.confermaSelezioneAro(); N.selezionaAzioneAro('BS_ATTACK');
+        const nome = ((String(T.nomadi.el('aro-weapon-list').innerHTML).match(/selezionaArmaAro\('([^']+)'/) || [])[1]);
+        N.selezionaArmaAro(nome); N.selezionaBersaglioAro('Uno');
+        const pag = () => String(T.nomadi.el('aro-modifiers-content').innerHTML);
+        const prima = pag(), cfgPrima = Object.assign({}, N.aroCurrentConfig);
+        if (scelta === false) N.sceltaBurstAro(false);
+        const dopo = pag(), cfgDopo = Object.assign({}, N.aroCurrentConfig);
+        const spedite = []; const orig = N.inviaRispostaAro;
+        N.inviaRispostaAro = function (payload, f) { spedite.push(JSON.parse(JSON.stringify(payload))); return orig.apply(this, arguments); };
+        N.salvaAroCorrente(); T.giro();
+        return { T, N, nome, prima, dopo, cfgPrima, cfgDopo, spedite, zond: N.roster.find(u => u.id === 'n1') };
+    };
+    // --- Thunderbolt (+1B), B2+1 = B3 col Total Reaction ---
+    const a = giro(null, false);
+    ok(/class="huge-btn tasto-burst-pieno"[^>]*>BURST PIENO \(B3\)/.test(a.prima) && /class="huge-btn tasto-burst-ridotto"[^>]*>B1</.test(a.prima),
+       'due tasti: «BURST PIENO (B3)» (B2 del Thunderbolt + il suo (+1B)) e «B1»');
+    ok(a.cfgPrima.burst === 3 && a.cfgPrima.burstPieno === true, 'parte dal pieno: B3 (' + a.cfgPrima.burst + ')');
+    ok(a.cfgDopo.burst === 1 && a.cfgDopo.burstPieno === false, 'scelto B1: la reazione ha burst 1 e burstPieno false (' + a.cfgDopo.burst + ', ' + a.cfgDopo.burstPieno + ')');
+    const r = a.spedite[0] || {};
+    ok(((r.reazioni || [])[0] || {}).burstPieno === false, 'e la risposta ARO spedita porta burstPieno: false (' + J(((r.reazioni || [])[0] || {}).burstPieno) + ')');
+    // --- Panzerfaust (+1B), Disposable (2): B2 brucia due usi, B1 uno ---
+    const b1 = giro('Panzerfaust (+1B)', false);
+    ok(/BURST PIENO \(B2\)/.test(b1.prima), 'Panzerfaust (+1B): «BURST PIENO (B2)» (' + b1.nome + ')');
+    ok(J(b1.zond.usiSpesi) === J({ 'PANZERFAUST': 1 }) || Object.values(b1.zond.usiSpesi || {})[0] === 1, 'scelto B1: speso UN uso, ne resta uno (' + J(b1.zond.usiSpesi) + ')');
+    const b2 = giro('Panzerfaust (+1B)', true);
+    ok(Object.values(b2.zond.usiSpesi || {})[0] === 2, 'CONTROPROVA: col pieno (B2) spesi tutti e due gli usi (' + J(b2.zond.usiSpesi) + ')');
+    // --- senza Total Reaction nessuna scelta ---
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+    const alg = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Fante' });
+    T.schiera([alg], [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'PANOCEANIA');
+    T.apriMenu(T.pano, 0); P.selectAction('MOVIMENTO', false); T.giro();
+    N.apriSelezioneAro(); N.toggleAroUnit('n1'); N.confermaSelezioneAro(); N.selezionaAzioneAro('BS_ATTACK');
+    N.selezionaArmaAro('Combi Rifle'); N.selezionaBersaglioAro('Uno');
+    ok(!/scelta-burst-aro/.test(T.nomadi.el('aro-modifiers-content').innerHTML) && N.aroCurrentConfig.burstPieno === undefined,
+       'CONTROPROVA: un Alguacil (senza Total Reaction) non ha la scelta, e la reazione non porta burstPieno');
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

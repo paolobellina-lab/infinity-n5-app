@@ -1,4 +1,7 @@
-// @versione 2026-10-12.1 | test_modulo_piazzamento.js | proprieta`: chat TEST
+// @versione 2026-10-26.1 | test_modulo_piazzamento.js | proprieta`: chat TEST
+// .1 (26 ott): sez. 4 e 11-bis girate, DIS-06 (motore 2026-10-26.3, ordine_piazzamento
+//    2026-10-26.1): la domanda e` DOPPIA, il «si`» al Marker da solo non blocca, decide
+//    il nemico scoperto. Sez. 14 nuova: M.haAreaInnesco, il Repeater senza domande.
 // .1 (12 ott): sezione 13 — Zero (Shock Mine) piazza tre mine, la quarta e`
 //    bloccata (ordine_piazzamento 2026-10-12.1, motore 2026-10-12.6). L'uso
 //    resta sull'unita` del roster via sostituisciUnita, quello VERO di
@@ -64,15 +67,33 @@ if (/PERIMETER/i.test(String(koalaP.traits || ''))) {
     ok(window.deployableDomande.length === 2, 'col Tratto Perimeter: due domande');
 } else { ok(true, 'CrazyKoalas senza Perimeter: una domanda'); }
 
-console.log('\n=== 4. Una risposta può BLOCCARE il piazzamento ===');
+console.log('\n=== 4. DIS-06: la domanda e` DOPPIA, decide il nemico scoperto ===');
+// 🔴 GIRATA IL 26 OTTOBRE (motore 2026-10-26.3, ordine_piazzamento 2026-10-26.1).
+// Prima un «si`» al Marker nell'area bloccava da solo, con la frase «NEGATO,
+// salvo che...»: il «salvo che» lo doveva risolvere il giocatore a memoria.
+// Ora markerNellArea=si` apre una seconda domanda (riga 7572-7573), e decide
+// quella: nemico valido scoperto si` -> si piazza, no -> NEGATO.
 ok(window.piazzamentoBloccato().incompleto === true, 'senza risposte: bloccato, incompleto');
 window.rispondiDeployable('markerNellArea', true);   // c'è un Marker nemico
-const bloc = window.piazzamentoBloccato();
-ok(bloc.bloccato === true && !bloc.incompleto, 'col Marker nell area: BLOCCATO');
-ok(/Attacco Intuitivo|NEGATO/i.test(bloc.motivo), 'col motivo del regolamento');
+let bloc = window.piazzamentoBloccato();
+ok(bloc.incompleto === true, 'col Marker nell area da solo: NON bloccato, manca una risposta (' + bloc.motivo + ')');
+ok(window.deployableDomande.some(d => d.id === 'nemicoScopertoNellArea'), 'e compare la seconda domanda: un nemico valido scoperto nell area?');
+ok(/nemico valido/.test(nodo('targets-allocation-container').innerHTML), '  scritta nella pagina');
+window.rispondiDeployable('percorsoLibero', true);
+window.rispondiDeployable('nemicoScopertoNellArea', false);
+bloc = window.piazzamentoBloccato();
+ok(bloc.bloccato === true && !bloc.incompleto, 'nessun nemico scoperto: BLOCCATO');
+ok(/NEGATO/.test(bloc.motivo) && /7572/.test(bloc.motivo), 'col motivo del regolamento (riga 7572)');
 window.eseguiPiazzamento();
 ok(alertUltimo && /NON è stato eseguito/.test(alertUltimo), 'e l ordine non si esegue');
 ok(window.roster.length === 1, 'nessun token creato: nel roster c e solo il portatore');
+// CONTROPROVA: lo stesso Marker, ma con un nemico scoperto nell area -> si piazza.
+nuovo(moran()); window.scegliArmaDaPiazzare('CrazyKoalas');
+window.rispondiDeployable('markerNellArea', true); window.rispondiDeployable('percorsoLibero', true);
+window.rispondiDeployable('nemicoScopertoNellArea', true);
+ok(window.piazzamentoBloccato().bloccato === false, 'CONTROPROVA: Marker nell area ma anche un nemico scoperto: non bloccato');
+window.eseguiPiazzamento();
+ok(window.roster.length === 2 && inviato !== null, '  e il gettone nasce (' + window.roster.length + ')');
 
 console.log('\n=== 5. Rispondendo NO, il token si crea ===');
 nuovo(moran());
@@ -229,26 +250,30 @@ ok(!!M.COLORE_TASTO.valido && M.COLORE_TASTO.valido !== M.COLORE_TASTO.idle,
 ok(tastoPiazza().sfondo === M.COLORE_TASTO.valido,
    `e il tasto lo porta (${tastoPiazza().sfondo})`);
 // STATO 3: una risposta blocca -> IDLE, giallo, e porta all Idle vero.
-pronta(moran(), true);
+// 🔴 GIRATA IL 26 OTTOBRE: a bloccare e` la seconda domanda (nessun nemico
+// scoperto), non piu` il «si`» al Marker da solo.
+pronta(moran());
+window.rispondiDeployable('markerNellArea', true); window.rispondiDeployable('percorsoLibero', true);
+ok(tastoPiazza().testo === 'RISPONDI ALLE DOMANDE',
+   `il «sì» al Marker da solo non fa IDLE: chiede la seconda (${tastoPiazza().testo})`);
+window.rispondiDeployable('nemicoScopertoNellArea', false);
 ok(tastoPiazza().testo === 'IDLE',
    `una risposta che blocca: il tasto diventa IDLE, non un divieto muto (${tastoPiazza().testo})`);
 ok(tastoPiazza().sfondo === '#ffcc00',
    `ed è giallo (${tastoPiazza().sfondo})`);
 // Chi decide che una risposta blocca è il MOTORE, non il modulo.
-const giudizio = M.valutaDomanda(window.deployableDomande[0], true);
+const giudizio = M.valutaDomanda(window.deployableDomande.find(d => d.id === 'nemicoScopertoNellArea'), false);
 ok(giudizio.esito === 'BLOCCATA' && giudizio.puoProcedere === false,
    `e lo decide M.valutaDomanda, non la schermata (${giudizio.esito})`);
-// E il tasto PORTA all Idle vero: non ne fa una copia sua, chiama
-// l unico window.dichiaraRequisitoFallito della pagina, col motivo che il
-// motore ha già scritto. Senza questa prova "il tasto dice IDLE" non si
-// distingue da "il tasto dice IDLE e non fa niente" — che è il difetto di
-// prima con un'etichetta nuova.
+const libera = M.valutaDomanda(window.deployableDomande.find(d => d.id === 'markerNellArea'), true);
+ok(libera.esito === 'LIBERA' && libera.puoProcedere === true,
+   `CONTROPROVA: per M.valutaDomanda il «sì» al Marker da solo è LIBERA (${libera.esito})`);
 let motivoIdle = null;
 const salvaDRF = window.dichiaraRequisitoFallito;
 window.dichiaraRequisitoFallito = (m) => { motivoIdle = m; return true; };
 tastoPiazza().onclick();
 ok(motivoIdle !== null, 'cliccandolo chiama window.dichiaraRequisitoFallito');
-ok(/percorso/.test(String(motivoIdle)) || /NEGATO/.test(String(motivoIdle)),
+ok(/NEGATO/.test(String(motivoIdle)) && /7572/.test(String(motivoIdle)),
    `col motivo scritto dal motore, non inventato dal modulo (${String(motivoIdle).slice(0, 60)}…)`);
 ok(inviato === null, 'e NON spedisce la busta del piazzamento: il gettone non si piazza');
 window.dichiaraRequisitoFallito = salvaDRF;
@@ -404,6 +429,38 @@ console.log('\n=== 13. Zero (Shock Mine): tre mine, la quarta bloccata ===');
     window.roster = [z2]; piazzaUna();
     ok(!((window.roster[0].usiSpesi || {})['SHOCK MINE']), 'CONTROPROVA: senza sostituisciUnita l uso NON arriva al roster');
     window.sostituisciUnita = vera;
+}
+
+console.log('\n=== 14. DEP-08/09: niente domande per chi non ha area d innesco (M.haAreaInnesco) ===');
+// Nuova il 26 ottobre (motore 2026-10-26.3, ordine_piazzamento 2026-10-26.1).
+// Il divieto del Marker CAMO e` delle sole Deployable Weapon con un'Area
+// d'Innesco (riga 7572; REGOLE, DEP-08). Il Repeater, il FastPanda
+// (Indiscriminate, riga 15041), la Deployable Cover e la Disco Ball
+// (Targetless, DEP-09) si piazzano senza domande; le mine, il WildParrot, il
+// Drop Bear e le Perimeter (CrazyKoala, MadTraps: la ZdC) le tengono.
+ok(typeof M.haAreaInnesco === 'function', 'premessa: il motore ha M.haAreaInnesco');
+if (typeof M.haAreaInnesco === 'function') {
+    const senza = ['Deployable Repeater', 'FastPanda', 'Deployable Cover (Cutting Foam)', 'Deployable Cover (Vitroferro)', 'Disco Ball'];
+    const con = ['Shock Mine', 'AP Mine', 'PARA Mine', 'WildParrot', 'Drop Bears (Deployable Mode)', 'CrazyKoalas', 'Madtraps'];
+    const vs = senza.filter(a => M.profiloArma(a) && M.haAreaInnesco(M.profiloArma(a)) === false);
+    ok(vs.length === senza.length, `senza area d innesco: ${senza.join(', ')} (${vs.length}/${senza.length})`);
+    const vc = con.filter(a => M.profiloArma(a) && M.haAreaInnesco(M.profiloArma(a)) === true);
+    ok(vc.length === con.length, `con l area: ${con.join(', ')} (${vc.length}/${con.length})`);
+    // Dalla porta del giocatore: il Repeater si sceglie e il tasto dice subito PIAZZA.
+    const rep = { id: 'n3', alias: 'Rep', bs: 11, wip: 12, skills: '', states: {}, weapon: 'Submachine Gun', equip: 'Deployable Repeater' };
+    nuovo(rep);
+    const arg = (nodo('weapon-buttons-container').innerHTML.match(/scegliArmaDaPiazzare\('([^']+)'/) || [])[1];
+    ok(arg === 'Deployable Repeater', `il Repeater ha il suo bottone (${arg})`);
+    window.scegliArmaDaPiazzare(arg);
+    ok(window.deployableDomande.length === 0, `nessuna domanda (${window.deployableDomande.length})`);
+    ok(window.piazzamentoBloccato().bloccato === false && tastoPiazza().testo === 'PIAZZA',
+       `e il tasto dice PIAZZA senza rispondere a niente (${tastoPiazza().testo})`);
+    window.eseguiPiazzamento();
+    ok(window.roster.length === 2 && inviato !== null, `il Repeater nasce (${window.roster.length})`);
+    // CONTROPROVA: il CrazyKoala dello stesso giro le domande le ha ancora.
+    nuovo(moran()); window.scegliArmaDaPiazzare('CrazyKoalas');
+    ok(window.deployableDomande.length === 2 && window.piazzamentoBloccato().incompleto === true,
+       `CONTROPROVA: il CrazyKoala chiede ancora (${window.deployableDomande.map(d => d.id).join(', ')})`);
 }
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

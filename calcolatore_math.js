@@ -1,4 +1,4 @@
-// @versione 2026-10-23.1 | calcolatore_math.js | proprieta`: chat MOTORE
+// @versione 2026-10-26.2 | calcolatore_math.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧮 CALCOLATORE N5 — adattatore sopra MotoreN5
 // ------------------------------------------
@@ -156,7 +156,11 @@
         noteMarker.forEach(function (n) {
             html += `<div style="margin:6px 0; padding:8px; background:#332200; border:2px solid #ffaa33; border-radius:4px; color:#ffcc66; font-size:13px; font-weight:bold;">${n}</div>`;
         });
-        html += `<span style="font-size:11px; color:#888;">Nota: un Critico aggiunge ${s.critExtra || 1} Tiro Salvezza extra.</span>`;
+        // 26 ottobre (SG-10): niente nota del Critico dove il Critico non c'e`
+        // (bersaglio secondario di una Sagoma): lo dice il motore.
+        html += s.senzaCritico
+            ? `<span style="font-size:11px; color:#888;">Nota: ${s.senzaCritico}</span>`
+            : `<span style="font-size:11px; color:#888;">Nota: un Critico aggiunge ${s.critExtra || 1} Tiro Salvezza extra.</span>`;
         return html;
     }
 
@@ -221,7 +225,10 @@
         // aroAtteso. Un campo scritto dal modulo, letto dal motore, e perso
         // nel mezzo. (Chat INTERFACCIA, 28 settembre.)
         const scontri = M.risolviPayload(Object.assign({}, dati || {}, { attacchi: attacchi }), reazioni.map(function (r) {
-            return Object.assign({}, r, { difensore: cercaIn(rosterDif, r.nome) });
+            // 26 ottobre: prima per id. Una truppa in Decoy/Holoecho/HoloMask
+            // ha nella vista pubblica un nome diverso da quello che manda la
+            // sua app: per nome non si trovava.
+            return Object.assign({}, r, { difensore: cercaPerId(rosterDif, r.id) || cercaIn(rosterDif, r.nome) });
         }), Object.assign(ctx, {
             // I bonus di Fireteam ora arrivano al calcolo.
             livelloFireteamAtt: (function () {
@@ -310,8 +317,22 @@
             // un campo nuovo dello scontro va aggiunto QUI, o non arriva.
             ['coperturaNegata', 'reattivoNonBersagliato', 'bersaglioDiSagoma', 'tiroUnico', 'attaccanteNonRisolto', 'bersaglioNonRisolto', 'scoprirePoiAttacco', 'scoprireSuperato', 'dopoScoprire', 'condizionatoDaScoprire', 'scoprirePoiPiazzare'].forEach(k => { if (s[k]) out[k] = s[k]; });
             if (s.note && s.note.length) out.note = s.note;
-            return out;
+            return mascheraHolomask(out);
         });
+        // 26 ottobre (INTERFACCIA): una truppa in HoloMask non deve comparire
+        // col nome VERO sul tabellone. I dati restano veri (servono al
+        // calcolo); qui, solo nel testo che si mostra, il nome vero diventa
+        // quello del Modello imitato (mostraCome.nome), ovunque compaia.
+        function mascheraHolomask(out) {
+            const maschere = rosterAtt.concat(rosterDif).filter(u => u && u.mostraCome && u.mostraCome.nome && M.nomeUnita(u));
+            if (!maschere.length) return out;
+            let testo = JSON.stringify(out);
+            maschere.forEach(function (u) {
+                const vero = M.nomeUnita(u).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                testo = testo.replace(new RegExp('(^|[^\\wÀ-ÿ])' + vero + '(?![\\wÀ-ÿ])', 'g'), '$1' + JSON.stringify(u.mostraCome.nome).slice(1, -1));
+            });
+            try { return JSON.parse(testo); } catch (e) { return out; }
+        }
     };
 
     console.log('🧮 calcolatore_math.js: adattatore su MotoreN5 (le 358 righe del monolite sono state rimosse).');
@@ -323,7 +344,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_math.js', versione: '2026-10-23.1', proprieta: 'MOTORE' };
+    var v = { file: 'calcolatore_math.js', versione: '2026-10-26.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-<!-- @versione 2026-10-19.2 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
+<!-- @versione 2026-10-27.1 | PRONTUARIO_ORDINI_N5.md | proprieta`: chat REGOLE -->
 
 # PRONTUARIO ORDINI N5 — richiamo rapido durante la partita
 
@@ -93,9 +93,9 @@ Vale per ogni ordine, sempre.
 |---|---|
 | `(+N)` | +N all'**utente**, solo con quella skill/arma |
 | `(-N)` | −N al **nemico**. Se la skill è Automatica (Mimetism, Surprise Attack, ECM) si applica sempre come dice la sua regola; negli altri casi (`Dodge (-3)`, `CC Attack (-3)`) **solo nei Faccia a Faccia** |
-| `(+1B)` | +1 Burst all'utente, **solo in Turno Attivo** |
+| `(+1B)` | +1 Burst all'utente. ⚠️ **Due notazioni diverse, non confonderle**: `BS Attack (+1B)` è della **skill** e vale **solo in Turno Attivo**; `Combi Rifle (+1B)`, `Panzerfaust (+1B)` ecc. è dell'**arma** e non ha limiti di Turno. Vedi il riquadro sotto |
 | `(+1 SD)` | 1 dado extra, poi se ne scarta uno. **Non** aumenta il Burst (né il tetto di 6), **non** consuma usi Disposable, **non** si applica alle Long Skill né a chi non tira (Sagome Dirette) — righe **1957–1959**. Vale in **Attivo e in Reattivo**. Col Burst diviso, il dado extra va a **un solo** bersaglio e lo scarto avviene su quel tiro. Nel F2F si scarta dopo che entrambi hanno tirato; sceglie prima l'attivo. **Un'arma a due modalità lo usa solo nella modalità che tira**: vedi il caso Drop Bears in §3.3 |
-| `(+1B)` in ARO | **mai**, nemmeno col Total Reaction: il testo lo esclude esplicitamente nel Turno Reattivo (righe 6646–6648) |
+| `(+1B)` in ARO | dipende da **quale** delle due: la skill `BS Attack (+1B)` **mai** (righe 6646–6648); il `(+1B)` dell'**arma** **sì**, ma solo se una regola solleva il Burst da 1 — col **Total Reaction** vale (righe 10227–10228). Riquadro qui sotto |
 | `(ReRoll)` **nudo** | Ritira **un dado** del tiro, solo quando si usa quella skill/arma. ✅ **Invariato a N5.3**: verificato l'8 ottobre sulla wiki *Template:Modifiers-explained* (oldid 4027, marcata «PDF 5.3, September 2026»), che dice ancora «will allow the user to reroll **one die** from the Roll, only when using that Skill, Weapon, or Equipment» — identico alle righe 1939–1941 del nostro .txt, e **senza** limite per Ordine. Riguarda `Booty (ReRoll)` 16 profili, `MetaChemistry (ReRoll)` 8, `Deactivator (ReRoll)` 8, `Discover (ReRoll)` 2: tutti tiri a **un dado solo**, quindi "un dado" e "il tiro" coincidono e non c'è ambiguità da sciogliere |
 | `(ReRoll …)` **con un valore**, solo Dottore e Ingegnere | ⚠️ **È un'altra notazione, non la stessa con un numero in più**: ha un limite per Ordine e ritira *il tiro*, non un dado. ✅ **Chiuso l'8 ottobre sulla wiki** (pagina *Doctor*, oldid 3979, che mostra le due forme affiancate): `(ReRoll −X)` è la forma **pre-N5.2** — «any failed Roll with this Skill may be rerolled, but with a negative MOD (−X) to the WIP Attribute»; in **N5.2** è diventata `(ReRoll WIP=X)` — «rerolled, but **applying the WIP Attribute indicated between brackets**». Non sono la stessa cosa: la prima è un malus, la seconda **sostituisce** il WIP. Vale per Dottore e Ingegnere. 🔴 **Nei dati ufficiali vive ancora la forma vecchia, e non esiste un numero per convertirla** — vedi il riquadro sotto |
 | `(SR-1)` / `(SR-2)` | I **bersagli** applicano −1/−2 al proprio Tiro Salvezza. Non è gittata |
@@ -114,6 +114,74 @@ Vale per ogni ordine, sempre.
 >
 > ⚠️ **Il livello non sta fra parentesi.** `Martial Arts L3`, `MSV L2`, `Fatality L1`:
 > il numero fa parte del **nome**. Fra parentesi c'è sempre un MOD, mai un livello.
+
+> 🔴 **`(+1B)`: DUE NOTAZIONI DIVERSE, E IN ARO SI COMPORTANO AL CONTRARIO.**
+>
+> ⚠️ **Ritrattazione (27 ottobre).** Questo file diceva che il `(+1B)` in ARO non vale «mai,
+> nemmeno col Total Reaction». È **sbagliato**: avevo applicato al `(+1B)` dell'**arma** la
+> restrizione che il regolamento scrive solo per quello della **skill**. Corretto qui e nelle
+> schede §1.1, §1.2, §1.4 e §1.5.
+>
+> **Il Burst in ARO parte da 1 per una regola a sé.** Righe **3118–3119**: «In ARO, the B value
+> is **always reduced to 1**; however, **some rules or Special Skills can modify this value**».
+> Quindi in ARO non si parte dal B dell'arma: si parte da 1, e serve una regola che sollevi il
+> tetto. Un `(+1B)` da solo **non** è una di quelle regole: non solleva nulla, è un MOD.
+>
+> **Ma i MOD al Burst esistono in entrambi i Turni.** Righe **3126–3127**: «**Both during the
+> Active and Reactive Turns**, there may be Modifiers (MODs) that affect the Burst (B). They are
+> applied when declaring the Attack». È la riga che rende falsa la mia vecchia formulazione
+> "i MOD al Burst valgono solo in Turno Attivo".
+>
+> | Notazione | In Turno Attivo | In ARO senza Total Reaction | In ARO **con Total Reaction** |
+> |---|---|---|---|
+> | **arma**: `Combi Rifle (+1B)`, `Panzerfaust (+1B)` | ✅ e **obbligatorio** (righe 3087–3088) | ❌ il Burst è forzato a 1 (riga 3118) e il MOD non lo solleva | ✅ **vale** |
+> | **skill**: `BS Attack (+1B)` | ✅ | ❌ | ❌ **mai** |
+>
+> **Perché l'arma sì.** Righe **1924–1927**: «Any MOD or value in round brackets next to a
+> Special Skill, **Weapon**, or Equipment—such as… **Combi Rifle (+1B)**, etc.—only applies when
+> using the Skill, **Weapon**, or Equipment». Nessun limite di Turno. E il Total Reaction, righe
+> **10227–10228**: «When performing a BS Attack ARO, the user **may** use the **full Burst (B)**
+> of their weapon. **Any MOD to B will also apply**». Sollevato il tetto, il calcolo torna quello
+> del Turno Attivo: B di chart + MOD. `Combi Rifle (+1B)` → **B4**. `Panzerfaust (+1B)` → **B2**.
+>
+> **Perché la skill no.** Righe **6646–6648**, che sono la glossa ufficiale della notazione:
+> «`BS Attack (+1B)` means that, when its user declares a BS Attack in their **Active Turn**,
+> they must apply a +1 MOD to their BS Weapon's Burst. They **may not**, however, apply this MOD
+> during their **Reactive Turn** if they declare a **BS Attack ARO**». Un ARO di Total Reaction
+> *è* un ARO di BS Attack (riga 10227), quindi l'esclusione morde esattamente lì. E l'«any MOD to
+> B» della riga 10228 non la scavalca: quel MOD **non esiste** nel Turno Reattivo, quindi non c'è
+> niente da raccogliere. Regola specifica contro clausola generica.
+>
+> **Il Total Reaction è `Optional` (riga 10224), e il suo testo dice «may».** Il giocatore può
+> **rinunciare** al Burst pieno e sparare a B1. Confermato dalle righe **3088–3090**: «MODs from
+> Skills and Equipment with the **Optional Label**… do not have to be applied during the Active
+> or Reactive Turn». Non è un dettaglio: vedi la trappola Disposable qui sotto.
+>
+> 🔴 **LA TRAPPOLA: con un'arma Disposable, il `(+1B)` brucia due usi.** Righe **15010–15016**:
+> «Each increment in the Burst (B) value applied to weapons with this Trait **due to any MOD**
+> uses up a **Disposable use**. For example, a Trooper with a **Panzerfaust (a two-use weapon
+> with B 1)** and BS Attack (+1B) must make a BS Attack with **B 2, consuming in a single Order
+> the two available uses**… the weapon is unloaded». L'esempio del regolamento usa la notazione
+> della skill, ma la regola dice «**any MOD**», quindi vale anche per il `(+1B)` dell'arma.
+> E righe **15017–15018**: «**Burst (B) MODs cannot raise the B value higher than the remaining
+> available uses**». Quindi:
+>
+> | Panzerfaust `(+1B)`, Disposable (2), in ARO con Total Reaction | Esito |
+> |---|---|
+> | 2 usi disponibili | B **2**, e il Panzerfaust resta **scarico** (Unloaded) |
+> | 1 uso disponibile | B **1**: il MOD **non si applica**, tetto della riga 15017 |
+> | 0 usi | niente attacco con quell'arma |
+>
+> Siccome il Burst pieno del Total Reaction è `Optional`, con due usi residui il giocatore
+> **sceglie**: B2 sparando tutto adesso, o B1 conservando un uso. L'app deve offrire la scelta,
+> non imporre il B2.
+
+> ℹ️ **Una svista della fonte, da non seguire.** La riga **3089** cita «the **Fireteam Burst
+> Bonus**» come esempio di MOD Optional. Nel Fireteam Bonuses Chart di N5 (righe **11867–11882**)
+> **non esiste nessun bonus al Burst**: il Livello 2 dà `BS Attack (+1 SD)` — che per righe
+> **11896–11898** «does **not** increase the Burst value… and does **not** expend additional
+> Disposable uses» — e il Livello 4 dà `+1 BS`. È un residuo di N4. Il Fireteam **non** alza il
+> Burst, né in Attivo né in ARO.
 
 > 🔴 **IL CASO BIPANDRA: una notazione orfana, e perché si lascia com'è.**
 > Censito da DATABASE l'8 ottobre su `database_panoceania.js 4a97dcf6.152854` e sulla fonte
@@ -268,7 +336,8 @@ Bersagliato ✅
 | Fireteam Livello 4 | **+1** | ✅ |
 | Fireteam Livello 2 | `+1 SD` | ✅ (non su Sagoma Diretta) |
 | `BS Attack (+N)` del profilo | +N | ✅ |
-| `BS Attack (+1B)` / arma `(+1B)` | +1 Burst | ✅ solo in Attivo |
+| `BS Attack (+1B)` (skill) | +1 Burst | ✅ in Attivo · ❌ in ARO, sempre (righe 6646–6648) |
+| arma `(+1B)` (`Combi Rifle (+1B)`…) | +1 Burst | ✅ in Attivo (obbligatorio) · in ARO **solo col Total Reaction** (righe 10227–10228). ⚠️ su arma Disposable consuma **un uso per ogni +1** (righe 15010–15018) |
 | Stordito (attivo) | −3 | — lo Stordito non può attaccare |
 | Martial Arts, `CC Attack (±N)` | — | ❌ sono del CC |
 
@@ -390,7 +459,8 @@ Il reattivo tira con **i propri** MOD, calcolati come in un suo attacco:
 | Stordito (reattivo) | −3 | ✅ ma lo Stordito **non può dichiarare Attacchi** |
 | Fireteam L4 (+1 BS) / L2 (+1 SD) | +1 / +1 dado | ✅ se in Fireteam |
 | Burst | **1** | salvo Total Reaction, Neurocinetics, Fuoco di Soppressione (B3), Enhanced Reaction (B2) |
-| `(+1B)` del profilo | — | ❌ i MOD al Burst valgono solo in Turno Attivo |
+| `(+1B)` dell'**arma** | +1 | ✅ **ma solo se una regola solleva il Burst da 1**: col **Total Reaction** vale (righe 10227–10228), altrimenti il tetto della riga 3118 lo annulla. Su arma Disposable ogni +1 consuma un uso (righe 15010–15018) |
+| `BS Attack (+1B)` della **skill** | — | ❌ **mai** in ARO, nemmeno col Total Reaction (righe 6646–6648) |
 
 Non possono attaccare in ARO: IMM-A, IMM-B, Stordito, Retreat!, qualsiasi stato Null. Engaged:
 solo CC. Isolato: può sparare, ma **non** hackerare.
@@ -716,7 +786,8 @@ Il reattivo tira con **i propri** MOD, calcolati come in un suo attacco:
 | Stordito (reattivo) | −3 | ✅ ma lo Stordito **non può dichiarare Attacchi** |
 | Fireteam L4 (+1 BS) / L2 (+1 SD) | +1 / +1 dado | ✅ se in Fireteam |
 | Burst | **1** | salvo Total Reaction, Neurocinetics, Fuoco di Soppressione (B3), Enhanced Reaction (B2) |
-| `(+1B)` del profilo | — | ❌ i MOD al Burst valgono solo in Turno Attivo |
+| `(+1B)` dell'**arma** | +1 | ✅ **ma solo se una regola solleva il Burst da 1**: col **Total Reaction** vale (righe 10227–10228), altrimenti il tetto della riga 3118 lo annulla. Su arma Disposable ogni +1 consuma un uso (righe 15010–15018) |
+| `BS Attack (+1B)` della **skill** | — | ❌ **mai** in ARO, nemmeno col Total Reaction (righe 6646–6648) |
 
 Non possono attaccare in ARO: IMM-A, IMM-B, Stordito, Retreat!, qualsiasi stato Null. Engaged:
 solo CC. Isolato: può sparare, ma **non** hackerare.
@@ -873,7 +944,8 @@ Il reattivo tira con **i propri** MOD, calcolati come in un suo attacco:
 | Stordito (reattivo) | −3 | ✅ ma lo Stordito **non può dichiarare Attacchi** |
 | Fireteam L4 (+1 BS) / L2 (+1 SD) | +1 / +1 dado | ✅ se in Fireteam |
 | Burst | **1** | salvo Total Reaction, Neurocinetics, Fuoco di Soppressione (B3), Enhanced Reaction (B2) |
-| `(+1B)` del profilo | — | ❌ i MOD al Burst valgono solo in Turno Attivo |
+| `(+1B)` dell'**arma** | +1 | ✅ **ma solo se una regola solleva il Burst da 1**: col **Total Reaction** vale (righe 10227–10228), altrimenti il tetto della riga 3118 lo annulla. Su arma Disposable ogni +1 consuma un uso (righe 15010–15018) |
+| `BS Attack (+1B)` della **skill** | — | ❌ **mai** in ARO, nemmeno col Total Reaction (righe 6646–6648) |
 
 Non possono attaccare in ARO: IMM-A, IMM-B, Stordito, Retreat!, qualsiasi stato Null. Engaged:
 solo CC. Isolato: può sparare, ma **non** hackerare.

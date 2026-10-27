@@ -1,4 +1,6 @@
-// @versione 2026-10-23.5 | test_novita_23ott.js | proprieta`: chat TEST
+// @versione 2026-10-26.1 | test_novita_23ott.js | proprieta`: chat TEST
+// 2026-10-26.1: sez. 14, la partenza del Burst e` a giro (DIS-05, ordine_attacco_bs
+//    2026-10-26.2): il helper porta i dadi nei due versi, e una prova nuova sulla partenza.
 // 2026-10-23.5: sez. 9 e 12 girate (motore 2026-10-23.8, ordine_attacco_bs 2026-10-23.4):
 //    nel Coordinato il secondo tocco sostituisce il primo e l'allarme nomina un bersaglio
 //    solo; l'Idle del partecipante e` A110 (nota), niente finestra ne` UI01.
@@ -688,14 +690,24 @@ sezione('14. TER-07: la Saturazione si applica DOPO la divisione, al Burst di og
         const N = T.nomadi.g; T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Heavy Machine Gun');
         N.toggleTargetSelection('p1'); N.toggleTargetSelection('p2'); N.confirmMultiAro(false); T.giro(); T.pano.g.annullaAro(); T.giro();
         N.goToModifiersBS('IDLE'); if (t0) N.setTargetTerrenoBS(0, t0); if (t1) N.setTargetTerrenoBS(1, t1);
-        const da = N.totalBurst;
-        while (N.combatTargets[0].burst > b0) N.adjustTargetBurstBS(0, -1); while (N.combatTargets[1].burst < b1) N.adjustTargetBurstBS(1, 1);
+        const da = N.totalBurst, partenza = N.combatTargets.map(t => t.burst);
+        // 🔴 26 ottobre (DIS-05, ordine_attacco_bs 2026-10-26.2): la partenza non e`
+        // piu` tutto sul primo, e` a giro (2+2). Il helper portava il Burst in un
+        // verso solo e non arrivava piu` a 3+1: ora si porta nei due versi.
+        const C = N.combatTargets;
+        for (let k = 0; k < 12 && (C[0].burst !== b0 || C[1].burst !== b1); k++) {
+            if (C[1].burst > b1) N.adjustTargetBurstBS(1, -1);
+            else if (C[0].burst < b0) N.adjustTargetBurstBS(0, 1);
+            else if (C[0].burst > b0) N.adjustTargetBurstBS(0, -1);
+            else if (C[1].burst < b1) N.adjustTargetBurstBS(1, 1);
+        }
         N.setTargetRangeBS(0, 1); N.setTargetRangeBS(1, 1); N.eseguiCalcoloBS(); T.giro();
         const sc = T.hub.g.ultimiScontri || [];
         const d = (n) => { const s = sc.find(x => J(x.reattivo || {}).indexOf(n) >= 0) || {}; return ((s.attivo || {}).dati || {}).burst; };
-        return { da, b: [d('Uno'), d('Due')] };
+        return { da, partenza, b: [d('Uno'), d('Due')] };
     };
     const a = giro(2, 2, 'TER_10', 'TER_10');
+    ok(J(a.partenza) === '[2,2]', 'DIS-05: 4 dadi su due bersagli partono a giro, 2+2 (era tutto sul primo)', a.partenza);
     ok(a.da === 4 && J(a.b) === '[1,1]', 'Heavy Machine Gun, i due Fusilier nel Bosco: 4 dadi da dividere, 2+2 -> 1+1', a);
     ok(J(giro(3, 1, 'TER_10', 'TER_10').b) === '[2,1]', '3+1 -> 2+1 (mai sotto 1)');
     ok(J(giro(2, 2, 'TER_10', null).b) === '[1,2]', 'CONTROPROVA: il #2 senza terreno, 2+2 -> 1+2');

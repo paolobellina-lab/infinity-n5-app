@@ -1,4 +1,4 @@
-// @versione 2026-10-20.1 | logica_stati.js | proprieta`: chat MOTORE
+// @versione 2026-10-26.1 | logica_stati.js | proprieta`: chat MOTORE
 // ==========================================
 // NOTA: le regole di questo file passano da MotoreN5.
 //  - la cancellazione degli stati Marker (Ritirata!, Ingaggiato, Stati Nulli)
@@ -8,6 +8,20 @@
 // ==========================================
 // 🟢 LOGICA STATI E FIRETEAM (N5) - AGGIORNATA
 // ==========================================
+
+// 26 ottobre (INTERFACCIA, Paolo): le icone degli stati stanno nella
+// cartella dell'esercito (img/nomadi/, img/panoceania/). Si prova prima
+// quella, poi la copia comune in img/, poi l'emoji di sempre.
+function iconeDellEsercito(html) {
+    const M = window.MotoreN5;
+    if (!M || typeof M.iconaDellaFazione !== 'function') return html;
+    const faz = (document.title || '').includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA';
+    return String(html).replace(/<img src="(img\/[^"\/]+)"([^>]*?)onerror="/g, function (_, file, mezzo) {
+        return '<img src="' + M.iconaDellaFazione(file, faz) + '" data-comune="' + file + '"' + mezzo +
+               'onerror="if(this.dataset.comune&&!this.dataset.rip){this.dataset.rip=1;this.src=this.dataset.comune;return;}';
+    });
+}
+window.iconeDellEsercito = iconeDellEsercito;
 
 window.unitToEdit = null;
 window.tempFT = "";
@@ -59,8 +73,17 @@ window.apriPaginaStati = (index) => {
     const haSkillImp = skills.includes('impersonation') || skills.includes('imp-1') || skills.includes('imp-2');
     const haCybermask = !!(Mi && typeof Mi.haProgramma === 'function' && Mi.haProgramma(window.unitToEdit, 'CYBERMASK'));
     let canImp = haSkillImp || haCybermask || !!statoMotore.imp;
-    let canHolo = skills.includes('holoprojector') || skills.includes('holomask') || skills.includes('holo');
-    let canDecoy = skills.includes('decoy');
+    // 26 ottobre (INTERFACCIA): DUE caselle, non una. Holoecho (Holoprojector)
+    // e HoloMask sono stati diversi; con una casella sola, salvare una truppa
+    // in Holoecho le accendeva anche l'HoloMask. Una replica non ha caselle:
+    // segue la vera.
+    const eReplica = !!(window.unitToEdit && window.unitToEdit.replica);
+    // Holoprojector e HoloMask sono EQUIPAGGIAMENTO: si leggono anche in equip
+    // (prima solo in skills, e la casella non compariva mai).
+    const skEq = (skills + ',' + String(window.unitToEdit.equip || '')).toLowerCase();
+    let canHoloecho = !eReplica && skEq.includes('holoprojector');
+    let canHolomask = !eReplica && skEq.includes('holomask');
+    let canDecoy = !eReplica && skills.includes('decoy');
     let canFoxhole = skills.includes('sapper');
 
     // Livelli intelligenti Camo/Imp
@@ -192,10 +215,16 @@ window.apriPaginaStati = (index) => {
                  </label>`;
         }
     }
-    if (canHolo) {
-        html += `<label class="state-label" title="HoloMask / HoloEcho">
-                    <input type="checkbox" id="st-holo" class="state-checkbox" ${(s.holoecho || s.holomask) ? 'checked' : ''}>
+    if (canHoloecho) {
+        html += `<label class="state-label" title="Holoecho (Holoprojector)">
+                    <input type="checkbox" id="st-holoecho" class="state-checkbox" ${s.holoecho ? 'checked' : ''}>
                     <img src="img/icon_holo.png" class="state-icon" onerror="this.outerHTML='<span class=\\'fallback-emoji\\'>👥</span>'">
+                 </label>`;
+    }
+    if (canHolomask) {
+        html += `<label class="state-label" title="HoloMask">
+                    <input type="checkbox" id="st-holomask" class="state-checkbox" ${s.holomask ? 'checked' : ''}>
+                    <img src="img/icon_holomask.png" class="state-icon" onerror="this.outerHTML='<span class=\\'fallback-emoji\\'>🎭</span>'">
                  </label>`;
     }
     if (canDecoy) {
@@ -242,7 +271,7 @@ window.apriPaginaStati = (index) => {
             <button class="huge-btn" style="flex:2; background:#003300; border-color:#00ff00;" onclick="window.salvaStatiUnita()">CONFERMA E SALVA</button>
         </div>`;
     
-    document.getElementById('states-content').innerHTML = html;
+    document.getElementById('states-content').innerHTML = iconeDellEsercito(html);
 
     window.tempFT = s.fireteam || "";
     window.tempLeader = s.isFireteamLeader || false;
@@ -293,7 +322,7 @@ window.renderFTPanel = () => {
         leaderHtml = `<input type="hidden" id="st-ft-leader" value="false">`;
     }
 
-    panel.innerHTML = `
+    panel.innerHTML = iconeDellEsercito(`
         <div style="display:flex; align-items:center; gap:15px; flex:1;">
             <button class="huge-btn" style="flex:none; width:150px; min-height:70px; margin:0; background:${btnBg}; border-color:${btnColor}; color:${window.tempFT==='' ? '#888' : '#fff'}; font-size:26px;" onclick="window.cycleFireteam()">
                 ${btnText}
@@ -304,7 +333,7 @@ window.renderFTPanel = () => {
         </div>
         ${leaderHtml}
         <input type="hidden" id="st-ft-team" value="${window.tempFT}">
-    `;
+    `);
 };
 
 window.cycleFireteam = () => {
@@ -433,10 +462,32 @@ window.salvaStatiUnita = () => {
     const selLivImp = document.getElementById('st-imp-liv');
     if (selLivImp && /^IMP_[12]$/.test(String(selLivImp.value))) window.tempImpState = selLivImp.value;
     
-    let isHolo = document.getElementById('st-holo') ? document.getElementById('st-holo').checked : false;
-    if(isHolo) { s.holoecho = true; s.holomask = true; } else { s.holoecho = false; s.holomask = false; }
-    
-    s.decoy = document.getElementById('st-decoy') ? document.getElementById('st-decoy').checked : false;
+    // 26 ottobre: Holoecho e HoloMask separati. Una casella che non c'e`
+    // (profilo senza quell'equipaggiamento, o una replica) lascia lo stato
+    // com'e`: non lo spegne.
+    const M5 = window.MotoreN5;
+    const eraHoloecho = !!s.holoecho, eraDecoy = !!s.decoy, eraHolomask = !!s.holomask;
+    const casHe = document.getElementById('st-holoecho'), casHm = document.getElementById('st-holomask'), casDe = document.getElementById('st-decoy');
+    if (casHe) s.holoecho = casHe.checked;
+    if (casHm) s.holomask = casHm.checked;
+    if (casDe) s.decoy = casDe.checked;
+    // HoloMask spenta: via anche il Modello imitato.
+    if (eraHolomask && !s.holomask) window.unitToEdit.holomaskImita = undefined;
+    // Holoecho/Decoy spenti: via le repliche dal roster.
+    if (M5 && ((eraHoloecho && !s.holoecho) || (eraDecoy && !s.decoy)) && typeof M5.togliRepliche === 'function') {
+        const tolte = M5.togliRepliche(window.roster || [], window.unitToEdit.id);
+        if (tolte.length) console.log('👥 Tolte ' + tolte.length + ' repliche di ' + M5.nomeUnita(window.unitToEdit) + '.');
+    }
+    // Holoecho acceso in partita (rientro con una Long Skill, pag. 159): si
+    // piazzano le due copie a contatto, se non ci sono gia`.
+    if (M5 && !eraHoloecho && s.holoecho && typeof M5.creaRepliche === 'function' && !M5.replicheDi(window.roster || [], window.unitToEdit.id).length) {
+        const r = M5.creaRepliche(Object.assign({}, window.unitToEdit, { states: Object.assign({}, s, { holoecho: false }) }), 'HOLOECHO');
+        if (r.possibile) {
+            ['gruppoRepliche', 'tipoRepliche', 'numeroReplica'].forEach(k => { window.unitToEdit[k] = r.unitaAggiornata[k]; });
+            r.repliche.forEach(x => window.roster.push(x));
+            alert('👥 Holoecho: piazza ' + r.repliche.length + ' copie olografiche a contatto di Silhouette.\n' + r.note.join('\n'));
+        }
+    }
     // FAIRY DUST (12 ottobre): lo si toglie a mano, e cade DA SOLO se l'hacker
     // diventa Isolato o Nullo (righe 4735-4738). Cancellato resta cancellato:
     // uscire dall'Isolato non lo riaccende, va dichiarato di nuovo.
@@ -591,7 +642,7 @@ window.salvaStatiUnita = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_stati.js', versione: '2026-10-20.1', proprieta: 'MOTORE' };
+    var v = { file: 'logica_stati.js', versione: '2026-10-26.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

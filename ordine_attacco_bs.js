@@ -1,4 +1,4 @@
-// @versione 2026-10-23.4 | ordine_attacco_bs.js | proprieta`: chat MOTORE
+// @versione 2026-10-27.1 | ordine_attacco_bs.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎯 ATTACCO BS (TIRO A DISTANZA) - ordine_attacco_bs.js
 // ------------------------------------------
@@ -159,6 +159,13 @@
                 if (p.isCC) { scartate.push({ nome: p.nome, motivo: 'arma da Corpo a Corpo' }); return; }
                 const voce = (window.RULES_WEAPONS || {})[p.nome] || p;
                 if (SI_PIAZZA.indexOf(voce.risoluzione) >= 0) { scartate.push({ nome: p.nome, motivo: 'si piazza, non si spara' }); return; }
+                // 26 ottobre (Paolo): le mine (Shock Mine, Cybermine,
+                // Monofilament...) hanno il Tratto Deployable e si mettono sul
+                // tavolo con PIAZZARE EQUIPAGGIAMENTO (righe 7542-7573): poi
+                // scattano da sole. Non sono un Attacco BS, e non sono Targetless.
+                if (/\bDEPLOYABLE\b/i.test(String(p.traits || '')) && !(M.eTargetless && M.eTargetless(p))) {
+                    scartate.push({ nome: p.nome, motivo: 'si piazza con PIAZZARE EQUIPAGGIAMENTO, non si spara' }); return;
+                }
                 // MediKit, GizmoKit, Deactivator: bersaglio vincolato, solo la
                 // loro azione (REGOLE, 10 ottobre; M.ARMI_AZIONE_DEDICATA).
                 const dedicata = M.azioneDedicataArma ? M.azioneDedicataArma(p.nome) : null;
@@ -205,7 +212,15 @@
                 // d'arma che passano da qui.
                 const nomeEsc = (p.nomeRichiesto || p.nome).replace(/'/g, "\\'");
                 // 9 ottobre: il bottone e` quello approvato da Paolo (M.bottoneArma).
-                container.innerHTML += M.bottoneArma(p, { attributi: `onclick="window.declareAttackBS('${nomeEsc}')"` });
+                // 26 ottobre (DIS-02): un'arma Disposable dice i suoi usi sul
+                // bottone, e a usi finiti il bottone spiega invece di sparare.
+                // La riga degli usi la disegna M.bottoneArma (opzione usi).
+                const usiP = M.usiResidui ? M.usiResidui(unita, p) : null;
+                if (usiP && usiP.residui <= 0) {
+                    container.innerHTML += M.bottoneArma(p, { usi: usiP, attributi: `onclick="alert(window.MotoreN5.messaggioScarico(window.coordUnits[window.coordIndex], window.MotoreN5.profiloArma('${nomeEsc}')))"` });
+                    return;
+                }
+                container.innerHTML += M.bottoneArma(p, { usi: usiP, attributi: `onclick="window.declareAttackBS('${nomeEsc}')"` });
             });
         }
         window._modiBS = gruppi;
@@ -231,6 +246,10 @@
     window.sagomaDirettaBS = function (a) { const M = motore(); return M ? sagomaDiretta(M, a) : false; };
 
     window.declareAttackBS = function (nomeArma, famiglia) {
+        const M0 = window.MotoreN5;
+        const u0 = window.coordUnits && window.coordUnits[window.coordIndex];
+        const usi0 = (M0 && M0.usiResidui && u0) ? M0.usiResidui(u0, M0.profiloArma(nomeArma)) : null;
+        if (usi0 && usi0.residui <= 0) return alert('⛔ ' + M0.messaggioScarico(u0, M0.profiloArma(nomeArma)));
         window.currentOrder.weapon = nomeArma;
         // Le modalita` fra cui scegliere nella pagina della gittata (o nessuna).
         window.currentOrder.modiArma = (famiglia && window._modiBS && window._modiBS[famiglia]) ? window._modiBS[famiglia].slice() : null;
@@ -271,6 +290,21 @@
         const bc = window.coordMode && window.coordIndex > 0 && window.currentOrder && window.currentOrder.bersaglioCoordinato;
         if (bc) {
             window.combatTargets = [Object.assign({ burst: 0, rangeIndex: 0, rangeMod: 0, cover: false, terrain: 'NESSUNO' }, bc)];
+            // 26 ottobre (Paolo, SP-07): SCOPRIRE + ATTACCO coordinato. Ogni
+            // partecipante ha il SUO Scoprire (gittata, copertura, terreno e
+            // Linea di Tiro sono suoi): prima la pagina usciva solo alla Punta,
+            // e la busta aveva 4 voci invece di 6. Stesso Marker, pagina nuova.
+            const scB = window.scoprireInCorso();
+            if (scB && !scB.fatto) {
+                scB.bersagliAttacco = window.combatTargets;
+                scB.poiAttacco = true;
+                scB.prosegui = null; scB.etichetta = 'AVANTI: ATTACCO BS'; scB.extraBusta = { poiAttacco: true };
+                window.currentOrder.weaponAttacco = window.currentOrder.weapon;
+                window.currentOrder.attaccoSceltoPer = window.currentOrder.action;
+                window.combatTargets = [{ id: scB.bersaglio.id, name: scB.bersaglio.name, burst: 1, cover: false,
+                                          rangeIndex: 0, rangeMod: 0, terrain: 'NESSUNO' }];
+                return window.preparaModificatoriScoprire();
+            }
             return window.goToModifiersBS();
         }
 
@@ -397,14 +431,38 @@
         // Per una Sagoma il numero di ogni bersaglio vuol dire "da quante
         // Sagome e` preso": almeno 1, al massimo il Burst, senza somma (il
         // motore conta gia` il massimo, non la somma: E21).
-        if (arma.isTemplate) {
+        // 26 ottobre (Paolo, SG-09): con 2 o piu` Sagome ogni Sagoma ha una
+        // LETTERA (A, B, C...) e per ogni bersaglio si accendono le lettere
+        // delle Sagome che lo prendono. Niente +/-: un bersaglio puo` stare
+        // sotto piu` Sagome, e l'annullamento di una Sagoma (un tuo alleato
+        // sotto) vale per tutti quelli sotto la STESSA lettera (motore,
+        // M.sagomeConLettera). Partenza: un bersaglio solo sotto tutte; piu`
+        // bersagli, una lettera a testa a giro.
+        const lettereBS = window.lettereSagomaBS();
+        if (arma.isTemplate && lettereBS.length > 1) {
             window.combatTargets.forEach(function (t, k) {
+                if (!Array.isArray(t.sagome)) t.sagome = (window.combatTargets.length === 1) ? lettereBS.slice() : [lettereBS[k % lettereBS.length]];
+                t.sagome = t.sagome.filter(L => lettereBS.indexOf(L) >= 0);
+                t.burst = t.sagome.length;
+            });
+        } else if (arma.isTemplate) {
+            window.combatTargets.forEach(function (t, k) {
+                t.sagome = undefined;
                 const n = parseInt(t.burst, 10) || 0;
                 t.burst = (n >= 1) ? Math.min(n, window.totalBurst) : (k === 0 ? window.totalBurst : 1);
             });
         } else {
+            // 26 ottobre (DIS-05, Paolo): con due bersagli e Burst 2 il secondo
+            // restava a 0 dadi e spariva dal tabellone ("si vede solo il tiro
+            // del Fusilier"). Ora i dadi si dividono a giro, il resto al primo:
+            // B2 su due bersagli = 1 e 1; B3 = 2 e 1. Il giocatore li sposta.
             const assegnati = window.combatTargets.reduce((s, t) => s + (t.burst || 0), 0);
-            if (assegnati === 0) window.combatTargets[0].burst = window.totalBurst;
+            if (assegnati === 0) {
+                const n = window.combatTargets.length;
+                window.combatTargets.forEach(function (t, k) {
+                    t.burst = Math.floor(window.totalBurst / n) + (k < window.totalBurst % n ? 1 : 0);
+                });
+            }
         }
 
         // Gittata: banda iniziale esplicita, mai uno zero implicito.
@@ -440,7 +498,11 @@
         if (sagome) {
             html += `<div style="text-align:center; color:#fff; margin-bottom:5px; font-size:16px;">` +
                 (window.totalBurst > 1
-                    ? `${window.totalBurst} SAGOME: per ogni bersaglio indica <b>da quante Sagome è preso</b> (da 1 a ${window.totalBurst}).`
+                    ? `${window.totalBurst} SAGOME: per ogni bersaglio accendi le lettere delle Sagome che lo prendono.<br>` +
+                      window.lettereSagomaBS().map(function (L) {
+                          const sotto = window.combatTargets.filter(t => (t.sagome || []).indexOf(L) >= 0).map(t => t.name);
+                          return `<b style="color:${sotto.length ? '#ffcc66' : '#ff6666'};">Sagoma ${L}</b>: ${sotto.length ? sotto.join(', ') : 'nessun bersaglio'}`;
+                      }).join(' &nbsp;·&nbsp; ')
                     : `UNA SAGOMA: ogni bersaglio scelto è sotto l'area e ne subisce il colpo.`) + `</div>`;
         } else {
             html += `<div style="text-align:center; color:#fff; margin-bottom:5px; font-size:18px;">
@@ -531,7 +593,11 @@
             <div class="target-card" style="border-left: 4px solid ${bordo}; margin-bottom: 20px; background: rgba(255,255,255,0.03); padding: 15px; overflow: hidden;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                     <b style="color:var(--nomad-orange); font-size:20px;">${tgt.name}${tgt.dopoScoprire ? ' <span style="font-size:12px; color:#66ff66;">🔍 dopo lo Scoprire</span>' : ''}${(impattoUnico && index === 0) ? ' <span class="etichetta-principale" style="font-size:13px; color:#ffcc66;">PRINCIPALE</span>' : ''}</b>
-                    ${(sagome && window.totalBurst <= 1) ? `<span style="font-size:18px; font-weight:bold; color:#00ff00;">1 Sagoma</span>` : `<div class="burst-ctrl">
+                    ${(sagome && window.totalBurst <= 1) ? `<span style="font-size:18px; font-weight:bold; color:#00ff00;">1 Sagoma</span>` : (sagome && Array.isArray(tgt.sagome)) ? `<div class="sagome-lettere" style="display:flex; gap:6px;">` +
+                        window.lettereSagomaBS().map(function (L) {
+                            const on = tgt.sagome.indexOf(L) >= 0;
+                            return `<button class="burst-btn tasto-sagoma" style="min-width:44px; font-weight:bold; ${on ? 'background:#ffcc66; color:#000; border-color:#ffcc66;' : 'background:#111; color:#888; border-color:#555;'}" onclick="window.toggleSagomaBS(${index}, '${L}')">${L}</button>`;
+                        }).join('') + `</div>` : `<div class="burst-ctrl">
                         <button class="burst-btn" style="opacity:${(sagome ? tgt.burst > 1 : tgt.burst > 0) ? 1 : 0.3}" onclick="window.adjustTargetBurstBS(${index}, -1)">-</button>
                         <span style="margin: 0 10px; font-size:22px; font-weight:bold; color:${tgt.burst > 0 ? '#00ff00' : '#888'}">${tgt.burst} ${sagome ? (tgt.burst === 1 ? 'Sagoma' : 'Sagome') : 'B'}</span>
                         <button class="burst-btn" style="opacity:${(sagome ? tgt.burst < window.totalBurst : restanti > 0) ? 1 : 0.3}" onclick="window.adjustTargetBurstBS(${index}, 1)">+</button>
@@ -738,6 +804,21 @@
         }
         window.combatTargets[i].ammo = v; window.renderTargetsAllocationBS();
     };
+    // SG-09: le lettere delle Sagome di questo Attacco (una per punto di Burst).
+    window.lettereSagomaBS = function () {
+        const M = window.MotoreN5; const n = parseInt(window.totalBurst, 10) || 0;
+        const L = (M && M.LETTERE_SAGOMA) || ['A', 'B', 'C', 'D', 'E', 'F'];
+        return n > 1 ? L.slice(0, n) : [];
+    };
+    window.toggleSagomaBS = function (i, L) {
+        const t = window.combatTargets && window.combatTargets[i]; if (!t) return;
+        t.sagome = Array.isArray(t.sagome) ? t.sagome.slice() : [];
+        const k = t.sagome.indexOf(L);
+        if (k >= 0) t.sagome.splice(k, 1); else t.sagome.push(L);
+        t.sagome.sort();
+        t.burst = t.sagome.length;
+        window.renderTargetsAllocationBS();
+    };
     window.adjustTargetBurstBS = function (i, delta) {
         // Sagoma: ogni bersaglio da 1 al Burst, indipendente dagli altri.
         const M = motore(); const arma = M && M.profiloArma(window.currentOrder.weapon);
@@ -771,6 +852,11 @@
         // anche il tiro della Punta. Ora la sua voce va nella busta a Burst 0,
         // col motivo, e si passa al prossimo partecipante.
         if (req.idle && !window.coordMode) return window.idleDaAttaccoBS();
+        // SG-09: con le lettere ogni bersaglio deve stare sotto almeno una Sagoma.
+        if (arma.isTemplate && window.lettereSagomaBS().length > 1) {
+            const senza = window.combatTargets.filter(t => !(t.sagome || []).length).map(t => t.name);
+            if (senza.length) return alert('⚠️ ' + senza.join(', ') + ': nessuna Sagoma accesa. Accendi le lettere delle Sagome che lo prendono, o togli il bersaglio.');
+        }
         const bersagli = M.bersagliConRequisiti(window.combatTargets, req);
 
         // SCOPRIRE + ATTACCO: prima la voce dello Scoprire, poi l'Attacco.
@@ -801,6 +887,10 @@
         }
 
         // Porta unica verso l'Hub: valida tutto e BLOCCA se qualcosa non torna.
+        // Copia PRIMA dell'invio: l'uscita dopo l'invio (app.html) azzera
+        // coordPayloads e currentOrder (stessa cautela del Fuoco Speculativo).
+        const inviatiBS = window.coordPayloads.slice();
+        const ordineIdBS = window.currentOrder && window.currentOrder.id;
         const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode });
 
         if (!spedito) {
@@ -811,6 +901,23 @@
             // ...e anche la voce dello Scoprire: si rimette al prossimo invio.
             if (scEs && scEs.busta) { const k = window.coordPayloads.indexOf(scEs.busta); if (k >= 0) window.coordPayloads.splice(k, 1); }
             return;
+        }
+
+        // 27 ottobre (TEST, DEP-09): il Disco Baller si spara con un Attacco
+        // BS (Targetless). Come nel Fuoco Speculativo, il segnalino nasce dal
+        // SUCCESSO del tiro: si chiede al giocatore com'e` andata e lo si crea
+        // con la stessa funzione (window.esitoDropBearBS, ordine_fuoco_speculativo).
+        const lanciBS = inviatiBS.filter(p => p.arma && M.lancioConSegnalino && M.lancioConSegnalino(p.arma));
+        if (lanciBS.length && typeof window.esitoDropBearBS === 'function' && typeof window.confirm === 'function') {
+            window._dropBearInSospeso = { lanci: lanciBS.map(p => ({ unita: p.attaccante, arma: p.arma })), ordineId: ordineIdBS,
+                                          nomeArma: String(lanciBS[0].arma.nome).replace(/ \(BS Mode\)/i, '') };
+            const sosp = window._dropBearInSospeso;
+            const si = window.confirm('🎯 ' + sosp.nomeArma + ': tira al tavolo.\n\nIl tiro è RIUSCITO?\n\nOK = sì, piazza il segnalino dove è caduto.\nAnnulla = no, fallito (l\'uso è comunque speso).');
+            const esito = window.esitoDropBearBS(!!si);
+            if (typeof window.alert === 'function') {
+                window.alert(si ? ('✅ ' + sosp.nomeArma + ': segnalino piazzato' + (esito && esito.piazzati ? '' : ' (nessun segnalino creato: controlla il roster)') + '.')
+                                : ('❌ ' + sosp.nomeArma + ': tiro fallito, nessun segnalino. L\'uso è comunque speso.'));
+            }
         }
 
         const calcDiv = document.getElementById('calc-result');
@@ -833,7 +940,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-23.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-27.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,0 +1,208 @@
+IMMAGINI E ICONE DELL'APP — elenco completo, aggiornato al 26 ottobre 2026
+Chat INTERFACCIA. Ricavato dai file del progetto e dal motore 2026-10-26.1 (catalogo_n5.js: segnaliniNumerati,
+cartelleSegnalini, ICONE_EFFETTO; motore_regole_n5.js: M.immagineMarker, M.iconaDellaFazione).
+Sostituisce l'elenco del 20 ottobre.
+
+Tutti PNG. Se un file manca non si rompe niente: al suo posto compare un'emoji, una scritta o la sigla.
+I nomi sono in minuscolo, tranne MARKER.png.
+
+COSA CAMBIA DAL 26 OTTOBRE: ogni esercito ha i SUOI stati e i SUOI segnalini.
+  - Le sezioni 2 e 7 vanno messe DUE volte: una in img/nomadi/ e una in img/panoceania/, con lo stesso nome.
+    Esempio: img/nomadi/icon_targeted.png e img/panoceania/icon_targeted.png.
+  - L'immagine che compare accanto a una truppa e` quella dell'esercito che la POSSIEDE: accanto alle tue
+    truppe le tue, accanto a quelle dell'avversario le sue. Vale sull'app di tutti e due e sull'Hub.
+  - Se nella cartella dell'esercito un file manca, l'app prova la copia comune in img/ (i file che hai gia`),
+    e solo se manca anche quella mette l'emoji o la sigla. Quindi puoi passare un esercito alla volta.
+  - Le sezioni 1, 3, 4, 5, 6 restano UNA copia sola, in img/, come prima.
+
+1. ICONE DELL'APP (cartella img/, una copia sola)
+img/icona_infinity.png       <- app installata, pagina di scelta della fazione, manifest
+img/icona_nomadi.png         <- app Nomadi (scheda del browser)
+img/icona_panoceania.png     <- app PanOceania (scheda del browser)
+img/icona_hub.png            <- Hub (scheda del browser)
+
+2. STATI — 27 file PER ESERCITO (img/nomadi/ e img/panoceania/)
+icon_dead.png              <- Morto                              app + Hub
+icon_unc.png               <- Incosciente                        app + Hub
+icon_retreat.png           <- Ritirata!                          app + Hub
+icon_engaged.png           <- Ingaggiato                         app + Hub
+icon_suppressive.png       <- Fuoco di Soppressione              app + Hub
+icon_targeted.png          <- Bersagliato                        app + Hub + programmi
+icon_foxhole.png           <- Foxhole                            app + Hub
+icon_stunned.png           <- Stordito                           app + Hub + programmi
+icon_imma.png              <- Immobilizzato-A                    app + Hub + programmi
+icon_immb.png              <- Immobilizzato-B                    app + Hub + programmi
+icon_isolated.png          <- Isolato                            app + Hub + programmi
+icon_disconnected.png      <- Disconnesso                        app + Hub + programmi
+icon_possessed.png         <- Posseduto                          app + Hub + programmi
+icon_sepsitorized.png      <- Sepsitorizzato                     app + Hub + programmi
+icon_camo.png              <- CAMO                               app + Hub
+icon_camo3.png             <- CAMO col Mimetismo -3              editor degli stati
+icon_camo6.png             <- CAMO col Mimetismo -6              editor degli stati
+icon_imp1.png              <- Impersonation IMP-1                app + editor degli stati
+icon_imp2.png              <- Impersonation IMP-2                app + editor degli stati
+icon_imp.png               <- Impersonation (senza livello)      Hub
+icon_hidden.png            <- Schieramento Nascosto              Hub
+icon_decoy.png             <- Decoy                              Hub + editor degli stati
+icon_holo.png              <- Olo-Eco (casella dell'editor)      editor degli stati
+icon_holoecho.png          <- Holoecho                           Hub
+icon_holomask.png          <- HoloMask                           Hub
+icon_wound.png             <- Ferita (effetto di Trinity)        bottone del programma
+icon_tag_vuoto.png         <- TAG vuoto (pilota sceso)           app + Hub
+
+3. INTERRUTTORI DELLE SCHEDE (cartella img/, una copia sola)
+img/icon_cover_si.png          <- bersaglio in Copertura
+img/icon_cover_no.png          <- bersaglio allo scoperto
+img/icon_lof_si.png            <- ho Linea di Tiro (Schivata)
+img/icon_lof_no.png            <- nessuna Linea di Tiro (Schivata)
+
+4. FIRETEAM, ORDINE COORDINATO E FAIRY DUST (cartella img/, una copia sola)
+img/icon_ft_duo.png            <- Fireteam Duo
+img/icon_ft_haris.png          <- Fireteam Haris
+img/icon_ft_core.png           <- Fireteam Core
+img/icon_spearhead.png         <- Punta di Lancia dell'Ordine Coordinato
+img/fairy_dust_hi.png          <- Hub: Fairy Dust attivo sugli HI
+img/fairy_dust_rem.png         <- Hub: Fairy Dust sui REM
+img/fairy_dust_tag.png         <- Hub: Fairy Dust sui TAG
+img/fairy_dust_vh.png          <- Hub: Fairy Dust sui VH
+
+5. ARMI (cartella img/armi/, una per TIPO d'arma; circa 170x100 px, sfondo trasparente) — 79 file, invariata
+img/armi/adhesive_launcher_rifle.png           <- Adhesive Launcher Rifle
+img/armi/akrylat_kanone.png                    <- Akrylat-Kanone
+img/armi/ap_da_cc_weapon.png                   <- AP+DA CC Weapon
+img/armi/ap_exp_cc_weapon.png                  <- AP+EXP CC Weapon
+img/armi/armed_turret.png                      <- Armed Turret
+img/armi/assault_pistol.png                    <- Assault Pistol
+img/armi/blitzen.png                           <- Blitzen
+img/armi/boarding_pistol.png                   <- Boarding Pistol, Boarding Pistol (Blast Mode)
+img/armi/boarding_shotgun.png                  <- Boarding Shotgun, T2 Boarding Shotgun
+img/armi/carbine.png                           <- E/M Carbine
+img/armi/cc_weapon.png                         <- AP CC Weapon, CC Weapon, E/M CC Weapon, PARA CC Weapon, Shock CC Weapon, Viral CC Weapon
+img/armi/chain_colt.png                        <- Chain-colt
+img/armi/chain_rifle.png                       <- Chain Rifle
+img/armi/chest_mine.png                        <- Chest Mine, Chest Mines
+img/armi/combi_rifle.png                       <- Breaker Combi Rifle, Combi Rifle, K1 Combi Rifle
+img/armi/contender.png                         <- Contender
+img/armi/crazykoala.png                        <- Crazykoala
+img/armi/cybermine.png                         <- Cybermine
+img/armi/d_charges.png                         <- D-Charges
+img/armi/da_cc_weapon.png                      <- DA CC Weapon
+img/armi/deployable_cover.png                  <- Deployable Cover
+img/armi/deployable_repeater.png               <- Deployable Repeater
+img/armi/disco_baller.png                      <- Disco Baller
+img/armi/drop_bears.png                        <- Drop Bears, Drop Bears (BS Mode), Drop Bears (Deployable Mode)
+img/armi/e_marat.png                           <- E/Marat
+img/armi/e_mitter.png                          <- E/Mitter
+img/armi/exp_cc_weapon.png                     <- EXP CC Weapon
+img/armi/fastpanda.png                         <- FastPanda
+img/armi/feuerbach.png                         <- Feuerbach
+img/armi/flammenspeer.png                      <- Flammenspeer
+img/armi/flash_pulse.png                       <- Flash Pulse
+img/armi/grenade_launcher.png                  <- E/M Grenade Launcher, Grenade Launcher, Smoke Grenade Launcher
+img/armi/grenades.png                          <- E/M Grenades, Eclipse Grenades, Grenades, Smoke Grenades
+img/armi/heavy_flamethrower.png                <- Heavy Flamethrower
+img/armi/heavy_machine_gun.png                 <- AP Heavy Machine Gun, Heavy Machine Gun
+img/armi/heavy_pistol.png                      <- AP Heavy Pistol, Heavy Pistol
+img/armi/heavy_riotstopper.png                 <- Heavy Riotstopper
+img/armi/heavy_rocket_launcher.png             <- Heavy Rocket Launcher
+img/armi/heavy_shotgun.png                     <- Heavy Shotgun
+img/armi/hyper_rapid_magnetic_cannon.png       <- Hyper-Rapid Magnetic Cannon
+img/armi/jammer.png                            <- Jammer
+img/armi/kobra_pistol.png                      <- Kobra Pistol
+img/armi/light_flamethrower.png                <- Light Flamethrower
+img/armi/light_riotstopper.png                 <- Light Riotstopper
+img/armi/light_rocket_launcher.png             <- Light Rocket Launcher
+img/armi/light_shotgun.png                     <- Light Shotgun
+img/armi/madtraps.png                          <- Madtraps
+img/armi/marksman_rifle.png                    <- AP Marksman Rifle, K1 Marksman Rifle, Marksman Rifle, Shock Marksman Rifle
+img/armi/mine.png                              <- AP Mine, E/M Mine, PARA Mine, Shock Mine, Viral Mine
+img/armi/mine_dispenser.png                    <- Mine Dispenser
+img/armi/missile_launcher.png                  <- Missile Launcher
+img/armi/mk12.png                              <- Mk12
+img/armi/monofilament_cc_weapon.png            <- Monofilament CC Weapon
+img/armi/multi_heavy_machine_gun.png           <- MULTI Heavy Machine Gun
+img/armi/multi_marksman_rifle.png              <- MULTI Marksman Rifle
+img/armi/multi_pistol.png                      <- MULTI Pistol
+img/armi/multi_red_fury.png                    <- MULTI Red Fury
+img/armi/multi_rifle.png                       <- MULTI Rifle
+img/armi/multi_sniper_rifle.png                <- MULTI Sniper Rifle
+img/armi/nanopulser.png                        <- Nanopulser
+img/armi/panzerfaust.png                       <- Panzerfaust
+img/armi/pistol.png                            <- Breaker Pistol, Pistol, Viral Pistol
+img/armi/pitcher.png                           <- Pitcher
+img/armi/plasma_carbine.png                    <- Plasma Carbine
+img/armi/plasma_rifle.png                      <- Plasma Rifle
+img/armi/pulzar.png                            <- Pulzar
+img/armi/red_fury.png                          <- AP Red Fury, Red Fury
+img/armi/rifle.png                             <- Breaker Rifle, Rifle, Viral Rifle
+img/armi/silenced_pistol.png                   <- Silenced Pistol
+img/armi/sniper_rifle.png                      <- AP Sniper Rifle, K1 Sniper Rifle, Sniper Rifle, T2 Sniper Rifle, Viral Sniper Rifle
+img/armi/spitfire.png                          <- AP Spitfire, Spitfire
+img/armi/stun_pistol.png                       <- Stun Pistol
+img/armi/submachine_gun.png                    <- AP Submachine Gun, Submachine Gun
+img/armi/tactical_bow.png                      <- Tactical Bow
+img/armi/thunderbolt.png                       <- AP Thunderbolt, Thunderbolt
+img/armi/trench_hammer.png                     <- Trench-Hammer
+img/armi/vulkan_shotgun.png                    <- Vulkan Shotgun
+img/armi/wildparrot.png                        <- WildParrot
+img/armi/zapper.png                            <- Zapper
+
+6. PROGRAMMI DI HACKING (cartella img/programmi/) — 12 file, invariata
+img/programmi/assisted_fire.png                <- ASSISTED FIRE (SUPPORTWARE)
+img/programmi/carbonite.png                    <- CARBONITE (ATTACCO)
+img/programmi/controlled_jump.png              <- CONTROLLED JUMP (SUPPORTWARE)
+img/programmi/cybermask.png                    <- CYBERMASK (NON_ATTACCO)
+img/programmi/enhanced_reaction.png            <- ENHANCED REACTION (SUPPORTWARE)
+img/programmi/fairy_dust.png                   <- FAIRY DUST (SUPPORTWARE)
+img/programmi/oblivion.png                     <- OBLIVION (ATTACCO)
+img/programmi/spotlight.png                    <- SPOTLIGHT (ATTACCO)
+img/programmi/total_control.png                <- TOTAL CONTROL (ATTACCO)
+img/programmi/trinity.png                      <- TRINITY (ATTACCO)
+img/programmi/white_noise.png                  <- WHITE NOISE (NON_ATTACCO)
+img/programmi/zero_pain.png                    <- ZERO PAIN (NON_ATTACCO)
+   Se il file di un programma d'attacco manca, il bottone mostra l'icona dello stato che provoca (sezione 2).
+
+7. SEGNALINI SUL TAVOLO — PER ESERCITO (img/nomadi/ e img/panoceania/)
+
+7a. Marker numerati: 50 file per esercito (5 serie da 1 a 10)
+camo_1.png ... camo_10.png         <- CAMO 1 ... CAMO 10            (Marker mimetico senza Mimetismo)
+camo-3_1.png ... camo-3_10.png     <- CAMO-3 1 ... CAMO-3 10        (Mimetismo -3)
+camo-6_1.png ... camo-6_10.png     <- CAMO-6 1 ... CAMO-6 10        (Mimetismo -6)
+imp-1_1.png ... imp-1_10.png       <- IMP-1 1 ... IMP-1 10
+imp-2_1.png ... imp-2_10.png       <- IMP-2 1 ... IMP-2 10
+   Oltre il 10 il numero c'e` lo stesso, ma senza immagine (resta la scritta).
+   Una MINA schierata in CAMO e` un CAMO senza Mimetismo: prende camo_N come le truppe (SCH-06).
+MARKER.png                         <- segnalino generico di un Marker senza numero
+
+7b. Equipaggiamenti e armi piazzati: 17 file per esercito
+deployable_cover.png               <- Deployable Cover
+armed_turret.png                   <- Armed Turret
+mina_ap.png                        <- Mina AP
+mina_shock.png                     <- Mina Shock
+mina_em.png                        <- Mina E/M
+mina_viral.png                     <- Mina Virale
+cybermine.png                      <- Cybermina
+mina_monofilamento.png             <- Mina Monofilamento
+mina_para.png                      <- Mina PARA
+crazykoala.png                     <- CrazyKoala (solo se mancano le foto in sequenza, sezione 8)
+fastpanda.png                      <- FastPanda
+dropbear.png                       <- Drop Bear
+wildparrot.png                     <- WildParrot
+deployable_repeater.png            <- Deployable Repeater
+dazer.png                          <- Dazer
+disco_ball.png                     <- Disco Ball
+madtraps.png                       <- MadTraps
+   Le mine usano il tuo segnalino da tavolo: uno per tipo di mina, tutte le mine dello stesso tipo
+   hanno la stessa immagine (niente numeri).
+
+8. FOTO DELLE MINIATURE (cartella del giocatore: img/nomadi/ e img/panoceania/), invariata
+Una foto per miniatura, nome libero; ogni cartella ha il suo elenco_foto.js (si genera con avvia_elenco_foto.html).
+I CrazyKoala prendono le loro foto in sequenza: img/nomadi/crazykoala_1.png ... crazykoala_4.png
+(il primo schierato la 1, il secondo la 2, e cosi` via).
+Copie olografiche (Holoecho) e bersagli Decoy: nessun file nuovo, mostrano la foto della truppa vera.
+HoloMask: nessun file nuovo, l'avversario vede la foto del Modello imitato se ce l'hai nella cartella.
+
+RIEPILOGO
+  una copia sola in img/ ............ 4 + 4 + 8 = 16 file, piu` 79 armi e 12 programmi
+  per OGNI esercito ................. 27 stati + 51 Marker + 17 segnalini = 95 file (x2 = 190)
+  foto delle miniature .............. libere, per esercito

@@ -1,4 +1,4 @@
-// @versione 2026-10-23.8 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-27.4 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-23.8';
+    M.VERSIONE = '2026-10-27.4';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -370,6 +370,19 @@
                     `L'attaccante "${nomeAtt}" non risulta nel tuo roster schierato.`,
                     'L\'Hub non riuscirebbe a leggerne le statistiche.'));
             }
+            // 26 ottobre (DIS-02): una truppa in Riserva o in Schieramento
+            // Aereo NON e` sul tavolo, e la vista pubblica — quella che legge
+            // l'Hub — non la contiene: l'attacco arrivava "ATTACCANTE NON
+            // TROVATO" (Spector, Combat Jump). Prima l'INGRESSO IN CAMPO.
+            const vero = (proprio.length > 0 && trovaNelRoster(proprio, input.attaccante)) ||
+                         (typeof input.attaccante === 'object' ? input.attaccante : null);
+            const depV = String((vero && vero.deployState) || 'NORMAL').toUpperCase();
+            const stV = (vero && vero.states) || {};
+            if ((depV === 'AD' || depV === 'RESERVE' || stV.reserve === true) && azione !== M.AZIONI.INGRESSO) {
+                errori.push(err('E62',
+                    `${nomeAtt} non è ancora sul tavolo (${depV === 'AD' ? 'Schieramento Aereo' : 'Riserva'}).`,
+                    'Prima dichiara INGRESSO IN CAMPO (Combat Jump / Parachutist): solo dopo può attaccare o agire.'));
+            }
         }
 
         // --- arma ---
@@ -628,6 +641,15 @@
             arma: arma,
             bersagli: bersagli
         };
+        // 26 ottobre (DIS-02): gli usi Disposable spesi PRIMA di questo colpo
+        // viaggiano con l'attacco. L'Hub calcola sulla sua copia del roster,
+        // che gli usi non li ha: un Panzerfaust (+1B) usciva B2 a ogni Ordine.
+        (function () {
+            const pr = M.rosterProprio();
+            const v = (pr.length > 0 && trovaNelRoster(pr, input.attaccante)) ||
+                      (input.attaccante && typeof input.attaccante === 'object' ? input.attaccante : null);
+            if (v && v.usiSpesi && typeof v.usiSpesi === 'object') attacco.usiSpesiAttaccante = JSON.parse(JSON.stringify(v.usiSpesi));
+        })();
         // 23 ottobre (AR-10): nascosta all'inizio dell'Ordine (lo segna
         // motore_core quando la dichiarazione la rivela). Serve al Surprise
         // Attack, che guarda lo stato a inizio Ordine; viaggia fino all'Hub.
@@ -1477,7 +1499,7 @@
             tipo: tipo,
             morto:        principale === 'DEAD' || !!st.dead,
             incosciente:  principale === 'UNCONSCIOUS' || !!st.unconscious,
-            hidden:       deploy === 'HIDDEN' || deploy === 'RESERVE' || deploy === 'AD' || !!st.hidden,
+            hidden:       deploy === 'HIDDEN' || deploy === 'RESERVE' || deploy === 'AD' || deploy === 'A_BORDO' || !!st.hidden,
             // 🔴 PREDEFINITO DEL PROFILO contro STATO REALE.
             // 49 profili del database portano state:'CAMO' e deployState:'CAMO'
             // come PREDEFINITO: "questa truppa si schiera come Marker". Non e`
@@ -5826,7 +5848,32 @@
 
     // Il Burst in reazione: 1, salvo Soppressione (gia` gestita in burstARO),
     // Total Reaction e Neurocinetica.
+    // 27 ottobre (domanda di TEST su A1): il tetto sugli usi residui
+    // (TRATTI_BURST.tettoSugliUsi: "Burst MODs cannot raise the B value higher
+    // than the remaining available uses") vale anche in ARO. Prima l'ARO non lo
+    // applicava, e i r.usiSpesi della risposta non cambiavano niente all'Hub:
+    // con Total Reaction e un'arma Disposable a un uso residuo il reattivo
+    // usciva col Burst pieno.
     M.burstReattivo = function (difensore, arma, ctx) {
+        let r = burstReattivoSenzaTetto(difensore, arma, ctx);
+        const usi = (difensore && arma && M.usiResidui) ? M.usiResidui(difensore, arma) : null;
+        // 27 ottobre (TEST, giro 9): il tetto vale anche per la SCELTA. Con un
+        // uso solo il "Burst pieno" del Total Reaction non e` B2: niente
+        // scelta, perche` le due voci varrebbero B1 tutte e due.
+        if (usi && r && typeof r.pienoDisponibile === 'number' && r.pienoDisponibile > usi.residui) {
+            const ridotto = Math.min(usi.residui, ((M.burstARO(difensore, arma) || {}).valore) || 1);
+            const pd = Math.max(0, usi.residui);
+            r = Object.assign({}, r, { pienoDisponibile: pd, opzionale: pd > ridotto });
+        }
+        if (usi && r && typeof r.valore === 'number' && r.valore > usi.residui) {
+            const nota = `Burst limitato agli usi residui: ${usi.residui} su ${usi.totali}`;
+            return Object.assign({}, r, { valore: usi.residui, max: usi.residui,
+                     voci: (r.voci || []).concat([{ fonte: 'usi', valore: usi.residui - r.valore, motivo: nota }]),
+                     note: (r.note || []).concat(usi.residui <= 0 ? [M.messaggioScarico(difensore, arma)] : [nota]) });
+        }
+        return r;
+    };
+    function burstReattivoSenzaTetto(difensore, arma, ctx) {
         ctx = ctx || {};
         const base = M.burstARO(difensore, arma);
         const t = M.trattiTiro(difensore);
@@ -5860,15 +5907,35 @@
             // burst 3 e le gittate SF. Il "Burst pieno" del Total Reaction in
             // SF Mode e` quindi il B3 del profilo, non il B dell'arma: la
             // combinazione "B4 con gittate SF" non puo` nascere. (Chat REGOLE.)
-            const valore = Math.max(pieno, base.valore);
+            let valore = Math.max(pieno, base.valore);
+            const nomeT = t.totalReaction ? 'Total Reaction' : 'Neurocinetics';
             const voci = (base.voci || []).concat([{ fonte: 'tratto', valore: valore - base.valore,
-                motivo: (t.totalReaction ? 'Total Reaction' : 'Neurocinetics') + `: Burst pieno dell'arma in ARO (B${valore})` }]);
-            // La notazione (+NB) del profilo NON vale in ARO, nemmeno col Total
-            // Reaction: righe 6646-6648, il MOD vale in Turno Attivo e "They may
-            // not ... apply this MOD during their Reactive Turn if they declare a
-            // BS Attack ARO". Il "any MOD to B" del Total Reaction riguarda i MOD
-            // validi in reattivo (es. Saturazione -1). Chat REGOLE, 23 settembre.
-            return { valore: valore, voci: voci, note: note,
+                motivo: nomeT + `: Burst pieno dell'arma in ARO (B${valore})` }]);
+            // 27 ottobre (REGOLE, ritrattazione del 23 settembre): il (+NB)
+            // ATTACCATO ALL'ARMA ("Panzerfaust (+1B)", "Combi Rifle (+1B)") vale
+            // anche in ARO quando una regola solleva il tetto da 1: righe
+            // 1924-1927 (nessun limite di Turno) e 10227-10228 ("Any MOD to B
+            // will also apply"). Quello della SKILL ("BS Attack (+1B)") NO:
+            // righe 6646-6648 lo escludono proprio in un ARO di BS Attack. Qui
+            // si leggono solo le notazioni dell'arma.
+            ((arma && arma.notazioni) || []).map(M.parseNotazione).forEach(function (n) {
+                if (n.tipo === 'BURST' && n.valore > 0) {
+                    valore += n.valore;
+                    voci.push({ fonte: 'notazione', valore: n.valore, motivo: `${arma.nome} (${n.raw}): +${n.valore} Burst anche in ARO (${nomeT}, righe 10227-10228)` });
+                }
+            });
+            if (valore > MAXB) { voci.push({ fonte: 'limite', valore: MAXB - valore, motivo: `Burst massimo di regolamento: ${MAXB}` }); valore = MAXB; }
+            // 🔴 Il Burst pieno e` OPZIONALE (riga 10224, etichetta Optional;
+            // "the user MAY use the full Burst", riga 10227; righe 3088-3090).
+            // ctx.burstPieno === false: il giocatore sceglie B1 (per esempio per
+            // non bruciare due usi di un Panzerfaust). pienoDisponibile dice
+            // alla pagina che la scelta c'e`.
+            if (ctx.burstPieno === false && valore > base.valore) {
+                return Object.assign({}, base, { voci: (base.voci || []).concat([{ fonte: 'scelta', valore: 0, motivo: nomeT + `: scelto il Burst ridotto (B${base.valore}) invece del pieno (B${valore}): e\` opzionale` }]),
+                                     note: note, pienoDisponibile: valore, opzionale: true,
+                                     unSoloBersaglio: t.neurocinetica ? true : base.unSoloBersaglio });
+            }
+            return { valore: valore, voci: voci, note: note, pienoDisponibile: valore, opzionale: valore > base.valore,
                      unSoloBersaglio: t.neurocinetica ? true : base.unSoloBersaglio };
         }
         return base;
@@ -5999,6 +6066,42 @@
     // lettura di prima (mischia del bersaglio con almeno un alleato).
     // Restituisce { applica, annullato, nota }: applica false per un'arma
     // senza Sagoma (li` vale il -6 della mischia).
+    // SG-09: le lettere delle Sagome di un attacco. Restituisce null se
+    // l'attacco non le usa (bersagli senza `sagome`), altrimenti una COPIA
+    // dei bersagli con burst = Sagome rimaste, `sagomeAnnullate` e le note.
+    M.LETTERE_SAGOMA = ['A', 'B', 'C', 'D', 'E', 'F'];
+    M.sagomeConLettera = function (att, ctx) {
+        ctx = ctx || {};
+        const bs = (att && att.bersagli) || [];
+        const arma = (typeof att.arma === 'string') ? M.profiloArma(att.arma) : att.arma;
+        if (!arma || !arma.isTemplate || !bs.some(b => b && Array.isArray(b.sagome))) return null;
+        const annullate = {};   // lettera -> nome di chi la annulla
+        bs.forEach(function (b) {
+            if (!b || !Array.isArray(b.sagome) || !b.sagome.length) return;
+            const dif = (ctx.trovaUnita ? ctx.trovaUnita(b.name || b.nome, b.id) : null) || b;
+            const es = M.esitoSagomaAlleati(arma, M.statoBersaglio(dif), { alleatoNellaSagoma: b.alleatoNellaSagoma, alleatiInMischia: b.alleatiInMischia });
+            if (es.annullato) b.sagome.forEach(L => { if (!annullate[L]) annullate[L] = b.name || b.nome || M.nomeUnita(dif); });
+        });
+        return bs.map(function (b) {
+            if (!b || !Array.isArray(b.sagome)) return b;
+            const sue = b.sagome.filter((L, i, a) => a.indexOf(L) === i);
+            const via = sue.filter(L => annullate[L]);
+            const restano = sue.filter(L => !annullate[L]);
+            const c = Object.assign({}, b, { sagome: sue, sagomeAnnullate: via, sagomeValide: restano });
+            if (via.length && restano.length) {
+                c.burst = restano.length;
+                c.notaSagome = 'Sagome ' + via.map(L => L + ' (annullata: prende ' + annullate[L] + ' con un tuo alleato)').join(', ') + '. Restano ' + restano.join(', ') + ': ' + restano.length + ' Tiro/i Salvezza.';
+            } else if (via.length) {
+                c.burst = sue.length;
+                c.sagomaAnnullataDaLettere = via.map(L => 'Sagoma ' + L + ' (' + annullate[L] + ')').join(', ');
+            } else {
+                c.burst = sue.length;
+                c.notaSagome = 'Sotto le Sagome ' + sue.join(', ') + ': ' + sue.length + ' Tiro/i Salvezza.';
+            }
+            return c;
+        });
+    };
+
     M.esitoSagomaAlleati = function (arma, statoD, ctx) {
         ctx = ctx || {};
         const a = (typeof arma === 'string') ? M.profiloArma(arma) : arma;
@@ -6043,7 +6146,14 @@
         // righe 3622-3626), da NO altrimenti; e lo scrive sul bersaglio.
         if (pArmaD && pArmaD.isTemplate) {
             const azD = M.azioneCanonica(G.currentOrder && G.currentOrder.action) || '';
-            const colpoUnico = [M.AZIONI.SPECULATIVO, M.AZIONI.GUIDATO, M.AZIONI.INTUITIVO].indexOf(azD) >= 0;
+            // 26 ottobre (Paolo, TPL-11): anche l'ATTACCO BS con UNA Sagoma
+            // (Burst 1) e` un colpo solo: la Sagoma e` quella del Principale,
+            // la risposta si da` li` e vale per tutti (rispostaColpo in
+            // risolviPayload). Sui secondari la domanda non si fa piu`.
+            // Con 2+ Sagome a lettere resta per bersaglio: vale per le sue lettere.
+            const tb = parseInt(G.totalBurst, 10);
+            const colpoUnico = [M.AZIONI.SPECULATIVO, M.AZIONI.GUIDATO, M.AZIONI.INTUITIVO].indexOf(azD) >= 0 ||
+                               (isFinite(tb) && tb <= 1);
             if (colpoUnico && indice > 0) return '';
             if (typeof bersaglio.alleatoNellaSagoma !== 'boolean') bersaglio.alleatoNellaSagoma = !!(vero && M.statoBersaglio(vero).engaged);
             const v = bersaglio.alleatoNellaSagoma;
@@ -6153,6 +6263,16 @@
                 }).join('') + `</div>` : scritta('&nbsp;');
             if (tpl) bassa += scritta('+ SAGOMA CIRCOLARE', true);
         }
+        // 26 ottobre (proposta di INTERFACCIA): gli USI di un'arma Disposable
+        // dentro il bottone, uguali in BS, ARO, Speculativo e Intuitivo.
+        //   o.usi = M.usiResidui(portatore, arma)  ({ residui, totali, spesi })
+        // A usi finiti il bottone si spegne e lo dice; l'onclick lo decide
+        // chi chiama (di solito: alert(M.messaggioScarico(...))).
+        const usiB = o.usi && typeof o.usi === 'object' && o.usi.totali > 0 ? o.usi : null;
+        const esaurito = !!(usiB && usiB.residui <= 0);
+        if (usiB) bassa += esaurito
+            ? `<div class="usi-arma usi-esauriti" style="color:#c62828; font-size:15px; font-weight:700; text-align:center; padding:2px 0;">⛔ USI ESAURITI (${usiB.spesi}/${usiB.totali}) — serve un Reload</div>`
+            : `<div class="usi-arma" style="color:#6d4c00; font-size:15px; text-align:center; padding:2px 0;">Usi residui: ${usiB.residui} su ${usiB.totali}</div>`;
         const icone = catalogo('ICONE_EFFETTO') || {};
         // 13 ottobre (Paolo): ogni programma ha la SUA icona, diversa da
         // quella dello stato che provoca: img/programmi/<nome>.png, col nome
@@ -6163,9 +6283,10 @@
         const img = o.immagine || (programma ? ('img/programmi/' + M.nomeImmagineArma(nomeProg) + '.png') : ('img/armi/' + M.nomeImmagineArma(p.nome) + '.png'));
         const ripiego = (!o.immagine && programma) ? (icone[String(p.effetto || (H0[nomeProg] || {}).effetto || '').toUpperCase()] || '') : '';
         return M.formaBottone({
-            classe: 'bottone-arma',
-            contorno: colore,
+            classe: 'bottone-arma' + (esaurito ? ' bottone-arma-esaurito' : ''),
+            contorno: esaurito ? '#666' : colore,
             attributi: o.attributi,
+            stile: esaurito ? 'opacity:.5;' : o.stile,
             sopra: img ? `<img src="${img}" alt="" style="position:absolute; left:-4px; top:6px; width:86px; height:52px; object-fit:contain; filter:drop-shadow(0 4px 8px rgba(0,0,0,.9)); z-index:5;" onerror="${ripiego ? `if(this.dataset.r){this.style.display='none';}else{this.dataset.r=1;this.src='${ripiego}';}` : `this.style.display='none';`}">` : '',
             alta: `<div style="flex:1 1 auto; min-width:0; overflow-wrap:anywhere; font-size:26px; font-weight:700; color:#fff; text-transform:uppercase; line-height:.95; letter-spacing:1px;">${nome}</div>
                 <div style="flex:0 0 auto; display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; max-width:40%;">${tag}</div>`,
@@ -6569,9 +6690,15 @@
 
         if (t.sestoSenso) esito.note.push('Sesto Senso attivo.');
 
-        const burst = M.burstReattivo(difensore, reazione.arma, ctx);
+        // La scelta del Burst pieno (Total Reaction, opzionale) viaggia con la
+        // reazione: r.burstPieno === false = B1.
+        const burst = M.burstReattivo(difensore, reazione.arma, Object.assign({}, ctx, { burstPieno: reazione.burstPieno }));
         esito.burst = burst.valore;
         esito.vociBurst = burst.voci;
+        // 27 ottobre (TEST, giro 7): anche le NOTE del Burst (lo Scarico, il
+        // tetto sugli usi) arrivano allo scontro: prima c'era il Burst 0 ma non
+        // il perche`.
+        (burst.note || []).forEach(function (n) { if (n && (esito.note || []).indexOf(n) < 0) (esito.note = esito.note || []).push(n); });
         esito.impossibile = (esito.valore < 1);
         return esito;
     };
@@ -7172,6 +7299,12 @@
         const scontri = [];
         const attacchi = (payload && payload.attacchi) || [];
         reazioni = reazioni || [];
+        // Anche in ARO gli usi spesi li porta la risposta (r.usiSpesi), non
+        // la copia del roster dell'Hub (26 ottobre, DIS-02).
+        reazioni = reazioni.map(function (r) {
+            if (!r || !r.usiSpesi || typeof r.usiSpesi !== 'object' || !r.difensore || typeof r.difensore !== 'object') return r;
+            return Object.assign({}, r, { difensore: Object.assign({}, r.difensore, { usiSpesi: r.usiSpesi }) });
+        });
         const usate = [];   // reazioni gia` opposte a un attacco
 
         // 🔴 CHI REAGISCE E CHI E` BERSAGLIO SONO LA STESSA UNITA` ANCHE SE I
@@ -7242,7 +7375,15 @@
 
         attacchi.forEach(function (att) {
             const spec = M.SPEC[att.azione] || {};
-            const bersagli = att.bersagli || [];
+            // 26 ottobre (Paolo, SG-09): SAGOME CON LA LETTERA. Con Burst 2+ ogni
+            // Sagoma ha una lettera (A, B, C...) e ogni bersaglio dice SOTTO
+            // QUALI sta (b.sagome = ['A','B']). Se una Sagoma prende un tuo
+            // alleato (o una mischia con un tuo alleato) si annulla QUELLA
+            // lettera, per tutti i bersagli che ci stanno sotto; le altre
+            // valgono (righe 3584-3594: "but not other shots of that same
+            // Burst"). Il Burst di ogni bersaglio diventa il numero delle sue
+            // lettere che restano.
+            const bersagli = M.sagomeConLettera(att, ctx) || att.bersagli || [];
 
             // Difese pure e Supporto: un solo tiro, nessun confronto.
             if (spec.bersagli === 'segnaposto' || spec.bersagli === 'nessuno' ||
@@ -7367,7 +7508,12 @@
             // `dadoSpeciale: true`, altrimenti il primo con dadi. (27 settembre.)
             const attSd = (ctx.trovaUnita ? ctx.trovaUnita(att.attaccante, att.attaccanteId) : null) || att.attaccante;
             const armaSd = (typeof att.arma === 'string') ? M.profiloArma(att.arma) : att.arma;
-            const sdAttacco = (attSd && armaSd) ? M.dadiSpeciali(attSd, armaSd, { azione: att.azione }) : 0;
+            // 26 ottobre (DIS-05): in Corpo a Corpo il (+1 SD) delle Martial
+            // Arts lo conta burstCC, non dadiSpeciali: la nota "su QUESTO
+            // bersaglio tira un dado in piu`" usciva solo in BS.
+            const eCCsd = att.azione === M.AZIONI.CC_ATTACK || att.azione === M.AZIONI.BERSERK;
+            const sdMA = (eCCsd && attSd && typeof attSd === 'object' && armaSd) ? ((M.burstCC(attSd, armaSd, {}) || {}).sd || 0) : 0;
+            const sdAttacco = ((attSd && armaSd) ? M.dadiSpeciali(attSd, armaSd, { azione: att.azione }) : 0) + sdMA;
             const iMarcato = bersagli.findIndex(x => x && x.dadoSpeciale === true && x.burst);
             const iSd = sdAttacco > 0 ? (iMarcato >= 0 ? iMarcato : bersagli.findIndex(x => x && x.burst)) : -1;
             // 🔴 UNA SAGOMA E` UN COLPO SOLO (8 ottobre, domanda di INTERFACCIA).
@@ -7384,8 +7530,11 @@
             // Un colpo solo: Sagoma e Burst massimo 1 (Speculativo, Guidato,
             // Intuitivo, e il BS con una Sagoma a B1).
             const armaUno = (typeof att.arma === 'string') ? M.profiloArma(att.arma) : att.arma;
-            const unColpo = !!(armaUno && armaUno.isTemplate) &&
-                bersagli.reduce(function (m, x) { return Math.max(m, parseInt(x && x.burst, 10) || 0); }, 0) <= 1;
+            // Con le lettere (SG-09) il colpo e` uno solo se la lettera e` una.
+            const lettere = [];
+            bersagli.forEach(function (x) { ((x && x.sagome) || []).forEach(function (L) { if (lettere.indexOf(L) < 0) lettere.push(L); }); });
+            const unColpo = !!(armaUno && armaUno.isTemplate) && (lettere.length ? lettere.length <= 1 :
+                bersagli.reduce(function (m, x) { return Math.max(m, parseInt(x && x.burst, 10) || 0); }, 0) <= 1);
             // 🔴 LA RISPOSTA E` DEL COLPO (misura di INTERFACCIA, 8 ottobre).
             // La domanda "la Sagoma prende un tuo alleato?" in un colpo solo si
             // fa UNA volta, sul Principale: i secondari arrivano senza il
@@ -7491,7 +7640,11 @@
                 // ritrova — trovaUnita di solito cerca per nome o per id — vale
                 // l'oggetto della busta: e` un'unita`, non un nome.
                 const attTrovato = ctx.trovaUnita ? ctx.trovaUnita(att.attaccante, att.attaccanteId) : att.attaccante;
-                const attObj = attTrovato || ((att.attaccante && typeof att.attaccante === 'object') ? att.attaccante : attTrovato);
+                let attObj = attTrovato || ((att.attaccante && typeof att.attaccante === 'object') ? att.attaccante : attTrovato);
+                // Gli usi spesi li sa chi spara, non l'Hub (26 ottobre, DIS-02).
+                if (attObj && typeof attObj === 'object' && !attObj.nonRisolto && att.usiSpesiAttaccante && typeof att.usiSpesiAttaccante === 'object') {
+                    attObj = Object.assign({}, attObj, { usiSpesi: att.usiSpesiAttaccante });
+                }
                 // `nonRisolto`: lo scrive chi cerca le unita` (l'adattatore)
                 // quando non trova niente e restituisce un segnaposto col solo
                 // nome. Senza, il segnaposto passava per un'unita` vera.
@@ -7518,7 +7671,7 @@
                     attaccante: attObj,
                     azione: att.azione, arma: att.arma, bersaglio: dif,
                     burst: b.burst, ammo: b.ammo, cover: b.cover,
-                    sagomaAnnullataDa: sagomaAnnullataDa,
+                    sagomaAnnullataDa: sagomaAnnullataDa || b.sagomaAnnullataDaLettere || null,
                     nascostoAInizioOrdine: !!att.nascostoAInizioOrdine,
                     // `copertura`: DA QUALE copertura ('VITROFERRO', 'CUTTING_FOAM').
                     // Viaggia col cover: senza questa riga l'interfaccia lo scriveva
@@ -7629,10 +7782,32 @@
                 // busta (bersaglio.ruolo) o lo da` la posizione: il primo e`
                 // il Principale.
                 const armaSag = (typeof att.arma === 'string') ? M.profiloArma(att.arma) : att.arma;
+                // 27 ottobre (TEST, DEP-09): un lancio che lascia un segnalino
+                // (Disco Baller, Pitcher, Drop Bear in modo BS) lo dice sul
+                // tabellone, qualunque sia il modulo da cui parte: se il tiro
+                // riesce nasce il segnalino, con i suoi effetti (Disco Ball:
+                // la Sagoma Circolare di Eclipse).
+                const lancioSeg = M.lancioConSegnalino ? M.lancioConSegnalino(armaSag) : null;
+                if (lancioSeg && scontri.length) {
+                    const sL = scontri[scontri.length - 1];
+                    sL.note = (sL.note || []).concat(['Se il tiro RIESCE nasce il segnalino (' + lancioSeg.armaDelSegnalino + ') dove e` caduto il colpo. ' + (lancioSeg.note || []).join(' ')]);
+                }
                 if (armaSag && armaSag.isTemplate && bersagli.length > 1) {
                     const ultimoSag = scontri[scontri.length - 1];
                     const principale = (b.ruolo ? /^princip|^primar/i.test(String(b.ruolo)) : iB === 0);
                     ultimoSag.bersaglioDiSagoma = principale ? 'PRINCIPALE' : 'SECONDARIO';
+                    // 26 ottobre (Paolo, SG-10): sul secondario un Critico vale
+                    // come successo normale (criticoSoloSulPrincipale): la nota
+                    // "un Critico aggiunge 1 Tiro Salvezza" li` non va.
+                    // 27 ottobre (TEST): anche su reattivo.salvezzaSubita, che e`
+                    // quella che il tabellone disegna sotto il bersaglio.
+                    if (!principale) {
+                        const sc = 'Bersaglio secondario: un Critico conta come successo normale, niente Tiro Salvezza extra (vale solo sul Principale).';
+                        if (ultimoSag.attivo && ultimoSag.attivo.salvezzaInflitta && typeof ultimoSag.attivo.salvezzaInflitta === 'object')
+                            ultimoSag.attivo.salvezzaInflitta = Object.assign({}, ultimoSag.attivo.salvezzaInflitta, { senzaCritico: sc });
+                        if (ultimoSag.reattivo && ultimoSag.reattivo.salvezzaSubita && typeof ultimoSag.reattivo.salvezzaSubita === 'object')
+                            ultimoSag.reattivo.salvezzaSubita = Object.assign({}, ultimoSag.reattivo.salvezzaSubita, { senzaCritico: sc });
+                    }
                     // 22 ottobre: gli scontri dello stesso tiro portano lo
                     // stesso `tiroUnico`, perche` il tabellone li mostri come UN
                     // tiro dell'attaccante contro piu` bersagli.
@@ -7642,7 +7817,7 @@
                     // (il numero lo dichiara il giocatore, ordine_attacco_bs).
                     const quanteSag = Math.max.apply(null, bersagli.map(function (x) { return parseInt(x.burst, 10) || 0; }).concat([1]));
                     ultimoSag.note = (ultimoSag.note || []).concat([
-                        (quanteSag > 1
+                        (b.notaSagome ? (b.notaSagome + ' ') : '') + (b.notaSagome ? '' : quanteSag > 1
                             ? `Sagome: ${quanteSag} Sagome, ognuna è un colpo che vale per tutti quelli sotto la sua area. Questo bersaglio è preso da ${parseInt(b.burst, 10) || 1}: un Tiro Salvezza per ciascuna. `
                             : `Sagoma: UN SOLO tiro vale per tutti i ${bersagli.length} bersagli sotto l'area. `) +
                         (principale ? 'Questo \u00e8 il Bersaglio Principale.' : 'Questo \u00e8 un bersaglio secondario.') +
@@ -7710,7 +7885,7 @@
                 const armaRf = M.armaReattivaEffettiva(reattivo, r.arma);
                 const f2f = M.risolviScontro({
                     attaccante: reattivo, azione: M.azioneCanonica(r.azione) || r.azione, arma: armaRf,
-                    bersaglio: attaccante, burst: armaRf ? M.burstReattivo(reattivo, armaRf, ctx).valore : (r.burst || 1), ammo: r.ammo,
+                    bersaglio: attaccante, burst: armaRf ? M.burstReattivo(reattivo, armaRf, Object.assign({}, ctx, { burstPieno: r.burstPieno })).valore : (r.burst || 1), ammo: r.ammo,
                     rangeIndex: r.rangeIndex, rangeMod: r.rangeMod, cover: senzaCoperturaSuAttivo(r).cover, terrain: r.terrain, zona: r.zona
                 }, { difensore: attaccante, azione: 'DODGE', bersaglio: reattivo }, ctx);
                 f2f.latiInvertiti = true;
@@ -7769,7 +7944,7 @@
                 azione: M.azioneCanonica(r.azione) || r.azione,
                 arma: armaRo,
                 bersaglio: bersaglioOrf,
-                burst: eHackOrf ? 1 : (armaRo ? M.burstReattivo(reattivo, armaRo, ctx).valore : (r.burst || 1)), ammo: eHackOrf ? (armaRo && armaRo.ammo) : r.ammo,
+                burst: eHackOrf ? 1 : (armaRo ? M.burstReattivo(reattivo, armaRo, Object.assign({}, ctx, { burstPieno: r.burstPieno })).valore : (r.burst || 1)), ammo: eHackOrf ? (armaRo && armaRo.ammo) : r.ammo,
                 // 🔴 L'ARO di Hacking via Repeater nemico vale anche quando
                 // l'attivo NON attacca (muove, e` Idle...): prima il campo si
                 // perdeva qui, e con lui il -3, il +3 alla salvezza e l'Idle
@@ -7973,6 +8148,17 @@
             return { puo: false, blocchi: [{ stato: 'DEPLOYABLE', motivo: 'È un Deployable: non riceve Ordini dal Pool.' }],
                      motivo: 'È un Deployable: non riceve Ordini dal Pool.',
                      annullaSoppressione: false, notaSoppressione: null };
+        }
+        if (unita && String(unita.deployState || '').toUpperCase() === 'A_BORDO') {
+            const m = 'È a bordo del TAG: prima SCENDI DAL TAG (Ordine al TAG).';
+            return { puo: false, blocchi: [{ stato: 'A_BORDO', motivo: m }], motivo: m, annullaSoppressione: false, notaSoppressione: null };
+        }
+        // 26 ottobre: una replica (Decoy, Holoecho) non si attiva da sola.
+        if (unita && unita.replica) {
+            const m = (unita.tipoRepliche === 'HOLOECHO')
+                ? 'È una copia olografica: si muove con l’Ordine della truppa vera, non da sola.'
+                : 'È una replica Decoy: resta ferma, non riceve Ordini.';
+            return { puo: false, blocchi: [{ stato: 'REPLICA', motivo: m }], motivo: m, annullaSoppressione: false, notaSoppressione: null };
         }
         const A = catalogo('ATTIVAZIONE').impedita || {};
         const st = M.statoBersaglio(unita);
@@ -8240,6 +8426,12 @@
         if (!ok.puo) return { possibile: false, motivo: ok.motivo };
         const t = JSON.parse(JSON.stringify(ok.tag));
         t.states = Object.assign({}, t.states || {}); delete t.states.tagVuoto; t.pilotaUscito = null;
+        // Il pilota della lista torna A BORDO (resta nel roster, fuori dal
+        // tavolo); quello nato dall'Escape System esce dal roster come prima.
+        if (pilota.pilotaDiLista) {
+            return { possibile: true, unitaAggiornata: t, aBordo: M.mettiABordo(pilota, ok.tag),
+                     note: ['Il pilota deve essere a contatto di Silhouette col TAG. Il TAG torna attivo con le ferite che aveva; il pilota resta a bordo.'] };
+        }
         return { possibile: true, unitaAggiornata: t, rimuovi: pilota.id,
                  note: ['Il pilota deve essere a contatto di Silhouette col TAG. Il TAG torna attivo con le ferite che aveva.'] };
     };
@@ -8247,9 +8439,67 @@
     // Le voci del menu che una truppa puo` dichiarare (meta` Ordine di
     // Movimento). INTERFACCIA le mette in dbAzioniN5.movimento; la regola
     // di chi puo` sta qui (M.azionePermessaDaStati le filtra).
-    M.AZIONI_TRASPORTO = ['SCENDI DALLA MOTO', 'RISALI SULLA MOTO', 'RISALI SUL TAG'];
+    M.AZIONI_TRASPORTO = ['SCENDI DALLA MOTO', 'RISALI SULLA MOTO', 'SCENDI DAL TAG', 'RISALI SUL TAG'];
+    // 26 ottobre (LOG-05, Paolo): il pilota scende dal TAG anche SENZA
+    // Escape System, come meta` Ordine di Movimento (regola della casa,
+    // gemella di RISALI SUL TAG). Stessi profili dell'Escape System, ma
+    // niente Sagoma di Eclipse: quella e` dell'espulsione, non dello scendere.
+    // 26 ottobre (Paolo): Gator, Szalamandra e Gecko hanno il pilota nella
+    // lista, sotto il TAG, come il pilota della moto. Regola della casa: il
+    // pilota della lista parte A BORDO (deployState 'A_BORDO', aBordoDi =
+    // id del TAG: non e` sul tavolo, l'avversario non lo vede) e scende o
+    // risale come una meta` Ordine di Movimento. Se il pilota e` nel roster
+    // si usa LUI (stessi usi, stessi stati), senza crearne un altro.
+    //   M.mettiABordo(pilota, tag) -> pilota aggiornato (allo schieramento)
+    // 26 ottobre (proposta di INTERFACCIA): l'abbinamento pilota <-> TAG sta
+    // qui. Il TAG e` quello il cui nome e` il nome del pilota senza "Pilot"
+    // ("Gator Pilot (...)" -> "Gator (TAG)"), preferendo lo stesso Gruppo di
+    // Combattimento e uno non gia` occupato da un altro pilota. null se nessuno.
+    M.tagDelPilota = function (pilota, roster) {
+        const nP = String((M.profiloDiDatabase(pilota) || pilota || {}).nome || (pilota && pilota.nome) || '');
+        const m = /^(.*?)\s+Pilot\b/i.exec(nP);
+        if (!m) return null;
+        const radice = m[1].trim().toUpperCase();
+        const occupati = {};
+        (roster || []).forEach(u => { if (u && u !== pilota && (u.aBordoDi || u.tagDi)) occupati[u.aBordoDi || u.tagDi] = true; });
+        const candidati = (roster || []).filter(function (u) {
+            // Mai una replica (Holoecho/Decoy): il pilota salirebbe su una copia (INTERFACCIA).
+            if (!u || u === pilota || u.replica || String(u.tipo || '').toUpperCase() !== 'TAG') return false;
+            const nT = String((M.profiloDiDatabase(u) || u).nome || u.nome || '').replace(/\s*\(.*$/, '').trim().toUpperCase();
+            return nT === radice;
+        });
+        const peso = u => (occupati[u.id] ? 2 : 0) + (pilota && u.combatGroup !== pilota.combatGroup ? 1 : 0);
+        candidati.sort((a, b) => peso(a) - peso(b));
+        return candidati.length && !occupati[candidati[0].id] ? candidati[0] : null;
+    };
+    M.mettiABordo = function (pilota, tag) {
+        return Object.assign({}, pilota, { deployState: 'A_BORDO', aBordoDi: tag && tag.id, tagDi: tag && tag.id, pilotaDiLista: true });
+    };
+    M.scendiDalTag = function (tag, roster) {
+        const aBordo = (roster || G.roster || []).find(u => u && tag && u.aBordoDi === tag.id && String(u.deployState || '').toUpperCase() === 'A_BORDO');
+        if (aBordo && tag && !(tag.states && tag.states.tagVuoto)) {
+            const t = JSON.parse(JSON.stringify(tag));
+            t.states = Object.assign({}, t.states || {}, { tagVuoto: true }); t.pilotaUscito = aBordo.id; t.pilotaScesoAPiedi = true;
+            const pil = Object.assign({}, aBordo, { deployState: 'NORMAL', aBordoDi: undefined, tagDi: tag.id,
+                                                    states: Object.assign({}, aBordo.states || {}, { hidden: false }) });
+            return { possibile: true, unitaAggiornata: t, esistente: { prima: aBordo, dopo: pil },
+                     note: ['Il pilota scende e si piazza a contatto di Silhouette col TAG (regola della casa, meta` Ordine di Movimento).',
+                            'Il TAG resta sul tavolo vuoto: niente Ordini ne` ARO finche` il pilota non risale (RISALI SUL TAG).'] };
+        }
+        const e = M.espelliPilota(tag);
+        if (!e.possibile) return e;
+        e.unitaAggiornata.pilotaScesoAPiedi = true;
+        e.note = ['Il pilota scende e si piazza a contatto di Silhouette col TAG (regola della casa, meta` Ordine di Movimento).',
+                  'Il TAG resta sul tavolo vuoto: niente Ordini ne` ARO finche` il pilota non risale (RISALI SUL TAG).'];
+        return e;
+    };
     M.trasportoPossibile = function (unita, azione, roster) {
         const a = String(azione || '').toUpperCase();
+        if (a === 'SCENDI DAL TAG') {
+            const conPilota = (roster || G.roster || []).some(u => u && unita && u.aBordoDi === unita.id && String(u.deployState || '').toUpperCase() === 'A_BORDO');
+            if (conPilota && !(unita.states && unita.states.tagVuoto)) return { puo: true };
+            return M.puoEspellere(unita);
+        }
         if (a === 'SCENDI DALLA MOTO') return M.puoSmontare(unita);
         if (a === 'RISALI SULLA MOTO') return M.puoRimontare(unita, roster);
         if (a === 'RISALI SUL TAG') return M.puoRisalireSulTag(unita, roster);
@@ -8654,7 +8904,7 @@
                 p.numeroMarker = unita.numeroMarker;
                 p.tipoNumeroMarker = tN;
                 p.alias = p.alias + (CN.aliasExtra ? ' ' + CN.aliasExtra : '') + ' ' + unita.numeroMarker;
-                p.immagineMarker = M.immagineMarker(tN, unita.numeroMarker);
+                p.immagineMarker = M.immagineMarker(tN, unita.numeroMarker, unita.fazione || (M.fazionePropria ? M.fazionePropria() : null));
             }
             // 18 ottobre (Paolo): il solo valore del Mimetismo viaggia col
             // segnalino, perche` lo Scoprire (e l'Hub) lo applichino. Niente
@@ -8666,20 +8916,23 @@
         // Truppa visibile: e` sul tavolo a faccia in su.
         const p = copia(S.campiVisibili || []);
 
+        // 26 ottobre: vera e repliche escono IDENTICHE, col numero a caso
+        // (M.creaRepliche). I campi `replica` e `replicaDi` non sono fra i
+        // campi visibili: non partono.
         if (st.holoecho || String(unita.tipo).toUpperCase() === 'HOLOECHO') {
-            p.alias = (S.etichette || {}).HOLOECHO || 'COPIA OLOGRAFICA';
+            p.alias = ((S.etichette || {}).HOLOECHO || 'COPIA OLOGRAFICA') + (unita.numeroReplica ? ' ' + unita.numeroReplica : '');
         } else if (st.decoy || String(unita.tipo).toUpperCase() === 'DECOY') {
-            p.alias = (S.etichette || {}).DECOY || 'BERSAGLIO DECOY';
+            p.alias = ((S.etichette || {}).DECOY || 'BERSAGLIO DECOY') + (unita.numeroReplica ? ' ' + unita.numeroReplica : '');
         }
+        if (unita.numeroReplica && (st.holoecho || st.decoy)) p.numeroReplica = unita.numeroReplica;
 
-        if (deploy === 'HOLOMASK' || (unita.states && unita.states.holomask)) {
-            // Nome finto e armi nascoste: il resto resta com'e`.
-            p.nome = unita.fakeName || p.alias || 'TROOPER SCONOSCIUTO';
-            p.name = p.nome;
-            p.weapon = 'Sconosciuta';
-            p.equip = 'Sconosciuto';
-            p.skills = 'Sconosciute';
-        }
+        // 26 ottobre: HOLOMASK. Prima si scrivevano "Sconosciuta" nelle armi:
+        // cosi` l'avversario capiva che era una maschera, e all'Hub l'ARO di
+        // quella truppa non trovava la sua arma. Ora i dati restano veri e lo
+        // schermo mostra `mostraCome` (il Modello imitato). Con l'Holoecho
+        // insieme, anche le repliche portano la stessa maschera.
+        const maschera = M.mostraComeHolomask(unita);
+        if (maschera) p.mostraCome = maschera;
 
         if (deploy === 'SEED') {
             const soloSeed = copia(S.campiMarker || ['id']);
@@ -8699,7 +8952,19 @@
 
     // Roster pubblico: quello che si spedisce all'avversario.
     M.rosterPubblico = function (roster) {
-        return (roster || []).map(M.filtraPerAvversario).filter(u => u !== null);
+        const lista = (roster || []).filter(Boolean);
+        // 27 ottobre (TEST, J1): vera e repliche escono nell'ordine del loro
+        // numero (dato a caso), negli stessi posti che occupano nel roster:
+        // la vera non e` piu` sempre la prima.
+        const gruppi = {};
+        lista.forEach(function (u, i) { if (u.gruppoRepliche) (gruppi[u.gruppoRepliche] = gruppi[u.gruppoRepliche] || []).push(i); });
+        const ordinata = lista.slice();
+        Object.keys(gruppi).forEach(function (g) {
+            const posti = gruppi[g];
+            const membri = posti.map(i => lista[i]).sort((a, b) => (a.numeroReplica || 0) - (b.numeroReplica || 0));
+            posti.forEach((pos, k) => { ordinata[pos] = membri[k]; });
+        });
+        return ordinata.map(M.filtraPerAvversario).filter(u => u !== null);
     };
 
     // Promemoria dei tiri automatici da fare dopo lo schieramento.
@@ -10654,9 +10919,26 @@
             giudizi.push(e);
         });
 
+        // 26 ottobre (DEP-11, Paolo): dal 26 settembre i segnalini piazzati
+        // stanno NEL ROSTER (deployable: true) — torrette, mine scoperte,
+        // Repeater, Koala. Il Deactivator leggeva solo lo scenario e la
+        // scenografia: la torretta del Clockmaker c'era fra i bersagli dello
+        // Spotlight e non fra i suoi. Righe 10614-10622.
+        const visti = {}; giudizi.forEach(function (g) { if (g.unita && g.unita.id != null) visti[g.unita.id] = true; });
+        (M.rosterNemico() || []).forEach(function (d) {
+            if (!d || d.deployable !== true || (d.id != null && visti[d.id])) return;
+            const e = { unita: d, nome: M.nomeUnita(d), tipo: 'DEPLOYABLE', ammesso: true, motivo: null, note: [] };
+            const stD = M.statoBersaglio(d);
+            if (stD.camo || stD.imp || String(d.tipo || '').toUpperCase() === 'MARKER') { e.ammesso = false; e.motivo = C.maiCamo || 'In forma di Marker: va Scoperta prima.'; }
+            else if (stD.morto || d.state === 'DEAD') { e.ammesso = false; e.motivo = 'Gia` distrutto.'; }
+            if (d.id != null) visti[d.id] = true;
+            giudizi.push(e);
+        });
+
         // La scenografia nemica con Tratto Deployable: Armed Turret,
         // Deployable Cover.
         M.scenografia().forEach(function (sc) {
+            if (sc && sc.id != null && visti[sc.id]) return;
             const tratti = M.trattiScenografia(sc);
             const eDeployable = tratti.indexOf('Deployable') >= 0 ||
                                 /DEPLOYABLE/i.test(String(sc.traits || ''));
@@ -11067,10 +11349,51 @@
     //   - e` un ALTRO Marker: la restrizione resta, piazzamento negato.
     // ctx.scoprendo: il nome del Marker dello Scoprire; senza, torna la
     // domanda di sempre.
+    // 26 ottobre (DEP-08, DEP-09, Paolo): la restrizione del Marker CAMO e`
+    // SOLO delle Deployable WEAPON con un'Area d'Innesco (riga 7572: "A
+    // Deployable Weapon cannot be placed if there is an enemy Camouflage
+    // Marker inside its Trigger Area"). Un Repeater, un Koala-periferica, un
+    // Disco Ball (Targetless, Sagoma d'Impatto sul punto) non hanno area
+    // d'innesco: nessuna domanda. L'area e` la Sagoma Diretta dell'arma (le
+    // mine: Goccia Piccola), o un Tratto che la nomina.
+    // Le Perimeter (CrazyKoala, MadTraps: Boost in ZdC) hanno per area la ZdC
+    // (Minelayer, riga 9124: "or inside the Zone of Control for Perimeter
+    // Weapons"). Fuori: Ripetitori, Copertura, il segnalino del Disco Ball,
+    // le D-Charges a contatto, e Indiscriminate (riga 15041: si usa anche
+    // con Marker nell'area — FastPanda).
+    M.haAreaInnesco = function (arma) {
+        const t = String((arma && arma.traits) || '');
+        const W = (G.RULES_WEAPONS || {})[arma && arma.nome] || {};
+        const ris = (arma && arma.risoluzione) || W.risoluzione || null;
+        if (M.eTargetless && M.eTargetless(arma)) return false;
+        if (['RIPETITORE', 'COPERTURA', 'PIAZZATO', 'CONTATTO_STRUTTURA'].indexOf(ris) >= 0) return false;
+        if (/INDISCRIMINATE/i.test(t)) return false;
+        if (!/DEPLOYABLE/i.test(t)) return false;
+        if (ris === 'BOOST_ZOC' || /PERIMETER/i.test(t)) return true;
+        if (/TRIGGER|PROXIMITY/i.test(t)) return true;
+        const tpl = M.regoleTemplate ? M.regoleTemplate(arma) : null;
+        return !!(tpl && tpl.tipo === 'DIRETTO');
+    };
+    // 26 ottobre (DIS-06, Paolo): la domanda e` DOPPIA come per il Drop Bear
+    // lanciato — la seconda solo se la prima e` si` (riga 7572-7573):
+    //   c'e` un Marker CAMO nell'area d'innesco?    no -> si piazza
+    //   si` -> c'e` anche un nemico valido scoperto?  no -> NEGATO
+    // Prima c'era una domanda sola con la frase "NEGATO, salvo che...": il
+    // "salvo che" lo doveva risolvere il giocatore a memoria.
     M.domandePiazzamento = function (risposte, ctx) {
         const base = M.domandeDeployable('PIAZZAMENTO')[0];
         const chi = ctx && ctx.scoprendo;
-        if (!chi) return [base];
+        if (!chi) {
+            const dom = (catalogo('REGOLE_DEPLOYABLE') || {}).domande || {};
+            const out = [Object.assign({}, base, { blocca: false, rispostaBloccante: true, seSi: null })];
+            if (M.rispostaDomanda((risposte || {}).markerNellArea) === M.RISPOSTA.SI) {
+                out.push({ id: 'nemicoScopertoNellArea', blocca: true, rispostaBloccante: false, seBloccata: 'VIETA',
+                           testo: (dom.dropBearNemicoScoperto || 'C\'e` anche un nemico valido, NON in forma di Marker, dentro l\'area d\'innesco?') +
+                                  ' (Vale anche se in quest\'Ordine e` stato fatto un Attacco Intuitivo.)',
+                           seNo: 'Piazzamento NEGATO: un Marker mimetico nemico nell\'area d\'innesco, e nessun nemico valido scoperto (riga 7572).' });
+            }
+            return out;
+        }
         const out = [Object.assign({}, base, { blocca: false, seSi: null })];   // da sola non blocca: decide la seconda
         if (M.rispostaDomanda((risposte || {}).markerNellArea) === M.RISPOSTA.SI) {
             out.push({ id: 'markerEQuelloScoperto', blocca: true, rispostaBloccante: false, seBloccata: 'VIETA',
@@ -13177,8 +13500,11 @@
             .filter(function (a, i, arr) { return arr.findIndex(function (b) { return b.nome === a.nome; }) === i; })
             .map(function (a) {
                 const u = M.usiResidui ? M.usiResidui(unita, a) : null;
+                // 26 ottobre (DEP-10): la domanda sull'area serve solo a chi ha
+                // un'area d'innesco (o la ZdC, se Perimeter): M.haAreaInnesco.
                 return { nome: a.nome, usiResidui: u ? u.residui : null,
-                         disponibile: !u || u.residui == null || u.residui > 0 };
+                         disponibile: !u || u.residui == null || u.residui > 0,
+                         chiedeArea: !!(M.haAreaInnesco && M.haAreaInnesco(M.profiloArma(a.nome))) };
             });
         return { ha: true, pezzi: pezzi, usati: usati, restanti: Math.max(0, pezzi - usati),
                  armi: armi, domande: (C.domande || []).slice(), requisiti: (C.requisiti || []).slice() };
@@ -13198,7 +13524,8 @@
         // validi nell'area — FastPanda, Pitcher, Deployable Repeater. Per loro il
         // requisito non si chiede. (Chat REGOLE, 28 settembre.)
         const indiscriminata = /INDISCRIMINATE/i.test(String((M.profiloArma(nomeArma) || {}).traits || ''));
-        if (!indiscriminata && risposte.nemiciNellArea !== false) errori.push(err('E54', 'Requisito: nessun nemico né Marker Mimetico nell\'Area d\'Innesco (o nella ZdC per le Perimeter).'));
+        const conArea = !M.haAreaInnesco || M.haAreaInnesco(M.profiloArma(nomeArma));
+        if (!indiscriminata && conArea && risposte.nemiciNellArea !== false) errori.push(err('E54', 'Requisito: nessun nemico né Marker Mimetico nell\'Area d\'Innesco (o nella ZdC per le Perimeter).'));
         if (risposte.dentroZona !== true) errori.push(err('E55', 'Requisito: il punto deve stare dentro l\'area in cui il Minelayer può schierarsi.'));
         if (errori.length) return { token: null, portatoreAggiornato: unita, avvisi: [], errori: errori };
 
@@ -13220,6 +13547,191 @@
         return { portatoreAggiornato: u,
                  nota: `Tiro di Schieramento Superiore fallito: il Minelayer perde ${a.nome}` + (disposable ? ' (un uso scalato).' : '.') };
     };
+
+    // ==================================================================
+    // PARTE 51b: REPLICHE (DECOY, HOLOECHO) E HOLOMASK — 26 ottobre, Paolo
+    // ------------------------------------------------------------------
+    // REGOLA: Decoy State (pag. 156), Holoecho State (pag. 159-160),
+    // HoloMask State (pag. 161); Decoy riga 8125, Holoprojector 10865,
+    // HoloMask 10848.
+    //  - DECOY (N): allo schieramento, fino a N repliche (DECOY-1, DECOY-2)
+    //    oltre alla truppa. Le repliche sono STATICHE, valgono come Modelli
+    //    per la LoF e si possono bersagliare.
+    //  - HOLOECHO (Holoprojector): la truppa e` rappresentata da TRE
+    //    Holoecho (due repliche e il Modello vero), che eseguono lo STESSO
+    //    Ordine insieme.
+    //  - Una replica colpita da un Attacco riuscito NON fa il Tiro Salvezza:
+    //    si toglie. Si toglie anche se Scoperta o a contatto con un nemico.
+    //  - Quando la truppa vera si rivela (le cause sono quelle degli stati
+    //    Marker, gia` in M.statoDopoAbilita), TUTTE le repliche si tolgono.
+    //  - Holoecho: se tutte le repliche sono state Scoperte, cade anche lo
+    //    stato della truppa vera.
+    //  - HOLOMASK: al posto del Modello si mostra un'ALTRA truppa della
+    //    fazione con la stessa Silhouette (il "Modello imitato"), ma si gioca
+    //    col profilo VERO. Scoprendola, si mette il Modello vero.
+    // Chi e` la truppa vera lo sa solo il suo giocatore: nella vista pubblica
+    // vera e repliche sono identiche, con un numero dato a caso.
+    // I DATI pubblici restano quelli veri (decisione di Paolo: i dati non si
+    // mascherano, si tengono fuori dallo schermo): per l'HoloMask il motore
+    // aggiunge `mostraCome`, cio` che lo schermo dell'avversario e l'Hub
+    // devono mostrare al posto del nome, delle armi e della foto.
+    // ==================================================================
+    M.numeroRepliche = function (unita, tipo) {
+        const t = String(tipo || '').toUpperCase();
+        const testo = [unita && unita.skills, unita && unita.equip].filter(Boolean).join(',');
+        if (t === 'DECOY') {
+            const m = /\bDECOY\s*[\(\[]\s*(\d+)\s*[\)\]]/i.exec(testo);
+            if (m) return Math.min(2, parseInt(m[1], 10) || 0);
+            return /\bDECOY\b/i.test(testo) ? 2 : 0;   // "fino a due" senza parentesi
+        }
+        if (t === 'HOLOECHO') return /\bHOLOPROJECTOR\b/i.test(testo) ? 2 : 0;
+        return 0;
+    };
+    M.puoReplicare = function (unita, tipo) {
+        const t = String(tipo || '').toUpperCase();
+        const n = M.numeroRepliche(unita, t);
+        if (!unita || unita.deployable || unita.replica) return { puo: false, n: 0, motivo: 'Solo una truppa vera puo` avere repliche.' };
+        if (!n) return { puo: false, n: 0, motivo: t === 'DECOY' ? 'Il profilo non ha Decoy.' : 'Il profilo non ha Holoprojector.' };
+        return { puo: true, n: n };
+    };
+    function idOpaco() { return 'u' + Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36); }
+    //   M.creaRepliche(unita, 'DECOY'|'HOLOECHO', { quante }) ->
+    //     { possibile, unitaAggiornata, repliche: [token], note, motivo }
+    M.creaRepliche = function (unita, tipo, opzioni) {
+        opzioni = opzioni || {};
+        const t = String(tipo || '').toUpperCase();
+        const ok = M.puoReplicare(unita, t);
+        if (!ok.puo) return { possibile: false, motivo: ok.motivo, repliche: [], note: [] };
+        const quante = Math.max(1, Math.min(ok.n, parseInt(opzioni.quante, 10) || ok.n));
+        const flag = t === 'DECOY' ? 'decoy' : 'holoecho';
+        const gruppo = 'rep_' + idOpaco();
+        const vera = Object.assign({}, unita, { states: Object.assign({}, unita.states || {}, { [flag]: true }),
+                                                gruppoRepliche: gruppo, tipoRepliche: t });
+        const note = [];
+        if (vera.states.fireteam) { vera.states.fireteam = null; note.push('Con ' + (t === 'DECOY' ? 'Decoy' : 'Holoecho') + ' la truppa esce dal Fireteam.'); }
+        const repliche = [];
+        // 27 ottobre (TEST, J1): l'id della replica ha la STESSA FORMA di
+        // quello della vera. Con gli id di lista (u_<numero>_<n>,
+        // roster_manager) si tiene il numero e si sceglie un <n> libero a
+        // caso: dalla forma non si capisce chi e` vera. L'intervallo e` lo
+        // stesso della lista (0..999, roster_manager): con 0..99 una vera a
+        // tre cifre restava riconoscibile (TEST, giro 7).
+        const mId = /^u_(\d+)_(\d+)$/.exec(String(unita.id || ''));
+        const presi = {}; (opzioni.roster || G.roster || []).forEach(u => { if (u && u.id != null) presi[u.id] = true; }); presi[unita.id] = true;
+        const nuovoId = function () {
+            if (!mId) return idOpaco();
+            for (let t = 0; t < 500; t++) { const c = 'u_' + mId[1] + '_' + Math.floor(Math.random() * 1000); if (!presi[c]) { presi[c] = true; return c; } }
+            return idOpaco();
+        };
+        for (let k = 0; k < quante; k++) {
+            const r = JSON.parse(JSON.stringify(vera));
+            ['usiSpesi', 'numeroMarker', 'tipoNumeroMarker', 'remDriverSu', 'minelayerUsati'].forEach(c => { r[c] = undefined; });
+            r.id = nuovoId();
+            r.replica = true; r.replicaDi = unita.id;
+            repliche.push(r);
+        }
+        // Il numero pubblico (1..n+1) si da` a caso: dal numero non si deve
+        // capire chi e` vera.
+        const tutte = [vera].concat(repliche);
+        const numeri = tutte.map((_, i) => i + 1);
+        for (let i = numeri.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const x = numeri[i]; numeri[i] = numeri[j]; numeri[j] = x; }
+        tutte.forEach((u, i) => { u.numeroReplica = numeri[i]; });
+        note.push(t === 'DECOY'
+            ? 'Decoy: ' + quante + ' replica/e statiche entro Coerenza. Si possono bersagliare: una replica colpita da un Attacco riuscito si toglie senza Tiro Salvezza.'
+            : 'Holoecho: ' + quante + ' copie olografiche in Coerenza; eseguono lo stesso Ordine della truppa vera. Una copia colpita da un Attacco riuscito si toglie senza Tiro Salvezza.');
+        note.push('Le repliche non copiano i Deployable rappresentati da segnalino (mine del Minelayer, FastPanda...).');
+        return { possibile: true, unitaAggiornata: vera, repliche: repliche, note: note };
+    };
+    M.eReplica = function (u) { return !!(u && u.replica === true); };
+    M.replicheDi = function (roster, idVero) {
+        return (roster || []).filter(u => u && u.replica && u.replicaDi === idVero);
+    };
+    // Toglie TUTTE le repliche della truppa (in place) -> [repliche tolte]
+    M.togliRepliche = function (roster, idVero) {
+        const tolte = [];
+        for (let i = (roster || []).length - 1; i >= 0; i--) {
+            const u = roster[i];
+            if (u && u.replica && u.replicaDi === idVero) { tolte.push(u); roster.splice(i, 1); }
+        }
+        return tolte;
+    };
+    // Toglie UNA replica (Scoperta, colpita, a contatto). Con l'Holoecho,
+    // se non ne resta nessuna cade anche lo stato della truppa vera.
+    //   -> { tolta, veraAggiornata|null, note }
+    M.togliReplica = function (roster, idReplica) {
+        const i = (roster || []).findIndex(u => u && u.id === idReplica && u.replica);
+        if (i < 0) return { tolta: null, veraAggiornata: null, note: ['Non e` una replica.'] };
+        const r = roster.splice(i, 1)[0];
+        const note = [M.nomeUnita(r) + ': replica tolta dal tavolo.'];
+        let vera = null;
+        const v = roster.find(u => u && u.id === r.replicaDi);
+        if (v && v.tipoRepliche === 'HOLOECHO' && M.replicheDi(roster, v.id).length === 0) {
+            vera = Object.assign({}, v, { states: Object.assign({}, v.states || {}, { holoecho: false }) });
+            note.push('Tutte le copie olografiche sono cadute: cade anche l’Holoecho della truppa vera (pag. 160).');
+        }
+        return { tolta: r, veraAggiornata: vera, note: note };
+    };
+    // La nota per il giocatore che POSSIEDE la truppa, quando un attacco la
+    // prende: solo lui sa se e` una replica.
+    M.notaReplicaBersaglio = function (u) {
+        if (!M.eReplica(u)) return null;
+        return 'E` una REPLICA: se l’Attacco riesce non fa il Tiro Salvezza, si toglie dal tavolo (M.togliReplica). Se lo Scoprono o un nemico la tocca, si toglie lo stesso.';
+    };
+
+    // --- HoloMask --------------------------------------------------------
+    // Le truppe che si possono imitare: stessa fazione (il database della
+    // truppa), stessa Silhouette, non Deployable. Una voce per nome.
+    M.profiliImitabili = function (unita) {
+        const base = M.profiloDiDatabase(unita) || unita || {};
+        const db = (G.DB_NOMADI || []).some(p => p && p.id === base.id) ? (G.DB_NOMADI || [])
+                 : (G.DB_PANOCEANIA || []).some(p => p && p.id === base.id) ? (G.DB_PANOCEANIA || [])
+                 : profiliDb();
+        const s = parseInt((unita && unita.s) != null ? unita.s : base.s, 10);
+        const visti = {};
+        return db.filter(function (p) {
+            if (!p || p.deployable || p.id === base.id || parseInt(p.s, 10) !== s) return false;
+            if (/PERIPHERAL/i.test(String(p.skills || ''))) return false;
+            if (visti[p.nome]) return false;
+            visti[p.nome] = true; return true;
+        }).map(p => ({ id: p.id, nome: p.nome, tipo: p.tipo, s: p.s }));
+    };
+    // 26 ottobre (INTERFACCIA): un Bashi Bazouk vedeva 290 voci, una per
+    // variante d'arma. Raggruppate per Unita` (il nome prima della parentesi),
+    // con le varianti dentro: si sceglie la truppa, poi l'opzione d'arma
+    // ("declaring which weapon option it is duplicating", pag. 161).
+    //   -> [{ unita, varianti: [{ id, nome }] }]  ordinate per nome
+    M.profiliImitabiliRaggruppati = function (unita) {
+        const gruppi = {};
+        M.profiliImitabili(unita).forEach(function (p) {
+            const base = String(p.nome || '').replace(/\s*\(.*$/, '').trim() || p.nome;
+            (gruppi[base] = gruppi[base] || []).push({ id: p.id, nome: p.nome });
+        });
+        return Object.keys(gruppi).sort().map(k => ({ unita: k, varianti: gruppi[k] }));
+    };
+    //   M.applicaHolomask(unita, idProfiloImitato) -> { possibile, unitaAggiornata, motivo, note }
+    M.applicaHolomask = function (unita, idImitato) {
+        const testo = [unita && unita.skills, unita && unita.equip].filter(Boolean).join(',');
+        if (!/\bHOLOMASK\b/i.test(testo)) return { possibile: false, motivo: 'Il profilo non ha HoloMask.' };
+        const im = M.profiloDaId(idImitato);
+        if (!im) return { possibile: false, motivo: 'Profilo da imitare non trovato.' };
+        if (!M.profiliImitabili(unita).some(p => p.id === im.id)) return { possibile: false, motivo: 'Si imita solo una truppa della propria fazione con la stessa Silhouette (pag. 161).' };
+        const u = Object.assign({}, unita, { holomaskImita: im.id,
+                   states: Object.assign({}, unita.states || {}, { holomask: true }) });
+        return { possibile: true, unitaAggiornata: u,
+                 note: ['HoloMask: l’avversario vede ' + im.nome + '. Si gioca col profilo VERO; scoperta o rivelata, si mette il Modello vero e si danno le informazioni pubbliche complete.',
+                        'Non si imitano i Deployable a segnalino del profilo imitato.'] };
+    };
+    // Cio` che l'avversario (e l'Hub) devono MOSTRARE di una truppa in
+    // HoloMask. null se non e` in HoloMask.
+    M.mostraComeHolomask = function (unita) {
+        if (!unita || !(unita.states && unita.states.holomask) && String(unita.deployState || '').toUpperCase() !== 'HOLOMASK') return null;
+        const im = unita.holomaskImita ? M.profiloDaId(unita.holomaskImita) : null;
+        if (!im) return { nome: unita.fakeName || 'TRUPPA SCONOSCIUTA', weapon: '', equip: '', skills: '', imitato: null };
+        return { nome: im.nome, weapon: im.weapon || '', equip: im.equip || '', skills: im.skills || '', tipo: im.tipo,
+                 cc: im.cc, bs: im.bs, ph: im.ph, wip: im.wip, arm: im.arm, bts: im.bts, w: im.w, str: im.str, s: im.s, mov: im.mov,
+                 imitato: im.id };
+    };
+
 
 
     // ==================================================================
@@ -13249,7 +13761,8 @@
         STATO_PARTITA:    'global_game_state',
         HUB_TURNO:        'canale_hub_turno',
         ALLARME_ATTACCO:  'canale_attacco_allarme',
-        HUB_SBLOCCO:      'hub_sblocco_attivo'
+        HUB_SBLOCCO:      'hub_sblocco_attivo',
+        HUB_RICARICA:     'hub_ricarica_usi'
     };
     M.CANALI = (typeof Proxy === 'function')
         ? new Proxy(Object.freeze(Object.assign({}, CANALI_DATI)), {
@@ -13272,8 +13785,39 @@
         global_game_state:             { scrive: 'hub (controller)',   legge: 'app (app.html)',   cosa: 'stato della partita' },
         canale_hub_turno:              { scrive: 'hub (controller)',   legge: 'app (motore_core)', cosa: 'di chi e` il turno' },
         canale_attacco_allarme:        { scrive: 'hub (controller)',   legge: 'app (motore_core)', cosa: 'allarme: chi e` attaccato' },
-        hub_sblocco_attivo:            { scrive: 'hub (controller)',   legge: 'app (motore_core)', cosa: 'sblocco del giocatore attivo' }
+        hub_sblocco_attivo:            { scrive: 'hub (controller)',   legge: 'app (motore_core)', cosa: 'sblocco del giocatore attivo' },
+        hub_ricarica_usi:              { scrive: 'hub (controller)',   legge: 'app (motore_core)', cosa: 'ricarica forzata degli usi limitati (M.comandoRicarica)' }
     });
+    // 26 ottobre (Paolo): dall'Hub si puo` FORZARE la ricarica degli usi
+    // limitati (armi Disposable) di una truppa, o di tutto un esercito.
+    // L'Hub scrive M.comandoRicarica(...) su CANALI.HUB_RICARICA; l'app di
+    // quella fazione la applica UNA volta (l'id del comando si ricorda: il
+    // cloud rimanda l'ultimo valore a ogni riapertura della pagina).
+    //   unitaId null = tutte le truppe della fazione.
+    M.comandoRicarica = function (fazione, unitaId) {
+        return JSON.stringify({ tipo: 'RICARICA_FORZATA', fazione: String(fazione || '').toUpperCase(),
+                                unitaId: unitaId == null ? null : String(unitaId),
+                                id: 'ric_' + Date.now() + '_' + Math.floor(Math.random() * 1e6), quando: Date.now() });
+    };
+    //   M.applicaComandoRicarica(roster, comando, fazione) -> [{ unita, recuperati }]
+    // Restituisce le truppe ricaricate; [] se il comando non e` per questa
+    // fazione o non e` valido. Le unita` si aggiornano SUL POSTO (stesso
+    // oggetto del roster), come fa consumaUsiSpari.
+    M.applicaComandoRicarica = function (roster, comando, fazione) {
+        let c = comando;
+        if (typeof c === 'string') { try { c = JSON.parse(c); } catch (e) { return []; } }
+        if (!c || c.tipo !== 'RICARICA_FORZATA') return [];
+        if (fazione && c.fazione && String(fazione).toUpperCase() !== c.fazione) return [];
+        const fatti = [];
+        (roster || []).forEach(function (u) {
+            if (!u || (c.unitaId != null && String(u.id) !== c.unitaId)) return;
+            if (!u.usiSpesi || !Object.keys(u.usiSpesi).length) return;
+            const r = M.ricaricaUsi(u, { forzata: true });
+            u.usiSpesi = r.unitaAggiornata.usiSpesi;
+            fatti.push({ unita: M.nomeUnita(u), recuperati: r.recuperati });
+        });
+        return fatti;
+    };
 
     // ------------------------------------------------------------------
     // PRIMA LETTURA DAL CLOUD — M.creaAttesaCloud(canali, opzioni)
@@ -13426,10 +13970,28 @@
         });
         return roster;
     };
-    M.immagineMarker = function (tipo, n) {
-        const C = ((catalogo('SCHIERAMENTO') || {}).segnaliniNumerati || {})[tipo];
+    // 26 ottobre (Paolo): ogni esercito ha i SUOI segnalini, in img/nomadi/
+    // e img/panoceania/. `fazione` e` quella del PROPRIETARIO del Marker:
+    // accanto alle proprie unita` le proprie immagini, accanto a quelle
+    // dell'avversario le sue. Senza fazione resta il percorso comune di prima.
+    M.immagineMarker = function (tipo, n, fazione) {
+        const S = catalogo('SCHIERAMENTO') || {};
+        const C = (S.segnaliniNumerati || {})[tipo];
         if (!C || !(n > 0) || n > (C.immagini || 0)) return null;
-        return String(C.file).replace('{n}', n);
+        return M.iconaDellaFazione(String(C.file).replace('{n}', n), fazione);
+    };
+    // Lo stesso per le icone degli STATI (CATALOGO_N5.ICONE_EFFETTO e quelle
+    // dell'app): 'img/icon_targeted.png' -> 'img/nomadi/icon_targeted.png'.
+    // Senza fazione, o con un percorso che non comincia da img/, resta com'e`.
+    M.iconaDellaFazione = function (percorso, fazione) {
+        const p = String(percorso || '');
+        const cartelle = (catalogo('SCHIERAMENTO') || {}).cartelleSegnalini || {};
+        const cart = fazione ? cartelle[String(fazione).toUpperCase()] : null;
+        if (!cart || !/^img\//.test(p) || p.indexOf(cart) === 0) return p || null;
+        // 27 ottobre (TEST): un percorso gia` nella cartella di un ALTRO
+        // esercito cambia cartella, non se ne aggiunge una seconda.
+        const altra = Object.keys(cartelle).map(k => cartelle[k]).find(c => p.indexOf(c) === 0);
+        return cart + p.slice(altra ? altra.length : 'img/'.length);
     };
     M.etichettaMarker = function (unita) {
         const t = unita && unita.tipoNumeroMarker, n = unita && unita.numeroMarker;
@@ -13491,6 +14053,64 @@
         const k = usi.chiaveUsi;
         const prima = ((unita.usiSpesi || {})[k]) || 0;
         return Object.assign({}, unita, { usiSpesi: Object.assign({}, unita.usiSpesi || {}, { [k]: Math.min(usi.totali, prima + n) }) });
+    };
+
+    // ------------------------------------------------------------------
+    // RELOAD e BAGGAGE (26 ottobre) — righe 10479-10500 e 14720-14745.
+    // Il Reload, nella ZdC di un alleato con Baggage non in Stato Nullo,
+    // riporta TUTTE le armi e gli equipaggiamenti Disposable della truppa
+    // agli usi pieni; un alleato per Ordine. Cio` che e` gia` sul tavolo (le
+    // mine piazzate) resta dov'e`: gli usi tornano, i segnalini non spariscono.
+    // Mai le armi Non-Reloadable.
+    //   M.alleatiConBaggage(unita, roster) -> [unita`]
+    //   M.puoRicaricare(unita, roster)     -> { puo, motivo, baggage: [nomi], armi: [nomi] }
+    //   M.ricaricaUsi(unita, { forzata })  -> { unitaAggiornata, recuperati: [{ arma, usi }], esclusi: [...] }
+    // `forzata` e` la ricarica decisa dai giocatori dall'Hub: nessun
+    // requisito, si azzera tutto (anche Non-Reloadable: lo hanno deciso loro).
+    // ------------------------------------------------------------------
+    function armiDisposableDi(unita) {
+        const voci = M.dividiLista([unita && unita.weapon, unita && unita.equip].filter(Boolean).join(','));
+        const out = [];
+        voci.forEach(function (v) {
+            const a = M.profiloArma(v);
+            if (!a || a.nonTrovata) return;
+            const u = M.usiResidui(unita, a);
+            if (u && !out.some(x => x.usi.chiaveUsi === u.chiaveUsi)) out.push({ arma: a, usi: u });
+        });
+        return out;
+    }
+    M.alleatiConBaggage = function (unita, roster) {
+        return (roster || G.roster || []).filter(function (x) {
+            if (!x || x === unita || (unita && x.id != null && x.id === unita.id)) return false;
+            if (x.state === 'DEAD' || M.eNullo(x)) return false;
+            const dep = String(x.deployState || 'NORMAL').toUpperCase();
+            if (dep === 'RESERVE' || dep === 'AD' || dep === 'HIDDEN') return false;
+            return /\bBAGGAGE\b/i.test([x.equip, x.skills, x.weapon].filter(Boolean).join(','));
+        });
+    };
+    M.puoRicaricare = function (unita, roster) {
+        const armi = armiDisposableDi(unita).filter(x => x.usi.spesi > 0 && !/NON-?RELOADABLE/i.test(String(x.arma.traits || '')));
+        const bag = M.alleatiConBaggage(unita, roster).map(M.nomeUnita);
+        if (!armi.length) return { puo: false, motivo: 'Nessuna arma o equipaggiamento Disposable da ricaricare: gli usi sono tutti pieni.', baggage: bag, armi: [] };
+        if (!bag.length) return { puo: false, motivo: 'Nessun alleato con Baggage sul tavolo in stato non Nullo (riga 10489).', baggage: [], armi: armi.map(x => x.arma.nome) };
+        return { puo: true, baggage: bag, armi: armi.map(x => x.arma.nome) };
+    };
+    M.ricaricaUsi = function (unita, opzioni) {
+        opzioni = opzioni || {};
+        const spesi = Object.assign({}, (unita && unita.usiSpesi) || {});
+        const recuperati = [], esclusi = [];
+        armiDisposableDi(unita).forEach(function (x) {
+            if (!(x.usi.spesi > 0)) return;
+            if (!opzioni.forzata && /NON-?RELOADABLE/i.test(String(x.arma.traits || ''))) { esclusi.push(x.arma.nome); return; }
+            Object.keys(spesi).forEach(function (k) {
+                const kb = normalizza(String(k).replace(/\s*\([^)]*\)\s*/g, ' ')).trim().toUpperCase();
+                if (kb === x.usi.chiaveUsi) delete spesi[k];
+            });
+            recuperati.push({ arma: x.arma.nome, usi: x.usi.spesi });
+        });
+        if (opzioni.forzata) Object.keys(spesi).forEach(k => delete spesi[k]);
+        return { unitaAggiornata: Object.assign({}, unita, { usiSpesi: spesi }), recuperati: recuperati, esclusi: esclusi,
+                 note: ['Gli equipaggiamenti gia` piazzati sul tavolo restano dove sono (riga 10498).'] };
     };
 
     // ------------------------------------------------------------------

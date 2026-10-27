@@ -1,4 +1,4 @@
-// @versione 2026-10-23.2 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-27.1 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -139,6 +139,30 @@
         if (window.ritardatari.ids.indexOf(idUnita) < 0) window.ritardatari.ids.push(idUnita);
     };
 
+    // Le repliche proprie fra i bersagli dell'Ordine nemico in arrivo.
+    // L'allarme porta i NOMI dei bersagli: si confrontano col nome che
+    // l'avversario vede (la vista pubblica del motore) e con quelli propri.
+    window.noteReplicheBersaglio = function () {
+        const M = window.MotoreN5;
+        if (!M || typeof M.notaReplicaBersaglio !== 'function' || typeof M.eReplica !== 'function') return '';
+        const presi = ((window.currentAttackData || {}).bersagli || []).map(n => String(n || '').trim().toUpperCase());
+        if (!presi.length) return '';
+        const note = [];
+        (window.roster || []).forEach(function (u) {
+            if (!u || !M.eReplica(u)) return;
+            const nomi = [M.nomeUnita(u), u.alias, u.nome];
+            if (typeof M.filtraPerAvversario === 'function') {
+                try { const p = M.filtraPerAvversario(u); if (p) nomi.push(p.alias, p.nome, p.name); } catch (e) { window.ultimaEccezione = e; }
+            }
+            if (!nomi.some(n => n && presi.indexOf(String(n).trim().toUpperCase()) >= 0)) return;
+            const nota = M.notaReplicaBersaglio(u);
+            if (nota) note.push(`<b>${M.nomeUnita(u)}${u.numeroReplica ? ' (' + u.numeroReplica + ')' : ''}</b>: ${nota}`);
+        });
+        if (!note.length) return '';
+        return `<div class="nota-replica-bersaglio" style="margin-bottom:12px; padding:10px; background:#002a2a; border:1px dashed #99ffff; border-radius:5px; color:#ccffff; font-size:14px;">\ud83e\ude9e ` +
+            note.join('<br>\ud83e\ude9e ') + `</div>`;
+    };
+
     window.apriSelezioneAro = function () {
         const M = motore(); if (!M) return;
         document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
@@ -163,6 +187,11 @@
         window.detonazioniAro = window.detonazioniAro || [];
 
         const inArrivo = (window.currentAttackData && window.currentAttackData.azione) || null;
+        // 26 ottobre (MOTORE 26.1): se l'attacco prende una REPLICA (Decoy,
+        // Holoecho) lo sa solo chi la possiede, cioe` chi legge qui. La nota
+        // e` del motore (M.notaReplicaBersaglio); la replica si toglie poi
+        // dalla sua riga dell'elenco, se l'attacco riesce.
+        container.innerHTML += window.noteReplicheBersaglio();
         const bg = isNomads() ? '#1a0000' : '#001122';
         const bordo = isNomads() ? '#550000' : '#003366';
 
@@ -728,7 +757,9 @@
     function registraModi(v, lato) {
         if (!v.famiglia || v.modi.length < 2) return null;
         const chiave = lato + ':' + String(v.famiglia).replace(/'/g, '');
-        window._modiAro[chiave] = v.modi.map(function (m) { return m.nome; });
+        // Il nome GREZZO del profilo (nomeRichiesto), con le sue notazioni:
+        // "Panzerfaust (+1B)", "(PS=6)". Vedi selezionaArmaAro.
+        window._modiAro[chiave] = v.modi.map(function (m) { return m.nomeRichiesto || m.nome; });
         return chiave;
     }
 
@@ -830,14 +861,29 @@
                 // Si parte dal PRIMO modo: in aroCurrentConfig.arma va sempre il
                 // nome della modalita` (il motore calcola su quello), mai quello
                 // della famiglia.
-                const nomeEsc = v.modi[0].nome.replace(/'/g, "\\'");
+                // 27 ottobre (TEST, via MOTORE 27.2): il nome GREZZO del profilo
+                // (nomeRichiesto), come in BS, Speculativo e Intuitivo. Prima si
+                // passava p.nome, spogliato: "Panzerfaust" invece di "Panzerfaust
+                // (+1B)", e in ARO si perdevano le notazioni dell'arma, (PS=6)
+                // compreso, e il (+1B) del Total Reaction (riga 10227).
+                const nomeEsc = (v.modi[0].nomeRichiesto || v.modi[0].nome).replace(/'/g, "\\'");
                 const tocco = `onclick="window.selezionaArmaAro('${nomeEsc}', false${chiave ? `, '${chiave}'` : ''})"`;
                 if (typeof M.bottoneArma !== 'function') {
                     console.error('\u26d4 M.bottoneArma manca: armi in ARO senza il bottone approvato.');
                     container.innerHTML += `<button class="huge-btn" ${tocco}>${p.nome}</button>`;
                     return;
                 }
-                container.innerHTML += M.bottoneArma(p, { attributi: tocco });
+                // 26 ottobre (DIS-02, motore 26.2): un'arma Disposable dice i
+                // suoi usi DENTRO il bottone (M.bottoneArma, opzione usi), come
+                // nell'Attacco BS dell'attivo. A usi finiti il bottone e` spento
+                // e il tocco spiega invece di scegliere l'arma.
+                const usiA = (typeof M.usiResidui === 'function') ? M.usiResidui(u, v.modi[0]) : null;
+                if (usiA && usiA.residui <= 0) {
+                    const msg = (typeof M.messaggioScarico === 'function') ? M.messaggioScarico(u, v.modi[0]) : 'Usi esauriti: serve un Reload.';
+                    container.innerHTML += M.bottoneArma(p, { usi: usiA, attributi: `onclick="alert(${JSON.stringify(String(msg)).replace(/"/g, '&quot;')})"` });
+                    return;
+                }
+                container.innerHTML += M.bottoneArma(p, { usi: usiA, attributi: tocco });
             });
         }
 
@@ -850,7 +896,7 @@
         raggruppa(M, esito.armiModoNormale || []).forEach(function (v) {
             const p = v.vista;
             const chiave = registraModi(v, 'N');
-            const nomeEsc = v.modi[0].nome.replace(/'/g, "\\'");
+            const nomeEsc = (v.modi[0].nomeRichiesto || v.modi[0].nome).replace(/'/g, "\\'");
             const avviso = `<div class="avviso-modo-normale" style="color:#ff8800; font-size:14px; font-weight:bold; margin:6px 0 4px; text-align:center;">⚠️ ${p.nome} IN MODO NORMALE: ATTIVARLA ANNULLA LA SOPPRESSIONE</div>`;
             if (typeof M.bottoneArma !== 'function') {
                 container.innerHTML += avviso + `<button class="huge-btn" style="border-color:#ff8800;" onclick="window.selezionaArmaAro('${nomeEsc}', true${chiave ? `, '${chiave}'` : ''})">${p.nome} — MODO NORMALE</button>`;
@@ -882,6 +928,8 @@
         delete window.aroCurrentConfig.lof;
         delete window.aroCurrentConfig.fuoriGittata;
         delete window.aroCurrentConfig.fuoriSagoma;
+        // Arma nuova, scelta del Burst nuova (Total Reaction: pieno o B1).
+        delete window.aroCurrentConfig.burstPieno;
         // Modo normale in Soppressione: lo stato si annulla. Il motore dà
         // l'unita` aggiornata, qui la si sostituisce nel roster.
         if (annullaSoppressione) {
@@ -967,6 +1015,15 @@
     // Colori dei tasti dei requisiti: gli stessi di ordine_attacco_bs.js.
     const STILE_REQ_SI = 'background:#004400; border-color:#00ff00; color:#00ff00;';
     const STILE_REQ_NO = 'background:#554400; border-color:#ffcc00; color:#ffcc00;';
+
+    // Total Reaction / Neurocinetics: Burst pieno o ridotto (riga 10224,
+    // opzionale). La reazione porta r.burstPieno, che leggono l'Hub e il
+    // conteggio degli usi (motore_core, inviaRispostaAro).
+    window.sceltaBurstAro = function (pieno) {
+        if (!window.aroCurrentConfig) return;
+        window.aroCurrentConfig.burstPieno = !!pieno;
+        window.renderAroModifiersUI();
+    };
 
     window.renderAroModifiersUI = function () {
         const M = motore(); if (!M) return;
@@ -1103,7 +1160,7 @@
                 ? modiA.map(function (n, mi) {
                     let m = M.profiloArma(n);
                     if (window.aroSfMode) m = Object.assign({}, m, M.profiloSF(m));
-                    const b = M.burstARO(u, m).valore;
+                    const b = (cfg.azione === 'BS_ATTACK' && typeof M.burstReattivo === 'function') ? M.burstReattivo(u, m, { burstPieno: cfg.burstPieno }).valore : M.burstARO(u, m).valore;
                     const tipo = m.isTemplate ? ((M.regoleTemplate(m) || {}).tipo === 'DIRETTO' ? ' · Sagoma' : ' · Sagoma d\'Impatto') : '';
                     return (m.ammoOpzioni || [m.ammo]).map(function (a) {
                         const sel = (n === cfg.arma && a === cfg.ammo) ? 'selected' : '';
@@ -1121,8 +1178,30 @@
             if (arma.isHacking) sceltaMunizioni = '';
         }
 
-        const burst = arma ? M.burstARO(u, arma) : { valore: 1, voci: [], note: [] };
+        // 27 ottobre (MOTORE 27.3, REGOLE): il Burst in ARO e` quello di
+        // M.burstReattivo, lo stesso che usano l'Hub e il conteggio degli usi:
+        // col Total Reaction (o Neurocinetics) il Burst pieno dell'arma, col
+        // suo (+1B), tetto degli usi residui compreso. Il pieno e` OPZIONALE
+        // (riga 10224): quando c'e` la scelta (opzionale), due tasti, e B1
+        // scrive cfg.burstPieno = false nella reazione. Prima qui si mostrava
+        // M.burstARO, cioe` B1 anche quando l'Hub calcolava il pieno.
+        const usaReattivo = !!(arma && cfg.azione === 'BS_ATTACK' && typeof M.burstReattivo === 'function');
+        const burst = !arma ? { valore: 1, voci: [], note: [] }
+                    : usaReattivo ? M.burstReattivo(u, arma, { burstPieno: cfg.burstPieno })
+                    : M.burstARO(u, arma);
+        burst.voci = burst.voci || []; burst.note = burst.note || [];
         cfg.burst = burst.valore;
+        let sceltaBurst = '';
+        if (usaReattivo && burst.opzionale && burst.pienoDisponibile > 0) {
+            const ridotto = M.burstARO(u, arma).valore;
+            const pieno = cfg.burstPieno !== false;
+            if (pieno) cfg.burstPieno = true;
+            const stileOn = 'background:#003300; color:#00ff00; border-color:#00ff00;', stileOff = 'background:#111; color:#aaa; border-color:#555;';
+            sceltaBurst = `<div class="scelta-burst-aro" style="display:flex; gap:10px; margin:0 0 12px;">
+                <button type="button" class="huge-btn tasto-burst-pieno" style="flex:1; margin:0; min-height:50px; font-size:15px; ${pieno ? stileOn : stileOff}" onclick="window.sceltaBurstAro(true)">BURST PIENO (B${burst.pienoDisponibile})</button>
+                <button type="button" class="huge-btn tasto-burst-ridotto" style="flex:1; margin:0; min-height:50px; font-size:15px; ${pieno ? stileOff : stileOn}" onclick="window.sceltaBurstAro(false)">B${ridotto}</button>
+            </div>`;
+        } else delete cfg.burstPieno;
 
         // 6 ottobre. Salto e Ingresso in Campo negano la Copertura a chi li
         // dichiara: il motore lo scrive nell'allarme (coperturaNegata). Prima
@@ -1200,6 +1279,7 @@
                     <b style="color:var(--nomad-orange); font-size:24px;">VS: ${cfg.bersaglio}</b>
                     <div class="burst-ctrl"><span style="font-size:22px; font-weight:bold; color:#00ff00;">${burst.valore} B</span></div>
                 </div>
+                ${sceltaBurst}
                 ${burst.voci.length > 1 ? `<div style="color:#888; font-size:12px; margin-bottom:12px;">` + burst.voci.map(v => v.motivo).join(' · ') + `</div>` : ''}
                 ${corpo}
                 ${burst.note.length ? `<div style="margin-top:10px; color:#ff9900; font-size:12px;">• ` + burst.note.join('<br>• ') + `</div>` : ''}
@@ -1462,7 +1542,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-10-23.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-10-27.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

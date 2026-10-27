@@ -1,4 +1,4 @@
-// @versione 2026-10-12.1 | ordine_piazzamento.js | proprieta`: chat MOTORE
+// @versione 2026-10-26.1 | ordine_piazzamento.js | proprieta`: chat MOTORE
 // ==========================================
 // 📦 PIAZZARE EQUIPAGGIAMENTO (N5) - ordine_piazzamento.js
 // ------------------------------------------
@@ -190,7 +190,10 @@
         // due (M.domandePiazzamento), perche` quel Marker puo` essere proprio
         // quello che si sta Scoprendo. Senza Scoprire resta la domanda sola.
         const scD = (!window.coordMode && M.scoprireInCorso) ? M.scoprireInCorso() : null;
-        let domande = M.domandePiazzamento(window.deployableRisposte, { scoprendo: scD ? scD.bersaglio.name : null });
+        // 26 ottobre (DEP-08/09): niente domanda sul Marker per chi non ha
+        // un'area d'innesco (Repeater, periferiche, Disco Ball).
+        let domande = (M.haAreaInnesco && !M.haAreaInnesco(arma)) ? []
+            : M.domandePiazzamento(window.deployableRisposte, { scoprendo: scD ? scD.bersaglio.name : null });
         // Col Tratto Perimeter si piazza ovunque dentro la ZdC, ma il
         // percorso dev'essere percorribile: è una domanda in più.
         if (/PERIMETER/i.test(String(arma.traits || ''))) {
@@ -491,7 +494,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-12.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-26.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

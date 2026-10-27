@@ -1,4 +1,6 @@
-// @versione 2026-09-25.1 | test_schieramento.js | proprieta`: chat TEST
+// @versione 2026-10-26.1 | test_schieramento.js | proprieta`: chat TEST
+// .1 (26 ott): sez. 5 HoloMask girata (motore 2026-10-26.3): dati veri e p.mostraCome,
+//    niente piu` "Sconosciuta".
 // Test del filtro anti-spoiler — node test_schieramento.js
 global.window = global;
 require('./catalogo_n5.js'); require('./database_comune.js');
@@ -53,9 +55,22 @@ ok(holo.alias === 'COPIA OLOGRAFICA', 'Holoecho: etichettato, ma visibile come m
 const decoy = M.filtraPerAvversario(con({ deployState: 'NORMAL', states: { decoy: true } }));
 ok(decoy.alias === 'BERSAGLIO DECOY', 'Decoy: idem');
 
+// 🔴 GIRATA IL 26 OTTOBRE (motore 2026-10-26.3). Prima: nome finto e armi
+// "Sconosciuta" — cosi` l'avversario capiva che era una maschera, e all'Hub
+// l'ARO non trovava la sua arma. Ora i dati restano VERI (decisione di
+// Paolo: i dati non si mascherano, si tengono fuori dallo schermo) e il
+// motore aggiunge p.mostraCome, quello che schermo e Hub devono mostrare.
 const mask = M.filtraPerAvversario(con({ deployState: 'HOLOMASK', fakeName: 'Fusilier' }));
-ok(mask.nome === 'Fusilier' && mask.weapon === 'Sconosciuta',
-   'HoloMask: nome finto e armi nascoste');
+ok(mask.weapon === croc.weapon && !/Sconosciuta/.test(JSON.stringify(mask)),
+   'HoloMask: niente piu` "Sconosciuta", le armi restano vere');
+ok(mask.mostraCome && mask.mostraCome.nome === 'Fusilier', 'HoloMask: mostraCome col nome da mostrare (' + JSON.stringify(mask.mostraCome) + ')');
+const alg = DB_NOMADI.find(u => /^Alguacil \(Combi/.test(u.nome));
+const mask2 = M.filtraPerAvversario(con({ deployState: 'NORMAL', states: { holomask: true }, holomaskImita: alg.id }));
+const mc = mask2.mostraCome || {};
+ok(mc.nome === alg.nome && mc.weapon === alg.weapon && mc.skills === alg.skills && mc.tipo === alg.tipo && mc.bs === alg.bs && mc.arm === alg.arm && mc.imitato === alg.id,
+   'HoloMask con holomaskImita: nome, armi, abilita`, tipo e statistiche del Modello imitato (' + mc.nome + ', BS ' + mc.bs + ')');
+ok(mask2.bs === croc.bs && mask2.weapon === croc.weapon, '  e i dati della truppa restano i suoi (BS ' + mask2.bs + ')');
+ok(v.mostraCome === undefined && holo.mostraCome === undefined, 'CONTROPROVA: senza HoloMask nessun mostraCome');
 
 const seed = M.filtraPerAvversario(con({ deployState: 'SEED' }));
 ok(seed.alias === 'SEED-EMBRYO' && seed.weapon === undefined, 'Seed-Embryo: solo il segnalino');

@@ -1,4 +1,4 @@
-// @versione 2026-10-20.2 | ordine_movimento.js | proprieta`: chat MOTORE
+// @versione 2026-10-26.1 | ordine_movimento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏃 MOVIMENTO E INSTRADAMENTO (N5) - ordine_movimento.js
 // ------------------------------------------
@@ -74,6 +74,10 @@
         if (M.AZIONI_TRASPORTO && M.AZIONI_TRASPORTO.indexOf(String(actionId).toUpperCase()) >= 0) {
             if (!window.applicaTrasporto(actionId)) return;
         }
+        // 26 ottobre: RELOAD con Baggage.
+        if (String(actionId).toUpperCase() === 'RICARICARE') {
+            if (!window.applicaRicarica()) return;
+        }
         window.eseguiMovimentoAutomatico();
     };
 
@@ -85,14 +89,19 @@
         const u = window.currentOrder.unit;
         const e = a === 'SCENDI DALLA MOTO' ? M.smontaMoto(u)
                 : a === 'RISALI SULLA MOTO' ? M.rimontaMoto(u, window.roster)
+                : a === 'SCENDI DAL TAG' ? M.scendiDalTag(u, window.roster)
                 : M.risaliSulTag(u, window.roster);
         if (!e.possibile) { alert('⛔ ' + e.motivo); return false; }
         const togli = (id) => { const i = (window.roster || []).findIndex(x => x && x.id === id); if (i >= 0) window.roster.splice(i, 1); };
         let chi = u;
         if (a === 'RISALI SUL TAG') {
-            // Chi riceve l'Ordine da qui in poi e` il TAG: il pilota sparisce.
+            // Chi riceve l'Ordine da qui in poi e` il TAG: il pilota sparisce
+            // (o, se e` quello della lista, torna a bordo: resta nel roster).
             chi = (window.roster || []).find(x => x && x.id === u.tagDi) || u;
-            togli(u.id);
+            if (e.aBordo) Object.assign(u, e.aBordo); else togli(u.id);
+        } else if (e.esistente) {
+            // Il pilota della lista era a bordo: scende LUI.
+            Object.assign(e.esistente.prima, e.esistente.dopo);
         } else {
             if (e.rimuovi) togli(e.rimuovi);
             if (e.nuova) window.roster.push(e.nuova);
@@ -103,6 +112,30 @@
         if (window.spearheadUnit === u) window.spearheadUnit = chi;
         if (Array.isArray(window.coordUnits)) window.coordUnits = window.coordUnits.map(x => x === u ? chi : x);
         alert('✅ ' + M.nomeUnita(chi) + ': ' + (e.note || []).join('\n'));
+        return true;
+    };
+
+    // RELOAD (righe 10479-10500): requisito = nella ZdC di un alleato con
+    // Baggage non in Stato Nullo. Se il giocatore dice di no, il Requisito
+    // e` fallito: Idle, l'Ordine e` speso e l'ARO resta (come ogni Idle).
+    window.applicaRicarica = function () {
+        const M = motore(); if (!M) return false;
+        const u = window.currentOrder.unit || window.spearheadUnit;
+        const p = M.puoRicaricare(u, window.roster);
+        if (!p.puo) { alert('⛔ ' + p.motivo); return false; }
+        const si = confirm('🔄 RELOAD — ' + M.nomeUnita(u) + '\n\nÈ nella Zona di Controllo di un alleato con Baggage, non in Stato Nullo?\n' +
+                           p.baggage.map(n => '• ' + n).join('\n') +
+                           '\n\nOK = sì, si ricarica (' + p.armi.join(', ') + ')\nAnnulla = no: Requisito fallito, IDLE');
+        if (!si) {
+            window.currentOrder.ricaricaFallita = true;
+            alert('⚠️ Requisito fallito: ' + M.nomeUnita(u) + ' fa IDLE. L\'Ordine è speso e l\'avversario ha il suo ARO.');
+            return true;
+        }
+        const r = M.ricaricaUsi(u);
+        if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(u, r.unitaAggiornata, 'RICARICARE');
+        else Object.assign(u, r.unitaAggiornata);
+        alert('✅ ' + M.nomeUnita(u) + ' ricarica: ' + r.recuperati.map(x => x.arma + ' (+' + x.usi + ')').join(', ') +
+              (r.esclusi.length ? '\nNon ricaricabili: ' + r.esclusi.join(', ') : '') + '\n' + r.note.join('\n'));
         return true;
     };
 
@@ -323,7 +356,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_movimento.js', versione: '2026-10-20.2', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_movimento.js', versione: '2026-10-26.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

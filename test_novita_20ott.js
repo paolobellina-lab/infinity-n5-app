@@ -1,4 +1,6 @@
-// @versione 2026-10-20.4 | test_novita_20ott.js | proprieta`: chat TEST
+// @versione 2026-10-26.1 | test_novita_20ott.js | proprieta`: chat TEST
+// 2026-10-26.1: sez. 8, immagineMarker nella cartella dell esercito del proprietario (K);
+//    sez. 7, quattro voci di trasporto con SCENDI DAL TAG (catalogo 2026-10-26.1).
 // ============================================================================
 //  Le novita` del giro del 20 ottobre (motore e catalogo 2026-10-20.2,
 //  logica_stati e ordine_movimento 2026-10-20.1; database Nomadi/PanOceania 2026-10-20.1;
@@ -293,8 +295,13 @@ sezione('6. Marker numerati PER SEGNALINO (motore 2026-10-20.2): CAMO / CAMO-3 /
     const fuori = M.filtraPerAvversario(r);
     ok(J(fuori.map(u => u.alias)) === J(['SEGNALINO MIMETICO 1', 'SEGNALINO MIMETICO (-3) 1', 'SEGNALINO MIMETICO (-6) 1', 'PERSONAGGIO SCONOSCIUTO (IMP-1) 1', 'PERSONAGGIO SCONOSCIUTO (IMP-1) 2']),
        'all avversario: «SEGNALINO MIMETICO 1», «... (-3) 1», «... (-6) 1», «PERSONAGGIO SCONOSCIUTO (IMP-1) 1 / 2»', fuori.map(u => u.alias));
-    ok(J(fuori.map(u => u.immagineMarker)) === J(['img/camo_1.png', 'img/camo-3_1.png', 'img/camo-6_1.png', 'img/imp-1_1.png', 'img/imp-1_2.png']),
-       'e l immagine della sua serie', fuori.map(u => u.immagineMarker));
+    // 🔴 GIRATA IL 26 OTTOBRE (motore 2026-10-26.1, K): il campo pubblico
+    // immagineMarker sta nella cartella dell esercito del PROPRIETARIO.
+    // M.immagineMarker(tipo, n) senza fazione resta la copia comune.
+    ok(J(fuori.map(u => u.immagineMarker)) === J(['img/nomadi/camo_1.png', 'img/nomadi/camo-3_1.png', 'img/nomadi/camo-6_1.png', 'img/nomadi/imp-1_1.png', 'img/nomadi/imp-1_2.png']),
+       'e l immagine della sua serie, nella cartella del suo esercito', fuori.map(u => u.immagineMarker));
+    ok(M.immagineMarker('CAMO', 1) === 'img/camo_1.png' && M.immagineMarker('CAMO-3', 1, 'PANOCEANIA') === 'img/panoceania/camo-3_1.png',
+       'CONTROPROVA: M.immagineMarker senza fazione da` la copia comune, con la fazione la sua cartella', [M.immagineMarker('CAMO', 1), M.immagineMarker('CAMO-3', 1, 'PANOCEANIA')]);
     const busta = J(fuori);
     const svelati = [pS.nome, p3.nome, p6.nome].filter(n => busta.indexOf(n) >= 0).concat(fuori.filter(u => /^[abc]$|^i\d$/.test(u.alias)).map(u => u.alias));
     ok(svelati.length === 0 && fuori.every(u => u.nome === 'MARKER'), 'CONTROPROVA: nel filtrato non c e ne il nome del profilo ne il soprannome (nome = "MARKER")', svelati);
@@ -325,15 +332,19 @@ sezione('6. Marker numerati PER SEGNALINO (motore 2026-10-20.2): CAMO / CAMO-3 /
     ok(vecchio.tipoNumeroMarker === 'IMP-2' && vecchio.numeroMarker === 1, 'una copia vecchia con tipo "IMP" passa alla serie IMP-2', [vecchio.tipoNumeroMarker, vecchio.numeroMarker]);
 });
 
-sezione('7. MOVIMENTO.senzaTiro: le tre voci di trasporto', () => {
+sezione('7. MOVIMENTO.senzaTiro: le quattro voci di trasporto (dal 26 ottobre)', () => {
     const st = ((G0.CATALOGO_N5 || {}).MOVIMENTO || {}).senzaTiro || {};
-    const tre = ['SCENDI DALLA MOTO', 'RISALI SULLA MOTO', 'RISALI SUL TAG'];
-    ok(Object.keys(st).length === 17, '17 voci senza tiro (14 + 3)', Object.keys(st).length);
+    // 🔴 GIRATA IL 26 OTTOBRE (catalogo 2026-10-26.1, LOG-05): c'e` una quarta
+    // voce, SCENDI DAL TAG (il pilota scende anche senza Escape System, regola
+    // della casa; niente Sagoma di Eclipse). 18 voci, quattro di trasporto.
+    const tre = ['SCENDI DALLA MOTO', 'RISALI SULLA MOTO', 'SCENDI DAL TAG', 'RISALI SUL TAG'];
+    ok(Object.keys(st).length === 18, '18 voci senza tiro (14 + 4)', Object.keys(st).length);
     ok(tre.every(v => st[v] && st[v].trasporto === true && st[v].tipo === 'BASIC_SHORT' && st[v].generaAro === true),
-       'le tre voci ci sono: Abilita` Breve, generano ARO, trasporto', tre.map(v => st[v] && [st[v].tipo, st[v].generaAro, st[v].trasporto]));
-    ok(Object.keys(st).filter(k => st[k].trasporto).sort().join('|') === tre.slice().sort().join('|'), 'CONTROPROVA: solo quelle tre sono di trasporto');
-    ok(J(M.AZIONI_TRASPORTO) === J(tre), 'M.AZIONI_TRASPORTO: le stesse tre, nello stesso ordine');
-    ok(tre.every(v => (M.azioneSenzaTiro(v) || {}).id === v), 'M.azioneSenzaTiro le riconosce tutte e tre');
+       'le quattro voci ci sono: Abilita` Breve, generano ARO, trasporto', tre.map(v => st[v] && [st[v].tipo, st[v].generaAro, st[v].trasporto]));
+    ok(/Eclipse/.test(String((st['SCENDI DAL TAG'] || {}).note)), 'SCENDI DAL TAG dice nella nota che non c e la Sagoma di Eclipse');
+    ok(Object.keys(st).filter(k => st[k].trasporto).sort().join('|') === tre.slice().sort().join('|'), 'CONTROPROVA: solo quelle quattro sono di trasporto');
+    ok(J(M.AZIONI_TRASPORTO) === J(tre), 'M.AZIONI_TRASPORTO: le stesse quattro, nello stesso ordine', M.AZIONI_TRASPORTO);
+    ok(tre.every(v => (M.azioneSenzaTiro(v) || {}).id === v), 'M.azioneSenzaTiro le riconosce tutte e quattro');
 });
 
 sezione('8. ARO: l arma col valore di profilo tiene il nome', () => {

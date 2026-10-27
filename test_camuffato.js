@@ -1,4 +1,10 @@
-// @versione 2026-09-22.1 | test_camuffato.js | proprieta`: chat TEST
+// @versione 2026-10-26.1 | test_camuffato.js | proprieta`: chat TEST
+// .1 (26 ott): l icona si legge da src="img/<esercito>/icon_camo….png" con
+//    data-comune="img/icon_camo….png" (logica_stati 2026-10-26.1); due prove nuove
+//    sulla cartella, il tipo dell icona invariato.
+// 2026-10-15.1: nomi aggiornati (1).
+//    Nomi dal database 2026-10-15.1 (DATABASE): Moran "Camouflage [1 Use]" col nome dell arma,
+//    Helot "Camouflage [1 Use]", Triggermen "[+1SD]". Solo il campo nome e` cambiato.
 // ================================================================
 // Il segnalino Camuffato e l'uso singolo del Camouflage.
 // Richiesta della chat REGOLE.
@@ -53,12 +59,17 @@ const profilo = (nome) => {
 // meno precisa troverebbe sempre quello — il test passerebbe con il difetto.
 const apri = (u) => { window.roster = [u]; window.apriPaginaStati(0);
     const html = (elementi['states-content'] || {}).innerHTML || '';
-    const m = html.match(/src="(img\/icon_camo\d?\.png)"/);
-    return { stato: window.tempCamoState, icona: m ? m[1].replace('img/', '').replace('.png', '') : null }; };
+    // 🔴 26 ottobre (logica_stati 2026-10-26.1, icone per esercito): l icona si
+    // cerca prima nella cartella dell esercito, con la copia comune in
+    // data-comune come ripiego. Si pretendono le due, e che parlino della
+    // STESSA icona: una cartella con camo6 e un ripiego con camo3 sarebbe un
+    // difetto che una ricerca del solo src non vedrebbe.
+    const m = html.match(/src="img\/([a-z]+)\/(icon_camo\d?)\.png" data-comune="img\/(icon_camo\d?)\.png"/);
+    return { stato: window.tempCamoState, icona: (m && m[2] === m[3]) ? m[2] : null, cartella: m ? m[1] : null, html }; };
 const iconaAttesa = (u) => { const m = M.valoreMimetismo(u); return m <= -6 ? 'icon_camo6' : m <= -3 ? 'icon_camo3' : 'icon_camo'; };
 
 console.log('\n=== 0. I profili sono quelli che la regola presuppone ===');
-const HELOT    = 'Helot Militiaman (Surprise Attack [-3], Camouflage, Red Fury)';
+const HELOT    = 'Helot Militiaman (Surprise Attack [-3], Camouflage [1 Use], Red Fury)';
 const BEAST    = 'Beasthunters (Surprise Attack [-3], Camouflage, Forward Deployment [+8"], AP Mine)';
 const INTRUDER = 'Intruder (HMG)';
 const SPEKTR   = 'Spektr (MULTI Sniper Rifle)';
@@ -80,6 +91,14 @@ ok(a(INTRUDER).icona === 'icon_camo3', `Intruder, Mimetism -3: icon_camo3 (${a(I
 ok(a(LIBERTO).icona === 'icon_camo', `Liberto, senza Mimetism: icon_camo (${a(LIBERTO).icona})`);
 // Controprova: il -3 della Sorpresa non e` Mimetismo.
 ok(a(HELOT).icona === 'icon_camo', `controprova — Helot, Surprise Attack (-3) senza Mimetism: icon_camo, non icon_camo3 (${a(HELOT).icona})`);
+// K (26 ottobre): la cartella e` quella dell esercito della pagina; il tipo
+// dell icona (camo / camo3 / camo6) non cambia.
+const sp = a(SPEKTR);
+ok(sp.cartella === 'nomadi' && /src="img\/nomadi\/icon_camo6\.png" data-comune="img\/icon_camo6\.png"/.test(sp.html),
+   `icona dalla cartella dell esercito, copia comune come ripiego (img/${sp.cartella}/${sp.icona}.png)`);
+{   const t0 = document.title; document.title = 'PANOCEANIA';
+    const pa = a(SPEKTR); document.title = t0;
+    ok(pa.cartella === 'panoceania' && pa.icona === 'icon_camo6', `CONTROPROVA: sulla pagina di PanOceania la cartella cambia, l icona no (img/${pa.cartella}/${pa.icona}.png)`); }
 
 // La relazione su tutti i profili con Camouflage: regge quando il database
 // cresce, dove un elenco di nomi no.

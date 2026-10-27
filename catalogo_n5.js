@@ -1,4 +1,4 @@
-// @versione 2026-10-20.2 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-10-26.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -696,6 +696,8 @@ window.CATALOGO_N5.MOVIMENTO = {
                               note: 'Il pilota scende; la moto diventa una Periferica (Synchronized) con STR propria.' },
         'RISALI SULLA MOTO':{ nome: 'Risali sulla moto', tipo: 'BASIC_SHORT', generaAro: true, trasporto: true,
                               note: 'Il pilota deve essere a contatto con la moto, e la moto non Isolata, Immobilizzata o in uno Stato Nullo.' },
+        'SCENDI DAL TAG':   { nome: 'Scendi dal TAG',    tipo: 'BASIC_SHORT', generaAro: true, trasporto: true,
+                              note: 'Il pilota scende dal TAG anche senza Escape System (regola della casa, 26 ottobre). Niente Sagoma di Eclipse.' },
         'RISALI SUL TAG':   { nome: 'Risali sul TAG',    tipo: 'BASIC_SHORT', generaAro: true, trasporto: true,
                               note: 'Il pilota uscito con l\'Escape System risale sul TAG vuoto (regola della casa). Il TAG torna attivo con le ferite che aveva.' },
         'ALLERTA':          { nome: 'Alert',             tipo: 'ARO',         generaAro: false },
@@ -919,7 +921,8 @@ window.CATALOGO_N5.FIRETEAM = {
 window.CATALOGO_N5.SCHIERAMENTO = {
 
     // Non esistono ancora per l'avversario: non vanno spedite affatto.
-    invisibili: ['HIDDEN', 'RESERVE', 'AD'],
+    // 'A_BORDO' (26 ottobre): il pilota di Gator/Szalamandra/Gecko dentro il TAG.
+    invisibili: ['HIDDEN', 'RESERVE', 'AD', 'A_BORDO'],
     noteInvisibili: 'Schieramento Nascosto, Riserva e Schieramento Aereo: la truppa non e` sul tavolo, l\'avversario non deve nemmeno sapere che esiste.',
 
     // Di un Marker si vede il segnalino e nient\'altro.
@@ -943,6 +946,9 @@ window.CATALOGO_N5.SCHIERAMENTO = {
         'IMP-1':  { immagini: 10, file: 'img/imp-1_{n}.png',  etichetta: 'IMP-1',  aliasExtra: '(IMP-1)' },
         'IMP-2':  { immagini: 10, file: 'img/imp-2_{n}.png',  etichetta: 'IMP-2',  aliasExtra: '(IMP-2)' }
     },
+    // 26 ottobre (Paolo): le immagini dei segnalini per esercito. Il nome del
+    // file resta quello di `file` qui sopra, senza 'img/'.
+    cartelleSegnalini: { NOMADI: 'img/nomadi/', PANOCEANIA: 'img/panoceania/' },
     noteMarker: 'Di un Marker Mimetico o Impersonation l\'avversario vede solo il segnalino: niente statistiche, armi, Abilita` o Equipaggiamento. Nemmeno il nome dell\'Unita`.',
 
     // Di una truppa visibile si vede tutto: e` sul tavolo a faccia in su.
@@ -2866,7 +2872,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-10-20.2', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-10-26.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

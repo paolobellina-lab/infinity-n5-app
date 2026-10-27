@@ -1,4 +1,4 @@
-// @versione 2026-10-23.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-26.1 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -455,6 +455,19 @@ window.ICONE_STATI = {
     holoecho: 'icon_holoecho', holomask: 'icon_holomask', tagVuoto: 'icon_tag_vuoto'
 };
 
+// 26 ottobre (Paolo, MOTORE 26.1): ogni esercito ha le sue icone e i suoi
+// segnalini. Il percorso lo da` il motore (M.iconaDellaFazione); senza
+// fazione (scenografia) o senza motore resta la copia comune in img/.
+// La fazione delle etichette la fissa generateStateTags per la truppa che
+// sta disegnando (window._fazioneIconeHub): etichettaStato ha gia` sette
+// argomenti, e la chiamano in tanti.
+window._fazioneIconeHub = null;
+window.iconaHubDellaFazione = (percorso, fazione) => {
+    const M = window.MotoreN5;
+    if (!fazione || !M || typeof M.iconaDellaFazione !== 'function') return percorso;
+    return M.iconaDellaFazione(percorso, fazione) || percorso;
+};
+
 window.etichettaStato = (icona, testo, sfondo, colore, titolo, nullo, idStato) => {
     const bordo = nullo ? ' box-shadow: inset 0 0 0 2px #ff2020;' : '';
     const segno = nullo ? ` <b style="color:#ff5050; font-size:9px; letter-spacing:1px;">NULL</b>` : '';
@@ -471,9 +484,14 @@ window.etichettaStato = (icona, testo, sfondo, colore, titolo, nullo, idStato) =
     if (file) {
         // Se il file manca, l'immagine si toglie e ricompare la scritta
         // (che e` gia` nel nodo, nascosta): niente stato invisibile.
+        // 26 ottobre (MOTORE 26.1): prima l'icona dell'ESERCITO della truppa
+        // (img/nomadi/, img/panoceania/), poi la copia comune in img/.
+        const comune = 'img/' + file + '.png';
+        const mia = window.iconaHubDellaFazione(comune, window._fazioneIconeHub);
+        const passo = (mia !== comune) ? `if(!this.dataset.comune){this.dataset.comune='1';this.src='${comune}';return;}` : '';
         return `<span class="state-tag state-icona"${tocco.replace(' style="cursor:pointer;"', '')} style="background:transparent; color:${colore};${bordo} cursor:pointer; padding:0;" title="${suggerimento}">` +
-            `<img src="img/${file}.png" alt="${String(testo).replace(/"/g, '&quot;')}" style="width:38px; height:38px; object-fit:contain; vertical-align:middle;" ` +
-            `onerror="this.style.display='none'; this.parentNode.style.background='${sfondo}'; this.parentNode.style.padding='2px 6px'; this.nextSibling.style.display='inline';">` +
+            `<img src="${mia}" alt="${String(testo).replace(/"/g, '&quot;')}" style="width:38px; height:38px; object-fit:contain; vertical-align:middle;" ` +
+            `onerror="${passo}this.style.display='none'; this.parentNode.style.background='${sfondo}'; this.parentNode.style.padding='2px 6px'; this.nextSibling.style.display='inline';">` +
             `<span style="display:none;">${icona} ${testo}</span>${segno}</span>`;
     }
     return `<span class="state-tag"${tocco ? tocco.replace(' style="cursor:pointer;"', '') : ''} style="background:${sfondo}; color:${colore};${bordo}${idStato ? ' cursor:pointer;' : ''}" title="${suggerimento}">${icona} ${testo}${segno}</span>`;
@@ -544,7 +562,14 @@ window.comeSiEsce = (idStato) => {
     }
 };
 
-window.generateStateTags = (unit) => {
+window.generateStateTags = (unit, fazione) => {
+    const prima = window._fazioneIconeHub;
+    window._fazioneIconeHub = (fazione === 'NOMADI' || fazione === 'PANOCEANIA') ? fazione : null;
+    try { return window.tagStatiDi(unit); }
+    finally { window._fazioneIconeHub = prima; }
+};
+
+window.tagStatiDi = (unit) => {
     const M = window.MotoreN5;
 
     if (!M || typeof M.statiPerCategoria !== 'function' || typeof M.statoBersaglio !== 'function') {
@@ -562,6 +587,10 @@ window.generateStateTags = (unit) => {
     //    Qui resta solo il vocabolario visivo: icona e colore.
     (M.statiPerCategoria(unit) || []).forEach(gruppo => {
         (gruppo.stati || []).forEach(stato => {
+            // 26 ottobre: una truppa in HoloMask l'Hub la mostra come il
+            // Modello imitato (mostraCome): l'etichetta HOLOMASK direbbe a
+            // tutti, sullo schermo comune, che e` una maschera.
+            if (stato.id === 'holomask' && unit && unit.mostraCome) return;
             const v = window.STATI_TABELLONE[stato.id];
             const nome = stato.nome || (v && v.testo) || String(stato.id).toUpperCase();
             // Il segno Null si legge SOLO dal campo `nullo` dello stato. Non
@@ -726,15 +755,37 @@ window.skillVisibiliDi = (u) => window.vociDiProfilo(u && u.skills).filter(sk =>
 // La foto assegnata (imgVariant) vince anche su un segnalino piazzato, come
 // nell'app; senza, il segnalino ha la sua immagine comune img/<id>.png.
 window.CARTELLA_FOTO = { NOMADI: 'img/nomadi/', PANOCEANIA: 'img/panoceania/' };
-window.fotoTruppaHub = (u, fazione) => {
-    if (!u) return '';
+window.fotoTruppaHub = (u, fazione) => window.fotoTruppaHubConRipieghi(u, fazione).src;
+
+// La foto e i suoi ripieghi (26 ottobre, come fotoUnitaConRipieghi in
+// app.html): segnalini e Marker cercano prima l'immagine del LORO esercito,
+// poi la copia comune in img/. Le foto delle miniature non hanno ripiego.
+window.fotoTruppaHubConRipieghi = (u, fazione) => {
+    const nessuna = { src: '', ripieghi: [] };
+    if (!u) return nessuna;
+    const conRipiego = (comune) => {
+        const mia = window.iconaHubDellaFazione(comune, fazione);
+        return { src: mia, ripieghi: mia !== comune ? [comune] : [] };
+    };
     const v = u.imgVariant;
     if (typeof v === 'string' && /\.(png|jpe?g|webp)$/i.test(v)) {
         const cartella = window.CARTELLA_FOTO[fazione];
-        if (cartella) return cartella + v;
+        if (cartella) return { src: cartella + v, ripieghi: [] };
         // Nessun ripiego in img/: li` le foto non ci sono piu`.
         console.error('\u26d4 fotoTruppaHub: fazione sconosciuta (' + fazione + '), non so in che cartella cercare ' + v);
-        return '';
+        return nessuna;
+    }
+    // SCH-06 (26 ottobre): il Marker PRIMA del segnalino. Una mina schierata
+    // in CAMO arriva come Marker (nome MARKER) ma con l'id del segnalino
+    // (dep_...): il ramo qui sotto la riconosceva dall'id e mostrava la mina.
+    // Va il segnalino numerato camo_N.
+    if (String(u.nome || u.name || '') === 'MARKER') {
+        const generico = 'img/MARKER.png', genericoMio = window.iconaHubDellaFazione(generico, fazione);
+        const im = u.immagineMarker;
+        const comuneDi = (p) => String(p || '').replace(/^img\/(nomadi|panoceania)\//, 'img/');
+        const lista = im ? [im, window.iconaHubDellaFazione(comuneDi(im), fazione), comuneDi(im), genericoMio, generico] : [genericoMio, generico];
+        const unici = lista.filter((x, i) => x && lista.indexOf(x) === i);
+        return { src: unici[0], ripieghi: unici.slice(1) };
     }
     // 19 ottobre: all'Hub un segnalino arriva dalla vista PUBBLICA, che fino
     // al catalogo 2026-10-18 non portava il campo deployable: questo ramo non
@@ -746,12 +797,10 @@ window.fotoTruppaHub = (u, fazione) => {
         const el = window.DB_DEPLOYABLES || [];
         const voce = el.find(d => u.modelId && d.id === u.modelId) || el.find(d => u.chiaveArma && d.chiaveArma === u.chiaveArma) ||
                      el.find(d => String(u.id || '').indexOf('dep_' + d.id + '_') === 0);
-        if (voce) return 'img/' + voce.id + '.png';
+        if (voce) return conRipiego('img/' + voce.id + '.png');
     }
-    // 20 ottobre (Paolo): il segnalino numerato (img/camo_2.png...), se il
-    // motore lo manda. Prima ogni Marker aveva lo stesso img/MARKER.png.
-    if (String(u.nome || u.name || '') === 'MARKER') return u.immagineMarker || 'img/MARKER.png';
-    return '';
+    // (Il segnalino numerato del Marker sta piu` su, prima dei segnalini.)
+    return nessuna;
 };
 
 // Il Gruppo di Combattimento: come window.gruppoDi in app.html. Un
@@ -767,12 +816,51 @@ window.gruppoTruppaHub = (u, lista) => {
     return 1;
 };
 
+// La vista di una truppa in HoloMask sullo schermo comune (26 ottobre,
+// MOTORE 26.1): nome, armi, abilita` e tipo del Modello imitato
+// (u.mostraCome), senza foto. I dati veri restano nel gameState: l'ARO
+// all'Hub si calcola su quelli.
+window.vistaMascherataHub = (u) => {
+    const mc = u && u.mostraCome;
+    if (!mc) return u;
+    const vero = String(u.nome || u.name || '').split('(')[0].trim().toUpperCase();
+    const v = Object.assign({}, u, { nome: mc.nome, name: mc.nome, weapon: mc.weapon || '', equip: mc.equip || '',
+                                     skills: mc.skills || '', tipo: mc.tipo || u.tipo, imgVariant: '0', mascherata: true });
+    if (vero && String(u.alias || '').toUpperCase().indexOf(vero) >= 0) v.alias = mc.nome;
+    return v;
+};
+
+// 26 ottobre (Paolo, MOTORE 26.1): RICARICA FORZATA dall'Hub. Il bottone c'e`
+// sulle truppe con armi Disposable (gli usi si contano solo su quelle: lo
+// dice M.usiResidui), e uno per tutto l'esercito. Il comando lo scrive il
+// motore (M.comandoRicarica); l'app di quella fazione lo applica una volta.
+window.haArmiUsaGetta = (u) => {
+    const M = window.MotoreN5;
+    if (!u || u.deployable || u.replica || !M || typeof M.usiResidui !== 'function' || typeof M.profiloArma !== 'function') return false;
+    const voci = (String(u.weapon || '') + ',' + String(u.equip || '')).split(',').map(x => x.trim()).filter(x => x && x !== '-');
+    return voci.some(n => {
+        try { const a = M.profiloArma(n); return !!(a && !a.nonTrovata && M.usiResidui(u, a)); }
+        catch (e) { window.ultimaEccezione = e; return false; }
+    });
+};
+window.inviaRicaricaForzata = (fazione, unitaId, nome) => {
+    const M = window.MotoreN5;
+    if (!M || typeof M.comandoRicarica !== 'function' || !M.CANALI || !M.CANALI.HUB_RICARICA) {
+        return alert('\u26d4 Ricarica forzata: serve motore_regole_n5.js dalla 2026-10-26.1.');
+    }
+    const chi = unitaId == null ? ('TUTTE le truppe ' + fazione) : (nome || 'questa truppa');
+    if (!window.confirm('\ud83d\udd04 Ricarica forzata degli usi limitati (armi Disposable) di ' + chi + '?\n\nL\'app ' + fazione + ' azzera gli usi spesi e lo dice al giocatore.')) return;
+    localStorage.setItem(M.CANALI.HUB_RICARICA, M.comandoRicarica(fazione, unitaId == null ? null : unitaId));
+};
+
 window.schedaTruppa = (u, fazione) => {
+    const reale = u;
+    if (u && u.mostraCome) u = window.vistaMascherataHub(u);
     const colore = window.COLORE_FAZIONE[fazione] || '#ffffff';
     const nomePuro = String((u && (u.nome || u.name)) || '?').split('(')[0].trim();
     const alias = (u && u.alias && u.alias !== nomePuro) ? ` <span class="st-alias">(${u.alias})</span>` : '';
     let tags;
-    try { tags = window.generateStateTags(u); }
+    try { tags = window.generateStateTags(u, fazione); }
     catch (errore) {
         console.error('🚨 Stati illeggibili per', (u && (u.alias || u.nome)) || '(unita` senza nome)', errore);
         window.ultimaEccezione = errore;
@@ -780,13 +868,22 @@ window.schedaTruppa = (u, fazione) => {
     }
     const equip = window.equipaggiamentoDi(u);
     const skill = window.skillVisibiliDi(u);
-    const foto = window.fotoTruppaHub(u, fazione);
+    const fr = window.fotoTruppaHubConRipieghi(u, fazione);
+    const foto = fr.src;
     const sigla = String((u && u.tipo) || '').slice(0, 3) || '?';
-    // Immagine numerata non ancora caricata: si ripiega sul segnalino comune.
-    const ripiegoFoto = (u && u.immagineMarker && foto === u.immagineMarker) ? 'img/MARKER.png' : '';
+    // Immagine dell'esercito non ancora caricata: si prova la comune, poi
+    // il segnalino senza numero (26 ottobre: l'elenco lo da` la funzione).
+    const rip = (fr.ripieghi || []).filter(x => x && x !== foto);
+    const passo = rip.length ? `var l=(this.dataset.rip||'').split('|').filter(Boolean);if(l.length){this.dataset.rip=l.slice(1).join('|');this.src=l[0];return;}` : '';
     const immagine = foto
-        ? `<img class="st-foto" src="${foto}" alt="" onerror="${ripiegoFoto ? `if(!this.dataset.ripiego){this.dataset.ripiego='1';this.src='${ripiegoFoto}';return;}` : ''}this.outerHTML='<div class=&quot;st-sigla&quot;>${sigla}</div>';">`
+        ? `<img class="st-foto" src="${foto}"${rip.length ? ` data-rip="${rip.join('|')}"` : ''} alt="" onerror="${passo}this.outerHTML='<div class=&quot;st-sigla&quot;>${sigla}</div>';">`
         : `<div class="st-sigla">${sigla}</div>`;
+    // Una truppa in HoloMask si giudica dalla MASCHERA: un bottone RICARICA
+    // che il Modello imitato non avrebbe direbbe chi e` (la si ricarica col
+    // bottone di tutto l'esercito, che vale anche per lei).
+    const ricarica = window.haArmiUsaGetta(u)
+        ? `<button type="button" class="bottone-ricarica" style="margin-top:4px; padding:3px 8px; font-size:12px; background:#111; color:#9f9; border:1px solid #6c6; border-radius:4px; cursor:pointer;" onclick="window.inviaRicaricaForzata('${fazione}', '${String(reale.id).replace(/'/g, "\\'")}', '${String(nomePuro).replace(/'/g, "\\'")}')">\ud83d\udd04 RICARICA</button>`
+        : '';
     return `<div class="scheda-truppa" data-fazione="${fazione}" style="--st-colore:${colore};">
             ${immagine}
             <div class="st-testo">
@@ -794,6 +891,7 @@ window.schedaTruppa = (u, fazione) => {
                 ${tags ? `<div class="state-tags-row st-stati">${tags}</div>` : ''}
                 ${equip.length ? `<div class="st-riga"><b>Equipment:</b> ${equip.join(', ')}</div>` : ''}
                 ${skill.length ? `<div class="st-riga"><b>Special Skills:</b> ${skill.join(' • ')}</div>` : ''}
+                ${ricarica}
             </div>
         </div>`;
 };
@@ -803,8 +901,12 @@ window.schedaTruppa = (u, fazione) => {
 window.elencoFazioneHub = (lista, fazione) => {
     lista = (lista || []).filter(Boolean);
     if (!lista.length) return '<div style="color:#666;">Nessuna truppa.</div>';
+    // 26 ottobre: la ricarica forzata di tutto l'esercito, se ha armi Disposable.
+    const tutto = lista.some(u => window.haArmiUsaGetta(u && u.mostraCome ? window.vistaMascherataHub(u) : u))
+        ? `<button type="button" class="bottone-ricarica-fazione" style="margin:0 0 8px; padding:5px 10px; font-size:13px; background:#111; color:#9f9; border:1px solid #6c6; border-radius:4px; cursor:pointer;" onclick="window.inviaRicaricaForzata('${fazione}', null)">\ud83d\udd04 RICARICA TUTTO ${fazione}</button>`
+        : '';
     const gruppi = [...new Set(lista.map(u => window.gruppoTruppaHub(u, lista)))].sort((a, b) => a - b);
-    return gruppi.map(g => {
+    return tutto + gruppi.map(g => {
         const del = lista.filter(u => window.gruppoTruppaHub(u, lista) === g);
         return `<div class="gruppo-hub">
                 <div class="gruppo-hub-titolo">GROUP ${g}</div>
@@ -1258,7 +1360,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-10-23.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-10-26.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

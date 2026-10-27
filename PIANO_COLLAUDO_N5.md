@@ -1,6 +1,6 @@
-<!-- @versione 2026-10-23.5 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-10-27.2 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 41)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 44)
 
 Bozza scritta dalla chat MOTORE il 15 ottobre, su richiesta di Paolo, da far
 adottare a TEST. Segue il motore **2026-10-15.1**, `motore_core.js`,
@@ -101,6 +101,45 @@ quello (CO-01). L'Idle del solo gregario porta l'avviso **A110**, una nota: nien
 finestra *«Prima di calcolare…»* (CO-10). Misurate sulle pagine intere. Le prove
 restano 303.
 
+**Revisione 42** (TEST, 26 ottobre): segue il motore **2026-10-26.3**, il
+catalogo, `motore_core.js`, `ordine_movimento.js`, `ordine_piazzamento.js`,
+`ordine_difesa.js`, `logica_stati.js`, `ordine_fuoco_speculativo.js` e
+`ordine_attacco_intuitivo.js` **2026-10-26.1**, `calcolatore_math.js` e
+`ordine_attacco_bs.js` **2026-10-26.2**, e i file di INTERFACCIA del 26 ottobre.
+Il roster dei Nomadi passa a 46: Bashi Bazouk (BS Attack (AP)) *(#42)*, Salyut
+(Deactivator, Repeater) *(#43)*, Gator (TAG) *(#44)*, Gator Pilot (CC Attack
+[+9]) *(#45)*, Knauf (Surprise Attack (-3), Decoy (1)) *(#46)*. Le risposte di
+REGOLE entrano nelle prove: DEP-07 (la mina scatta anche contro un Marker), DEP-08
+(il Repeater si piazza senza domande), DEP-09 (la Disco Ball si spara con un
+Attacco BS Targetless); il pilota del Gator sta a bordo come quello della moto
+(regola della casa di Paolo, LOG-08). Riscritte DEP-01 (il Gator Pilot piazza le D-Charges), DEP-02 (la domanda è doppia),
+DEP-10, DEP-11 (il Deactivator vede i segnalini del roster), LOG-05 (SCENDI DAL
+TAG dal menu), SCH-06 (le immagini nella cartella dell'esercito, la mina in CAMO),
+DIS-02, DIS-05, SP-07, SG-07, SG-09 (le Sagome a lettere) e TPL-06. Nuove BS-29
+(E62), BS-30 (le mine non si sparano), DIS-07 (Reload), DIS-08 (ricarica
+dall'Hub), DIS-09 (gli usi dentro il bottone), LOG-08 (pilota di lista), ST-24
+(Holoecho e HoloMask nell'editor), SCH-07 (repliche) e SCH-08 (HoloMask sul
+tabellone). Tre difetti nuovi nel capitolo 31. Ogni «Atteso» cambiato o nuovo è
+misurato sulle pagine intere. Le prove passano a 312.
+
+**Revisione 43** (TEST, 27 ottobre): segue il motore e `ordine_attacco_bs.js`
+**2026-10-27.1**. Chiusi tre difetti del capitolo 31: sotto il secondario di una
+Sagoma d'Impatto il tabellone dice che il Critico conta come successo normale
+(TPL-06); le repliche hanno un identificativo della stessa forma della vera e
+non escono più con la vera sempre prima (SCH-07); il Disco Baller chiede se il
+tiro è riuscito e fa nascere la Disco Ball, e il tabellone nomina la Sagoma di
+Eclipse (DEP-09). Due difetti nuovi e una domanda nel capitolo 31. Il tetto
+sugli usi residui in ARO non ha una prova al tavolo (nessun profilo vero ha
+un'arma Disposable a Burst 2 e Total Reaction): lo tiene il banco (capitolo
+30). Le prove restano 312.
+
+**Revisione 44** (TEST, 27 ottobre, mattina): segue il motore **2026-10-27.2**.
+Chiusi i due difetti della revisione 43: il numero in fondo all'identificativo
+delle repliche pesca nello stesso intervallo della lista, e la vera non si
+riconosce più (SCH-07); all'Hub il reattivo con l'arma esaurita porta la nota
+dello Scarico (banco). Resta la domanda a REGOLE sul (+1B) dell'arma in ARO con
+Total Reaction. Le prove restano 312.
+
 Ogni prova dice **chi** agisce, **quale Ordine** dichiara, **con che cosa**,
 **contro chi**, **a che distanza** (in pollici) e **cosa si deve leggere**. Dove
 un dato non cambia il risultato è scelto comunque, così la prova si esegue senza
@@ -137,10 +176,10 @@ casella della barra.
 più tutti i MOD. Si tira 1d20 e serve **uguale o meno**. La salvezza si scrive
 **ARM VS 8 ×1**: ARM (o BTS, o PH) più il PS dell'arma, un dado.
 
-**Il conteggio.** Il piano contiene **303 prove, tutte nello stesso formato**:
-tutte e 303, nelle stesse cinque righe; le convenzioni servono a non scrivere
-la stessa riga 303 volte. I codici sono uno per prova: alla revisione 41 sono 303.
-Prove con un campo da completare: 0 prove su 303
+**Il conteggio.** Il piano contiene **312 prove, tutte nello stesso formato**:
+tutte e 312, nelle stesse cinque righe; le convenzioni servono a non scrivere
+la stessa riga 312 volte. I codici sono uno per prova: alla revisione 44 sono 312.
+Prove con un campo da completare: 0 prove su 312
 Il numero lo controlla `test_piano_schieramento.js`: non si cambia a mano.
 
 **Se un numero non torna**, guarda prima la scheda ufficiale della miniatura e
@@ -198,6 +237,11 @@ letto, cosa ti aspettavi.
 | 39 | **Clockmaker (Armed Turret)** | **nuova**: Armed Turret (DEP-11) |
 | 40 | **Switcher** | **nuova**: Transmutation (WIP), secondo profilo Enhanced (ST-23); Madtraps |
 | 41 | **Anaconda (Heavy Machine Gun)** | **nuova**: TAG con Escape System, pilota Operator (LOG-05) |
+| 42 | **Bashi Bazouk (BS Attack (AP))** | **nuova**: Holoprojector e Holomask (ST-24, SCH-07, SCH-08) |
+| 43 | **Salyut (Deactivator, Repeater)** | **nuova**: Baggage (DIS-07), Deactivator (DEP-11) |
+| 44 | **Gator (TAG)** | **nuova**: TAG col pilota di lista (LOG-08) |
+| 45 | **Gator Pilot (CC Attack [+9])** | **nuova**: il pilota del #44, a bordo (LOG-08) |
+| 46 | **Knauf (Surprise Attack (-3), Decoy (1))** | **nuova**: Decoy (1) (SCH-07) |
 
 **PanOceania**
 
@@ -238,7 +282,9 @@ LOG-05). **Lo Zondmate (REM) non si può aggiungere a mano**: è un profilo
 secondario. Le prove che lo usano (A-05, CC-04, ST-05) partono dalla
 Zondnautica-A *(#18)* con SCENDI DALLA MOTO. Switcher *(#40)* e Anaconda (Heavy
 Machine Gun) *(#41)* non sono nella lista di Paolo: si aggiungono a mano, come
-Spector, Saito Togan e Hawkwood.
+Spector, Saito Togan e Hawkwood; lo stesso i #42-#46. Il Gator Pilot *(#45)* è
+il pilota **di lista** del Gator *(#44)*: confermato lo schieramento parte **a
+bordo**, non si schiera e non riceve Ordini (LOG-08).
 
 ## 1.2 Terreni
 
@@ -561,6 +607,17 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 - **ARO:** Alguacil → ATTACCO BS, Combi Rifle, a 8-16", contro il Croc Man
 - **Atteso:** **TIRO FACCIA A FACCIA**. Croc Man **12** B2. L'Alguacil tira **5** (11 +3 −6 Mimetismo −3), con la voce *«Attacco a Sorpresa: -3»*: la Sorpresa guarda lo stato a **inizio** Ordine, anche se la dichiarazione ha già rivelato la truppa (righe 10125-10128). Lo stesso con il Croc Man schierato come **Marker CAMO**: 5. Controprova: un secondo ATTACCO BS nell'Ordine dopo, col Croc Man già rivelato, dà **8** e nessuna voce di Sorpresa.
 
+**BS-29 — Schieramento Aereo: prima l'INGRESSO IN CAMPO** *(nuova)*
+- **Attivo:** Spector (Parachutist, Combat Jump) *(Nomadi #29)* in **Schieramento Aereo** · ATTACCO BS
+- **Con:** Boarding Shotgun (+1B)
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)*
+- **ARO:** nessuno
+- **Atteso:** il menu offre anche INGRESSO IN CAMPO. L'ATTACCO BS si ferma all'invio: *«⛔ INVIO BLOCCATO… Spec non è ancora sul tavolo (Schieramento Aereo).»* e *«Prima dichiara INGRESSO IN CAMPO (Combat Jump / Parachutist): solo dopo può attaccare o agire.»* (E62). Prima arrivava all'Hub come *ATTACCANTE NON TROVATO*. Controprova: lo Spector già sul tavolo attacca e l'Hub risolve.
+
+**BS-30 — Le mine non si sparano** *(nuova)*
+- **Attivo:** Zero (Hacker, Killer Hacking Device) *(Nomadi #9)*, rivelato · ATTACCO BS
+- **Atteso:** le armi sono Combi Rifle e Pistol. La Shock Mine è fra le non utilizzabili: *«Shock Mine (si piazza con PIAZZARE EQUIPAGGIAMENTO, non si spara)»*. Controprova: in PIAZZARE EQUIPAGGIAMENTO la Shock Mine c'è.
+
 ---
 
 # 5. Blocco C — Munizioni e Tiri Salvezza
@@ -734,7 +791,7 @@ Bersagli di riferimento: **Fusilier (Combi Rifle)** *(PanOceania #1: ARM 1, BTS
 - **Con:** Missile Launcher, Sagoma d'Impatto
 - **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* come primo bersaglio, Fusilier (Missile Launcher) *(PanOceania #2)* come secondo, tutti e due a 16-24", senza copertura
 - **ARO:** nessuno
-- **Atteso:** sul tabellone **un** riquadro, *«SAGOMA D'IMPATTO: UN TIRO, 2 BERSAGLI»*: l'Alguacil **11** una volta sola, poi una riga per Fusilier. Il primo porta la nota *«Questo è il Bersaglio Principale»*, il secondo *«Questo è un bersaglio secondario»*. Il Critico vale come Critico **solo** sul Principale.
+- **Atteso:** sul tabellone **un** riquadro, *«SAGOMA D'IMPATTO: UN TIRO, 2 BERSAGLI»*: l'Alguacil **11** una volta sola, poi una riga per Fusilier. Il primo porta la nota *«Questo è il Bersaglio Principale»*, il secondo *«Questo è un bersaglio secondario»*. Il Critico vale come Critico **solo** sul Principale: sotto il primo *«Nota: un Critico aggiunge 1 Tiro Salvezza extra.»*, sotto il secondo *«Nota: Bersaglio secondario: un Critico conta come successo normale, niente Tiro Salvezza extra (vale solo sul Principale).»*
 
 **TPL-07 — Una Sagoma, due bersagli**
 - **Attivo:** Grenzer (Forward Observer, Sensor, NCO) *(Nomadi #12)* · ATTACCO BS
@@ -1300,6 +1357,10 @@ IDLE, CAUTO, SALTO, ARRAMPICARSI, SOPPRESSIONE, REQUEST SPEEDBALL.
 - **Attivo:** Switcher *(Nomadi #40)* · apri l'editor degli stati
 - **Atteso:** il tasto **🔄 TIRO RIUSCITO: PASSA AL PROFILO: Switcher - Enhanced Profile**, con la spiegazione del tiro (*Tiro Normale di WIP 13* prima di dichiarare un Ordine o un ARO). Toccato: **CC 23** (prima 15), e l'Hub vede CC 23. Riaperto l'editor: **↩️ TORNA AL PRIMO PROFILO**; toccato: CC 15, anche all'Hub. Ripassa al profilo Enhanced, poi **cambia turno** dall'Hub: lo Switcher torna da solo a **CC 15**, e l'Hub lo vede (AGGIORNAMENTO). Controprova: un Puppetbot *(#17)* passato a Battle Ravaged (ST-22) al cambio turno **resta** Battle Ravaged; un secondo cambio turno non cambia niente.
 
+**ST-24 — Holoecho e HoloMask: due caselle** *(nuova)*
+- **Attivo:** Bashi Bazouk (BS Attack (AP)) *(Nomadi #42)* · apri l'editor degli stati
+- **Atteso:** **due** caselle, Holoecho e HoloMask, anche se Holoprojector e Holomask stanno fra gli equipaggiamenti e non fra le abilità; le icone dalla cartella del tuo esercito (`img/nomadi/…`, poi la copia comune in `img/`, poi l'emoji). Salvando con la sola Holoecho l'HoloMask **non** si accende. Accesa in partita, l'Holoecho piazza **due** copie (*«👥 Holoecho: piazza 2 copie olografiche a contatto di Silhouette.»*); spenta, le repliche escono dal roster. Spenta l'HoloMask, si toglie anche il Modello imitato. Controprova: un Alguacil (Combi Rifle) *(#1)* non ha nessuna delle due caselle.
+
 ---
 
 # 16. Blocco N — Stati del reattivo
@@ -1351,13 +1412,13 @@ contro l'Orc; oppure, dove la prova dice HACKING, **Interventor (Hacker Plus, Fa
 
 **DEP-01 — Chi può piazzare**
 - **Attivo:** le truppe nomadi del roster · apri il menu degli Ordini di ognuna
-- **Atteso:** PIAZZARE EQUIPAGGIAMENTO compare a **dodici** truppe, con queste armi: Alguacil (Forward Observer) *(#4)* Deployable Repeater; Clockmaker (Engineer) *(#7)* D-Charges; Interventor *(#8)* FastPanda; Zero *(#9)* Shock Mine; Moran *(#19)* CrazyKoalas e D-Charges; Puppet Masters *(#22)* Shock Mine; Kulak *(#23)* Cybermine e D-Charges; Intruder (Hacker, Killer Hacking Device) *(#25)* D-Charges; Spector *(#29)* Drop Bears; Racerbot Mk-I *(#35)* PARA Mine; Clockmaker (Armed Turret) *(#39)* Armed Turret e D-Charges; Switcher *(#40)* Madtraps. Non compare alle altre, fra cui il Puppetbot *(#17)*, il Krakot *(#31)* e il Bambabot-1 *(#32)*: Chest Mine e Mine Dispenser non hanno il Tratto Deployable.
+- **Atteso:** PIAZZARE EQUIPAGGIAMENTO compare a **tredici** truppe, con queste armi: Alguacil (Forward Observer) *(#4)* Deployable Repeater; Clockmaker (Engineer) *(#7)* D-Charges; Interventor *(#8)* FastPanda; Zero *(#9)* Shock Mine; Moran *(#19)* CrazyKoalas e D-Charges; Puppet Masters *(#22)* Shock Mine; Kulak *(#23)* Cybermine e D-Charges; Intruder (Hacker, Killer Hacking Device) *(#25)* D-Charges; Spector *(#29)* Drop Bears; Racerbot Mk-I *(#35)* PARA Mine; Clockmaker (Armed Turret) *(#39)* Armed Turret e D-Charges; Switcher *(#40)* Madtraps; Gator Pilot *(#45)* D-Charges (una volta sceso dal Gator, LOG-08). Non compare alle altre, fra cui il Puppetbot *(#17)*, il Krakot *(#31)* e il Bambabot-1 *(#32)*: Chest Mine e Mine Dispenser non hanno il Tratto Deployable.
 
 **DEP-02 — Le domande bloccano prima**
 - **Attivo:** Moran *(Nomadi #19)* · IDLE → PIAZZARE EQUIPAGGIAMENTO
 - **Con:** CrazyKoalas
 - **ARO:** nessuno
-- **Atteso:** due domande (Marker nell'area d'innesco; percorso libero). Il tasto resta **RISPONDI ALLE DOMANDE** finché ne manca una. La risposta che lascia piazzare è **verde**, quella che blocca **gialla**. Rispondendo **sì** al Marker il tasto diventa **IDLE** giallo: premendolo nessun segnalino nasce e l'uso non si scala.
+- **Atteso:** due domande (Marker nell'area d'innesco; percorso libero). Il tasto resta **RISPONDI ALLE DOMANDE** finché ne manca una. Il **sì** al Marker da solo **non** blocca: compare una terza domanda, *«C'è anche un nemico valido, NON in forma di Marker, dentro l'area d'innesco?»*, e il tasto dice ancora RISPONDI ALLE DOMANDE. Rispondendo **no** il tasto diventa **IDLE** giallo, col motivo *«Piazzamento NEGATO: un Marker mimetico nemico nell'area d'innesco, e nessun nemico valido scoperto (riga 7572).»*: premendolo nessun segnalino nasce e l'uso non si scala. Rispondendo **sì** il tasto dice **PIAZZA** e il koala nasce. La risposta che lascia piazzare è **verde**, quella che blocca **gialla**.
 
 **DEP-03 — Piazzamento riuscito**
 - **Attivo:** Moran *(Nomadi #19)* · IDLE → PIAZZARE EQUIPAGGIAMENTO, rispondendo **no** al Marker e **sì** al percorso
@@ -1381,33 +1442,33 @@ contro l'Orc; oppure, dove la prova dice HACKING, **Interventor (Hacker Plus, Fa
 - **ARO:** il CrazyKoala → si attiva da solo; alla domanda *«è dentro la ZdC, con percorso libero?»* rispondi **sì**. Il Fusilier risponde con una SCHIVATA
 - **Atteso:** il segnalino compare nella schermata ARO **separato** dalle truppe: non dichiara, si attiva. Sul tabellone **uno scontro solo**, *«CrazyKoala #1 detona su …»*: il koala **DETONAZIONE, Nessun dado**; il Fusilier **SCHIVATA (Tiro Normale)** a **PH 10**, senza il −3 (il koala non è una Sagoma); salvezza **SHOCK, ARM VS 6 ×1**. Nessun *«TIRO DI SUPPORTO / DIFESA»* a parte. Due note, una volta sola ciascuna: *«L'unico modo di evitarlo è una Schivata riuscita»* e *«Dopo la detonazione l'arma è rimossa dal gioco»*.
 
-**DEP-07 — Il koala non scatta**
-- **Attivo:** nel turno PanOceania, nella Zona di Controllo del CrazyKoala: (a) Zulu-Cobra *(PanOceania #10)* come **Marker CAMO** · MUOVERE; (b) Fusilier *(#1)* · MUOVERE, lasciando **senza risposta** la domanda sulla ZdC
-- **ARO:** il CrazyKoala
-- **Atteso:** (a) non scatta: *«Non scatta contro Marker Mimetici o Impersonation…»*. (b) non si risolve finché non rispondi: *«Percorso non verificato: chiedere se è libero prima di risolvere.»* Il caso *«un Deployable non ne attiva un altro»* non si costruisce al tavolo (un segnalino non si attiva da solo): sta nel banco.
+**DEP-07 — Il koala non scatta, la mina sì**
+- **Attivo:** nel turno PanOceania, nella Zona di Controllo del CrazyKoala: (a) Zulu-Cobra *(PanOceania #10)* come **Marker CAMO** · MUOVERE; (b) Fusilier *(#1)* · MUOVERE, lasciando **senza risposta** la domanda sulla ZdC; (c) Zulu-Cobra come **Marker CAMO** · MUOVERE → MUOVERE nell'area d'innesco della Shock Mine di Zero *(Nomadi #9)*, e nella seconda metà si rivela
+- **ARO:** il CrazyKoala; poi la Shock Mine
+- **Atteso:** (a) il koala non scatta: *«Non scatta contro Marker Mimetici o Impersonation…»*. (b) non si risolve finché non rispondi: *«Percorso non verificato: chiedere se è libero prima di risolvere.»* (c) la mina chiede *«Un Modello o Marker nemico ha dichiarato o eseguito una Skill o un ARO dentro l'area di innesco…?»*: per un Marker che muove la risposta è **sì** e la mina scatta (REGOLE, 26 ottobre); la rivelazione nella seconda metà non la annulla. Il caso *«un Deployable non ne attiva un altro»* non si costruisce al tavolo (un segnalino non si attiva da solo): sta nel banco.
 
 **DEP-08 — Il segnalino muore**
-- **Attivo:** prima, nel turno PanOceania, Fusilier (Forward Observer) *(PanOceania #3)* · IDLE → PIAZZARE EQUIPAGGIAMENTO · Deployable Repeater. Poi, nel turno nomade, Alguacil (Combi Rifle) *(Nomadi #1)* · ATTACCO BS
+- **Attivo:** prima, nel turno PanOceania, Fusilier (Forward Observer) *(PanOceania #3)* · IDLE → PIAZZARE EQUIPAGGIAMENTO · Deployable Repeater, **senza domande** (il Repeater non ha area d'innesco: il divieto del Marker CAMO vale solo per le armi con un'area, riga 7572; REGOLE, 26 ottobre); il tasto dice subito **PIAZZA**. Poi, nel turno nomade, Alguacil (Combi Rifle) *(Nomadi #1)* · ATTACCO BS
 - **Con:** Combi Rifle
 - **Bersaglio:** il Deployable Repeater, a 8-16", senza copertura
 - **ARO:** nessuno
 - **Atteso:** salvezza **ARM VS 7 ×1** (ARM 0 + PS 7). Se fallisce passa **direttamente a Morto** e si rimuove: *«Un Deployable che entra in Stato Incosciente passa automaticamente a Morto…»*. Controprova: Machinist (Combi Rifle) *(PanOceania #13)* · TECH RECOVERY sul Repeater: rifiutato, *«È un Deployable: passa direttamente a Morto, non c'è nulla da riparare.»*
 
 **DEP-09 — Disco Ball**
-- **Attivo:** Kulak (Hacker, Killer Hacking Device) *(Nomadi #23)* · FUOCO SPECULATIVO
-- **Con:** Disco Baller (l'unica arma che la schermata offre)
-- **Bersaglio:** un punto del tavolo: il Disco Baller è Targetless
+- **Attivo:** Kulak (Hacker, Killer Hacking Device) *(Nomadi #23)* · ATTACCO BS
+- **Con:** Disco Baller
+- **Bersaglio:** un punto del tavolo: il Disco Baller è Targetless, a 8-16"
 - **ARO:** nessuno
-- **Atteso:** il Disco Ball non è fra le armi di PIAZZARE EQUIPAGGIAMENTO: nasce solo da un tiro riuscito del Disco Baller, con la Sagoma Circolare Eclipse. Alla Fase Stati si toglie **la Sagoma, non il segnalino**.
+- **Atteso:** il Disco Baller è fra le armi dell'ATTACCO BS (*«Usi residui: 2 su 2»*), non più del FUOCO SPECULATIVO, e non è fra quelle di PIAZZARE EQUIPAGGIAMENTO. La scheda è **PUNTO SUL TAVOLO**, *«Arma Targetless: si tira su un punto del tavolo, non su una truppa…»*, con la voce *«Double Shot: +1 Burst (consuma tutti e 2 gli usi)»*. Sul tabellone **TIRO NORMALE**, il Kulak **13** con **2** dadi; dopo il colpo il Disco Baller è a **2 su 2**. Se il tiro riesce si mette una Sagoma Circolare di Eclipse, **senza** domande di piazzamento (REGOLE, 26 ottobre); alla Fase Stati si toglie **la Sagoma, non il segnalino**. Sul tabellone la nota *«Se il tiro RIESCE nasce il segnalino (Disco Ball) dove e` caduto il colpo. Sulla Disco Ball si appoggia una Sagoma Circolare di munizione ECLIPSE, centrata sul segnalino…»*. Dopo l'invio la finestra *«🎯 Disco Baller: tira al tavolo. Il tiro è RIUSCITO?»*. **OK**: *«✅ Disco Baller: segnalino piazzato.»*, la **Disco Ball** entra nel roster e arriva all'Hub. **Annulla**: *«❌ Disco Baller: tiro fallito, nessun segnalino. L'uso è comunque speso.»*. Controprova: lo stesso Kulak con l'AP Submachine Gun, nessuna finestra e nessuna nota.
 
 **DEP-10 — Minelayer in schieramento**
 - **Attivo:** Puppet Masters (Minelayer) *(Nomadi #22)*, nella fase di schieramento
 - **Con:** Shock Mine
-- **Atteso:** l'app offre solo le armi Deployable e chiede due conferme: nessun nemico né Marker nell'Area d'Innesco; punto dentro la propria Zona di Schieramento. Senza tutte e due non si piazza. Piazzata, la mina arriva all'avversario come **SEGNALINO MIMETICO**. Un secondo piazzamento col Minelayer è rifiutato.
+- **Atteso:** nella pagina degli stati **«MINELAYER: piazzati 0 su 1»**, un bottone per arma da piazzare, ognuno con i suoi usi. Due conferme: nessun nemico né Marker nell'Area d'Innesco (solo per le armi che **hanno** un'area: mine e Perimeter; senza risposta, E54) e punto dentro la propria Zona di Schieramento. Senza tutte e due non si piazza. Piazzata, la mina arriva all'avversario come **SEGNALINO MIMETICO 1**; «piazzati 1 su 1» e i bottoni spenti: un secondo piazzamento non piazza niente.
 
 **DEP-11 — La torretta non è scenografia**
-- **Attivo:** prima Clockmaker (Armed Turret) *(Nomadi #39)* · IDLE → PIAZZARE EQUIPAGGIAMENTO · Armed Turret. Poi, nel turno PanOceania: Fusilier (Combi Rifle) *(#1)* · ATTACCO BS; Orc (Hacker, Hacking Device) *(#4)* · HACKING; Machinist (Combi Rifle) *(#13)* · DEACTIVATOR
-- **Atteso:** l'Armed Turret arriva a PanOceania **a vista**. È fra i bersagli dell'ATTACCO BS e del Deactivator, **non** fra quelli dell'HACKING, e non compare fra gli elementi scenici.
+- **Attivo:** prima Clockmaker (Armed Turret) *(Nomadi #39)* · IDLE → PIAZZARE EQUIPAGGIAMENTO · Armed Turret; Moran *(#19)* piazza un CrazyKoala; Zero *(#9)* piazza una Shock Mine. Poi, nel turno PanOceania: Fusilier (Combi Rifle) *(#1)* · ATTACCO BS; Orc (Hacker, Hacking Device) *(#4)* · HACKING; Machinist (Combi Rifle) *(#13)* · DEACTIVATOR. Poi lo stesso al contrario: Salyut (Deactivator, Repeater) *(Nomadi #43)* · DEACTIVATOR contro i segnalini di PanOceania
+- **Atteso:** l'Armed Turret arriva a PanOceania **a vista**. È fra i bersagli dell'ATTACCO BS e del Deactivator, **non** fra quelli dell'HACKING, e non compare fra gli elementi scenici. Il Deactivator vede **la torretta, il koala, il Repeater e le mine già scoperte**, che stanno nel roster nemico; la mina ancora in CAMO no (arriva come MARKER), e mai i Marker.
 
 ---
 
@@ -1428,9 +1489,9 @@ contro l'Orc; oppure, dove la prova dice HACKING, **Interventor (Hacker Plus, Fa
 - **ARO:** nessuno
 - **Atteso:** in sella il menu ha **SCENDI DALLA MOTO** e non RISALI. Scelta la voce: la Zondnautica-A diventa **Zondnaut-A** e nasce una seconda unità, **Zondmate (REM)** (STR 1), nello stesso Gruppo; l'Hub la vede; all'avversario parte l'**allarme ARO** e a te si offre la **seconda metà**. A piedi il menu del pilota ha **RISALI SULLA MOTO** e non SCENDI. Moto messa **Isolata** dall'editor: il pilota **non ha** RISALI. Moto sana: RISALI → torna **Zondnautica-A**, la moto esce dal roster. Controprova: l'Alguacil (Combi Rifle) *(#1)* non ha nessuna delle tre voci nel menu.
 
-**LOG-05 — Escape System: il pilota esce e risale** *(nuova)*
-- **Attivo:** Anaconda (Heavy Machine Gun) *(Nomadi #41)* · editor degli stati → **🪂 ESCAPE SYSTEM: FAI USCIRE IL PILOTA**
-- **Atteso:** il TAG resta sul tavolo **vuoto**: icona TAG VUOTO sulla riga, non attivabile; all'Hub la scheda dice **TAG VUOTO**. Nasce il pilota **Operator (Spitfire)** nello stesso Gruppo. In ARO il TAG vuoto non si sceglie: *«TAG vuoto: il pilota è uscito (Escape System). Non dichiara ARO finché non risale.»*; il pilota sì. Il menu del pilota ha **RISALI SUL TAG**: scelto, il pilota esce dal roster e il TAG torna attivo. Controprova: TAG messo **Morto** → RISALI negato, *«Il TAG e` distrutto (Stato Nullo): non si risale.»*
+**LOG-05 — SCENDI DAL TAG: il pilota esce e risale**
+- **Attivo:** Anaconda (Heavy Machine Gun) *(Nomadi #41)* · SCENDI DAL TAG dal menu degli Ordini (o, come prima, editor degli stati → **🪂 ESCAPE SYSTEM: FAI USCIRE IL PILOTA**)
+- **Atteso:** *«Il pilota scende e si piazza a contatto di Silhouette col TAG (regola della casa, metà Ordine di Movimento).»* **Niente** Sagoma di Eclipse. Il TAG resta sul tavolo **vuoto**: icona TAG VUOTO sulla riga, non attivabile, e il suo menu non offre più SCENDI DAL TAG (chiamato lo stesso: *«Il pilota e` gia` uscito.»*); all'Hub la scheda dice **TAG VUOTO**. Nasce il pilota **Operator (Spitfire)** nello stesso Gruppo. In ARO il TAG vuoto non si sceglie: *«TAG vuoto: il pilota è uscito (Escape System). Non dichiara ARO finché non risale.»*; il pilota sì. Il menu del pilota ha **RISALI SUL TAG**: scelto, il pilota esce dal roster e il TAG torna attivo. Controprova: TAG messo **Morto** → RISALI negato, *«Il TAG e` distrutto (Stato Nullo): non si risale.»*
 
 **LOG-06 — La seconda metà: solo quello che la truppa può fare** *(nuova)*
 - **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* · MUOVERE → guarda la seconda metà; poi Zondnautica-A *(Nomadi #18)* · SCENDI DALLA MOTO → guarda la seconda metà
@@ -1442,6 +1503,11 @@ contro l'Orc; oppure, dove la prova dice HACKING, **Interventor (Hacker Plus, Fa
 - **Con:** le foto delle miniature, dalla galleria dello schieramento
 - **Bersaglio:** nessuno
 - **Atteso:** scelta la foto della Zondnautica, la galleria chiede **subito** quella del pilota (**Zondnaut-A**), poi quella della moto (**Zondmate**), senza le foto già prese; per l'Anaconda chiede il solo pilota (**Operator**). **NESSUNA FOTO** è una risposta valida. In partita: SCENDI → il pilota e la moto hanno **le loro** foto; RISALI → torna la foto della Zondnautica montata; ESCAPE SYSTEM → il pilota con la sua, il TAG vuoto tiene la sua. Senza scelta: il pilota **senza** foto, la moto con quella della montata. L'avversario vede la foto in uso, mai le scelte. Controprova: un Alguacil (Combi Rifle) *(#1)* non chiede nessuna foto collegata.
+
+**LOG-08 — Pilota di lista: Gator** *(nuova)*
+- **Attivo:** in schieramento Gator (TAG) *(Nomadi #44)* e Gator Pilot (CC Attack [+9]) *(#45)*, conferma lo schieramento; poi in partita Gator · SCENDI DAL TAG, e Gator Pilot · RISALI SUL TAG
+- **ARO:** nessuno
+- **Atteso:** il pilota parte **a bordo** del Gator: sulla riga *«[ A BORDO DEL GATOR: NON SI SCHIERA ]»*, non riceve Ordini (*«È a bordo del TAG: prima SCENDI DAL TAG (Ordine al TAG).»*), e PanOceania e l'Hub vedono **solo il Gator**. SCENDI DAL TAG: scende **lui**, il #45 (nessun pilota nuovo), a contatto col TAG, e ora l'avversario lo vede. RISALI SUL TAG: torna **a bordo**, resta nel roster e sparisce di nuovo dalla vista dell'avversario. Con due Gator il secondo pilota va sul TAG libero; mai su una replica (banco). Lo stesso vale per Szalamandra e Gecko (regola della casa di Paolo).
 
 ---
 
@@ -1577,7 +1643,18 @@ Tutte le prove: truppe dello stesso Gruppo, dove non è scritto altro. Bersaglio
 
 **SCH-06 — Marker numerati: una serie per segnalino** *(nuova)*
 - **Attivo:** in schieramento metti in CAMO Zero *(Nomadi #9)*, Intruder (HMG) *(#24)* e Saito Togan *(#33)*; metti in **IMP-1** dall'editor degli stati Interventor *(#8)* e Kulak *(#23)*; poi conferma lo schieramento
-- **Atteso:** accanto al nome, nella tua app: Interventor **IMP-1 1**, Zero **CAMO-3 1**, Kulak **IMP-1 2**, Intruder (HMG) **CAMO-3 2**, Saito **CAMO-6 1**. Il segnalino lo decide il Mimetismo del profilo (−3 → CAMO-3, −6 → CAMO-6) e, per gli IMP, il livello: ogni segnalino ha la sua serie. L'avversario e l'Hub vedono *«SEGNALINO MIMETICO (-3) 1»*, *«SEGNALINO MIMETICO (-3) 2»*, *«SEGNALINO MIMETICO (-6) 1»*, *«PERSONAGGIO SCONOSCIUTO (IMP-1) 1»* e *«PERSONAGGIO SCONOSCIUTO (IMP-1) 2»*, con le immagini `img/camo-3_1.png`, `camo-3_2.png`, `camo-6_1.png`, `imp-1_1.png`, `imp-1_2.png`; nessun nome vero. Poi lo Zero si rivela e metti in CAMO l'Intruder (MULTI Sniper Rifle) *(#10)*: prende **CAMO-3 1**, l'Intruder (HMG) resta CAMO-3 2. Poi il Kulak passa a IMP-2 dall'editor: **IMP-2 1**, l'Interventor resta IMP-1 1. Nel roster non c'è un Marker senza Mimetismo: il CAMO semplice (*«SEGNALINO MIMETICO 1»*, `img/camo_1.png`) e l'undicesimo Marker di una serie (numero sì, immagine no) li tiene `test_novita_20ott.js`.
+- **Atteso:** accanto al nome, nella tua app: Interventor **IMP-1 1**, Zero **CAMO-3 1**, Kulak **IMP-1 2**, Intruder (HMG) **CAMO-3 2**, Saito **CAMO-6 1**. Il segnalino lo decide il Mimetismo del profilo (−3 → CAMO-3, −6 → CAMO-6) e, per gli IMP, il livello: ogni segnalino ha la sua serie. L'avversario e l'Hub vedono *«SEGNALINO MIMETICO (-3) 1»*, *«SEGNALINO MIMETICO (-3) 2»*, *«SEGNALINO MIMETICO (-6) 1»*, *«PERSONAGGIO SCONOSCIUTO (IMP-1) 1»* e *«PERSONAGGIO SCONOSCIUTO (IMP-1) 2»*, con le immagini nella cartella dell'esercito di **chi possiede** il segnalino: `img/nomadi/camo-3_1.png`, `camo-3_2.png`, `camo-6_1.png`, `imp-1_1.png`, `imp-1_2.png` (senza il file, la copia comune in `img/`); nessun nome vero. Poi lo Zero si rivela e metti in CAMO l'Intruder (MULTI Sniper Rifle) *(#10)*: prende **CAMO-3 1**, l'Intruder (HMG) resta CAMO-3 2. Poi il Kulak passa a IMP-2 dall'editor: **IMP-2 1**, l'Interventor resta IMP-1 1. Il CAMO semplice è la mina: piazza una Shock Mine con lo Zero, che arriva come **SEGNALINO MIMETICO 1**, mimetismo 0, `img/nomadi/camo_1.png` — un CAMO **senza** mimetismo, non CAMO-3. L'undicesimo Marker di una serie (numero sì, immagine no) lo tiene `test_novita_20ott.js`.
+
+**SCH-07 — Repliche: Holoecho e Decoy** *(nuova)*
+- **Attivo:** in schieramento Bashi Bazouk (BS Attack (AP)) *(Nomadi #42)* → **CREA LE REPLICHE (Holoecho)**; Knauf *(#46)* → Decoy; poi conferma lo schieramento
+- **Atteso:** il Bashi ha **due** copie, il Knauf **una** (Decoy (1)). All'avversario e all'Hub le tre del Bashi arrivano **identiche**, *«COPIA OLOGRAFICA 1 / 2 / 3»* coi numeri dati a caso, senza nessun campo che dica chi è la replica. Nella tua app la riga dice **— VERA** o **— REPLICA**. Una replica non riceve Ordini (*«È una copia olografica: si muove con l'Ordine della truppa vera…»*); quando un attacco la prende, nell'ARO del proprietario c'è la nota *«E` una REPLICA: se l'Attacco riesce non fa il Tiro Salvezza, si toglie dal tavolo…»*. Tolte tutte e due le copie, cade l'Holoecho della vera; se la vera si rivela, le repliche escono dal roster. All'avversario i tre identificativi hanno **la stessa forma**, e l'ordine è quello dei numeri dati a caso: la vera non è sempre la prima. Nemmeno il numero in fondo all'identificativo la tradisce: pesca nello stesso intervallo della lista.
+
+**SCH-08 — HoloMask sul tabellone** *(nuova)*
+- **Attivo:** Bashi Bazouk *(Nomadi #42)* in **HoloMask** che imita Alguacil (Combi Rifle) *(#1)*; nel turno PanOceania Fusilier (Combi Rifle) *(PanOceania #1)* · ATTACCO BS
+- **Con:** Combi Rifle
+- **Bersaglio:** il Bashi, a 8-16", senza copertura
+- **ARO:** il Bashi → SCHIVATA
+- **Atteso:** fra le Truppe Imitabili **solo la stessa Silhouette**, raggruppate per Unità (circa **105** truppe, con le varianti dentro: non 290 voci). Sul tabellone il reattivo è **«Alguacil (Combi Rifle)»**, *SCHIVATA*, **10**; nessuna traccia di «Bashi», nemmeno nell'HTML; la salvezza è sull'ARM **vera** del Bashi, **ARM VS 9 ×1** (ARM 2 + PS 7: l'Alguacil ha ARM 1). Niente «Sconosciuta» nelle armi.
 
 ---
 
@@ -1725,11 +1802,11 @@ modificando la busta prima dell'invio: sono la rete sotto i moduli.
 - **Atteso:** **13** B1, salvezza **ARM VS 7 ×3**. Dopo il primo colpo resta **1** uso, dopo il secondo **0**; al terzo Ordine il Panzerfaust è bloccato, *«usi esauriti»*.
 
 **DIS-02 — Il (+1B) costa due usi, il (+1SD) uno**
-- **Attivo:** Triphammer *(Nomadi #30, BS 13)* · ATTACCO BS; poi Spector (Parachutist, Combat Jump) *(Nomadi #29)* · FUOCO SPECULATIVO
+- **Attivo:** Triphammer *(Nomadi #30, BS 13)* · ATTACCO BS, in tre Ordini; poi Spector (Parachutist, Combat Jump) *(Nomadi #29)* · FUOCO SPECULATIVO
 - **Con:** Panzerfaust (+1B) per il Triphammer; Drop Bears (+1SD) per lo Spector
 - **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* a 0-8", copertura no
 - **ARO:** nessuno
-- **Atteso:** Triphammer: **2** dadi, voci *«Burst dell'arma Panzerfaust · BS Attack (+1B): +1 Burst in Turno Attivo»*, Successo al **10** (13 −3). Dopo il colpo il Panzerfaust è a **2 su 2** usi spesi. Spector: Burst **1** più un dado speciale, e si spende **un** uso su 3.
+- **Atteso:** dentro il bottone del Panzerfaust *«Usi residui: 2 su 2»*. Triphammer: **2** dadi, voci *«Burst dell'arma Panzerfaust · BS Attack (+1B): +1 Burst in Turno Attivo»*, Successo al **10** (13 −3). Dopo il colpo il Panzerfaust è a **2 su 2** usi spesi. Al secondo e al terzo Ordine il bottone dice **«⛔ USI ESAURITI (2/2) — serve un Reload»**, è spento, e toccarlo spiega lo Scarico invece di scegliere l'arma. L'Hub calcola con gli usi spesi che la busta porta (*attacco.usiSpesiAttaccante*), non con la sua copia del roster. Spector: Burst **1** più un dado speciale, e si spende **un** uso su 3.
 
 **DIS-03 — Una Schivata non consuma**
 - **Attivo:** Fusilier (Combi Rifle) *(PanOceania #1)* · ATTACCO BS sul Triphammer *(Nomadi #30)*
@@ -1745,13 +1822,26 @@ modificando la busta prima dell'invio: sono la rete sotto i moduli.
 - **Con:** MULTI Sniper Rifle (AP Mode) (+1SD)
 - **Bersaglio:** prima Fusilier (Combi Rifle) *(PanOceania #1)*; poi Fusilier #1 e Orc #4 insieme; a 24-32", copertura no
 - **ARO:** nessuno
-- **Atteso:** fra i MOD *«tira 1 dado in più, poi scartane 1»*, e il Burst dell'arma **non** cresce. Con due bersagli il dado va a **uno solo**. Controprova: Alguacil (Combi Rifle) *(#1)*: Burst 3 e nessuna frase. Terza strada: Wolfgang Amadeus *(#26)* in ATTACCO CC con la DA CC Weapon, nota *«Martial Arts L3: (+1 SD)…»*.
+- **Atteso:** fra i MOD *«tira 1 dado in più, poi scartane 1»*, e il Burst dell'arma **non** cresce. Con due bersagli il dado va a **uno solo**. Controprova: Alguacil (Combi Rifle) *(#1)*: Burst 3 e nessuna frase. Terza strada: Wolfgang Amadeus *(#26)* in ATTACCO CC, nota nello scontro *«Dado Speciale (+1 SD): su QUESTO bersaglio tira 1 dado in più, poi scartane 1.»*. Fuori dalle Sagome, con due bersagli e Burst 2, i dadi partono **1 e 1**, a giro.
 
 **DIS-06 — Tre mine, e la quarta no**
 - **Attivo:** Zero (Hacker, Killer Hacking Device) *(Nomadi #9)*, rivelato · IDLE → PIAZZARE EQUIPAGGIAMENTO, in quattro Ordini
 - **Con:** Shock Mine
 - **ARO:** nessuno
 - **Atteso:** tre mine piazzate, usi spesi 1, 2, 3 anche riaprendo il menu. Il terzo uso **non** è respinto all'invio. Al quarto la mina è bloccata, nessun segnalino nuovo, niente parte per l'Hub.
+
+**DIS-07 — Reload col Baggage** *(nuova)*
+- **Attivo:** Triphammer *(Nomadi #30)* col Panzerfaust esaurito (DIS-02), nella ZdC del Salyut (Deactivator, Repeater) *(#43)* · RICARICARE
+- **ARO:** nessuno
+- **Atteso:** la finestra *«🔄 RELOAD — … È nella Zona di Controllo di un alleato con Baggage, non in Stato Nullo?»* col nome del Salyut. **OK**: *«Tri ricarica: Panzerfaust (+2)»*, il bottone torna a **2 su 2**. **Annulla**: *«⚠️ Requisito fallito: … fa IDLE. L'Ordine è speso e l'avversario ha il suo ARO.»*, gli usi restano spesi. Senza il Salyut sul tavolo, o col Salyut **Incosciente**: *«⛔ Nessun alleato con Baggage sul tavolo in stato non Nullo (riga 10489).»*, prima della domanda.
+
+**DIS-08 — Ricarica forzata dall'Hub** *(nuova)*
+- **Attivo:** all'Hub, sulla scheda del Triphammer *(Nomadi #30)* col Panzerfaust esaurito → **🔄 RICARICA**; poi in testa all'elenco dei Nomadi **🔄 RICARICA TUTTO NOMADI**
+- **Atteso:** nell'app dei Nomads *«🔄 Ricarica forzata dall'Hub: …»* e il Triphammer a 2 su 2; le altre truppe no. Lo stesso comando arrivato due volte si applica **una** volta. Con RICARICA TUTTO tutte le truppe Nomadi si ricaricano; PanOceania no. PanOceania, senza armi Disposable nel roster di prova, non ha il bottone.
+
+**DIS-09 — Gli usi dentro il bottone, in ogni Ordine** *(nuova)*
+- **Attivo:** Mary Problems (Hacker) *(Nomadi #21)* · FUOCO SPECULATIVO; Krakot Renegade (Boarding Shotgun) *(#31)* · ATTACCO INTUITIVO; Triphammer *(#30)* · ATTACCO BS; Fusilier (Combi Rifle) *(PanOceania #1)* col Panzerfaust aggiunto, in ARO
+- **Atteso:** la riga *«Usi residui: X su Y»* sta **dentro** il bottone dell'arma, una volta sola, uguale nei quattro: *«Pitcher … Usi residui: 2 su 2»*, *«Chest Mines SHOCK SAGOMA DIRETTA · SMALL TEARDROP Usi residui: 2 su 2»*, *«Panzerfaust … Usi residui: 2 su 2»*, e in ARO lo stesso testo del Panzerfaust. A usi finiti il bottone è spento e il tocco spiega lo Scarico.
 
 ---
 
@@ -1882,10 +1972,10 @@ la **Puppet Masters (Minelayer)** *(Nomadi #22)*, con la **Shock Mine**.
 
 **SP-07 — Coordinato con tre partecipanti**
 - **Attivo:** Coordinato con gli Alguacil *(#1, #2, #3)* · SCOPRIRE → ATTACCO BS
-- **Con:** l'arma di ciascuno
+- **Con:** l'arma di ciascuno (il Missile Launcher in Hit Mode)
 - **Bersaglio:** lo Zulu-Cobra (Marker), a 8-16"
 - **ARO:** nessuno
-- **Atteso:** l'Ordine parte: sei voci, nessun errore sul numero di unità.
+- **Atteso:** **tre** pagine dello Scoprire, una per partecipante, ognuna con la **sua** gittata, copertura, terreno e LoF (prima usciva solo alla Punta). Una busta da **sei** voci, nessun errore sul numero di unità; sul tabellone **sei** scontri: tre SCOPRIRE a **10** (WIP 13 −3 Mimetismo) e i tre ATTACCO BS.
 
 **SP-08 — Coordinato con cinque partecipanti**
 - **Attivo:** Coordinato con gli Alguacil *(#1-#5)* · SCOPRIRE → ATTACCO BS
@@ -1960,7 +2050,7 @@ giallo) e compare sempre. Per Fumo ed Eclipse non c'è domanda.
 - **Con:** Grenades per l'Intruder; Missile Launcher (Blast Mode) per il Vertigo
 - **Bersaglio:** Fusilier (Combi Rifle) *(#1)* **Ingaggiato** e **Bersagliato** come Principale; Fusilier (Missile Launcher) *(#2)* **Ingaggiato** sotto la Sagoma; a 8-16"
 - **ARO:** nessuno
-- **Atteso:** la domanda compare una volta, sulla scheda del Principale. Rispondendo **NO** il colpo vale per tutti e due.
+- **Atteso:** la domanda compare una volta, sulla scheda del Principale. Rispondendo **NO** il colpo vale per tutti e due. Lo stesso nell'ATTACCO BS con **una** Sagoma: Alguacil (Missile Launcher) *(#3)* col Missile Launcher (Blast Mode) sugli stessi due, la domanda solo sul #1, e la risposta vale per tutti.
 
 **SG-08 — Fumo: nessuna domanda**
 - **Attivo:** Morlock (Assault Pistol) *(Nomadi #13)* · ATTACCO BS
@@ -1971,10 +2061,10 @@ giallo) e compare sempre. Per Fumo ed Eclipse non c'è domanda.
 
 **SG-09 — Due Sagome: ognuna vale per sé**
 - **Attivo:** Grenzer (Forward Observer, Sensor, NCO) *(Nomadi #12)* · ATTACCO BS
-- **Con:** Light Flamethrower(+1B): Burst 2, cioè **2 Sagome**
-- **Bersaglio:** Fusilier (Combi Rifle) *(#1)* **Ingaggiato**, sotto **1** Sagoma, e rispondi **SÌ**; Fusilier (Missile Launcher) *(#2)* non Ingaggiato, sotto **1** Sagoma, e rispondi **NO**
+- **Con:** Light Flamethrower(+1B): Burst 2, cioè **2 Sagome**, A e B
+- **Bersaglio:** Fusilier (Combi Rifle) *(#1)* **Ingaggiato**, e rispondi **SÌ**; Fusilier (Missile Launcher) *(#2)* non Ingaggiato
 - **ARO:** nessuno
-- **Atteso:** in testa *«2 SAGOME: per ogni bersaglio indica da quante Sagome è preso (da 1 a 2)»*. Il #1 è annullato; il #2 è colpito, senza tiro (Sagoma Diretta), e fa **un** Tiro Salvezza. Portando il #2 a **2** Sagome fa **due** Tiri Salvezza, e la nota lo dice: *«…Questo bersaglio è preso da 2: un Tiro Salvezza per ciascuna.»*
+- **Atteso:** in testa *«2 SAGOME: per ogni bersaglio accendi le lettere delle Sagome che lo prendono.»* e *«Sagoma A: F1 · Sagoma B: F2»*: le lettere partono a giro (un bersaglio solo le prende tutte e due). Il #1 è annullato; il #2 è colpito da B, senza tiro (Sagoma Diretta), un Tiro Salvezza: *«Sagome B: 1 Tiro/i Salvezza.»*. Accendi anche la **A** sul #2: resta un Tiro Salvezza, *«Sagome A (annullata: prende F1 con un tuo alleato). Restano B: 1 Tiro/i Salvezza.»*. Con il #1 non Ingaggiato e il #2 sotto A e B: tutti e due colpiti, il #2 con **due** Tiri Salvezza, *«Sotto le Sagome A, B: 2 Tiro/i Salvezza.»*. Un bersaglio senza lettere blocca l'invio: *«⚠️ … nessuna Sagoma accesa…»*.
 
 **SG-10 — Il secondario arriva sul tabellone**
 - **Attivo:** Vertigo Zond *(Nomadi #28)* · ATTACCO GUIDATO
@@ -2009,6 +2099,9 @@ quello indicato.
 | Le novità del 20 ottobre: profili collegati nel database, secondo profilo e Transmutation (WIP) dall'editor e al cambio turno, moto ed Escape System (chi non può risalire), Marker numerati per segnalino, MOVIMENTO senza tiro, nomi delle armi in ARO, Fumo in ARO fino al tabellone; la Sagoma Diretta in ARO e la seconda metà filtrata (sez. 10); la Schivata contro koala e mina, e il Reset contro la Cybermine, dentro lo scontro della detonazione (sez. 11) | `test_novita_20ott.js` |
 | Le otto correzioni del 23 ottobre fino al tabellone: Sagoma d'Impatto un tiro coi MOD del Principale anche con una busta diversa sul secondario, Combi Rifle e Sagoma Diretta a due bersagli invariati; eraMarker nel motore; Pitcher sul punto, finestra e Ripetitore all'Hub, Grenades sul punto E15; Fumo 13 con la Copertura nella busta e Smoke dell'attivo sul punto; Triangulated 13 sul tabellone; fasce del MediKit e IDLE dal tasto; foto collegate nel motore e filtraPerAvversario; INT-01 dalla porta del giocatore (sez. 2b) e la nota del punto; dal pomeriggio (sez. 8-14) la Sorpresa da Hidden e da CAMO, Hidden in ARO, il Coordinato contro un bersaglio (E60, E61), E49, E44 con una lista senza `chars`, l'Idle del solo gregario (A110), TER-06 e TER-07 | `test_novita_23ott.js` |
 | La Schivata contro Sagoma senza LoF (PH−3) | `test_orchestratore.js` |
+| La consegna del 26 ottobre fino al tabellone: usi Disposable (Panzerfaust su tre Ordini, la busta e la risposta ARO con gli usi, il bottone uguale in BS, ARO, Speculativo e Intuitivo, Reload col Baggage, ricarica dall'Hub una volta sola), E62, Coordinato SCOPRIRE + ATTACCO a tre (sei scontri), Dado Speciale in CC, le mine fuori dall'Attacco BS, il Deactivator sul roster nemico, Minelayer ed E54, SCENDI DAL TAG e il pilota di lista, M.tagDelPilota, le Sagome a lettere e la domanda sul Principale, senzaCritico, repliche e HoloMask, icone per esercito, la mina in CAMO | `test_novita_26ott.js` |
+| La domanda doppia del piazzamento e i Deployable senza area d'innesco (Repeater, FastPanda, Deployable Cover, Disco Ball) | `test_modulo_piazzamento.js` sez. 4, 11-bis e 14 |
+| Le correzioni del 27 ottobre: la nota del secondario sul tabellone, identificativi e ordine delle repliche (200 giri), il Disco Baller fino alla Disco Ball, la nota del segnalino anche col Pitcher dello Speculativo, le icone fra eserciti, il tetto sugli usi residui in ARO (`M.burstReattivo` e l'Hub, con la controprova senza `r.usiSpesi`) | `test_novita_26ott.js` I3, J1, J1b, M, N, O |
 
 Una trappola da sapere scrivendo una prova nuova: la chiave di un requisito non
 è il nome del campo. `gittata` legge `fuoriGittata` (manca se **true**),
@@ -2029,6 +2122,7 @@ Una trappola da sapere scrivendo una prova nuova: la chiave di un requisito non
 | Con un MSV3 la nota del terreno dice "MSV2" | — (`test_terreni_combinati.js`) | MOTORE |
 | `profiloArma` scrive munizione N dove il database ha `null` (Deployable Cover) | — | MOTORE |
 | La gittata del Missile Launcher in TPL-04: da confermare con la foto della schermata | TPL-04 | Paolo |
+| Da chiarire: Total Reaction col Panzerfaust (+1B) è **B1** in ARO anche a usi pieni (il +1B non entra), e la pagina dell'ARO passa *«Panzerfaust»* senza la notazione. Il «B1 invece di B2» del 27 ottobre non si vede. MOTORE l'ha girata a REGOLE con la sua lettura (vale); fino alla risposta il (+1B) dell'arma in ARO non conta | — (`test_novita_26ott.js` O) | REGOLE, MOTORE |
 
 **Divergenze che restano per una ragione:** le mine non sanno se detonano (il
 motore risponde *non lo so* e l'app chiede di toglierle a mano: → DATABASE);

@@ -1,4 +1,4 @@
-// @versione 2026-10-18.1 | ordine_difesa.js | proprieta`: chat MOTORE
+// @versione 2026-10-26.1 | ordine_difesa.js | proprieta`: chat MOTORE
 // ==========================================
 // 🛡️ DIFESA: SCHIVATA, RESET E SOPPRESSIONE - ordine_difesa.js
 // ------------------------------------------
@@ -104,12 +104,11 @@
                     onclick="window.toggleDifesaLoF(${index}, '${actionId}')">
                     ${u.difesaOpts.hasLoF ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofSi') : '👁️ '}HO LINEA DI TIRO VERSO CHI ATTACCA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofNo') : '🚫 '}NESSUNA LINEA DI TIRO (-3 PH)`}</button>`;
 
-                const stileSag = u.difesaOpts.controSagoma
-                    ? 'background:#442200; color:#ff9900; border-color:#ff9900;'
-                    : 'background:#111; color:#888; border-color:#555;';
-                opzioni += `<button type="button" class="huge-btn" style="width:100%; margin-top:8px; min-height:50px; font-size:15px; ${stileSag}"
-                    onclick="window.toggleDifesaSagoma(${index}, '${actionId}')">
-                    ${u.difesaOpts.controSagoma ? '🔥 STO SCHIVANDO UNA SAGOMA' : 'Attacco normale (non a Sagoma)'}</button>`;
+                // 26 ottobre (Paolo): il tasto "STO SCHIVANDO UNA SAGOMA" non
+                // serve piu`. All'Hub la Schivata si ricalcola contro l'ARO
+                // vero (M.modReazione legge la Sagoma dall'arma del reattivo),
+                // e qui dava solo una nota. Restano la funzione e il campo,
+                // spenti, per le buste vecchie.
             }
 
             html += `
@@ -323,7 +322,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_difesa.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_difesa.js', versione: '2026-10-26.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

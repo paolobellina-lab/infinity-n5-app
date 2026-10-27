@@ -1,4 +1,4 @@
-// @versione 2026-10-23.1 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-27.1 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -226,14 +226,23 @@ window.inviaCalcoloAllHub = (payload) => {
 window.inviaRispostaAro = (payload, fazione) => {
     // Residuo del 23 settembre: i doppi apici erano sfuggiti al porto su M.CANALI.
     const canale = window.MotoreN5.canaleAro(fazione);
-    localStorage.setItem(canale, JSON.stringify(payload));
     // Anche in ARO un'arma Disposable si consuma: il Burst reattivo lo dice
     // il motore (1, o pieno con Neurocinetics / Total Reaction).
     const M = window.MotoreN5;
+    // 26 ottobre (DIS-02): la risposta porta gli usi gia` spesi, perche`
+    // l'Hub calcola sulla sua copia del roster, che non li ha. Si scrivono
+    // PRIMA di spedire: sono quelli di prima del colpo.
+    ((payload && payload.reazioni) || []).forEach(function (r) {
+        const u = (window.roster || []).find(x => x && x.id === r.id);
+        if (u && u.usiSpesi && Object.keys(u.usiSpesi).length) r.usiSpesi = JSON.parse(JSON.stringify(u.usiSpesi));
+    });
+    localStorage.setItem(canale, JSON.stringify(payload));
     consumaUsiSpari(((payload && payload.reazioni) || []).map(function (r) {
         const u = (window.roster || []).find(x => x && x.id === r.id);
         const arma = r.arma ? ((typeof r.arma === 'string') ? M.profiloArma(r.arma) : r.arma) : null;
-        const b = (u && arma) ? (M.burstReattivo(u, arma).valore || 1) : 0;
+        // Il Burst pieno del Total Reaction e` una scelta (r.burstPieno): gli
+        // usi si contano su quello scelto.
+        const b = (u && arma) ? (M.burstReattivo(u, arma, { burstPieno: r.burstPieno }).valore || 0) : 0;
         return { id: r.id, arma: arma, n: arma ? M.usiDaConsumare(arma, [b], r.azione) : 0 };
     }).filter(v => v.arma));
     console.log(`🛡️ Core: Risposta ARO (${fazione}) inviata all'Hub.`);
@@ -374,7 +383,14 @@ window.sostituisciUnita = function (unita, aggiornata, perche, opzioni) {
     const nelRoster = (window.roster || []).find(x => x && unita.id && x.id === unita.id);
     const prima = String(unita.deployState || 'NORMAL');
     const eraCamo = !!(M && M.statoBersaglio && M.statoBersaglio(unita).camo);
+    const eraReplicata = !!(unita.states && (unita.states.decoy || unita.states.holoecho));
     [unita, nelRoster].filter(Boolean).forEach(x => Object.assign(x, aggiornata));
+    // 26 ottobre: la truppa vera si rivela (Decoy, Holoecho): tutte le sue
+    // repliche escono dal tavolo, e l'aggiornamento qui sotto lo dice all'Hub.
+    if (eraReplicata && M && typeof M.togliRepliche === 'function' && !(unita.states && (unita.states.decoy || unita.states.holoecho))) {
+        const tolte = M.togliRepliche(window.roster || [], unita.id);
+        if (tolte.length) console.log(`👥 ${M.nomeUnita(unita)} si rivela: tolte ${tolte.length} repliche.`);
+    }
     // 🔴 9 ottobre (chat REGOLE, F07): con Camouflage (1 Use) l'uso e`
     // l'ENTRATA nello Stato CAMO, schieramento compreso. Chi ESCE dal CAMO lo
     // ha speso, comunque ci fosse entrato: un Marker schierato dal database
@@ -721,6 +737,28 @@ window.riprendiDaStato = function () {
     return { ripresa: true, turno: t, ordineAMeta: ordineAMeta };
 };
 
+// Ricarica forzata dall'Hub: una volta per comando (l'id si ricorda fuori
+// dai canali, perche` il cloud rimanda l'ultimo valore a ogni apertura).
+window.applicaRicaricaDaHub = function (grezzo) {
+    const M = window.MotoreN5;
+    if (!M || typeof M.applicaComandoRicarica !== 'function') return [];
+    let c = null; try { c = JSON.parse(grezzo); } catch (e) { return []; }
+    if (!c || !c.id) return [];
+    const CHIAVE = 'n5_ultima_ricarica_applicata';
+    let ultima = null; try { ultima = localStorage.getItem(CHIAVE); } catch (e) {}
+    if (ultima === c.id) return [];
+    const fazione = document.title.includes('NOMADS') ? 'NOMADI' : 'PANOCEANIA';
+    if (c.fazione && c.fazione !== fazione) return [];
+    try { localStorage.setItem(CHIAVE, c.id); } catch (e) {}
+    const fatti = M.applicaComandoRicarica(window.roster || [], c, fazione);
+    if (!fatti.length) return fatti;
+    if (typeof window.salvaPartitaLocale === 'function') window.salvaPartitaLocale();
+    if (typeof window.aggiornaGraficaRoster === 'function') window.aggiornaGraficaRoster();
+    alert('🔄 Ricarica forzata dall\'Hub:\n' + fatti.map(f => '• ' + f.unita + ': ' +
+          (f.recuperati.length ? f.recuperati.map(x => x.arma + ' (+' + x.usi + ')').join(', ') : 'usi azzerati')).join('\n'));
+    return fatti;
+};
+
 // --- 5. ASCOLTATORI GLOBALI (Event Listeners) ---
 
 window.addEventListener('storage', (event) => {
@@ -733,6 +771,11 @@ window.addEventListener('storage', (event) => {
     }
     if (event.key === window.MotoreN5.CANALI.HUB_TURNO) {
         window.applicaCambioTurno(event.newValue);
+    }
+
+    // 26 ottobre: ricarica forzata dall'Hub (M.comandoRicarica).
+    if (event.key === window.MotoreN5.CANALI.HUB_RICARICA && event.newValue) {
+        window.applicaRicaricaDaHub(event.newValue);
     }
 
     if (event.key === window.MotoreN5.CANALI.HUB_SBLOCCO) {
@@ -817,7 +860,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-23.1', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-27.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
