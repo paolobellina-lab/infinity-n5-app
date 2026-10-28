@@ -1,4 +1,4 @@
-// @versione 2026-10-26.1 | logica_stati.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.2 | logica_stati.js | proprieta`: chat MOTORE
 // ==========================================
 // NOTA: le regole di questo file passano da MotoreN5.
 //  - la cancellazione degli stati Marker (Ritirata!, Ingaggiato, Stati Nulli)
@@ -137,10 +137,10 @@ window.apriPaginaStati = (index) => {
     // riquadro aveva altezza fissa 60vh e overflow-y:auto; ora si allunga
     // quanto serve e scorre la pagina intera (body ha min-height, non height).
     let html = `
-        <div style="background:#111; padding:15px; border:1px solid #444; border-radius:8px;">
-            ${s.fairyDust ? `<label style="display:block; margin:6px 0; padding:8px; background:#111; border:1px solid #66aaff; border-radius:5px; color:#ccc; font-size:14px;">
+        <div style="background:var(--mn-fondo-tasto,#111111); padding:15px; border:1px solid var(--mn-bordo-spento,#555555); border-radius:8px;">
+            ${s.fairyDust ? `<label style="display:block; margin:6px 0; padding:8px; background:var(--mn-fondo-tasto,#111111); border:1px solid #66aaff; border-radius:5px; color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s);">
                 <input type="checkbox" id="st-fairydust" checked> 💻 Fairy Dust attivo sui <b>${s.fairyDust}</b>
-                <span style="color:#888; font-size:12px;">— togli la spunta se è caduto (es. una truppa protetta ha ricevuto un altro Supportware, righe 4735-4737)</span></label>` : ''}
+                <span style="color:var(--mn-spento,#888888); font-size:var(--fs-xs);">— togli la spunta se è caduto (es. una truppa protetta ha ricevuto un altro Supportware, righe 4735-4737)</span></label>` : ''}
             <div class="state-grid" id="main-state-grid">
                 <label class="state-label" title="Morto">
                     <input type="checkbox" id="st-dead" class="state-checkbox" ${isDead ? 'checked' : ''}>
@@ -209,11 +209,29 @@ window.apriPaginaStati = (index) => {
                  </label>`;
         if (livelliImpAmmessi.length > 1) {
             html += `<label class="state-label" title="Livello dell'Impersonation" style="width:auto;">
-                    <select id="st-imp-liv" style="background:#111; color:#fff; border:1px solid #666; font-size:16px; padding:8px;">
+                    <select id="st-imp-liv" style="background:var(--mn-fondo-tasto,#111111); color:var(--mn-testo,#ffffff); border:1px solid var(--mn-bordo-spento,#555555); font-size:var(--fs-m); padding:8px;">
                         ${livelliImpAmmessi.map(l => `<option value="IMP_${l}" ${l === livelloImp ? 'selected' : ''}>IMP-${l}</option>`).join('')}
                     </select>
                  </label>`;
         }
+    }
+    // 27 ottobre (Paolo, INTERFACCIA): l'Hidden Deployment si vede anche qui,
+    // con la sua icona (M.segnalinoSenzaNumero). La casella c'e` solo se la
+    // truppa E` in Hidden Deployment: togliendola si rivela (per esempio
+    // Scoperta da un Sensor) e diventa un Modello. Non lo si rimette da qui:
+    // si sceglie allo schieramento.
+    // La pagina si segna PER QUALE truppa ha disegnato la casella: il
+    // salvataggio rivela solo se la casella e` stata davvero mostrata e
+    // tolta. Senza il segno, un salvataggio senza pagina (o con un DOM che
+    // risponde "tutto spento") rivelava il nascosto e lo spediva al cloud
+    // (test_produttori_busta, sez. 5).
+    window.statiCasellaHidden = null;
+    if (String(window.unitToEdit.deployState || '').toUpperCase() === 'HIDDEN') {
+        window.statiCasellaHidden = window.unitToEdit;
+        html += `<label class="state-label" title="Hidden Deployment: togli la spunta se la truppa si rivela">
+                    <input type="checkbox" id="st-hidden" class="state-checkbox" checked>
+                    <img src="img/icon_hidden.png" class="state-icon" onerror="this.outerHTML='<span class=\\'fallback-emoji\\'>🫥</span>'">
+                 </label>`;
     }
     if (canHoloecho) {
         html += `<label class="state-label" title="Holoecho (Holoprojector)">
@@ -249,27 +267,29 @@ window.apriPaginaStati = (index) => {
     const esp = (Mp && typeof Mp.puoEspellere === 'function') ? Mp.puoEspellere(window.unitToEdit) : null;
     let profiloHtml = '';
     if (trasf && !trasf.gia) {
-        profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:#2a1a00; border-color:#ffaa33; color:#ffcc66; font-size:18px;" onclick="window.cambiaProfiloDaStati()">
-            🔄 ${trasf.tipo === 'WIP' ? 'TIRO RIUSCITO: ' : ''}PASSA AL PROFILO: ${trasf.nome}<br><span style="font-size:12px; color:#cc9955;">${trasf.quando} ${trasf.nota}</span></button>`;
+        profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:var(--mn-nota-fondo,#1a1000); border-color:var(--mn-acceso,#ffaa33); color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-m);" onclick="window.cambiaProfiloDaStati()">
+            🔄 ${trasf.tipo === 'WIP' ? 'TIRO RIUSCITO: ' : ''}PASSA AL PROFILO: ${trasf.nome}<br><span style="font-size:var(--fs-xs); color:var(--mn-nota-tenue,#cc9955);">${trasf.quando} ${trasf.nota}</span></button>`;
     } else if (trasf && trasf.gia && trasf.reversibile) {
-        profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:#1a1a1a; border-color:#ffaa33; color:#ffcc66; font-size:18px;" onclick="window.tornaPrimoProfiloDaStati()">
-            ↩️ TORNA AL PRIMO PROFILO<br><span style="font-size:12px; color:#cc9955;">In uso: ${trasf.nome}. ${trasf.nota}</span></button>`;
+        profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:var(--mn-fondo-tasto,#111111); border-color:var(--mn-acceso,#ffaa33); color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-m);" onclick="window.tornaPrimoProfiloDaStati()">
+            ↩️ TORNA AL PRIMO PROFILO<br><span style="font-size:var(--fs-xs); color:var(--mn-nota-tenue,#cc9955);">In uso: ${trasf.nome}. ${trasf.nota}</span></button>`;
     } else if (trasf && trasf.gia) {
-        profiloHtml += `<div style="color:#cc9955; font-size:13px; margin-bottom:8px;">🔄 Secondo profilo in uso: ${trasf.nome}. ${trasf.nota}</div>`;
+        profiloHtml += `<div style="color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s); margin-bottom:8px;">🔄 Secondo profilo in uso: ${trasf.nome}. ${trasf.nota}</div>`;
     }
     if (esp && esp.puo) {
-        profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:#1a1a33; border-color:#8888ff; color:#ccccff; font-size:18px;" onclick="window.espelliPilotaDaStati()">
-            🪂 ESCAPE SYSTEM: FAI USCIRE IL PILOTA<br><span style="font-size:12px; color:#9999cc;">A fine Ordine, quando il TAG ha ricevuto le ferite indicate. Il TAG resta vuoto sul tavolo; il pilota può risalire.</span></button>`;
+        profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:#1a1a33; border-color:#8888ff; color:#ccccff; font-size:var(--fs-m);" onclick="window.espelliPilotaDaStati()">
+            🪂 ESCAPE SYSTEM: FAI USCIRE IL PILOTA<br><span style="font-size:var(--fs-xs); color:#9999cc;">A fine Ordine, quando il TAG ha ricevuto le ferite indicate. Il TAG resta vuoto sul tavolo; il pilota può risalire.</span></button>`;
     }
     if (profiloHtml) html += `</div></div><div style="margin-top:15px;">${profiloHtml}</div><div><div>`;
 
     html += `</div></div>
-        <div id="ft-dynamic-panel" style="background:#222; border:1px solid #444; padding:10px; margin-top:15px; border-radius:5px; display:flex; justify-content:space-between; align-items:center;">
+        <div id="ft-dynamic-panel" style="background:var(--mn-fondo-riquadro,#222222); border:1px solid var(--mn-bordo-spento,#555555); padding:10px; margin-top:15px; border-radius:5px; display:flex; justify-content:space-between; align-items:center;">
         </div>
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="huge-btn" style="flex:1; background:#330000; border-color:#ff0000;" onclick="window.annullaStati()">ANNULLA</button>
-            <button class="huge-btn" style="flex:2; background:#003300; border-color:#00ff00;" onclick="window.salvaStatiUnita()">CONFERMA E SALVA</button>
-        </div>`;
+        <!-- 27 ottobre sera (collaudo grafico, secondo giro): i due tasti
+             affiancati erano larghi 179 + 208 px su 370 e uscivano dal bordo
+             (F01-F03). Ora sono quelli di tutta l'app: la conferma verde a
+             tutta riga (.tasto-conferma, verde da M.COLORI) e sotto l'uscita. -->
+        <button class="huge-btn tasto-conferma" style="background:var(--mn-si-fondo,#004400); border-color:var(--mn-si,#00ff00);" onclick="window.salvaStatiUnita()">CONFERMA E SALVA</button>
+        <button class="tasto-uscita" onclick="window.annullaStati()">ANNULLA</button>`;
     
     document.getElementById('states-content').innerHTML = iconeDellEsercito(html);
 
@@ -305,8 +325,8 @@ window.renderFTPanel = () => {
     else if (count >= 4) { ftType = "CORE"; ftIcon = "img/icon_ft_core.png"; }
 
     let btnText = window.tempFT === "" ? "NESSUNO" : `TEAM ${window.tempFT}`;
-    let btnColor = window.tempFT === "" ? "#555" : "var(--nomad-red)"; 
-    let btnBg = window.tempFT === "" ? "#111" : "#002244";
+    let btnColor = window.tempFT === "" ? "var(--mn-bordo-spento,#555555)" : "var(--nomad-red)"; 
+    let btnBg = window.tempFT === "" ? "var(--mn-fondo-tasto,#111111)" : "#002244";
 
     let leaderHtml = "";
     if (window.tempFT !== "") {
@@ -314,7 +334,7 @@ window.renderFTPanel = () => {
             <div style="text-align:center;">
                 <label class="state-label" title="Fireteam Leader" style="margin:0; width:auto;">
                     <input type="checkbox" id="st-ft-leader" class="state-checkbox" ${window.tempLeader ? 'checked' : ''}>
-                    <img src="${ftIcon}" class="state-icon" style="width:70px; height:70px;" onerror="this.outerHTML='<span class=\\'fallback-emoji\\' style=\\'font-size:50px; line-height:70px;\\'>👑</span>'">
+                    <img src="${ftIcon}" class="state-icon" style="width:70px; height:70px;" onerror="this.outerHTML='<span class=\\'fallback-emoji\\' style=\\'font-size:var(--fs-xxl); line-height:70px;\\'>👑</span>'">
                 </label>
             </div>
         `;
@@ -324,11 +344,11 @@ window.renderFTPanel = () => {
 
     panel.innerHTML = iconeDellEsercito(`
         <div style="display:flex; align-items:center; gap:15px; flex:1;">
-            <button class="huge-btn" style="flex:none; width:150px; min-height:70px; margin:0; background:${btnBg}; border-color:${btnColor}; color:${window.tempFT==='' ? '#888' : '#fff'}; font-size:26px;" onclick="window.cycleFireteam()">
+            <button class="huge-btn" style="flex:none; width:150px; min-height:70px; margin:0; background:${btnBg}; border-color:${btnColor}; color:${window.tempFT==='' ? 'var(--mn-spento,#888888)' : 'var(--mn-testo,#ffffff)'}; font-size:var(--fs-l);" onclick="window.cycleFireteam()">
                 ${btnText}
             </button>
-            <div style="color:var(--nomad-orange); font-size:18px; font-weight:bold; text-align:center; flex:1;">
-                ${window.tempFT !== "" ? `TIPO:<br><span style="color:#fff; font-size:28px; text-shadow: 0 0 5px #fff;">${ftType}</span>` : ''}
+            <div style="color:var(--nomad-orange); font-size:var(--fs-m); font-weight:bold; text-align:center; flex:1;">
+                ${window.tempFT !== "" ? `TIPO:<br><span style="color:var(--mn-testo,#ffffff); font-size:var(--fs-xl); text-shadow: 0 0 5px var(--mn-testo,#ffffff);">${ftType}</span>` : ''}
             </div>
         </div>
         ${leaderHtml}
@@ -517,6 +537,13 @@ window.salvaStatiUnita = () => {
         if (canc.cancellati.length) console.log('🔄 Stati Marker cancellati: ' + canc.cancellati.join(', ') + ' — ' + canc.motivo);
     }
 
+    // Hidden Deployment tolto dall'editor: la truppa si rivela come Modello.
+    const casHidden = document.getElementById('st-hidden');
+    const eraHidden = String(window.unitToEdit.deployState || '').toUpperCase() === 'HIDDEN';
+    if (eraHidden && casHidden && window.statiCasellaHidden === window.unitToEdit && casHidden.checked === false && !s.camo && !s.impersonation) {
+        window.unitToEdit.deployState = 'NORMAL';
+        s.hidden = false;
+    }
     // Gestione Testo DeployState Plancia per la UI visiva
     if (s.camo) {
         window.unitToEdit.deployState = window.tempCamoState;
@@ -642,7 +669,7 @@ window.salvaStatiUnita = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_stati.js', versione: '2026-10-26.1', proprieta: 'MOTORE' };
+    var v = { file: 'logica_stati.js', versione: '2026-10-28.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

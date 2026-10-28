@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | ordine_logistica.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.4 | ordine_logistica.js | proprieta`: chat MOTORE
 // ==========================================
 // 🪂 INGRESSO IN CAMPO e REQUEST SPEEDBALL - ordine_logistica.js
 // ------------------------------------------
@@ -29,7 +29,20 @@
         return window.MotoreN5;
     }
 
-    const COL = { bordo: '#88aaff', sfondo: '#161d33' };
+    // 28 ottobre (Paolo): il colore e` dell'ORDINE, non del modulo (M.COLORI_ORDINE nel
+    // motore: Movimenti blu, Abilita` Brevi verdi, Ordini Interi rossi). COL legge le
+    // tinte dell'Ordine in corso a ogni uso; 'REQUEST SPEEDBALL' e` quello di casa. Prima: { bordo: '#88aaff', sfondo: '#161d33' };.
+    const COL = (function () {
+        const ripiego = { bordo: '#88aaff', sfondo: '#161d33', riquadro: '#161d33', tenue: '#88aaff', testo: '#88aaff' };
+        const o = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) {
+            Object.defineProperty(o, k, { enumerable: true, get: function () {
+                const M = window.MotoreN5;
+                return (M && typeof M.colOrdine === 'function') ? M.colOrdine('REQUEST SPEEDBALL')[k] : ripiego[k];
+            } });
+        });
+        return o;
+    })();
 
     window.avviaFaseLogistica = function (actionId, isSecondHalf) {
         const M = motore(); if (!M) return;
@@ -59,12 +72,13 @@
         const e = M.regoleIngressoInCampo(unita, {});
         window.logisticaEsito = e;
         const container = document.getElementById('targets-allocation-container');
+        window.MotoreN5.azzeraNote('step-modifiers');
         if (!container) return;
 
         if (!e.valido) {
-            container.innerHTML = `<div style="padding:16px; text-align:center; background:#2a1010; border:1px solid #883333; border-radius:5px;">
-                <b style="color:#ff6666;">INGRESSO IN CAMPO NON DISPONIBILE</b>
-                <div style="color:#ccc; font-size:14px; margin-top:8px;">${e.motivo}</div></div>`;
+            container.innerHTML = `<div style="padding:16px; text-align:center; background:var(--mn-errore-fondo,#330000); border:1px solid var(--mn-errore-bordo,#883333); border-radius:5px;">
+                <b style="color:var(--mn-errore,#ff3333);">INGRESSO IN CAMPO NON DISPONIBILE</b>
+                <div style="color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s); margin-top:8px;">${e.motivo}</div></div>`;
             window.aggiornaPulsanteLogistica(true, 'NON DISPONIBILE');
             return window.goToStep('step-modifiers');
         }
@@ -73,45 +87,44 @@
         // Tre esiti, dal motore (M.valutaDomande): NON RISPOSTO non esegue.
         const dom = window.statoDomandaIngresso();
         container.innerHTML = `
-            <h2 style="color:${COL.bordo}; text-align:center; margin-bottom:6px;">🪂 INGRESSO IN CAMPO</h2>
-            <div style="color:#aaa; font-size:13px; text-align:center; margin-bottom:16px;">
+            ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `🪂 INGRESSO IN CAMPO` })}
+            <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-s); text-align:center; margin-bottom:16px;">
                 Ordine Intero. Il calcolatore non ha la mappa.</div>
 
-            <div style="background:#0d1428; border:1px solid #2a3a66; padding:12px; border-radius:5px;">
-                <div style="text-align:center; color:#fff; margin-bottom:8px;">
-                    PH <b style="color:${COL.bordo}; font-size:26px;">${e.valore}</b></div>
-                ${e.voci.map(v => `<div style="display:flex; justify-content:space-between; color:#aaa; font-size:13px;">
+            <div style="background:var(--mn-ordine-riquadro,#0d1428); border:1px solid var(--mn-ordine-tenue,#2a3a66); padding:12px; border-radius:5px;">
+                <div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:8px;">
+                    PH <b style="color:${COL.bordo}; font-size:var(--fs-l);">${e.valore}</b></div>
+                ${e.voci.map(v => `<div style="display:flex; justify-content:space-between; color:var(--mn-debole,#aaaaaa); font-size:var(--fs-s);">
                     <span>${v.motivo}</span></div>`).join('')}
-                ${e.critici && !e.critici.nessunTiro ? `<div style="text-align:center; color:#ffcc00; font-size:12px; margin-top:6px;">🎯 ${e.critici.testo}</div>` : ''}
+                ${e.critici && !e.critici.nessunTiro ? `<div style="text-align:center; color:var(--mn-attenzione,#ffcc00); font-size:var(--fs-xs); margin-top:6px;">🎯 ${e.critici.testo}</div>` : ''}
             </div>
 
             <div style="margin-top:14px; background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:14px; border-radius:5px;">
-                <div style="color:#fff; font-size:15px; margin-bottom:10px;">${e.domanda}</div>
-                <div style="color:#999; font-size:12px; line-height:1.6; margin-bottom:12px;">
+                <div style="color:var(--mn-testo,#ffffff); font-size:var(--fs-m); margin-bottom:10px;">${e.domanda}</div>
+                <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); line-height:1.6; margin-bottom:12px;">
                     ${e.divieti.map(d => `• ${d}`).join('<br>')}</div>
                 <div style="display:flex; gap:8px;">
-                    <button class="huge-btn" style="flex:1; min-height:48px; ${r === true ? 'background:#004400; border-color:#00ff00;' : 'background:#111;'}"
+                    <button class="huge-btn" style="flex:1; min-height:48px; ${r === true ? 'background:var(--mn-si-fondo,#004400); border-color:var(--mn-si,#00ff00);' : 'background:var(--mn-fondo-tasto,#111111);'}"
                         onclick="window.rispondiLogistica(true)">SÌ</button>
-                    <button class="huge-btn" style="flex:1; min-height:48px; ${r === false ? 'background:#553300; border-color:#ffaa33;' : 'background:#111;'}"
+                    <button class="huge-btn" style="flex:1; min-height:48px; ${r === false ? 'background:var(--mn-attenzione-fondo,#554400); border-color:var(--mn-acceso,#ffaa33);' : 'background:var(--mn-fondo-tasto,#111111);'}"
                         onclick="window.rispondiLogistica(false)">NO</button>
                 </div>
-                ${dom.esito === 'BLOCCATA' ? `<div style="margin-top:10px; padding:10px; background:#330000; border:1px solid #ff3333; border-radius:4px; color:#ff9999; font-size:13px;">
+                ${dom.esito === 'BLOCCATA' ? `<div style="margin-top:10px; padding:10px; background:var(--mn-errore-fondo,#330000); border:1px solid var(--mn-errore,#ff3333); border-radius:4px; color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s);">
                     ⛔ ${dom.motivo}</div>` : ''}
             </div>
 
-            <div style="margin-top:14px; padding:12px; background:#2a2010; border:1px solid #886633; border-radius:5px;">
-                <b style="color:#ffcc66; font-size:14px;">SE IL TIRO FALLISCE</b>
-                <div style="color:#ddd; font-size:13px; margin-top:6px; line-height:1.6;">
+            <div style="margin-top:14px; padding:12px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-nota-bordo,#664400); border-radius:5px;">
+                <b style="color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-s);">SE IL TIRO FALLISCE</b>
+                <div style="color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s); margin-top:6px; line-height:1.6;">
                     • ${e.seFallisce.dove}<br>
                     • ${e.seFallisce.perdeMarker}<br>
                     • ${e.seFallisce.deployableRimossi}
                 </div>
-                <div style="color:#ffcc88; font-size:12px; margin-top:8px;">
+                <div style="color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-xs); margin-top:8px;">
                     La truppa entra comunque: l'Ordine non è sprecato.</div>
-            </div>
-
-            ${e.note.length ? `<div style="margin-top:12px; color:#888; font-size:12px; line-height:1.6;">` +
-                e.note.map(n => `• ${n}`).join('<br>') + `</div>` : ''}`;
+            </div>`;
+        // 28 ottobre (Paolo): le note nella ⓘ (o sotto il tasto).
+        e.note.forEach(n => window.MotoreN5.nota('step-modifiers', 'Ingresso in campo', n, { tipo: 'regole' }));
 
         window.aggiornaPulsanteLogistica(!dom.puoProcedere,
             dom.esito === 'BLOCCATA' ? 'PUNTO NON VALIDO' : (dom.esito === 'NON_RISPOSTO' ? 'RISPONDI ALLA DOMANDA' : 'ESEGUI TIRO PH'));
@@ -142,6 +155,7 @@
         const e = M.regoleSpeedball(unita, { tokenDisponibili: window.speedballToken });
         window.logisticaEsito = e;
         const container = document.getElementById('targets-allocation-container');
+        window.MotoreN5.azzeraNote('step-modifiers');
         if (!container) return;
 
         const scelto = window.speedballScelto;
@@ -149,46 +163,46 @@
         const daTiro = (tiro != null) ? M.oggettoSpeedball(tiro) : null;
 
         container.innerHTML = `
-            <h2 style="color:${COL.bordo}; text-align:center; margin-bottom:6px;">📦 REQUEST SPEEDBALL</h2>
-            <div style="color:#aaa; font-size:13px; text-align:center; margin-bottom:16px;">
+            ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `📦 REQUEST SPEEDBALL` })}
+            <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-s); text-align:center; margin-bottom:16px;">
                 Abilità Automatica, non un Ordine.</div>
 
-            <div style="background:#0d1428; border:1px solid #2a3a66; padding:12px; border-radius:5px; text-align:center;">
-                <div style="color:#fff;">PH <b style="color:${COL.bordo}; font-size:26px;">${e.valore}</b>
-                    <span style="color:#888; font-size:12px;"> — fisso</span></div>
-                <div style="color:#999; font-size:12px; margin-top:6px;">
+            <div style="background:var(--mn-ordine-riquadro,#0d1428); border:1px solid var(--mn-ordine-tenue,#2a3a66); padding:12px; border-radius:5px; text-align:center;">
+                <div style="color:var(--mn-testo,#ffffff);">PH <b style="color:${COL.bordo}; font-size:var(--fs-l);">${e.valore}</b>
+                    <span style="color:var(--mn-spento,#888888); font-size:var(--fs-xs);"> — fisso</span></div>
+                <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); margin-top:6px;">
                     Un tiro per ciascuno dei ${e.token} Token.</div>
             </div>
 
             <div style="margin-top:14px; background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:14px; border-radius:5px;">
-                <div style="color:${COL.bordo}; font-size:14px; margin-bottom:8px;">PRIMO TOKEN — scegli l'oggetto</div>
+                <div style="color:${COL.bordo}; font-size:var(--fs-s); margin-bottom:8px;">PRIMO TOKEN — scegli l'oggetto</div>
                 ${Object.keys(e.oggetti).map(function (o) {
-                    return `<button class="huge-btn" style="width:100%; min-height:44px; font-size:15px; margin-bottom:5px; ${scelto === o ? 'background:#003355; border-color:' + COL.bordo + ';' : 'background:#111;'}"
+                    return `<button class="huge-btn" style="width:100%; min-height:44px; font-size:var(--fs-m); margin-bottom:5px; ${scelto === o ? 'background:var(--mn-ordine-riquadro,#003355); border-color:' + COL.bordo + ';' : 'background:var(--mn-fondo-tasto,#111111);'}"
                         onclick="window.scegliSpeedball('${o.replace(/'/g, "\\'")}')">${o}</button>`;
                 }).join('')}
-                ${scelto ? `<div style="margin-top:8px; color:#aaccff; font-size:12px;">${e.oggetti[scelto]}</div>` : ''}
+                ${scelto ? `<div style="margin-top:8px; color:var(--mn-ordine-testo,#aaccff); font-size:var(--fs-xs);">${e.oggetti[scelto]}</div>` : ''}
             </div>
 
             <div style="margin-top:14px; background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:14px; border-radius:5px;">
-                <div style="color:${COL.bordo}; font-size:14px; margin-bottom:8px;">SECONDO TOKEN — tira sulla Chart</div>
-                <div style="color:#999; font-size:12px; line-height:1.7; margin-bottom:10px;">
+                <div style="color:${COL.bordo}; font-size:var(--fs-s); margin-bottom:8px;">SECONDO TOKEN — tira sulla Chart</div>
+                <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); line-height:1.7; margin-bottom:10px;">
                     ${e.chart.map(r => `${r.da}-${r.a}: ${r.oggetto}`).join(' &nbsp;·&nbsp; ')}</div>
                 <input id="speedball-tiro" type="number" min="1" max="20" value="${tiro != null ? tiro : ''}"
                     placeholder="il risultato del D20"
-                    style="width:100%; padding:12px; font-size:18px; background:#111; color:#fff; border:1px solid ${COL.bordo}; border-radius:4px;"
+                    style="width:100%; padding:12px; font-size:var(--fs-m); background:var(--mn-fondo-tasto,#111111); color:var(--mn-testo,#ffffff); border:1px solid ${COL.bordo}; border-radius:4px;"
                     onchange="window.tiraSpeedball(this.value)">
                 ${daTiro ? (daTiro.oggetto
-                    ? `<div style="margin-top:10px; padding:10px; background:#0d2a18; border:1px solid #66cc66; border-radius:4px;">
-                        <b style="color:#88ff88;">${daTiro.oggetto}</b>
-                        <div style="color:#ccc; font-size:12px; margin-top:4px;">${daTiro.effetto}</div></div>`
-                    : `<div style="margin-top:10px; padding:10px; background:#330000; border:1px solid #ff3333; border-radius:4px; color:#ff9999; font-size:13px;">⛔ ${daTiro.avviso.messaggio}</div>`) : ''}
+                    ? `<div style="margin-top:10px; padding:10px; background:var(--mn-ordine-riquadro,#0d2a18); border:1px solid var(--mn-ordine-bordo,#66cc66); border-radius:4px;">
+                        <b style="color:var(--mn-si-testo,#88ff88);">${daTiro.oggetto}</b>
+                        <div style="color:var(--mn-testo-2,#cccccc); font-size:var(--fs-xs); margin-top:4px;">${daTiro.effetto}</div></div>`
+                    : `<div style="margin-top:10px; padding:10px; background:var(--mn-errore-fondo,#330000); border:1px solid var(--mn-errore,#ff3333); border-radius:4px; color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s);">⛔ ${daTiro.avviso.messaggio}</div>`) : ''}
             </div>
 
-            ${e.avvisi.length ? `<div style="margin-top:12px; padding:10px; background:#221100; border:1px solid #664400; border-radius:4px; color:#cc9955; font-size:13px;">` +
+            ${e.avvisi.length ? `<div style="margin-top:12px; padding:10px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-nota-bordo,#664400); border-radius:4px; color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s);">` +
                 e.avvisi.map(a => `⚠️ ${a.messaggio}`).join('<br>') + `</div>` : ''}
-
-            <div style="margin-top:12px; color:#888; font-size:12px; line-height:1.6;">
-                ${e.note.map(n => `• ${n}`).join('<br>')}</div>`;
+`;
+        // 28 ottobre (Paolo): le note nella ⓘ (o sotto il tasto).
+        e.note.forEach(n => window.MotoreN5.nota('step-modifiers', 'Speedball', n, { tipo: 'regole' }));
 
         window.aggiornaPulsanteLogistica(!(scelto && daTiro && daTiro.oggetto), 'CONFERMA SPEEDBALL');
         window.goToStep('step-modifiers');
@@ -311,7 +325,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_logistica.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_logistica.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

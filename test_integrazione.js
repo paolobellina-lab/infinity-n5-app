@@ -1,4 +1,13 @@
-// @versione 2026-09-23.1 | test_integrazione.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_integrazione.js | proprieta`: chat TEST
+// 2026-10-28.1: motore 2026-10-28.1, scala comune di 96". RISCRITTO il modo di
+//    leggere le bande del bottone del Combi: dalle celle data-da / data-fino /
+//    data-mod (prima dal disegno, <span>16"</span><span>+3</span>). Le due
+//    affermazioni restano le stesse. Nessuna prova in piu`.
+// .1 (9 ott, pomeriggio): le bande del Combi non sono piu` una stringa sul
+//    bottone ma CELLE raggruppate (motore 2026-10-09.4). La prova le riespande
+//    e le confronta DUE volte: col profilo (fedelta` del disegno) e coi valori
+//    ufficiali inchiodati qui. Col solo confronto sul profilo era una
+//    tautologia: bottone e profilo leggono lo stesso database.
 // ==========================================
 // 🔗 TEST DI INTEGRAZIONE — node test_integrazione.js
 // ------------------------------------------
@@ -109,7 +118,56 @@ canaleCalcolo = null;
 window.avviaFaseAttaccoBS('ATTACCO BS', false);
 const armiHtml = nodo('weapon-buttons-container').innerHTML;
 ok(armiHtml.includes('Combi Rifle'), 'il modulo offre il Combi Rifle');
-ok(armiHtml.includes('+3 / +3 / -3 / -3 / -6 / -6'), 'con le bande ufficiali del Weapon Chart');
+// 🔴 GIRATA IL 9 OTTOBRE (motore 2026-10-09.4, bottone di Paolo). Le bande non
+// sono piu` la stringa "+3 / +3 / -3 / -3 / -6 / -6" ma CELLE raggruppate dove
+// il MOD non cambia (16" +3, 32" -3, 48" -6). La prova cercava la stringa e
+// andava rossa: il difetto era qui. Adesso le celle si riespandono in bande da
+// 8" e si confrontano una per una con quelle del database — i pollici
+// compresi, che la stringa di prima non guardava. Stessa correzione in
+// test_modulo_bs.js.
+{
+    const celleBottone = (html, nome) => {
+        const b = String(html).split('<button type="button" class="bottone-arma"')
+            .find(x => x.indexOf('>' + nome + '</div>') >= 0) || '';
+        // 28 ottobre: le celle dicono i loro numeri (data-fino, data-mod).
+        const celle = [...b.matchAll(/<div class="cella-gittata" data-da="\d+" data-fino="(\d+)" data-mod="(-?\d+)"/g)]
+            .map(x => ({ fino: Number(x[1]), mod: Number(x[2]) }));
+        const bande = []; let da = 0;
+        celle.forEach(c => { for (; da < c.fino; da += 8) bande.push({ mod: c.mod, label: `${da}-${da + 8}"` }); });
+        return bande;
+    };
+    const dire = (x) => `${x.mod > 0 ? '+' : ''}${x.mod} a ${x.label}`;
+    const scarti = (lette, attese, chi) => {
+        const f = [];
+        for (let i = 0; i < Math.max(lette.length, attese.length); i++) {
+            const x = lette[i], y = attese[i];
+            if (!x) f.push(`banda ${i + 1} SPARITA dal bottone (${chi}: ${dire(y)})`);
+            else if (!y) f.push(`banda ${i + 1} IN PIU sul bottone (${dire(x)}), ${chi} non la ha`);
+            else if (x.mod !== y.mod || x.label !== y.label) f.push(`banda ${i + 1}: il bottone dice ${dire(x)}, ${chi} ${dire(y)}`);
+        }
+        return f;
+    };
+    const lette = celleBottone(armiHtml, 'Combi Rifle');
+    // DUE affermazioni: la fedelta` del disegno (contro il profilo, che e`
+    // quello che il bottone sta disegnando) e i valori UFFICIALI (inchiodati
+    // qui, perche` confrontarli col database li confronterebbe con se stessi:
+    // rompendo una banda del Combi cambiavano insieme bottone e profilo e la
+    // prova restava verde — tautologia trovata rompendo, il 9 ottobre).
+    const dalProfilo = M.profiloArma('Combi Rifle').bands.map(b => ({ mod: b.mod, label: b.label }));
+    const UFFICIALI = [{ mod: 3, label: '0-8"' }, { mod: 3, label: '8-16"' },
+                       { mod: -3, label: '16-24"' }, { mod: -3, label: '24-32"' },
+                       { mod: -6, label: '32-40"' }, { mod: -6, label: '40-48"' }];
+    const infedele = scarti(lette, dalProfilo, 'il profilo dell arma'), nonUff = scarti(lette, UFFICIALI, 'il Weapon Chart');
+    ok(lette.length > 0 && infedele.length === 0,
+       'il bottone mostra le bande del profilo, come celle raggruppate'
+         + (lette.length ? ` (${lette.map(dire).join('  ')})` : ''),
+       lette.length === 0
+         ? 'NESSUNA CELLA DI GITTATA LETTA sul bottone del Combi: questa prova non sta guardando niente. Il motore ha cambiato il disegno del bottone?'
+         : infedele.join('\n       '));
+    ok(lette.length > 0 && nonUff.length === 0,
+       'e sono quelle ufficiali del Weapon Chart',
+       lette.length === 0 ? 'nessuna cella letta: vedi la prova qui sopra' : nonUff.join('\n       '));
+}
 
 // 3b. selezione arma e bersaglio
 window.declareAttackBS('Combi Rifle');

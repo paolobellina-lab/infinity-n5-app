@@ -1,4 +1,4 @@
-// @versione 2026-10-26.1 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.4 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
 // ==========================================
 // 👻 ATTACCO INTUITIVO (N5) - ordine_attacco_intuitivo.js
 // ------------------------------------------
@@ -38,7 +38,20 @@
         return window.MotoreN5;
     }
 
-    const COL = { bordo: '#ff9900', sfondo: '#442200' };
+    // 28 ottobre (Paolo): il colore e` dell'ORDINE, non del modulo (M.COLORI_ORDINE nel
+    // motore: Movimenti blu, Abilita` Brevi verdi, Ordini Interi rossi). COL legge le
+    // tinte dell'Ordine in corso a ogni uso; 'ATTACCO INTUITIVO' e` quello di casa. Prima: { bordo: '#ff9900', sfondo: '#442200' };.
+    const COL = (function () {
+        const ripiego = { bordo: '#ff9900', sfondo: '#442200', riquadro: '#442200', tenue: '#ff9900', testo: '#ff9900' };
+        const o = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) {
+            Object.defineProperty(o, k, { enumerable: true, get: function () {
+                const M = window.MotoreN5;
+                return (M && typeof M.colOrdine === 'function') ? M.colOrdine('ATTACCO INTUITIVO')[k] : ripiego[k];
+            } });
+        });
+        return o;
+    })();
 
     window.avviaFaseIntuitivo = function (actionId, isSecondHalf) {
         window.currentOrder = window.currentOrder || {};
@@ -76,15 +89,14 @@
         if (window.mostraTitoloUnitaCorrente) window.mostraTitoloUnitaCorrente();
 
         const container = document.getElementById('weapon-buttons-container');
-        container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:10px; margin-bottom:15px; text-align:center; color:#fff; border-radius:5px;">
-            <b style="color:${COL.bordo}; font-size:20px;">👻 ATTACCO INTUITIVO</b><br>
-            <span style="font-size:14px; color:#ccc;">Ordine Intero · Tiro WIP non modificato · Burst 1</span>
-        </div>`;
+
+        window.MotoreN5.azzeraNote('step-weapon');
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `ATTACCO INTUITIVO`, nota: `Ordine Intero · Tiro WIP non modificato · Burst 1` })}`;
 
         const esito = M.armiIntuitive(unita);
 
         if (esito.armi.length === 0) {
-            container.innerHTML += `<p style="color:#ff3333; text-align:center; font-size:18px;">❌ Nessuna arma utilizzabile per un Attacco Intuitivo.</p>`;
+            container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-size:var(--fs-m);">❌ Nessuna arma utilizzabile per un Attacco Intuitivo.</p>`;
         } else {
             esito.armi.forEach(function (p) {
                 const forma = p.isTemplate ? `Sagoma ${p.template || ''}`.trim() : 'Colpo singolo';
@@ -108,8 +120,8 @@
 
         // Il limite del database si dichiara, non si nasconde.
         if (esito.avvisi.length > 0) {
-            container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#221100; border:1px solid #664400; border-radius:5px; color:#cc9955; font-size:13px;">
-                ⚠️ ${esito.avvisi[0].messaggio}<br><span style="color:#886644;">${esito.avvisi[0].dettaglio || ''}</span></div>`;
+            container.innerHTML += `<div style="margin-top:15px; padding:10px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-nota-bordo,#664400); border-radius:5px; color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s);">
+                ⚠️ ${esito.avvisi[0].messaggio}<br><span style="color:var(--mn-nota-tenue,#cc9955);">${esito.avvisi[0].dettaglio || ''}</span></div>`;
         }
 
         window.goToStep('step-weapon');
@@ -148,28 +160,27 @@
         window.targetsScartati = giudizi.filter(g => !g.ammesso).map(g => ({ nome: g.nome, motivo: g.motivo }));
 
         const container = document.getElementById('enemy-target-buttons');
+
+        window.MotoreN5.azzeraNote('step-wait-aro');
         const statoLoF = fuoriLoF
-            ? `background:#004400; border-color:#00ff00; color:#00ff00;`
-            : `background:#222; border-color:#666; color:#aaa;`;
+            ? M.stileColore('si')
+            : `background:var(--mn-fondo-riquadro,#222222); border-color:var(--mn-bordo-spento,#555555); color:var(--mn-debole,#aaaaaa);`;
 
         container.innerHTML = `
-            <div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:12px; border-radius:5px; margin-bottom:15px; text-align:center;">
-                <b style="color:${COL.bordo};">🎯 BERSAGLIO PRINCIPALE — UNO SOLO</b><br>
-                <span style="color:#aaa; font-size:12px;">Se la Sagoma coinvolge altri nemici, il tiratore deve comunque sceglierne uno solo come Principale.</span>
-            </div>
-            <button class="huge-btn" style="width:100%; min-height:55px; font-size:15px; margin-bottom:15px; ${statoLoF}" onclick="window.toggleIntuitivoFuoriLoF()">
+            ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `BERSAGLIO PRINCIPALE — UNO SOLO`, nota: `Se la Sagoma coinvolge altri nemici, il tiratore deve comunque sceglierne uno solo come Principale.` })}
+            <button class="huge-btn" style="width:100%; min-height:55px; font-size:var(--fs-m); margin-bottom:15px; ${statoLoF}" onclick="window.toggleIntuitivoFuoriLoF()">
                 ${fuoriLoF ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofNo') : '🌫️ '}NESSUNA LoF — Zona di Visibilità Zero` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofSi') : '👁️ '}HO LINEA DI TIRO (solo Marker bersagliabili)`}
             </button>
             <div id="intuitivo-bersagli"></div>`;
 
         const lista = document.getElementById('intuitivo-bersagli');
         if (window.validTargets.length === 0) {
-            lista.innerHTML = `<p style="color:#ff3333; text-align:center; font-weight:bold;">Nessun bersaglio valido per un Attacco Intuitivo.</p>`;
+            lista.innerHTML = `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-weight:bold;">Nessun bersaglio valido per un Attacco Intuitivo.</p>`;
         } else {
             window.validTargets.forEach(function (u) {
                 const nome = M.nomeUnita(u);
                 const scelto = window.combatTargets && window.combatTargets[0] && window.combatTargets[0].id === u.id;
-                const sfondo = scelto ? '#663300' : '#111';
+                const sfondo = scelto ? '#663300' : 'var(--mn-fondo-tasto,#111111)';
                 // La riga con la foto, il carattere e il colore di fazione la
                 // disegna la pagina (window.rigaUnitaConFoto, chat INTERFACCIA):
                 // questo elenco era rimasto l'unico senza. Dove la pagina non
@@ -177,15 +188,12 @@
                 const clic = `onclick="window.scegliPrincipaleIntuitivo('${String(u.id).replace(/'/g, "\\'")}')"`;
                 lista.innerHTML += (typeof window.rigaUnitaConFoto === 'function')
                     ? window.rigaUnitaConFoto(u, { attributi: clic, fazione: 'NEMICA', scelta: !!scelto })
-                    : `<button class="huge-btn" style="width:100%; min-height:60px; font-size:19px; margin-bottom:6px; background:${sfondo}; border-color:${COL.bordo};" ${clic}>[${u.tipo || 'LI'}] ${nome}</button>`;
+                    : `<button class="huge-btn" style="width:100%; min-height:60px; font-size:var(--fs-l); margin-bottom:6px; background:${sfondo}; border-color:${COL.bordo};" ${clic}>[${u.tipo || 'LI'}] ${nome}</button>`;
             });
         }
 
-        if (window.targetsScartati.length > 0) {
-            lista.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
-                <b style="color:#aaa;">Non bersagliabili con l'Intuitivo:</b><br>` +
-                window.targetsScartati.map(t => `• <b>${t.nome}</b> — ${t.motivo}`).join('<br>') + `</div>`;
-        }
+        // 28 ottobre (Paolo): perche` non si puo`, nella ⓘ (o sotto il tasto).
+        window.targetsScartati.forEach(t => window.MotoreN5.nota('step-wait-aro', t.nome + ' non bersagliabile con l\'Intuitivo', t.motivo, { tipo: 'nonpuo' }));
 
         window.goToStep('step-wait-aro');
     };
@@ -254,32 +262,32 @@
         const tgt = window.combatTargets[0];
 
         const container = document.getElementById('targets-allocation-container');
-        container.innerHTML = `
-            <h2 style="color:${COL.bordo}; text-align:center; margin-bottom:20px;">ATTACCO INTUITIVO</h2>
 
-            <div style="background:#220000; border:1px solid #ff0000; padding:15px; border-radius:5px; margin-bottom:20px; text-align:center;">
-                <b style="color:#ff3333; font-size:18px;">TIRO NORMALE SU WIP ${unita.wip}</b><br>
-                <span style="color:#ffaaaa; font-size:14px;">${regole.noteTiro}</span>
+        window.MotoreN5.azzeraNote('step-modifiers');
+        container.innerHTML = `
+            ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `ATTACCO INTUITIVO` })}
+
+            <div style="background:var(--mn-errore-fondo,#330000); border:1px solid var(--mn-errore,#ff3333); padding:15px; border-radius:5px; margin-bottom:20px; text-align:center;">
+                <b style="color:var(--mn-errore,#ff3333); font-size:var(--fs-m);">TIRO NORMALE SU WIP ${unita.wip}</b><br>
+                <span style="color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s);">${regole.noteTiro}</span>
             </div>
 
             <div class="target-card" style="border-left:4px solid ${COL.bordo}; margin-bottom:15px; background:rgba(255,153,0,0.05); padding:15px; border-radius:5px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <b style="color:#fff; font-size:22px;">🎯 ${tgt.name}</b>
-                    <div style="font-size:20px; font-weight:bold; color:${COL.bordo};">1 B</div>
+                    <b style="color:var(--mn-testo,#ffffff); font-size:var(--fs-l);">🎯 ${tgt.name}</b>
+                    <div style="font-size:var(--fs-l); font-weight:bold; color:${COL.bordo};">1 B</div>
                 </div>
-                <div style="color:#aaa; font-size:13px; line-height:1.6;">
-                    Bersaglio Principale${regole.sagoma ? ` · Sagoma ${regole.sagoma.forma || regole.sagoma.tipo}` : ''}<br>
-                    Critico valido solo su questo bersaglio; sui secondari colpiti dalla Sagoma è un successo normale.<br>
-                    ${regole.coperturaAnnullaSalvezza ? 'Chi è colpito NON ha il +3 al Tiro Salvezza per Copertura Parziale.<br>' : ''}
-                    La reazione del bersaglio è un Faccia a Faccia contro questo tiro WIP.
+                <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-s); line-height:1.6;">
+                    Bersaglio Principale${regole.sagoma ? ` · Sagoma ${regole.sagoma.forma || regole.sagoma.tipo}` : ''}
                 </div>
                 ${M.rigaRequisiti(REQ_INTUITIVO, tgt, 0, 'window.toggleRequisitoIntuitivo')}
                 ${(M.domandaAlleatiInMischia && arma && arma.isTemplate) ? M.domandaAlleatiInMischia(tgt, 0, 'window.setAlleatiInMischiaIntuitivo') : ''}
-            </div>
-
-            <div style="padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:12px;">
-                Se il tiro WIP fallisce, questa unità non può ritentare un Attacco Intuitivo contro lo stesso bersaglio fino al prossimo Turno Attivo.
             </div>`;
+        // 28 ottobre (Paolo): le regole del tiro nella ⓘ (o in cima), non a schermo.
+        M.nota('step-modifiers', 'Critico', 'Vale solo sul Bersaglio Principale; sui secondari colpiti dalla Sagoma è un successo normale.', { tipo: 'regole' });
+        if (regole.coperturaAnnullaSalvezza) M.nota('step-modifiers', 'Copertura', 'Chi è colpito NON ha il +3 al Tiro Salvezza per Copertura Parziale.', { tipo: 'mod' });
+        M.nota('step-modifiers', 'Reazione del bersaglio', 'Un Faccia a Faccia contro questo tiro WIP.', { tipo: 'regole' });
+        M.nota('step-modifiers', 'Se il tiro fallisce', 'Questa unità non può ritentare un Attacco Intuitivo contro lo stesso bersaglio fino al prossimo Turno Attivo.', { tipo: 'regole' });
 
         const btn = (document.getElementById('btn-esegui-calcolo') || document.querySelector('#step-modifiers .huge-btn'));
         if (btn) {
@@ -357,7 +365,7 @@
             calcDiv.innerHTML = `
                 <div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; background:rgba(255,153,0,0.1); margin-top:20px;">
                     <h2 style="color:${COL.bordo}; margin:0;">ATTACCO INVIATO ALL'HUB</h2>
-                    <p style="font-size:12px; color:#aaa;">Tiro WIP non modificato in corso...</p>
+                    <p style="font-size:var(--fs-xs); color:var(--mn-debole,#aaaaaa);">Tiro WIP non modificato in corso...</p>
                 </div>`;
             calcDiv.style.display = 'block';
         }
@@ -372,7 +380,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-10-26.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

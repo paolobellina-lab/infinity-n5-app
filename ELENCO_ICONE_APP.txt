@@ -1,7 +1,12 @@
-IMMAGINI E ICONE DELL'APP — elenco completo, aggiornato al 26 ottobre 2026
-Chat INTERFACCIA. Ricavato dai file del progetto e dal motore 2026-10-26.1 (catalogo_n5.js: segnaliniNumerati,
-cartelleSegnalini, ICONE_EFFETTO; motore_regole_n5.js: M.immagineMarker, M.iconaDellaFazione).
-Sostituisce l'elenco del 20 ottobre.
+IMMAGINI E ICONE DELL'APP — elenco completo, aggiornato al 27 ottobre 2026
+Chat INTERFACCIA. Ricavato dai file del progetto e dal motore 2026-10-27.5 (catalogo_n5.js: segnaliniNumerati,
+segnaliniSenzaNumero, cartelleSegnalini, ICONE_EFFETTO; motore_regole_n5.js: M.immagineMarker,
+M.iconaDellaFazione, M.segnalinoSenzaNumero). Sostituisce l'elenco del 26 ottobre.
+
+NOVITA` DEL 27 OTTOBRE: icon_hidden.png (Schieramento Nascosto) ora si vede anche nella TUA app, accanto al
+nome della truppa con la scritta HIDDEN, nella lista dello schieramento e sul tasto HIDDEN DEPLOYMENT.
+E` sempre lo stesso file della sezione 2, per esercito e comune: nessun file nuovo da aggiungere se c'e` gia`.
+Se manca, compare l'emoji 🫥. L'avversario e l'Hub non vedono la truppa nascosta.
 
 Tutti PNG. Se un file manca non si rompe niente: al suo posto compare un'emoji, una scritta o la sigla.
 I nomi sono in minuscolo, tranne MARKER.png.
@@ -42,7 +47,7 @@ icon_camo6.png             <- CAMO col Mimetismo -6              editor degli st
 icon_imp1.png              <- Impersonation IMP-1                app + editor degli stati
 icon_imp2.png              <- Impersonation IMP-2                app + editor degli stati
 icon_imp.png               <- Impersonation (senza livello)      Hub
-icon_hidden.png            <- Schieramento Nascosto              Hub
+icon_hidden.png            <- Schieramento Nascosto (HIDDEN)     app (accanto al nome, schieramento) + Hub
 icon_decoy.png             <- Decoy                              Hub + editor degli stati
 icon_holo.png              <- Olo-Eco (casella dell'editor)      editor degli stati
 icon_holoecho.png          <- Holoecho                           Hub
@@ -200,7 +205,8 @@ Una foto per miniatura, nome libero; ogni cartella ha il suo elenco_foto.js (si 
 I CrazyKoala prendono le loro foto in sequenza: img/nomadi/crazykoala_1.png ... crazykoala_4.png
 (il primo schierato la 1, il secondo la 2, e cosi` via).
 Copie olografiche (Holoecho) e bersagli Decoy: nessun file nuovo, mostrano la foto della truppa vera.
-HoloMask: nessun file nuovo, l'avversario vede la foto del Modello imitato se ce l'hai nella cartella.
+HoloMask: nessun file nuovo. L'avversario e l'Hub vedono nome e armi del Modello imitato, ma NESSUNA foto
+(la foto direbbe chi e`): al posto della foto c'e` la sigla del tipo.
 
 RIEPILOGO
   una copia sola in img/ ............ 4 + 4 + 8 = 16 file, piu` 79 armi e 12 programmi

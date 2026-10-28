@@ -1,4 +1,4 @@
-// @versione 2026-10-27.1 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-28.6 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -52,6 +52,26 @@
         }
         return window.MotoreN5;
     }
+
+    // 27 ottobre sera (Paolo): le spiegazioni vanno nella ⓘ della schermata
+    // (window.aggiungiInfo, app.html), non piu` a schermo.
+    // extra: { tipo: 'stato'|'nonpuo'|'mod'|'regole', tasto: data-nota del bottone }
+    // (28 ottobre: le opzioni delle note decidono se mostrarla e dove).
+    // Dal 28 ottobre (proposta di MOTORE) le note passano da M.nota e
+    // M.azzeraNote: con la pagina e` lo stesso (vanno ad aggiungiInfo), senza
+    // app.html restano in window.INFO invece di perdersi.
+    function info(idStep, titolo, testo, extra) {
+        const M = window.MotoreN5;
+        if (M && typeof M.nota === 'function') M.nota(idStep, titolo, testo, extra);
+        else console.error('\u26d4 M.nota assente (serve motore_regole_n5.js dalla 2026-10-28.1): spiegazione persa: ' + titolo);
+    }
+    function azzeraInfo(idStep) {
+        const M = window.MotoreN5;
+        if (M && typeof M.azzeraNote === 'function') M.azzeraNote(idStep);
+        else console.error('\u26d4 M.azzeraNote assente (serve motore_regole_n5.js dalla 2026-10-28.1): note di ' + idStep + ' non azzerate.');
+    }
+    // HTML del motore (note con <b>, <br>) ridotto a testo per la ⓘ.
+    const soloTesto = (h) => String(h == null ? '' : h).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 
     window.selectedAroUnits = [];
     window.currentAroIndex = 0;
@@ -112,10 +132,16 @@
         lofNo:   { file: 'img/icon_lof_no.png',   ripiego: '\u{1F6AB}' }
     };
 
-    window.iconaInterruttore = function (chiave, altezza) {
+    // sopra (27 ottobre sera, Paolo): l'icona grande SOPRA la scritta, e
+    // l'emoji di ripiego grande quanto l'icona. Senza, come prima.
+    window.iconaInterruttore = function (chiave, altezza, sopra) {
         const v = window.ICONE_INTERRUTTORI[chiave];
         if (!v) return '';
         const h = altezza || 26;
+        if (sopra) {
+            return `<img class="icona-interruttore" src="${v.file}" alt="" style="height:${h}px; width:auto; display:block; margin:0 auto 4px;"` +
+                   ` onerror="this.outerHTML='<span class=&quot;icona-interruttore&quot; style=&quot;display:block; font-size:${Math.round(h * 0.8)}px; line-height:1; margin:0 auto 4px;&quot;>${v.ripiego}</span>'">`;
+        }
         // onerror: se l'immagine non c'e`, al suo posto torna l'emoji.
         return `<img src="${v.file}" alt="" style="height:${h}px; vertical-align:middle; margin-right:6px;"` +
                ` onerror="this.outerHTML='${v.ripiego} '">`;
@@ -168,6 +194,8 @@
         document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
         const step = document.getElementById('step-aro-selection');
         if (step) step.style.display = 'flex';
+        if (typeof window.segnaStepCorrente === 'function') window.segnaStepCorrente('step-aro-selection');
+        azzeraInfo('step-aro-selection');
 
         const container = document.getElementById('aro-selection-list');
         if (!container) return;
@@ -252,7 +280,9 @@
             const rit = haRitardato ? ` <span style="color:#ffcc66; font-size:13px;">⏳ aveva ritardato</span>` : '';
             // Il rivelarsi lo fa spedisci(), come per un CAMO che reagisce:
             // M.statoDopoAbilita (inAro) lo riporta NORMAL e parte l'AGGIORNAMENTO.
-            const nasc = nascosto ? ` <span class="etichetta-nascosto" style="color:#66ccff; font-size:13px;">👁️ NASCOSTO: reagendo si rivela</span>` : '';
+            // 27 ottobre: con l'icona dell'Hidden Deployment (window.iconaSegnalinoSenzaNumero, app.html).
+            const icoH = (nascosto && typeof window.iconaSegnalinoSenzaNumero === 'function') ? window.iconaSegnalinoSenzaNumero(u, null, 18) : '';
+            const nasc = nascosto ? ` <span class="etichetta-nascosto" style="color:#66ccff; font-size:13px;">${icoH}👁️ NASCOSTO: reagendo si rivela</span>` : '';
             if (piuGruppi && gruppoScritto !== gruppoDi(u) && typeof window.intestazioneGruppo === 'function') {
                 gruppoScritto = gruppoDi(u);
                 container.innerHTML += window.intestazioneGruppo(gruppoScritto,
@@ -266,7 +296,8 @@
                 container.innerHTML += window.rigaUnitaConFoto(u, {
                     id: 'aro-btn-' + u.id, fazione: 'PROPRIA', opacita: '1',
                     scelta: (window.selectedAroUnits || []).indexOf(u.id) >= 0,
-                    dopoNome: sopp + rit + nasc, attributi: tocco
+                    // 27 ottobre sera (collaudo, G02): le etichette nella fascia bassa.
+                    etichette: sopp + rit + nasc, attributi: tocco
                 });
             } else {
                 container.innerHTML += `
@@ -364,7 +395,7 @@
                     : ` <span style="color:#cc88ff; font-size:13px;">\ud83d\udca5 solo DETONAZIONE</span>`;
                 container.innerHTML += window.rigaUnitaConFoto(u, {
                     id: 'aro-dep-' + u.id, fazione: 'PROPRIA', opacita: '1',
-                    scelta: giaDetonato, dopoNome: segno,
+                    scelta: giaDetonato, etichette: segno,
                     attributi: giaDetonato ? '' : `onclick="window.apriDetonazione('${sicK}')"`
                 });
                 return;
@@ -387,11 +418,8 @@
                 fuori.map(r => `\ud83d\udca5 <b>${r.nome}</b> DETONA: parte con l'ARO (AVANTI o NESSUN ARO).`).join('<br>') + `</div>`;
         }
 
-        if (escluse.length > 0) {
-            container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
-                <b style="color:#aaa;">Non possono reagire:</b><br>` +
-                escluse.map(x => `• <b>${x.nome}</b> — ${x.motivo}`).join('<br>') + `</div>`;
-        }
+        // 27 ottobre sera: chi non puo` reagire, e perche`, sta nella ⓘ.
+        escluse.forEach(x => info('step-aro-selection', x.nome + ' non puo` reagire', soloTesto(x.motivo), { tipo: 'nonpuo' }));
     };
 
     // ==============================================================
@@ -410,9 +438,10 @@
         const sic = String(id).replace(/'/g, "\\'");
         const spiega = voce.mina ? 'Non lo sceglie la mina: dichiara cosa e` successo al tavolo.'
                                  : 'Si attiva per Zona di Controllo: la Linea di Tiro non serve.';
-        lista.innerHTML = `<button id="btn-detonazione-${id}" class="huge-btn" style="background:#2a1a33; border-color:#cc88ff; min-height:70px; width:100%;"
-            onclick="window.sceltaDetonazione('${sic}')">\ud83d\udca5 DETONAZIONE
-            <div style="font-size:13px; color:#cc88ff; font-weight:normal;">${spiega}</div></button>`;
+        azzeraInfo('step-aro-action');
+        info('step-aro-action', 'DETONAZIONE', spiega, { tipo: 'regole', tasto: 'detonazione' });
+        lista.innerHTML = `<button id="btn-detonazione-${id}" data-nota="detonazione" class="huge-btn" style="background:#2a1a33; border-color:#cc88ff; min-height:70px; width:100%;"
+            onclick="window.sceltaDetonazione('${sic}')">\ud83d\udca5 DETONAZIONE</button>`;
     };
 
     window.sceltaDetonazione = function (id) {
@@ -647,10 +676,14 @@
         document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
         const el = document.getElementById(stepId);
         if (el) el.style.display = 'flex';
+        if (typeof window.segnaStepCorrente === 'function') window.segnaStepCorrente(stepId);
     };
 
     window.aggiornaTitoliAro = function (nome) {
-        const t = `-- ${String(nome).toUpperCase()} (ARO) --`;
+        // 27 ottobre sera (Paolo): senza "(ARO)". 28 ottobre: i trattini
+        // restano attaccati al nome (spazio che non va a capo), cosi` col tasto
+        // ⓘ accanto non resta un "--" da solo sulla riga sotto.
+        const t = `--\u00a0${String(nome).toUpperCase()}\u00a0--`;
         ['aro-header-action', 'aro-header-weapon', 'aro-header-target', 'aro-header-mods']
             .forEach(id => { const e = document.getElementById(id); if (e) e.innerHTML = t; });
     };
@@ -694,12 +727,25 @@
         const container = document.getElementById('aro-action-list');
         if (!container) return;
         container.innerHTML = '';
+        azzeraInfo('step-aro-action');
 
-        const colori = {
-            BS_ATTACK: ['#002244', accento()], HACKING: ['#002244', accento()],
-            CC_ATTACK: ['#002244', accento()], DODGE: ['#003300', '#00ff00'], RESET: ['#003300', '#00ff00']
+        // 27 ottobre sera (Paolo, dal collaudo): le reazioni tornano coi
+        // colori di prima, come gli Ordini del Turno Attivo: azzurro per BS,
+        // CC e Hacking, verde per Schivata e Reset, grigio per il resto. Il
+        // collaudo grafico (G03) li aveva fatti tutti uguali: Paolo li vuole
+        // distinti. Restano la classe tasto-reazione (misure) e la nota a 14 px.
+        // 28 ottobre (Paolo): le reazioni hanno il colore della categoria
+        // dell'Ordine scritta dal motore (M.coloreOrdine), come il menu e le
+        // schede dell'attivo. Dal motore 2026-10-28.5 la tabella ha anche gli
+        // id delle reazioni (BS_ATTACK, DODGE...): niente traduzione qui.
+        const coloreReazione = (id) => {
+            if (typeof M.coloreOrdine !== 'function' || !M.COLORI_ORDINE || !M.COLORI_ORDINE[id]) {
+                console.error('\u26d4 colore della reazione ' + id + ': serve M.coloreOrdine con "' + id + '" in M.COLORI_ORDINE (motore_regole_n5.js dalla 2026-10-28.5). Tasto grigio.');
+                return ['#111', '#888'];
+            }
+            const c = M.coloreOrdine(id);
+            return [c.sfondo, c.bordo];
         };
-
         possibili.filter(a => a.ammesso).forEach(function (a) {
             // 🔴 6 ottobre, difetto di questa chat. Qui c'era un SECONDO filtro:
             // ogni ARO ammessa dal motore veniva ripassata a puoFareAzione
@@ -712,10 +758,12 @@
             // filtro non toglieva niente (765 profili per 4 azioni in
             // arrivo): era solo dannoso. Quali ARO sono lecite lo decide
             // M.azioniAroPossibili, una volta sola.
-            const nota = a.note.length ? `<br><span style="font-size:12px; color:#ff9900;">${a.note[0]}</span>` : '';
-            const c = colori[a.id] || ['#111', '#888'];
-            container.innerHTML += `<button class="huge-btn" style="background:${c[0]}; border-color:${c[1]};"
-                onclick="window.selezionaAzioneAro('${a.id}')">${a.nome.toUpperCase()}${nota}</button>`;
+            // 27 ottobre sera (Paolo): la nota non sta piu` dentro il tasto:
+            // va nella ⓘ della schermata.
+            if (a.note.length) info('step-aro-action', a.nome, soloTesto(a.note.join(' ')), { tipo: 'regole', tasto: 'reazione-' + a.id });
+            const c = coloreReazione(a.id);
+            container.innerHTML += `<button class="huge-btn tasto-reazione" style="background:${c[0]}; border-color:${c[1]};" data-nota="reazione-${a.id}"
+                onclick="window.selezionaAzioneAro('${a.id}')">${a.nome.toUpperCase()}</button>`;
         });
 
         // Foxhole in ARO (6 ottobre): lo stato non si cancella e non cade, e
@@ -724,17 +772,13 @@
         // tavolo. Il testo e` del catalogo, lo consegna il motore.
         if (typeof M.foxholeAllaDichiarazione === 'function') {
             const fx = M.foxholeAllaDichiarazione(u, 'SCHIVATA', { inAro: true });
-            if (fx && fx.nota) {
-                container.innerHTML += `<div style="margin-top:10px; padding:10px; background:#221a00; border:1px solid #aa8800; border-radius:5px; color:#ddbb55; font-size:13px;">🕳️ ${fx.nota}${fx.nonModellato ? '<br><span style="color:#aa9955;">' + fx.nonModellato + '</span>' : ''}</div>`;
-            }
+            if (fx && fx.nota) info('step-aro-action', 'Foxhole', soloTesto(fx.nota + (fx.nonModellato ? ' ' + fx.nonModellato : '')), { tipo: 'regole' });
         }
 
-        const negate = possibili.filter(a => !a.ammesso);
-        if (negate.length > 0) {
-            container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
-                <b style="color:#aaa;">Non disponibili:</b><br>` +
-                negate.map(a => `• <b>${a.nome}</b> — ${a.motivo}`).join('<br>') + `</div>`;
-        }
+        // 27 ottobre sera (Paolo): niente piu` il riquadro "Non disponibili"
+        // sotto le reazioni; le reazioni che non si possono dichiarare non
+        // compaiono, e il perche` sta nella ⓘ.
+        possibili.filter(a => !a.ammesso).forEach(a => info('step-aro-action', a.nome + ' non disponibile', soloTesto(a.motivo), { tipo: 'nonpuo' }));
 
         window.goToAroStep('step-aro-action');
     };
@@ -805,17 +849,15 @@
         const container = document.getElementById('aro-weapon-list');
         if (!container) return;
         container.innerHTML = '';
+        azzeraInfo('step-aro-weapon');
 
         if (esito.sfMode) {
+            // 27 ottobre sera: sullo schermo resta che la truppa e` in
+            // Soppressione; le spiegazioni e le note di armiARO vanno nella ⓘ.
             container.innerHTML += `<div style="background:#331100; border:1px solid #ff6600; padding:10px; margin-bottom:15px; text-align:center; color:#ffaa66; border-radius:5px;">
-                🔥 <b>FUOCO DI SOPPRESSIONE</b><br>
-                <span style="font-size:13px;">Profilo SF Mode: gittata e Burst sostituiti, PS e munizioni invariati.<br>
-                Il Burst pieno va tutto su un bersaglio solo.</span></div>`;
-            // Le note che armiARO restituisce: prima il riquadro era fisso e
-            // la nota non si vedeva. (Chat REGOLE, 21 settembre.)
-            (esito.note || []).forEach(function (n) {
-                container.innerHTML += `<div style="margin:-5px 0 12px; padding:8px 10px; color:#ffcc99; font-size:13px;">${n}</div>`;
-            });
+                🔥 <b>FUOCO DI SOPPRESSIONE</b></div>`;
+            info('step-aro-weapon', 'Fuoco di Soppressione', 'Profilo SF Mode: gittata e Burst sostituiti, PS e munizioni invariati. Il Burst pieno va tutto su un bersaglio solo.', { tipo: 'regole' });
+            (esito.note || []).forEach(function (n) { info('step-aro-weapon', 'Soppressione', soloTesto(n), { tipo: 'regole' }); });
         }
 
         if (esito.armi.length === 0) {
@@ -905,11 +947,9 @@
             container.innerHTML += avviso + M.bottoneArma(p, { colore: '#ff8800', attributi: `onclick="window.selezionaArmaAro('${nomeEsc}', true${chiave ? `, '${chiave}'` : ''})"` });
         });
 
-        if (esito.escluse.length > 0) {
-            container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
-                <b style="color:#aaa;">Non utilizzabili:</b><br>` +
-                esito.escluse.map(x => `• <b>${x.nome}</b> — ${x.motivo}`).join('<br>') + `</div>`;
-        }
+        // 27 ottobre sera (Paolo): niente piu` il riquadro "Non utilizzabili"
+        // sotto le armi: non compaiono, e il perche` sta nella ⓘ.
+        (esito.escluse || []).forEach(x => info('step-aro-weapon', x.nome + ' non utilizzabile', soloTesto(x.motivo), { tipo: 'nonpuo' }));
         esito.avvisi.forEach(function (a) {
             container.innerHTML += `<div style="margin-top:10px; padding:10px; background:#221100; border:1px solid #664400; border-radius:5px; color:#cc9955; font-size:13px;">⚠️ ${a.messaggio}</div>`;
         });
@@ -1016,14 +1056,8 @@
     const STILE_REQ_SI = 'background:#004400; border-color:#00ff00; color:#00ff00;';
     const STILE_REQ_NO = 'background:#554400; border-color:#ffcc00; color:#ffcc00;';
 
-    // Total Reaction / Neurocinetics: Burst pieno o ridotto (riga 10224,
-    // opzionale). La reazione porta r.burstPieno, che leggono l'Hub e il
-    // conteggio degli usi (motore_core, inviaRispostaAro).
-    window.sceltaBurstAro = function (pieno) {
-        if (!window.aroCurrentConfig) return;
-        window.aroCurrentConfig.burstPieno = !!pieno;
-        window.renderAroModifiersUI();
-    };
+    // (window.sceltaBurstAro, la scelta BURST PIENO / B1, e` stata tolta il
+    // 27 ottobre sera: Paolo, BS-16 B. In ARO il Burst e` sempre pieno.)
 
     window.renderAroModifiersUI = function () {
         const M = motore(); if (!M) return;
@@ -1033,6 +1067,7 @@
         const cfg = window.aroCurrentConfig;
         const u = (window.roster || []).find(x => String(x.id) === String(cfg.id)) || {};
         const difensivo = (cfg.azione === 'DODGE' || cfg.azione === 'RESET');
+        azzeraInfo('step-aro-modifiers');
 
         // 🚨 Con un'azione difensiva NON si tocca il profilo arma.
         // 🔴 6 ottobre, difetto di questa chat. Un programma di Hacking NON e`
@@ -1074,15 +1109,12 @@
             if (cfg.azione === 'DODGE') {
                 const stile = cfg.hasLoF ? 'background:#004400; color:#00ff00; border-color:#00ff00;'
                                          : 'background:#440000; color:#ff5555; border-color:#ff0000;';
-                corpo += `<button type="button" class="huge-btn" style="width:100%; margin-top:10px; min-height:60px; font-size:17px; ${stile}"
+                corpo += `<button type="button" class="huge-btn" style="width:100%; margin-top:10px; min-height:60px; font-size:20px; ${stile}"
                     onclick="window.toggleAroLoF()">${cfg.hasLoF
                         ? window.iconaInterruttore('lofSi') + 'HO LINEA DI TIRO'
                         : window.iconaInterruttore('lofNo') + 'NESSUNA LINEA DI TIRO (-3 PH)'}</button>`;
             }
-            if (esito.note.length) {
-                corpo += `<div style="margin-top:10px; color:#888; font-size:12px; line-height:1.6;">` +
-                    esito.note.map(n => `• ${n}`).join('<br>') + `</div>`;
-            }
+            esito.note.forEach(n => info('step-aro-modifiers', cfg.azione === 'DODGE' ? 'Schivata' : 'Reset', soloTesto(n), { tipo: 'regole' }));
         } else {
             // Gittata: banda esplicita, mai uno zero implicito.
             if (arma.bands && arma.bands.length > 0) {
@@ -1107,23 +1139,21 @@
                 const r = RQ[chiave] || {};
                 return M.requisitoManca(cfg, chiave) ? (r.no || chiave) : (r.si || chiave);
             };
+            // La barra della gittata: la stessa delle schede dell'attivo,
+            // M.barraGittata (motore dalla 2026-10-28.1): bande larghe uguali,
+            // un numero per confine (0, 8, 16...), FUORI largo 48 px. Fino
+            // alla 2026-10-28.1 di logica_aro ce n'era qui una copia.
             const barraGittata = () => {
-                let seg = '', lab = '';
-                (arma.bands || []).forEach(function (b, i) {
-                    let cls = 'seg-2';
-                    if (b.mod > 0) cls = 'seg-1'; else if (b.mod === -3) cls = 'seg-3'; else if (b.mod < -3) cls = 'seg-4';
-                    const attivo = (!cfg.fuoriGittata && cfg.rangeIndex === i) ? 'active' : '';
-                    seg += `<div class="range-seg ${cls} ${attivo}" onclick="window.setAroRange(${i})">${b.mod > 0 ? '+' + b.mod : b.mod}</div>`;
-                    lab += `<span>${b.label}</span>`;
-                });
-                // L'ultimo segmento: oltre la gittata massima. Non e` una banda
-                // (non ha un MOD): e` un requisito che manca. Come nell'attivo.
-                if (conRequisiti) {
-                    seg += `<div class="range-seg seg-fuori ${cfg.fuoriGittata ? 'active' : ''}" style="background:${cfg.fuoriGittata ? '#ffcc00' : '#332b00'}; color:${cfg.fuoriGittata ? '#000' : '#ffcc00'}; font-size:12px;" onclick="window.toggleAroRequisito('gittata')">FUORI</div>`;
-                    lab += `<span>oltre</span>`;
+                if (typeof M.barraGittata !== 'function') {
+                    console.error('\u26d4 M.barraGittata assente (serve motore_regole_n5.js dalla 2026-10-28.1): niente barra della gittata in ARO.');
+                    return `<p style="color:#ff6666;">\u26d4 Barra della gittata: serve motore_regole_n5.js dalla 2026-10-28.1.</p>`;
                 }
-                return `<div style="margin-bottom:15px;"><div class="range-bar">${seg}</div>
-                    <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${lab}</div></div>`;
+                return M.barraGittata(arma.bands || [], {
+                    indice: cfg.rangeIndex,
+                    tocco: (i) => `window.setAroRange(${i})`,
+                    fuori: conRequisiti ? "window.toggleAroRequisito('gittata')" : '',
+                    fuoriAttivo: !!cfg.fuoriGittata
+                });
             };
 
             if (arma.isTemplate) {
@@ -1172,7 +1202,13 @@
             // Le munizioni NON si scrivono qui: vanno sulla stessa riga della
             // copertura, piu` sotto, come nell'ordine attivo. Qui si prepara
             // soltanto la tendina.
-            sceltaMunizioni = `<select class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; background:#002233; color:#fff; border-color:${accento()}; text-align:center; padding:0 10px;"
+            // 27 ottobre (collaudo, G06): la tendina stava a meta` riga accanto
+            // al terreno, e "Munizioni: AP · B3 · Sagoma d'Impatto" usciva
+            // troncata. Ora la riga va a capo: munizioni a tutta larghezza,
+            // il terreno sotto (vedi righeBS).
+            // 27 ottobre sera (Paolo): la scritta centrata anche in altezza:
+            // la classe huge-btn sulla tendina la teneva in alto, tolta.
+            sceltaMunizioni = `<select class="tendina-munizioni" style="display:block; flex:1 1 100%; width:100%; min-width:0; margin:0; height:55px; font-family:'Teko', sans-serif; font-size:22px; font-weight:bold; text-transform:uppercase; background:#002233; color:#fff; border:2px solid ${accento()}; border-radius:5px; text-align:center; text-align-last:center; padding:0 10px;"
                 onchange="window.setAroAmmo(this.value)">${ammoOpts}</select>`;
             // Un programma di Hacking non ha munizioni da scegliere.
             if (arma.isHacking) sceltaMunizioni = '';
@@ -1181,27 +1217,19 @@
         // 27 ottobre (MOTORE 27.3, REGOLE): il Burst in ARO e` quello di
         // M.burstReattivo, lo stesso che usano l'Hub e il conteggio degli usi:
         // col Total Reaction (o Neurocinetics) il Burst pieno dell'arma, col
-        // suo (+1B), tetto degli usi residui compreso. Il pieno e` OPZIONALE
-        // (riga 10224): quando c'e` la scelta (opzionale), due tasti, e B1
-        // scrive cfg.burstPieno = false nella reazione. Prima qui si mostrava
-        // M.burstARO, cioe` B1 anche quando l'Hub calcolava il pieno.
+        // suo (+1B), tetto degli usi residui compreso.
+        // 27 ottobre sera (Paolo, BS-16 B): il pieno e` opzionale (riga 10224),
+        // ma nessuno sceglie B1: niente tasti BURST PIENO / B1, si usa SEMPRE
+        // il pieno, e la reazione porta cfg.burstPieno = true.
         const usaReattivo = !!(arma && cfg.azione === 'BS_ATTACK' && typeof M.burstReattivo === 'function');
         const burst = !arma ? { valore: 1, voci: [], note: [] }
-                    : usaReattivo ? M.burstReattivo(u, arma, { burstPieno: cfg.burstPieno })
+                    : usaReattivo ? M.burstReattivo(u, arma, { burstPieno: true })
                     : M.burstARO(u, arma);
         burst.voci = burst.voci || []; burst.note = burst.note || [];
         cfg.burst = burst.valore;
-        let sceltaBurst = '';
-        if (usaReattivo && burst.opzionale && burst.pienoDisponibile > 0) {
-            const ridotto = M.burstARO(u, arma).valore;
-            const pieno = cfg.burstPieno !== false;
-            if (pieno) cfg.burstPieno = true;
-            const stileOn = 'background:#003300; color:#00ff00; border-color:#00ff00;', stileOff = 'background:#111; color:#aaa; border-color:#555;';
-            sceltaBurst = `<div class="scelta-burst-aro" style="display:flex; gap:10px; margin:0 0 12px;">
-                <button type="button" class="huge-btn tasto-burst-pieno" style="flex:1; margin:0; min-height:50px; font-size:15px; ${pieno ? stileOn : stileOff}" onclick="window.sceltaBurstAro(true)">BURST PIENO (B${burst.pienoDisponibile})</button>
-                <button type="button" class="huge-btn tasto-burst-ridotto" style="flex:1; margin:0; min-height:50px; font-size:15px; ${pieno ? stileOff : stileOn}" onclick="window.sceltaBurstAro(false)">B${ridotto}</button>
-            </div>`;
-        } else delete cfg.burstPieno;
+        const sceltaBurst = '';
+        if (usaReattivo && burst.opzionale && burst.pienoDisponibile > 0) cfg.burstPieno = true;
+        else delete cfg.burstPieno;
 
         // 6 ottobre. Salto e Ingresso in Campo negano la Copertura a chi li
         // dichiara: il motore lo scrive nell'allarme (coperturaNegata). Prima
@@ -1236,25 +1264,27 @@
         if (cfg.azione === 'BS_ATTACK') {
             const RQ = M.REQUISITI_TAVOLO || {};
             const noLoF = M.requisitoManca(cfg, 'lof');
-            const tastoLoF = `<button type="button" class="huge-btn tasto-lof-aro" style="flex:1; margin:0; min-height:55px; font-size:15px; ${noLoF ? STILE_REQ_NO : STILE_REQ_SI}"
-                onclick="window.toggleAroRequisito('lof')">${noLoF ? ((RQ.lof || {}).no || 'LINEA DI TIRO NO') : ((RQ.lof || {}).si || 'LINEA DI TIRO SÌ')}</button>`;
-            const tastoCover = (copNeg || senzaCopertura) ? '' : `<button type="button" class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:15px; ${cfg.cover ? 'background:#003300; color:#00ff00; border-color:#00ff00;' : 'background:#111; color:#aaa; border-color:#555;'}"
+            // 27 ottobre sera (Paolo): l'icona della Linea di Tiro non c'era, e
+            // quella della Copertura era a 22 px accanto alla scritta. Ora tutti
+            // e due i tasti hanno l'icona grande (44 px) SOPRA la scritta.
+            const tastoLoF = `<button type="button" class="huge-btn tasto-lof-aro" style="flex:1; margin:0; min-height:90px; font-size:20px; flex-direction:column; ${noLoF ? STILE_REQ_NO : STILE_REQ_SI}"
+                onclick="window.toggleAroRequisito('lof')">${window.iconaInterruttore(noLoF ? 'lofNo' : 'lofSi', 44, true)}${noLoF ? ((RQ.lof || {}).no || 'LINEA DI TIRO NO') : ((RQ.lof || {}).si || 'LINEA DI TIRO SÌ')}</button>`;
+            const tastoCover = (copNeg || senzaCopertura) ? '' : `<button type="button" class="huge-btn tasto-cover-aro" data-nota="copertura" style="flex:1; margin:0; min-height:90px; font-size:20px; flex-direction:column; ${cfg.cover ? 'background:#003300; color:#00ff00; border-color:#00ff00;' : 'background:#111; color:#aaa; border-color:#555;'}"
                 onclick="window.toggleAroCover()">${cfg.cover
-                    ? window.iconaInterruttore('coverSi', 22) + 'IN COPERTURA'
-                    : window.iconaInterruttore('coverNo', 22) + 'NO COPERTURA'}</button>`;
+                    ? window.iconaInterruttore('coverSi', 44, true) + 'IN COPERTURA'
+                    : window.iconaInterruttore('coverNo', 44, true) + 'NO COPERTURA'}</button>`;
             const terreno = (typeof window.sceltaTerreno === 'function')
                 ? window.sceltaTerreno(cfg.terrain, cfg.zona, 'window.setAroTerreno')
                 : window.tendinaTerrenoAro(cfg);
             righeBS = `<div style="display:flex; gap:10px; margin-top:14px;">${tastoCover}${tastoLoF}</div>
                 ${(cfg.cover && !copNeg) ? window.sceltaCopertura(cfg.copertura, 'window.setAroCopertura') : ''}
-                ${(cfg.cover && !copNeg) ? '<div style="color:#888; font-size:12px; margin-top:4px;">-3 al tuo tiro, +3 alla sua ARM.</div>' : ''}
                 ${copNeg ? '<div style="color:#ff9900; font-size:13px; margin-top:8px; padding:8px; border:1px solid #ff9900; border-radius:5px;">⛔ NIENTE COPERTURA per il bersaglio: ' + (copNeg.motivo || copNeg.nome || copNeg.azione || '') + '</div>' : ''}
-                ${(senzaCopertura && !copNeg) ? '<div class="nota-targetless" style="color:#bbb; font-size:13px; margin-top:8px;">Arma Targetless: si tira su un punto del tavolo. Niente Copertura né Mimetismo; restano la gittata e la Linea di Tiro verso l\'attivo.</div>' : ''}
-                <div style="display:flex; gap:10px; margin-top:10px; align-items:flex-end;">
+                <div class="riga-munizioni-terreno" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; align-items:flex-end;">
                     ${sceltaMunizioni}
-                    <div class="bs-terreno" style="flex:1; min-width:0;">${terreno}</div>
-                </div>
-                ${(typeof window.notaZona === 'function' && cfg.zona) ? (window.notaZona(cfg.zona) || '') : ''}`;
+                    <div class="bs-terreno" style="flex:1 1 100%; min-width:0;">${terreno}</div>
+                </div>`;
+            // 27 ottobre sera (Paolo): niente nota del Fumo o dell'Eclipse sotto
+            // la casella dei terreni.
         }
 
         // IL TASTO DIVENTA IDLE quando un requisito manca, come nell'attivo:
@@ -1268,10 +1298,22 @@
                 const diretta = arma.isTemplate && (M.regoleTemplate(arma) || {}).tipo === 'DIRETTO';
                 idle = !!M.requisitiDichiarati([cfg], diretta ? ['lof', 'sagoma'] : ['lof', 'gittata']).idle;
             }
-            tasto.innerText = idle ? 'IDLE: ARO SPESO, NESSUN TIRO' : '✅ CONFERMA E PROCEDI';
-            tasto.style.background = idle ? ((M.COLORE_TASTO || {}).idle || '#ffcc00') : '#004400';
+            tasto.innerText = idle ? 'IDLE: ARO SPESO, NESSUN TIRO' : 'CONFERMA E PROCEDI';
+            // 27 ottobre (collaudo, punto 3): il verde della conferma lo da` la
+            // classe tasto-conferma (app.html, da M.COLORI.conferma). Qui si
+            // scrive in linea solo il giallo dell'IDLE, e lo si toglie dopo.
+            tasto.style.background = idle ? ((M.COLORE_TASTO || {}).idle || '#ffcc00') : '';
+            tasto.style.borderColor = idle ? ((M.COLORE_TASTO || {}).idle || '#ffcc00') : '';
             tasto.style.color = idle ? '#000' : '';
         }
+
+        // 27 ottobre sera (Paolo): il perche` del Burst, la Copertura, l'arma
+        // Targetless e la zona di visibilita` stanno nella ⓘ.
+        if (burst.voci.length > 1) info('step-aro-modifiers', 'Burst', soloTesto(burst.voci.map(v => v.motivo).join(' · ')), { tipo: 'regole' });
+        burst.note.forEach(n => info('step-aro-modifiers', 'Burst', soloTesto(n), { tipo: 'regole' }));
+        if (cfg.azione === 'BS_ATTACK' && cfg.cover && !copNeg) info('step-aro-modifiers', 'Copertura', '-3 al tuo tiro, +3 alla sua ARM.', { tipo: 'mod', tasto: 'copertura' });
+        if (cfg.azione === 'BS_ATTACK' && senzaCopertura && !copNeg) info('step-aro-modifiers', 'Arma Targetless', 'Si tira su un punto del tavolo. Niente Copertura ne` Mimetismo; restano la gittata e la Linea di Tiro verso l\'attivo.', { tipo: 'mod' });
+        if (cfg.zona) { const z = (window.ZONE_VISIBILITA || []).find(x => x.id === cfg.zona); if (z) info('step-aro-modifiers', z.nome, z.nota, { tipo: 'mod' }); }
 
         container.innerHTML = `
             <div class="target-card" style="border-left:4px solid var(--nomad-red); background:rgba(255,255,255,0.03); padding:15px; overflow:hidden;">
@@ -1280,9 +1322,9 @@
                     <div class="burst-ctrl"><span style="font-size:22px; font-weight:bold; color:#00ff00;">${burst.valore} B</span></div>
                 </div>
                 ${sceltaBurst}
-                ${burst.voci.length > 1 ? `<div style="color:#888; font-size:12px; margin-bottom:12px;">` + burst.voci.map(v => v.motivo).join(' · ') + `</div>` : ''}
+                <!-- 27 ottobre sera (Paolo): tolta la riga col perche del Burst
+                     ("In Turno Reattivo il Burst e 1 · Total Reaction..."). -->
                 ${corpo}
-                ${burst.note.length ? `<div style="margin-top:10px; color:#ff9900; font-size:12px;">• ` + burst.note.join('<br>• ') + `</div>` : ''}
                 <!-- Munizioni e copertura sulla stessa riga, come nella scheda
                      bersaglio dell'ordine attivo: sono le due scelte che si
                      fanno insieme guardando il tavolo, e separarle costava uno
@@ -1402,7 +1444,6 @@
             return `<div style="margin-top:20px; margin-bottom:5px;">
                     <div style="color:#aaa; font-size:13px; margin-bottom:4px;">${window.ETICHETTA_TERRENO || 'Terreno, Fumo o Eclipse sulla linea di tiro'}:</div>
                     ${window.sceltaTerreno(cfg.terrain, cfg.zona, 'window.setAroTerreno')}
-                    ${(typeof window.notaZona === 'function') ? window.notaZona(cfg.zona) : ''}
                 </div>`;
         }
         console.error('\u26d4 window.sceltaTerreno manca (app.html non caricato?): tendina del solo terreno, senza Fumo ne` Eclipse.');
@@ -1542,7 +1583,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-10-27.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-10-28.6', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

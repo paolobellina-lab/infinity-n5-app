@@ -1,4 +1,7 @@
-// @versione 2026-09-23.1 | test_modulo_cc.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_modulo_cc.js | proprieta`: chat TEST
+// 2026-10-28.1: motore 2026-10-28.1. RISCRITTA la prova del Dado Speciale: la
+//    nota sta nella ⓘ (window.INFO['step-modifiers'], titolo «Dado Speciale»),
+//    non piu` a schermo. Nessuna prova in piu`.
 // Test end-to-end del modulo CC — node test_modulo_cc.js
 global.window = global;
 let passati = 0, falliti = 0;
@@ -107,7 +110,11 @@ h = nodo('targets-allocation-container').innerHTML;
 ok(h.includes('Valore di Successo') && h.includes('>23<'),
    'il Valore di Successo calcolato è a schermo (prima diceva "calcola a mente")');
 ok(h.includes('Martial Arts L1 del nemico'), 'il -3 nemico è spiegato voce per voce');
-ok(h.includes('+1 SD'), 'il dado SD è segnalato');
+// RISCRITTO il 28 ottobre (motore 2026-10-28.1): il Dado Speciale non sta
+// piu` a schermo ma nella ⓘ della schermata (M.nota; senza app.html in
+// window.INFO['step-modifiers']). Prima: h.includes('+1 SD').
+{ const sd = ((window.INFO || {})['step-modifiers'] || []).find(v => v.titolo === 'Dado Speciale');
+  ok(!!sd && /\+1 SD/.test(sd.testo) && !h.includes('+1 SD'), 'il dado SD è segnalato (nella ⓘ: «Dado Speciale», +1 SD; non a schermo)'); }
 ok(h.includes('Multiple Troopers'), 'il selettore alleati c è');
 ok(!h.includes('range-seg') && !h.includes('COPERTURA'), 'niente gittata né copertura in CC');
 

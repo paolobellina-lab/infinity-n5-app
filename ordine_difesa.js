@@ -1,4 +1,4 @@
-// @versione 2026-10-26.1 | ordine_difesa.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.4 | ordine_difesa.js | proprieta`: chat MOTORE
 // ==========================================
 // 🛡️ DIFESA: SCHIVATA, RESET E SOPPRESSIONE - ordine_difesa.js
 // ------------------------------------------
@@ -36,7 +36,20 @@
         return window.MotoreN5;
     }
 
-    const COL = { bordo: '#00ffff', fuoco: '#ff6600' };
+    // 28 ottobre (Paolo): il colore e` dell'ORDINE, non del modulo (M.COLORI_ORDINE nel
+    // motore: Movimenti blu, Abilita` Brevi verdi, Ordini Interi rossi). COL legge le
+    // tinte dell'Ordine in corso a ogni uso; 'SCHIVATA' e` quello di casa. Prima: { bordo: '#00ffff', fuoco: '#ff6600' };.
+    const COL = (function () {
+        const ripiego = { bordo: '#00ffff', sfondo: '#111111', riquadro: '#111111', tenue: '#00ffff', testo: '#00ffff' };
+        const o = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) {
+            Object.defineProperty(o, k, { enumerable: true, get: function () {
+                const M = window.MotoreN5;
+                return (M && typeof M.colOrdine === 'function') ? M.colOrdine('SCHIVATA')[k] : ripiego[k];
+            } });
+        });
+        return o;
+    })();
 
     window.avviaFaseDifesa = function (actionId, isSecondHalf) {
         window.currentOrder = window.currentOrder || {};
@@ -65,8 +78,9 @@
         const schivata = (actionId === 'SCHIVATA');
         const nome = schivata ? 'SCHIVATA' : 'RESET';
         const container = document.getElementById('targets-allocation-container');
+        window.MotoreN5.azzeraNote('step-modifiers');
 
-        let html = `<h2 style="color:${COL.bordo}; text-align:center; margin-bottom:20px;">MODIFICATORI ${nome}</h2>`;
+        let html = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `${nome}` })}`;
 
         window.coordUnits.forEach(function (u, index) {
             if (!u.difesaOpts) u.difesaOpts = { hasLoF: true, controSagoma: false };
@@ -85,22 +99,22 @@
 
             u.difesaEsito = esito;
 
-            const colore = schivata ? '#00ff00' : COL.bordo;
+            const colore = schivata ? 'var(--mn-si,#00ff00)' : COL.bordo;
             const icona = schivata ? '🏃' : '🧠';
 
             const dettaglio = esito.voci.length
                 ? esito.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                        <span style="color:#aaa;">${v.motivo}</span>
-                        <b style="color:${v.valore >= 0 ? '#00ff00' : '#ff6666'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b></div>`).join('')
-                : `<div style="color:#888; text-align:center;">Nessun modificatore</div>`;
+                        <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
+                        <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b></div>`).join('')
+                : `<div style="color:var(--mn-spento,#888888); text-align:center;">Nessun modificatore</div>`;
 
             let opzioni = '';
             if (schivata) {
                 // Il -3 di LoF vale solo sulla Schivata: sul Reset non si mostra.
                 const stileLoF = u.difesaOpts.hasLoF
-                    ? 'background:#004400; color:#00ff00; border-color:#00ff00;'
-                    : 'background:#440000; color:#ff5555; border-color:#ff0000;';
-                opzioni += `<button type="button" class="huge-btn" style="width:100%; margin-top:10px; min-height:50px; font-size:16px; ${stileLoF}"
+                    ? 'background:var(--mn-si-fondo,#004400); color:var(--mn-si,#00ff00); border-color:var(--mn-si,#00ff00);'
+                    : 'background:var(--mn-errore-fondo,#330000); color:var(--mn-errore,#ff3333); border-color:var(--mn-errore,#ff3333);';
+                opzioni += `<button type="button" class="huge-btn" style="width:100%; margin-top:10px; min-height:50px; font-size:var(--fs-m); ${stileLoF}"
                     onclick="window.toggleDifesaLoF(${index}, '${actionId}')">
                     ${u.difesaOpts.hasLoF ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofSi') : '👁️ '}HO LINEA DI TIRO VERSO CHI ATTACCA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofNo') : '🚫 '}NESSUNA LINEA DI TIRO (-3 PH)`}</button>`;
 
@@ -114,22 +128,23 @@
             html += `
             <div class="target-card" style="border-left:4px solid ${colore}; margin-bottom:15px; background:rgba(0,255,255,0.05); padding:15px; border-radius:5px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <b style="color:#fff; font-size:22px;">${icona} ${u.alias || u.nome}</b>
+                    <b style="color:var(--mn-testo,#ffffff); font-size:var(--fs-l);">${icona} ${u.alias || u.nome}</b>
                     <div style="text-align:right;">
-                        <span style="color:#888; font-size:13px;">${esito.attributo} ${esito.base} →</span>
+                        <span style="color:var(--mn-spento,#888888); font-size:var(--fs-s);">${esito.attributo} ${esito.base} →</span>
                         ${esito.impossibile
                             // 🔴 Dopo aver tolto i clamp a 1, Schivata e Reset possono
                             // scendere sotto 1: e` un FALLIMENTO AUTOMATICO, non un
                             // numero da tirare. Qui si mostrava "-2". Stesso testo di
                             // scoprire, osservazione e scenografia. (Chat REGOLE, 21 sett.)
-                            ? '<b style="color:#ff3333; font-size:18px;"> FALLIMENTO AUTOMATICO</b><br><span style="color:#ff9999; font-size:12px;">Valore ' + esito.valore + ' sotto 1: il tiro fallisce automaticamente</span>'
-                            : '<b style="color:' + colore + '; font-size:26px;"> ' + esito.valore + '</b>'}
+                            ? '<b style="color:var(--mn-errore,#ff3333); font-size:var(--fs-m);"> FALLIMENTO AUTOMATICO</b><br><span style="color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-xs);">Valore ' + esito.valore + ' sotto 1: il tiro fallisce automaticamente</span>'
+                            : '<b style="color:' + colore + '; font-size:var(--fs-l);"> ' + esito.valore + '</b>'}
                     </div>
                 </div>
-                <div style="background:#001a1a; border:1px solid #005555; padding:10px; border-radius:5px; font-size:14px;">${dettaglio}</div>
+                <div style="background:var(--mn-ordine-riquadro,#001a1a); border:1px solid var(--mn-ordine-tenue,#005555); padding:10px; border-radius:5px; font-size:var(--fs-s);">${dettaglio}</div>
                 ${opzioni}
-                ${esito.note.length ? `<div style="margin-top:10px; color:#888; font-size:12px; line-height:1.6;">` + esito.note.map(n => `• ${n}`).join('<br>') + `</div>` : ''}
             </div>`;
+            // 28 ottobre (Paolo): le note della Schivata o del Reset nella ⓘ.
+            esito.note.forEach(n => M.nota('step-modifiers', (u.alias || u.nome) + ': ' + (schivata ? 'Schivata' : 'Reset'), n, { tipo: 'regole' }));
         });
 
         container.innerHTML = html;
@@ -194,7 +209,7 @@
             calcDiv.innerHTML = `
                 <div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; background:rgba(0,255,255,0.1); margin-top:20px;">
                     <h2 style="color:${COL.bordo}; margin:0;">DATI DIFENSIVI INVIATI</h2>
-                    <p style="font-size:12px; color:#aaa;">In attesa della risoluzione all'Hub...</p>
+                    <p style="font-size:var(--fs-xs); color:var(--mn-debole,#aaaaaa);">In attesa della risoluzione all'Hub...</p>
                 </div>`;
             calcDiv.style.display = 'block';
         }
@@ -205,37 +220,35 @@
     // ==============================================================
     window.avviaSoppressione = function () {
         const M = motore(); if (!M) return;
+        // Ordine Intero: le tinte di SOPPRESSIONE (rosso), non quelle della Schivata.
+        const COL = M.segnaColoreOrdine(M.coloreOrdine('SOPPRESSIONE'));
         const unita = window.currentOrder.unit;
         const esito = M.armiSoppressione(unita);
 
         const container = document.getElementById('weapon-buttons-container');
-        container.innerHTML = `<div style="background:#331100; border:1px solid ${COL.fuoco}; padding:10px; margin-bottom:15px; text-align:center; color:#fff; border-radius:5px;">
-            <b style="color:${COL.fuoco}; font-size:20px;">🔥 FUOCO DI SOPPRESSIONE</b><br>
-            <span style="font-size:14px; color:#ccc;">Ordine Intero · scegli l'arma da mettere in SF Mode</span>
-        </div>`;
+
+        window.MotoreN5.azzeraNote('step-weapon');
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `FUOCO DI SOPPRESSIONE`, nota: `Ordine Intero · scegli l'arma da mettere in SF Mode` })}`;
 
         if (esito.armi.length === 0) {
-            container.innerHTML += `<p style="color:#ff3333; text-align:center; font-size:18px;">
+            container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-size:var(--fs-m);">
                 ❌ Nessuna arma utilizzabile per il Fuoco di Soppressione.</p>`;
         } else {
             esito.armi.forEach(function (p) {
                 const sf = M.profiloSF(p);
                 const gittata = sf.bands.map(b => `${b.mod > 0 ? '+' : ''}${b.mod}`).join(' / ');
                 const nomeEsc = p.nome.replace(/'/g, "\\'");
-                container.innerHTML += `<button class="huge-btn" style="border-color:${COL.fuoco};" onclick="window.confermaSoppressione('${nomeEsc}')">
-                    ${p.nome}<br><span style="color:${COL.fuoco}; font-size:13px;">SF Mode: B${sf.burst} · ${gittata} · PS e munizioni invariati</span>
+                container.innerHTML += `<button class="huge-btn" style="border-color:${COL.bordo};" onclick="window.confermaSoppressione('${nomeEsc}')">
+                    ${p.nome}<br><span style="color:${COL.bordo}; font-size:var(--fs-s);">SF Mode: B${sf.burst} · ${gittata} · PS e munizioni invariati</span>
                 </button>`;
             });
         }
 
-        if (esito.escluse.length > 0) {
-            container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
-                <b style="color:#aaa;">Non utilizzabili:</b><br>` +
-                esito.escluse.map(x => `• <b>${x.nome}</b> — ${x.motivo}`).join('<br>') + `</div>`;
-        }
+        // 28 ottobre (Paolo): perche` non si puo`, nella ⓘ (o sotto il tasto).
+        esito.escluse.forEach(x => window.MotoreN5.nota('step-weapon', x.nome + ' non utilizzabile', x.motivo, { tipo: 'nonpuo' }));
         esito.avvisi.forEach(function (a) {
-            container.innerHTML += `<div style="margin-top:10px; padding:10px; background:#221100; border:1px solid #664400; border-radius:5px; color:#cc9955; font-size:13px;">
-                ⚠️ ${a.messaggio}<br><span style="color:#886644;">${a.dettaglio || ''}</span></div>`;
+            container.innerHTML += `<div style="margin-top:10px; padding:10px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-nota-bordo,#664400); border-radius:5px; color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s);">
+                ⚠️ ${a.messaggio}<br><span style="color:var(--mn-nota-tenue,#cc9955);">${a.dettaglio || ''}</span></div>`;
         });
 
         window.goToStep('step-weapon');
@@ -322,7 +335,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_difesa.js', versione: '2026-10-26.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_difesa.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

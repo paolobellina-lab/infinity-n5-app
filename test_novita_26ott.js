@@ -1,4 +1,39 @@
-// @versione 2026-10-27.2 | test_novita_26ott.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_novita_26ott.js | proprieta`: chat TEST
+// 2026-10-28.1: motore 2026-10-28.1 e INTERFACCIA 28.1-28.2. RISCRITTE: E (la
+//    Shock Mine esclusa sta nella ⓘ, vociInfo('step-weapon'), tipo nonpuo); O2
+//    intera (niente piu` scelta BURST PIENO / B1: sceltaBurstAro tolta, sempre
+//    al pieno, le voci del Burst nella ⓘ; via le prove del B1, da 13 a 10); P2 e
+//    P3 (l HIDDEN non ha etichetta: il segnalino a 45 px fra le icone degli
+//    stati); Q2 (la nota HIDDEN nella ⓘ; il tasto CAMO col div voce-con-icona).
+// 2026-10-27.6 (motore 2026-10-27.9, roster_manager 2026-10-27.3): nuove Q
+//   (M.opzioniSchieramento: i casi di MOTORE, Spektr [CAMO, HIDDEN], il Marker
+//   senza skill, CAMO_1 acceso, Heckler F07, l'ordine delle sei voci, i 745
+//   profili, mai acceso e spento insieme), Q2 (la pagina vera: Croc Man, il
+//   tocco, Spector in AD fuori dall'Hub, il CAMO che arriva come segnalino, il
+//   Moran col tiro d'Infiltrazione fallito e la voce spenta con F07) e Q3
+//   (SCH-09 del piano, rev 48). Rotte sui file del giro 12: 9 rossi su 48;
+//   col solo roster_manager di prima e il motore 27.9: 7 rossi.
+// 2026-10-27.5 (motore 2026-10-27.5, catalogo 2026-10-27.1; app.html 2026-10-27.1):
+//   nuove P (M.etichettaMarker «HIDDEN», M.segnalinoSenzaNumero per esercito,
+//   nessun numero; controprove: NORMAL null, CAMO numerato invariato, l'HIDDEN
+//   fuori da M.rosterPubblico), P2 (la riga nella propria app con l'icona e i
+//   ripieghi, l'avversario, l'Hub e il server senza traccia; rivelato, sparisce)
+//   e P3 (SCH-01 del piano, rev 47). Rotte sui file del giro 11: 14 rossi su 30.
+//   tx() salta i '>' dentro gli attributi: il ripiego dell'icona mette una
+//   <span> nell'onerror, e la vecchia regex tagliava li`.
+// 2026-10-27.4 (motore 2026-10-27.4): GIRATO il DIFETTO APERTO di O e O2. Il
+//   tetto degli usi vale anche per la scelta: a un uso pienoDisponibile 1 e
+//   opzionale false, e la pagina dell'ARO non offre i due tasti; a zero usi
+//   pienoDisponibile 0. Nessun difetto aperto in questo banco.
+// 2026-10-27.3 (motore 2026-10-27.3, motore_core 2026-10-27.1, logica_aro
+//   2026-10-27.1; REGOLE 27 ottobre): GIRATO il «DA CHIARIRE» di O: col Total
+//   Reaction il (+1B) dell'arma vale in ARO, Panzerfaust (+1B) B2, e il pieno
+//   e` opzionale. Nuova O2: l'«Atteso» al tavolo sulla pagina ARO vera
+//   (BURST PIENO (B2) / B1, usi spesi 2 o 1, r.burstPieno, Hub; un uso; zero;
+//   Reaktion Zond (Thunderbolt) B3; Fusilier senza Total Reaction B1).
+//   DIFETTO APERTO nuovo, misurato com'e`: a UN uso residuo la scelta
+//   «BURST PIENO (B2)» / «B1» c'e` lo stesso (pienoDisponibile 2,
+//   opzionale), ma vale B1 in tutti e due i casi.
 // 2026-10-27.2 (motore 2026-10-27.2): GIRATE J1b (il <n> delle repliche e`
 //   0..999 come la lista: la vera non e` piu` l'unica a tre cifre) e O (la
 //   nota dello Scarico arriva allo scontro e al tabellone). Nessun difetto
@@ -132,7 +167,7 @@ function sezione(titolo, fn) {
     console.log('\n=== ' + titolo + ' ===');
     try { fn(); } catch (e) { falliti++; console.log('  ✗ la sezione e` caduta: ' + e.message + ' ' + ((e.stack || '').split('\n')[1] || '').trim()); }
 }
-const tx = (h) => String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+const tx = (h) => String(h).replace(/<(?:[^>"']|"[^"]*"|'[^']*')*>/g, ' ').replace(/\s+/g, ' ').trim();
 const tr = (p, a) => Object.assign(JSON.parse(J(p)), { states: {}, deployState: 'NORMAL', state: 'ACTIVE', combatGroup: 1 }, a);
 const ris = (T) => T.hub.el('step-resolution').style.display === 'block';
 const tab = (T) => tx(T.hub.el('clash-container').innerHTML);
@@ -390,7 +425,12 @@ sezione('E. Le mine non si sparano: Spektr con la Shock Mine nell Attacco BS', (
     const N = T.nomadi.g; T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.startUnitAllocationLoopBS();
     const w = String(T.nomadi.el('weapon-buttons-container').innerHTML);
     ok(!/declareAttackBS\('Shock Mine/.test(w) && !diArma(w, /Shock Mine/), 'la Shock Mine non ha un bottone nell Attacco BS');
-    ok(/Shock Mine \(si piazza con PIAZZARE EQUIPAGGIAMENTO, non si spara\)/.test(tx(w)), 'ed e` fra le scartate, col motivo «si piazza con PIAZZARE EQUIPAGGIAMENTO, non si spara»', (tx(w).match(/.{0,20}PIAZZARE EQUIPAGGIAMENTO.{0,20}/) || [])[0]);
+    // RISCRITTO il 28 ottobre (motore 2026-10-28.1): le escluse stanno nella ⓘ
+    // (vociInfo('step-weapon'), titolo «<nome> non utilizzabile…», tipo
+    // 'nonpuo', testo = motivo). Prima: la riga delle scartate a schermo.
+    { const vs = N.vociInfo('step-weapon'), sm = vs.find(v => /^Shock Mine non utilizzabile/.test(v.titolo));
+      ok(!!sm && sm.tipo === 'nonpuo' && sm.testo === 'si piazza con PIAZZARE EQUIPAGGIAMENTO, non si spara' && !/PIAZZARE EQUIPAGGIAMENTO, non si spara/.test(tx(w)),
+         'ed e` fra le escluse della ⓘ, col motivo «si piazza con PIAZZARE EQUIPAGGIAMENTO, non si spara»', vs.map(v => v.titolo + ': ' + v.testo)); }
     ok(/declareAttackBS\('Silenced Pistol'/.test(w), 'CONTROPROVA: la Silenced Pistol dello stesso Spektr si spara');
     const T2 = tavolo(T => [tr(P_(T, /^Spektr \(MULTI Sniper Rifle\)/), { id: 'n1', alias: 'Spk' })], T => [FUS(T, 'p1')], 'NOMADI');
     T2.apriMenu(T2.nomadi, 0); T2.nomadi.g.selectAction('PIAZZARE EQUIPAGGIAMENTO', false);
@@ -785,10 +825,32 @@ sezione('O. Il tetto sugli usi residui vale anche in ARO (M.burstReattivo, Hub)'
     const t1 = br(Object.assign({}, sal, { usiSpesi: { PANZERFAUST: 1 } }), pf2);
     ok(t1.valore === 1 && t1.voci.some(v => v.fonte === 'usi' && /Burst limitato agli usi residui: 1 su 2/.test(v.motivo)), 'Total Reaction, un uso residuo: B1, «Burst limitato agli usi residui: 1 su 2»', [t1.valore, t1.voci.map(v => v.motivo)]);
     ok(br(Object.assign({}, sal, { usiSpesi: { PANZERFAUST: 1 } }), M.profiloArma('Combi Rifle')).valore === 3, 'CONTROPROVA: lo stesso Salyut col Combi Rifle (non Disposable) resta B3');
-    // DA CHIARIRE (REGOLE): col Panzerfaust (+1B) vero il B2 in ARO non c e` mai.
+    // 🔴 GIRATA IL 27 OTTOBRE (REGOLE, motore 2026-10-27.3): col Total Reaction
+    // il (+1B) dell ARMA vale anche in ARO (righe 10227-10228). Fino alla 27.2
+    // il Panzerfaust (+1B) restava B1 («DA CHIARIRE»).
     const p1b = M.profiloArma('Panzerfaust (+1B)');
-    ok(br(sal, p1b).valore === 1 && br(Object.assign({}, sal, { usiSpesi: { PANZERFAUST: 1 } }), p1b).valore === 1,
-       'DA CHIARIRE: Total Reaction col Panzerfaust (+1B), B1 sia a usi pieni sia a un uso: il (+1B) in ARO non entra, e «B1 invece di B2» non si vede', [br(sal, p1b).valore, br(sal, p1b).voci.map(v => v.motivo)]);
+    const pieno = br(sal, p1b);
+    ok(pieno.valore === 2 && pieno.voci.some(v => /^Panzerfaust \(\+1B\): \+1 Burst anche in ARO \(Total Reaction, righe 10227-10228\)$/.test(v.motivo)),
+       'Total Reaction col Panzerfaust (+1B), usi pieni: B2, con la voce «Panzerfaust (+1B): +1 Burst anche in ARO (Total Reaction, righe 10227-10228)»', [pieno.valore, pieno.voci.map(v => v.motivo)]);
+    ok(pieno.opzionale === true && pieno.pienoDisponibile === 2, '  il pieno e` opzionale: pienoDisponibile 2', [pieno.opzionale, pieno.pienoDisponibile]);
+    const rid = M.burstReattivo(sal, p1b, { burstPieno: false });
+    ok(rid.valore === 1 && rid.voci.some(v => /Total Reaction: scelto il Burst ridotto \(B1\) invece del pieno \(B2\)/.test(v.motivo)), '  burstPieno:false: B1, «scelto il Burst ridotto (B1) invece del pieno (B2)»', rid.voci.map(v => v.motivo));
+    const pu1 = br(Object.assign({}, sal, { usiSpesi: { PANZERFAUST: 1 } }), p1b);
+    ok(pu1.valore === 1 && pu1.note.some(n => /Burst limitato agli usi residui: 1 su 2/.test(n)), '  a un uso residuo: B1, «Burst limitato agli usi residui: 1 su 2»', [pu1.valore, pu1.note]);
+    const pu0 = br(Object.assign({}, sal, { usiSpesi: { PANZERFAUST: 2 } }), p1b);
+    ok(pu0.valore === 0 && pu0.note.some(n => /Panzerfaust: usi esauriti — la truppa è in stato Scarico/.test(n)), '  a zero usi: B0, con la nota dello Scarico', [pu0.valore, pu0.note.map(n => n.slice(0, 40))]);
+    ok(M.usiDaConsumare(p1b, [2], 'BS_ATTACK') === 2 && M.usiDaConsumare(p1b, [1], 'BS_ATTACK') === 1, '  gli usi si contano sul Burst tirato: B2 = 2, B1 = 1');
+    // 🔴 GIRATA IL 27 OTTOBRE (motore 2026-10-27.4): il tetto degli usi vale
+    // anche per la scelta. Fino alla 27.3 a un uso pienoDisponibile restava 2 e
+    // opzionale true, e la pagina offriva «BURST PIENO (B2)» che dava B1.
+    ok(pu1.opzionale === false && pu1.pienoDisponibile === 1,
+       'a un uso residuo pienoDisponibile 1 e opzionale false: nessuna scelta', [pu1.opzionale, pu1.pienoDisponibile]);
+    ok(pu0.opzionale === false && pu0.pienoDisponibile === 0, '  a zero usi pienoDisponibile 0, opzionale false', [pu0.opzionale, pu0.pienoDisponibile]);
+    ok(pieno.opzionale === true && br(Object.assign({}, sal, { usiSpesi: { PANZERFAUST: 1 } }), M.profiloArma('Combi Rifle(+1B)')).opzionale === true,
+       'CONTROPROVA: a usi pieni la scelta resta, e un arma non Disposable (Combi (+1B)) con usiSpesi a caso resta opzionale');
+    ok(br(sal, M.profiloArma('Combi Rifle(+1B)')).valore === 4, 'CONTROPROVA: Combi Rifle (+1B) col Total Reaction: B4');
+    ok(br(Object.assign({}, sal, { skills: sal.skills + ', BS Attack (+1B)' }), M.profiloArma('Combi Rifle')).valore === 3, 'CONTROPROVA: Combi Rifle con l abilita` «BS Attack (+1B)»: B3, l abilita` in ARO non vale');
+    ok(br(fus, M.profiloArma('Combi Rifle(+1B)')).valore === 1, 'CONTROPROVA: Fusilier senza Total Reaction, Combi Rifle (+1B): B1');
     // All Hub: il reattivo Scarico, con e senza r.usiSpesi nella risposta.
     const hub = (togli) => {
         const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
@@ -817,6 +879,314 @@ sezione('O. Il tetto sugli usi residui vale anche in ARO (M.burstReattivo, Hub)'
     ok(notaS.test(a.t) && notaS.test(J(a.T.hub.g.ultimiScontri || [])),
        'sul tabellone e in ultimiScontri la nota «Panzerfaust: usi esauriti — … Si toglie con Reload…»', (a.t.match(/Panzerfaust: usi esauriti.{0,40}/) || [])[0]);
     ok(!/usi esauriti/.test(b.t), '  CONTROPROVA: tolto r.usiSpesi, la nota non c e` (il reattivo tira B1)');
+});
+
+sezione('O2. Atteso al tavolo: Total Reaction col (+1B) sulla pagina ARO (sempre BURST PIENO)', () => {
+    // RISCRITTA il 28 ottobre (logica_aro 2026-10-28.2, INTERFACCIA; Paolo il 27
+    // sera, BS-16 B: «togli i tasti di selezione del burst»). Prima: due tasti,
+    // «BURST PIENO (B2)» e «B1», con N.sceltaBurstAro(false) che riduceva a B1 e
+    // spendeva un uso solo. Ora: nessun tasto, sceltaBurstAro non c e` piu`, e
+    // la reazione e` sempre al pieno (burstPieno true). Le voci del Burst («+1
+    // Burst anche in ARO», «limitato agli usi residui») stanno nella ⓘ.
+    // Salyut (Total Reaction): un Panzerfaust (+1B) aggiunto al profilo (nessun
+    // profilo vero li ha insieme). Reaktion Zond (Thunderbolt) e` il profilo vero.
+    const giro = (arma, spesi, unitaRe) => {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+        const r = tr(P_(T, unitaRe || /^Salyut \(Total Reaction, Repeater\)/), { id: 'n1', alias: 'Reag' });
+        if (spesi) r.usiSpesi = spesi;
+        if (!/^=/.test(arma)) r.weapon = String(r.weapon || '') + ', ' + arma;
+        arma = arma.replace(/^=/, '');
+        T.schiera([r], [FUS(T, 'p1', { alias: 'Spara' })], 'PANOCEANIA');
+        const viste = []; const orh = T.hub.riceve;
+        T.hub.riceve = (k, v) => { if (k === H.MotoreN5.CANALI.ARO_NOMADI && v) { const o = JSON.parse(v); (o.reazioni || []).forEach(x => viste.push({ u: x.usiSpesi, bp: x.burstPieno })); } return orh(k, v); };
+        T.apriMenu(T.pano, 0); P.selectAction('ATTACCO BS', false); P.startUnitAllocationLoopBS(); P.declareAttackBS('Combi Rifle'); P.toggleTargetSelection('n1'); P.confirmMultiAro(false); T.giro();
+        N.apriSelezioneAro(); N.toggleAroUnit('n1'); N.confermaSelezioneAro(); N.selezionaAzioneAro('BS_ATTACK');
+        const nome = arma.replace(/\s*\(\+1B\)/, '').replace(/[()+]/g, '\\$&');
+        const bt = bottoni(String(T.nomadi.el('aro-weapon-list').innerHTML)).find(b => new RegExp(nome).test(b)) || '';
+        const oc = onclickDi(bt).replace(/&quot;/g, '"');
+        const al0 = N.alert_.length;
+        if (oc) vm.runInContext(oc, vm.createContext(N));
+        N.selezionaBersaglioAro('Spara');
+        const m1 = String(T.nomadi.el('aro-modifiers-content').innerHTML);
+        const info = N.vociInfo('step-aro-modifiers').filter(v => v.titolo === 'Burst').map(v => v.testo).join(' | ');
+        const cfg = JSON.parse(J(N.aroCurrentConfig));
+        N.salvaAroCorrente(); T.giro();
+        P.goToModifiersBS('IDLE'); P.eseguiCalcoloBS(); T.giro();
+        const sc = (H.ultimiScontri || [])[0] || {};
+        return { T, N, bt, oc, al: N.alert_.slice(al0), m1, info, tasti: /tasto-burst-pieno|tasto-burst-ridotto|scelta-burst-aro|sceltaBurstAro/.test(m1),
+                 cfg, viste, burst: sc.reattivo && sc.reattivo.burst, usi: J(N.roster[0].usiSpesi || {}), t: tab(T) };
+    };
+    const a = giro('Panzerfaust (+1B)', null);
+    ok(onclickDi(a.bt) === "window.selezionaArmaAro('Panzerfaust (+1B)', false)" && classe(a.bt) === 'bottone-arma',
+       'nella lista dell ARO il bottone porta il nome grezzo: selezionaArmaAro(\'Panzerfaust (+1B)\', false)', onclickDi(a.bt));
+    ok(!a.tasti && typeof a.N.sceltaBurstAro === 'undefined', 'dopo la scelta dell arma nessun tasto del Burst, e sceltaBurstAro non c e` piu`');
+    ok(/Panzerfaust \(\+1B\): \+1 Burst anche in ARO \(Total Reaction, righe 10227-10228\)/.test(a.info) && !/\+1 Burst anche in ARO/.test(tx(a.m1)),
+       '  e la voce «Panzerfaust (+1B): +1 Burst anche in ARO (Total Reaction…)» sta nella ⓘ («Burst»), non a schermo', a.info);
+    ok(ris(a.T) && a.cfg.burst === 2 && a.cfg.burstPieno === true && a.viste[0].bp === true && a.burst === 2 && /Reag Azione: ATTACCO BS Successo al: \d+ \(o meno\) Dadi da lanciare: 2/.test(a.t),
+       'sempre BURST PIENO: cfg B2 e burstPieno true, la risposta porta burstPieno:true, all Hub B2, sul tabellone «Dadi da lanciare: 2»', [a.cfg.burst, a.cfg.burstPieno, a.viste, a.burst, (a.t.match(/Reag Azione.{0,60}/) || [])[0]]);
+    ok(a.usi === '{"PANZERFAUST":2}', '  e gli usi spesi dopo l ARO: {PANZERFAUST: 2}', a.usi);
+    const c = giro('Panzerfaust (+1B)', { PANZERFAUST: 1 });
+    ok(ris(c.T) && c.cfg.burst === 1 && c.burst === 1 && /Burst limitato agli usi residui: 1 su 2/.test(c.info) && c.usi === '{"PANZERFAUST":2}',
+       'a un uso residuo: B1 sulla pagina e all Hub, «Burst limitato agli usi residui: 1 su 2» nella ⓘ, poi {PANZERFAUST: 2}', [c.cfg.burst, c.burst, c.info, c.usi]);
+    ok(!c.tasti && c.viste[0].bp === undefined,
+       'a un uso residuo nessun tasto del Burst, e la risposta non porta burstPieno', [c.tasti, c.viste]);
+    const z = giro('Panzerfaust (+1B)', { PANZERFAUST: 2 });
+    ok(classe(z.bt) === 'bottone-arma bottone-arma-esaurito' && z.al.some(m => /Panzerfaust: usi esauriti — la truppa è in stato Scarico\. Si toglie con Reload/.test(m)) && !z.tasti,
+       'a zero usi: il bottone e` spento e al tocco dice «Panzerfaust: usi esauriti — … Scarico. Si toglie con Reload…»; niente tasti del Burst', [classe(z.bt), z.al.map(m => m.slice(0, 40))]);
+    const tb = giro('=Thunderbolt(+1B)', null, /^Reaktion Zond \(Thunderbolt\)$/);
+    ok(ris(tb.T) && !tb.tasti && tb.cfg.burstPieno === true && tb.burst === 3 && /Dadi da lanciare: 3/.test(tb.t),
+       'il profilo vero, Reaktion Zond (Thunderbolt): sempre al pieno, all Hub B3', [tb.cfg.burstPieno, tb.burst]);
+    const f = giro('Panzerfaust (+1B)', null, /^Fusilier \(Combi/);
+    ok(ris(f.T) && !f.tasti && f.cfg.burst === 1 && f.cfg.burstPieno === undefined && f.burst === 1 && f.usi === '{"PANZERFAUST":1}',
+       'CONTROPROVA: un Fusilier senza Total Reaction col Panzerfaust (+1B): B1, niente burstPieno, un uso', [f.cfg.burstPieno, f.burst, f.usi]);
+});
+// ---------------------------------------------------------------------------
+//  27 ottobre, sera (motore 2026-10-27.5, catalogo 2026-10-27.1; app.html
+//  2026-10-27.1): l'Hidden Deployment nella PROPRIA app, etichetta e icona.
+// ---------------------------------------------------------------------------
+sezione('P. Hidden Deployment: «HIDDEN» e l icona nella propria app (motore)', () => {
+    const T = creaTavolo(DIR); const M = T.nomadi.g.MotoreN5;
+    const spe = (a) => tr(P_(T, /^Spektr \(MULTI Sniper/), Object.assign({ id: 'n1', alias: 'Ombra' }, a || {}));
+    ok(typeof M.segnalinoSenzaNumero === 'function', 'premessa: il motore ha M.segnalinoSenzaNumero');
+    ok(M.etichettaMarker({ deployState: 'HIDDEN' }) === 'HIDDEN', 'M.etichettaMarker({ deployState: HIDDEN }) = «HIDDEN»', M.etichettaMarker({ deployState: 'HIDDEN' }));
+    const nas = spe({ deployState: 'HIDDEN', states: { hidden: true } });
+    ok(M.etichettaMarker(nas) === 'HIDDEN', 'lo stesso su uno Spektr vero del database, in HIDDEN', M.etichettaMarker(nas));
+    const sn = (typeof M.segnalinoSenzaNumero === 'function' ? M.segnalinoSenzaNumero : () => null)(nas, 'NOMADI') || {};
+    ok(sn.immagine === 'img/nomadi/icon_hidden.png' && sn.immagineComune === 'img/icon_hidden.png' && sn.tipo === 'HIDDEN' && sn.etichetta === 'HIDDEN',
+       'M.segnalinoSenzaNumero(u, NOMADI): img/nomadi/icon_hidden.png, la comune img/icon_hidden.png, tipo ed etichetta HIDDEN', sn);
+    const snP = (typeof M.segnalinoSenzaNumero === 'function' ? M.segnalinoSenzaNumero : () => null)(nas, 'PANOCEANIA') || {};
+    ok(snP.immagine === 'img/panoceania/icon_hidden.png', '  con PANOCEANIA la cartella di PanOceania', snP.immagine);
+    const C = ((T.nomadi.g.CATALOGO_N5 || {}).SCHIERAMENTO || {}).segnaliniSenzaNumero || {};
+    ok(J(Object.keys(C)) === '["HIDDEN"]' && (C.HIDDEN || {}).file === 'img/icon_hidden.png', 'nel catalogo: segnaliniSenzaNumero ha il solo HIDDEN, file img/icon_hidden.png', C);
+    M.numeraMarker([nas]);
+    ok(nas.numeroMarker === undefined && nas.tipoNumeroMarker === undefined, 'e l HIDDEN non prende un numero: non c e niente da distinguere al tavolo', [nas.numeroMarker, nas.tipoNumeroMarker]);
+    // CONTROPROVE
+    const vis = spe();
+    ok(M.etichettaMarker(vis) === null && (typeof M.segnalinoSenzaNumero !== 'function' || M.segnalinoSenzaNumero(vis, 'NOMADI') === null), 'CONTROPROVA: lo Spektr a vista (NORMAL): etichetta null, nessun segnalino');
+    const cam = spe({ id: 'n2', deployState: 'CAMO', states: { camo: true } }); M.numeraMarker([cam]);
+    ok(M.etichettaMarker(cam) === 'CAMO-6 1' && (typeof M.segnalinoSenzaNumero !== 'function' || M.segnalinoSenzaNumero(cam, 'NOMADI') === null), 'CONTROPROVA: lo stesso Spektr in CAMO ha ancora il numero, «CAMO-6 1», e nessun segnalino senza numero', M.etichettaMarker(cam));
+    const croc = tr(T.profilo(T.pano, /^Croc Man \(Boarding/), { id: 'p9', deployState: 'CAMO', states: { camo: true } });
+    ok(M.etichettaMarker({ deployState: 'CAMO', states: { camo: true }, tipoNumeroMarker: 'CAMO', numeroMarker: 1, skills: 'Camouflage' }) === 'CAMO 1', 'CONTROPROVA: un CAMO numerato senza Mimetismo resta «CAMO 1»');
+    ok(!/HIDDEN/.test(String(M.etichettaMarker(croc))), '  e un Croc Man in CAMO non dice HIDDEN', M.etichettaMarker(croc));
+    const pub = M.rosterPubblico([nas, vis]);
+    ok(pub.length === 1 && pub[0].id === 'n1' && !/HIDDEN|icon_hidden/.test(J(pub)), 'CONTROPROVA: M.rosterPubblico([HIDDEN, a vista]) ha la sola truppa a vista, e nessuna traccia di HIDDEN', pub.map(u => u.id + ':' + u.deployState));
+    ok(J(M.rosterPubblico([nas])) === '[]', '  il solo HIDDEN: roster pubblico vuoto');
+    const solo = { deployState: 'NORMAL', states: { hidden: true } };
+    ok(M.etichettaMarker(solo) === null, 'misura: il nascondimento solo negli stati (deployState NORMAL) non porta l etichetta, e` deployState a deciderla', M.etichettaMarker(solo));
+});
+
+sezione('P2. Hidden Deployment al tavolo: la riga nella propria app, l Hub e l avversario non la vedono', () => {
+    const T = tavolo(T => [tr(P_(T, /^Spektr \(MULTI Sniper/), { id: 'n1', alias: 'Ombra', deployState: 'HIDDEN', states: { hidden: true } }),
+                           tr(P_(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Vista' })],
+                     T => [tr(T.profilo(T.pano, /^Croc Man \(MULTI Sniper/), { id: 'p6', alias: 'Coccodrillo', deployState: 'HIDDEN', states: { hidden: true } }),
+                           FUS(T, 'p1')], 'NOMADI');
+    const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+    const righe = (d) => { d.g.currentGroup = 1; d.g.aggiornaGraficaRoster(); return String(d.el('unit-buttons-container').innerHTML); };
+    // RISCRITTE il 28 ottobre (app.html e roster_manager 2026-10-28.1,
+    // INTERFACCIA; Paolo il 27 sera: «togli la scritta HIDDEN e metti il token
+    // in grande a destra come gli altri»). Prima: una etichetta-marker «HIDDEN»
+    // con l icona piccola, fra il nome e il soprannome. Ora: nessuna scritta,
+    // il segnalino a 45 px fra le icone degli stati (rup-icone).
+    const hN = righe(T.nomadi);
+    const righeDi = (h) => String(h).split(/(?=<button)/).filter(r => /riga-unita/.test(r));
+    const iconeDi = (r) => (String(r).match(/<div class="rup-icone[^"]*">([\s\S]*?)<\/div>/) || ['', ''])[1];
+    const rN = righeDi(hN), rSpk = rN.find(r => /Spektr/.test(r)) || '', rAlg = rN.find(r => /Alguacil/.test(r)) || '';
+    ok(!/etichetta-marker/.test(hN) && !/>HIDDEN</.test(hN) && !/HIDDEN/.test(tx(hN)), 'nell app dei Nomads: nessuna etichetta, nessuna scritta HIDDEN', tx(hN).slice(0, 120));
+    ok(/<img class="icona-segnalino-hidden" src="img\/nomadi\/icon_hidden\.png"[\s\S]*?alt="HIDDEN" style="width:45px; height:45px;/.test(iconeDi(rSpk)),
+       '  il segnalino della cartella dei Nomads, 45 px, fra le icone degli stati della riga dello Spektr', iconeDi(rSpk).slice(0, 160));
+    ok(/data-rip="img\/icon_hidden\.png"/.test(iconeDi(rSpk)) && /🫥/.test(iconeDi(rSpk)), '  e i ripieghi: la copia comune img/icon_hidden.png, poi l emoji 🫥', iconeDi(rSpk).slice(0, 260));
+    ok(!/icona-segnalino-hidden/.test(rAlg) && rN.indexOf(rSpk) < rN.indexOf(rAlg), 'sulla riga dello Spektr, non su quella dell Alguacil (che viene dopo)', rN.map(r => tx(r).slice(0, 30)));
+    const hP = righe(T.pano);
+    ok(/<img class="icona-segnalino-hidden" src="img\/panoceania\/icon_hidden\.png"/.test(hP) && !/etichetta-marker/.test(hP),
+       'nell app di PanOceania il suo Croc Man nascosto: il segnalino dalla cartella di PanOceania, nessuna etichetta', (hP.match(/icona-segnalino-hidden" src="[^"]+"/) || [])[0]);
+    // L'avversario e l'Hub.
+    const nem = P.MotoreN5.rosterNemico();
+    ok(J(nem.map(u => u.id)) === '["n2"]' && !/Ombra|Spektr|HIDDEN/.test(J(nem)), 'l app di PanOceania vede il solo Alguacil: dello Spektr nessuna traccia', nem.map(u => u.id));
+    const hub = (H.gameState.nomads || []);
+    ok(J(hub.map(u => u.id)) === '["n2"]' && !(H.gameState.panoceania || []).some(u => u.id === 'p6'), 'l Hub non riceve ne lo Spektr ne il Croc Man nascosti', [hub.map(u => u.id), (H.gameState.panoceania || []).map(u => u.id)]);
+    const sporco = Object.keys(T.server).filter(k => /Ombra|Coccodrillo|icon_hidden/.test(String(T.server[k])));
+    ok(sporco.length === 0, 'e su nessun canale del server compaiono il soprannome o l icona dell HIDDEN', sporco);
+    const htmlHub = Object.keys(T.hub.elementi).map(k => T.hub.elementi[k].innerHTML).join(' ');
+    ok(!/Ombra|Coccodrillo|icon_hidden/.test(htmlHub), 'e nelle pagine dell Hub nemmeno');
+    const htmlP = Object.keys(T.pano.elementi).map(k => T.pano.elementi[k].innerHTML).join(' ');
+    ok(!/Ombra|icona-segnalino-hidden" src="img\/nomadi/.test(htmlP), 'e nelle pagine di PanOceania lo Spektr non c e');
+    // CONTROPROVA: rivelato, l'etichetta sparisce e l'Hub lo vede.
+    const u = N.roster.find(x => x.id === 'n1'); u.deployState = 'NORMAL'; u.states = {};
+    N.inviaSchieramentoAllHub('NOMADI', { roster: N.roster, strutture: [], terreni: [], motivo: 'AGGIORNAMENTO' }); T.giro();
+    const hN2 = righe(T.nomadi);
+    ok(!/etichetta-marker/.test(hN2) && !/icona-segnalino-hidden/.test(hN2) && /Ombra/.test(tx(hN2)), 'CONTROPROVA: lo Spektr rivelato (NORMAL): nessuna etichetta, nessuna icona', tx(hN2).slice(0, 120));
+    ok((H.gameState.nomads || []).some(x => x.id === 'n1') && P.MotoreN5.rosterNemico().some(x => x.id === 'n1'), '  e l Hub e PanOceania lo ricevono');
+});
+sezione('P3. SCH-01 del piano (rev 47): l Atteso sulle due app', () => {
+    const T = tavolo(T => [tr(P_(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Alg' })],
+                     T => [tr(T.profilo(T.pano, /^Croc Man \(MULTI Sniper/), { id: 'p6', alias: 'Croc', deployState: 'HIDDEN', states: { hidden: true } }),
+                           FUS(T, 'p1', { alias: 'Fus' }),
+                           tr(T.profilo(T.pano, /^Zulu-Cobra \(Triangulated Fire, Sensor\)/), { id: 'p10', alias: 'Zulu', deployState: 'CAMO', states: { camo: true } }),
+                           tr(T.profilo(T.pano, /^Fusilier \(Missile/), { id: 'p2', alias: 'Ris', deployState: 'RESERVE', states: { reserve: true } })], 'NOMADI');
+    const P = T.pano.g; P.currentGroup = 1; P.aggiornaGraficaRoster();
+    const h = String(T.pano.el('unit-buttons-container').innerHTML);
+    // RISCRITTE il 28 ottobre (INTERFACCIA 28.1): l HIDDEN non ha piu` etichetta;
+    // il suo segnalino sta fra le icone degli stati della riga del Croc Man.
+    const etich = (h.match(/<span class="etichetta-marker"[^>]*>(?:<(?:[^>"']|"[^"]*"|'[^']*')*>)*[^<]*<\/span>/g) || []).map(e => tx(e));
+    ok(J(etich) === '["CAMO-3 1"]', 'app di PanOceania: una sola etichetta, «CAMO-3 1» (Zulu-Cobra); il Croc Man in HIDDEN non ne ha', etich);
+    ok((h.match(/icona-segnalino-hidden" src="img\/panoceania\/icon_hidden\.png"/g) || []).length === 1, '  una sola icona HIDDEN, dalla cartella di PanOceania');
+    const rC = String(h).split(/(?=<button)/).find(r => /riga-unita/.test(r) && /Croc Man/.test(r)) || '';
+    ok(/<div class="rup-icone[^"]*"><img class="icona-segnalino-hidden"/.test(rC) && !/HIDDEN/.test(tx(rC)), '  fra le icone degli stati della riga del Croc Man, senza scritta', tx(rC).slice(0, 80));
+    const nem = T.nomadi.g.MotoreN5.rosterNemico();
+    ok(!nem.some(u => u.id === 'p6') && !/Croc|HIDDEN|icon_hidden/.test(J(nem)) && !(T.hub.g.gameState.panoceania || []).some(u => u.id === 'p6'),
+       'l app nomade e l Hub: il Croc Man non c e, e nemmeno la sua etichetta', nem.map(u => u.id));
+});
+
+// ---------------------------------------------------------------------------
+// Q: M.opzioniSchieramento esteso (MOTORE 2026-10-27.9). Le voci oltre NORMALE.
+const opz = (M, u) => M.opzioniSchieramento(u).map(v => v.stato);
+// Le scelte di stato della pagina dello schieramento: NORMALE e le voci del
+// motore (data-stato). I tasti dei piazzabili, sotto, non sono stati.
+const vociStato = (d) => [...String(d.el('deploy-states-content').innerHTML).matchAll(/<button class="huge-btn tasto-opzione( opzione-schieramento)?( attivo)?"(?: data-stato="([A-Z0-9_]+)")?( disabled)?(?: onclick="([^"]*)")?>([\s\S]*?)<\/button>/g)]
+    .map(x => ({ stato: x[3] || 'NORMAL', acceso: !!x[2], spento: !!x[4], clic: x[5] || '', testo: tx(x[6]), html: x[6] }))
+    .filter(v => v.stato !== 'NORMAL' || /setDeployState\(\d+, 'NORMAL'\)/.test(v.clic));
+sezione('Q. M.opzioniSchieramento: tutte le scelte oltre NORMALE, decise dal motore', () => {
+    const T = creaTavolo(DIR); const M = T.nomadi.g.MotoreN5;
+    ok(typeof M.opzioniSchieramento === 'function', 'premessa: il motore ha M.opzioniSchieramento');
+    const tutti = [].concat(T.nomadi.g.DB_NOMADI, T.nomadi.g.DB_PANOCEANIA);
+    const pr = (re) => tr(T.profilo(T.nomadi, re), { id: 'x' });
+    // I casi di MOTORE, uno per uno.
+    [[/^Spector \(Parachutist, Combat Jump\)/, '["AD"]'], [/^Bashi Bazouk/, '["AD"]'], [/^Hellcat/, '["AD"]'],
+     [/^Spektr \(MULTI Sniper/, '["CAMO","HIDDEN"]'], [/^Croc Man \(MULTI Sniper/, '["CAMO","HIDDEN"]'],
+     [/^Moran \(Surprise Attack/, '["CAMO"]'], [/^Intruder \(HMG/, '["CAMO"]'], [/^Alguacil \(Combi/, '[]']].forEach(function (c) {
+        const u = pr(c[0]);
+        ok(J(opz(M, u)) === c[1], u.nome + ': ' + c[1], opz(M, u));
+    });
+    const spec = M.opzioniSchieramento(pr(/^Spector \(Parachutist, Combat Jump\)/))[0] || {};
+    ok(spec.etichetta === 'SCHIERAMENTO AEREO' && spec.disponibile === true && spec.acceso === false && /INGRESSO IN CAMPO/.test(spec.nota) && !/[<>]/.test(spec.nota),
+       'Spector: «SCHIERAMENTO AEREO», disponibile, spento, la nota dice INGRESSO IN CAMPO ed e` testo semplice', spec);
+    ok(J(Object.keys(spec).sort()) === J(['acceso', 'disponibile', 'etichetta', 'nota', 'stato']), '  ogni voce ha i cinque campi: stato, etichetta, nota, disponibile, acceso', Object.keys(spec));
+    const spk = M.opzioniSchieramento(pr(/^Spektr \(MULTI Sniper/));
+    ok(J(spk.map(v => v.etichetta)) === J(['SEGNALINO CAMO (-6)', 'HIDDEN DEPLOYMENT']), 'Spektr: «SEGNALINO CAMO (-6)» e «HIDDEN DEPLOYMENT», in quest ordine (correzione di MOTORE: prima [HIDDEN] solo)', spk.map(v => v.etichetta));
+    ok(M.opzioniSchieramento(pr(/^Moran \(Surprise Attack/))[0].etichetta === 'SEGNALINO CAMO (-3)', 'Moran: il MOD del Mimetismo nell etichetta, «SEGNALINO CAMO (-3)»');
+    const mk = M.opzioniSchieramento({ tipo: 'MARKER', skills: '' });
+    ok(J(mk.map(v => [v.stato, v.etichetta, v.disponibile])) === J([['CAMO', 'SEGNALINO CAMO', true]]), 'il Marker delle liste vecchie (tipo MARKER, senza skill): [CAMO], «SEGNALINO CAMO», senza MOD', mk);
+    // acceso, anche coi deployState vecchi.
+    const croc = Object.assign(pr(/^Croc Man \(MULTI Sniper/), { deployState: 'CAMO_1' });
+    const vc = M.opzioniSchieramento(croc);
+    ok(vc[0].stato === 'CAMO' && vc[0].etichetta === 'SEGNALINO CAMO (-6)' && vc[0].acceso === true && vc[1].stato === 'HIDDEN' && vc[1].acceso === false && vc[1].disponibile === true,
+       'Croc Man con deployState CAMO_1: CAMO «SEGNALINO CAMO (-6)» acceso, HIDDEN spento e disponibile', vc.map(v => [v.stato, v.acceso, v.disponibile]));
+    croc.deployState = 'HIDDEN';
+    ok(J(M.opzioniSchieramento(croc).map(v => v.acceso)) === '[false,true]', '  e in HIDDEN il contrario: CAMO spento, HIDDEN acceso');
+    // Camouflage (1 Use) consumato: F07.
+    const hk = Object.assign(pr(/^Heckler \(Boarding/), { camoUsato: true });
+    const h1 = M.opzioniSchieramento(hk)[0] || {};
+    ok(h1.stato === 'CAMO' && h1.disponibile === false && h1.acceso === false && /F07/.test(h1.nota) && !/[<>]/.test(h1.nota), 'Heckler (Camouflage 1 Use) col CAMO gia` usato, NORMAL: CAMO non disponibile, spento, la nota cita F07', h1);
+    hk.deployState = 'CAMO';
+    const h2 = M.opzioniSchieramento(hk)[0] || {};
+    ok(h2.disponibile === true && h2.acceso === true && h2.nota === '', '  lo stesso in CAMO: disponibile e acceso, nota vuota («una voce accesa non e` mai spenta»)', h2);
+    ok(M.opzioniSchieramento(Object.assign(pr(/^Heckler \(Boarding/), { camoUsato: false }))[0].disponibile === true, 'CONTROPROVA: lo Heckler col CAMO ancora da usare: disponibile');
+    // L'ordine delle sei voci su una truppa di prova che le ha tutte.
+    const tutte = { tipo: 'LI', skills: 'Camouflage, Impersonation-2, Sapper, Transmutation (Hatching), Parachutist, Hidden Deployment', equip: '', states: {}, deployState: 'NORMAL' };
+    ok(J(opz(M, tutte)) === J(['CAMO', 'IMP_2', 'FOXHOLE', 'SEED', 'AD', 'HIDDEN']), 'l ordine: CAMO, IMP, FOXHOLE, SEED, AD, HIDDEN', opz(M, tutte));
+    ok(J(opz(M, { skills: 'Impersonation-1' })) === '["IMP_1"]' && J(opz(M, { skills: 'Impersonation-2' })) === '["IMP_2"]', 'Impersonation-1 da` IMP_1, Impersonation-2 IMP_2');
+    ok(M.opzioniSchieramento(Object.assign({}, tutte, { deployState: 'IMP_2' })).filter(v => v.acceso).map(v => v.stato).join() === 'IMP_2', 'deployState IMP_2: accesa la sola voce IMP');
+    // Su tutti i profili dei due database.
+    const schedeOk = [], diverse = [], accesoSpento = [];
+    const deps = ['NORMAL', 'CAMO', 'CAMO_3', 'AD', 'HIDDEN'];
+    tutti.forEach(function (p) {
+        const s = (String(p.skills || '') + ',' + String(p.equip || '')).toUpperCase();
+        const att = [];
+        if (/CAMOUFLAGE/.test(s) || p.tipo === 'MARKER') att.push('CAMO');
+        if (/PARACHUTIST|COMBAT JUMP|AIRBORNE DEPLOYMENT|AD:/.test(s)) att.push('AD');
+        if (/HIDDEN DEPLOYMENT/.test(s)) att.push('HIDDEN');
+        const u = tr(p, { id: 'x' });
+        if (J(opz(M, u)) !== J(att)) diverse.push(p.nome);
+        deps.forEach(function (d) {
+            M.opzioniSchieramento(Object.assign({}, u, { deployState: d, camoUsato: true })).forEach(function (v) {
+                if (v.acceso && !v.disponibile) accesoSpento.push(p.nome + ' ' + d);
+                const giusto = (v.stato === 'CAMO') ? d.indexOf('CAMO') === 0 : d === v.stato;
+                if (v.acceso !== giusto || typeof v.nota !== 'string' || /[<>]/.test(v.nota)) schedeOk.push(p.nome + ' ' + d + ' ' + v.stato);
+            });
+        });
+    });
+    ok(tutti.length > 700 && diverse.length === 0, 'su ' + tutti.length + ' profili: la voce c e esattamente per chi ha Camouflage (o e` MARKER), Parachutist / Combat Jump / AD, Hidden Deployment (' + diverse.length + ' diversi)', diverse.slice(0, 5));
+    ok(accesoSpento.length === 0, '  con camoUsato e cinque deployState: nessuna voce accesa e spenta insieme', accesoSpento.slice(0, 5));
+    ok(schedeOk.length === 0, '  acceso solo sullo stato attuale (CAMO anche per CAMO_x), la nota sempre testo semplice', schedeOk.slice(0, 5));
+    // Misura: niente unita`.
+    let vuota; try { vuota = J(M.opzioniSchieramento(null)); } catch (e) { vuota = 'eccezione: ' + e.message; }
+    ok(vuota === '[]', 'misura: M.opzioniSchieramento(null) = []', vuota);
+});
+
+sezione('Q2. Gli stati di schieramento sulla pagina vera, fino all Hub (roster_manager 27.3)', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+    const voci = vociStato;
+    const apri = (d, i) => { d.g.apriSchieramento(); d.g.apriGruppoDeploy(1); d.g.apriDeployStati(i); return voci(d); };
+    // PanOceania: il Croc Man (#6 del piano) e un Fusilier.
+    P.roster = [tr(T.profilo(T.pano, /^Croc Man \(MULTI Sniper/), { id: 'p6', alias: 'Croc' }), FUS(T, 'p1')];
+    N.roster = [tr(P_(T, /^Spector \(Parachutist, Combat Jump\)/), { id: 'n29', alias: 'Spec' }), tr(P_(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Alg' })];
+    let v = apri(T.pano, 0);
+    ok(J(v.map(x => x.stato)) === J(['NORMAL', 'CAMO', 'HIDDEN']) && J(v.map(x => x.testo)) === J(['NORMALE', 'SEGNALINO CAMO (-6)', 'HIDDEN DEPLOYMENT']),
+       'Croc Man: NORMALE, SEGNALINO CAMO (-6), HIDDEN DEPLOYMENT, in quest ordine', v.map(x => x.testo));
+    ok(v[0].acceso && !v[1].acceso && !v[2].acceso, '  NORMALE acceso (lo stato attuale), le altre no');
+    ok(/<img class="icona-segnalino-hidden" [^>]*src="img\/panoceania\/icon_hidden\.png"/.test(v[2].html), '  HIDDEN con l icona della cartella di PanOceania', v[2].html.slice(0, 120));
+    const notaH = (P.MotoreN5.opzioniSchieramento(P.roster[0]).find(x => x.stato === 'HIDDEN') || {}).nota;
+    // RISCRITTO il 28 ottobre (roster_manager 2026-10-28.1, INTERFACCIA): la nota di
+    // una voce accesa va nella ⓘ della pagina, non sotto il tasto (resta sotto solo
+    // per una voce spenta). Prima: <div class="nota-opzione"> sotto HIDDEN.
+    ok(!!notaH && P.vociInfo('step-deploy-states').some(x => x.testo === notaH && x.titolo === 'HIDDEN DEPLOYMENT') && String(T.pano.el('deploy-states-content').innerHTML).indexOf(notaH) < 0,
+       '  la nota del motore sta nella ⓘ (titolo HIDDEN DEPLOYMENT, il suo tasto), non sotto il tasto');
+    // Il tocco vero su CAMO, poi la riapertura.
+    vm.runInContext(v[1].clic, T.pano.g);
+    ok(P.roster[0].deployState === 'CAMO' && P.roster[0].states.camo === true, 'toccato SEGNALINO CAMO (-6): deployState CAMO, states.camo', [P.roster[0].deployState, P.roster[0].states]);
+    v = apri(T.pano, 0);
+    ok(J(v.map(x => x.acceso)) === '[false,true,false]', '  riaperta la pagina: accesa la voce CAMO, NORMALE no', v.map(x => x.acceso));
+    // I Nomadi: lo Spector in Schieramento Aereo, l'Alguacil solo NORMALE.
+    let w = apri(T.nomadi, 0);
+    ok(J(w.map(x => x.testo)) === J(['NORMALE', 'SCHIERAMENTO AEREO']), 'Spector: NORMALE e SCHIERAMENTO AEREO', w.map(x => x.testo));
+    vm.runInContext(w[1].clic, T.nomadi.g);
+    ok(N.roster[0].deployState === 'AD', '  toccato: deployState AD', N.roster[0].deployState);
+    ok(J(apri(T.nomadi, 1).map(x => x.stato)) === '["NORMAL"]', 'CONTROPROVA: l Alguacil ha solo NORMALE');
+    // Conferma dei due schieramenti, e cosa arriva all'Hub e all'avversario.
+    P.confermaSchieramento(); N.confermaSchieramento(); T.giro();
+    const hN = (H.gameState.nomads || []).map(u => u.id), hP = (H.gameState.panoceania || []);
+    ok(J(hN) === '["n1"]' && !P.MotoreN5.rosterNemico().some(u => u.id === 'n29'), 'all Hub e a PanOceania lo Spector non arriva (fuori dal tavolo), l Alguacil si`', hN);
+    const crocHub = hP.find(u => u.id === 'p6') || {};
+    ok(crocHub.nome === 'MARKER' && !/Croc Man|MULTI Sniper/.test(J(crocHub)), 'il Croc Man in CAMO arriva all Hub come MARKER, senza nome ne` armi', [crocHub.nome, crocHub.alias]);
+    const visto = N.MotoreN5.rosterNemico().find(u => u.id === 'p6') || {};
+    ok(/SEGNALINO MIMETICO \(-6\) 1/.test(String(visto.alias)) && !/Croc/.test(J(visto)), '  e l app dei Nomadi lo vede «SEGNALINO MIMETICO (-6) 1»', visto.alias);
+    // Il Moran: tiro di Infiltrazione fallito, poi fuori dal CAMO.
+    const T2 = creaTavolo(DIR); const N2 = T2.nomadi.g;
+    N2.roster = [tr(P_(T2, /^Moran \(Surprise Attack/), { id: 'n19', alias: 'Moran', deployState: 'CAMO', states: { camo: true } })];
+    N2.confirm = () => true;
+    N2.apriSchieramento(); N2.apriGruppoDeploy(1); N2.apriDeployStati(0);
+    const pagM = String(T2.nomadi.el('deploy-states-content').innerHTML);
+    // RISCRITTO il 28 ottobre: il tasto CAMO ha dentro il div voce-con-icona col
+    // segnalino (prima solo testo, [^<]*). Si guarda che fra il tasto CAMO e
+    // quello del tiro fallito non ci siano altri tasti.
+    const tiro = (pagM.match(/data-stato="CAMO"(?:(?!<button)[\s\S])*?<\/button>\s*<button class="tasto-uscita"[^>]*onclick="(window\.infiltrazioneFallita\(0\))"/) || [])[1];
+    ok(!!tiro, 'Moran in CAMO: sotto la voce CAMO il tasto TIRO DI INFILTRAZIONE FALLITO');
+    if (tiro) vm.runInContext(tiro, T2.nomadi.g);
+    ok(N2.roster[0].camoUsato === true && N2.roster[0].deployState === 'CAMO', '  toccato e confermato: camoUsato, e la truppa resta in CAMO', [N2.roster[0].camoUsato, N2.roster[0].deployState]);
+    let m = voci(T2.nomadi);
+    const camoM = m.find(x => x.stato === 'CAMO') || {};
+    ok(camoM.acceso && !camoM.spento && !/infiltrazioneFallita/.test(String(T2.nomadi.el('deploy-states-content').innerHTML)), '  la voce CAMO resta accesa e toccabile, il tasto del tiro non c e piu`', camoM);
+    vm.runInContext((m.find(x => x.stato === 'NORMAL') || {}).clic || 'void 0', T2.nomadi.g);
+    N2.apriDeployStati(0); m = voci(T2.nomadi);
+    const camoM2 = m.find(x => x.stato === 'CAMO') || {};
+    const notaF07 = (N2.MotoreN5.opzioniSchieramento(N2.roster[0])[0] || {}).nota;
+    ok(N2.roster[0].deployState === 'NORMAL' && camoM2.spento && !camoM2.acceso && !camoM2.clic && /F07/.test(notaF07) &&
+       String(T2.nomadi.el('deploy-states-content').innerHTML).indexOf('<div class="nota-opzione">' + notaF07 + '</div>') >= 0,
+       'tornato NORMALE: la voce CAMO e` spenta (disabled, nessun tocco), con la nota F07 del motore', camoM2);
+});
+
+sezione('Q3. SCH-09 del piano (rev 48): l Atteso', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+    const testi = (d, i) => { d.g.apriSchieramento(); d.g.apriGruppoDeploy(1); d.g.apriDeployStati(i); return vociStato(d).map(v => v.testo); };
+    P.roster = [tr(T.profilo(T.pano, /^Croc Man \(MULTI Sniper/), { id: 'p6' })];
+    N.roster = [tr(P_(T, /^Alguacil \(Combi/), { id: 'n1' }), tr(P_(T, /^Zero \(Hacker, Killer/), { id: 'n9' })];
+    ['Spector (Parachutist, Combat Jump)', 'Moran (Surprise Attack [-3], Camouflage [1 Use], Combi Rifle)'].forEach(n => N.roster.push(tr(P_(T, new RegExp('^' + n.replace(/[()[\]]/g, '\\$&') + '$')), { id: n })));
+    ok(J(testi(T.pano, 0)) === J(['NORMALE', 'SEGNALINO CAMO (-6)', 'HIDDEN DEPLOYMENT']), 'Croc Man (#6): NORMALE, SEGNALINO CAMO (-6), HIDDEN DEPLOYMENT', testi(T.pano, 0));
+    ok(J(testi(T.nomadi, 0)) === '["NORMALE"]', 'Alguacil (#1): solo NORMALE', testi(T.nomadi, 0));
+    ok(J(testi(T.nomadi, 1)) === J(['NORMALE', 'SEGNALINO CAMO (-3)']), 'Zero (#9): NORMALE, SEGNALINO CAMO (-3)', testi(T.nomadi, 1));
+    ok(J(testi(T.nomadi, 2)) === J(['NORMALE', 'SCHIERAMENTO AEREO']), 'Spector (#29): NORMALE, SCHIERAMENTO AEREO', testi(T.nomadi, 2));
+    ok(J(testi(T.nomadi, 3)) === J(['NORMALE', 'SEGNALINO CAMO (-3)']), 'Moran (#19): NORMALE, SEGNALINO CAMO (-3)', testi(T.nomadi, 3));
+    ok(!/RISERVA/.test(String(T.nomadi.el('deploy-states-content').innerHTML)), '  e da nessuna parte la vecchia «RISERVA / AD»');
 });
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
 process.exit(falliti ? 1 : 0);

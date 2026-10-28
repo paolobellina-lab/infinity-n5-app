@@ -1,4 +1,4 @@
-// @versione 2026-10-06.1 | test_sostituzione_unita.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-27.1 | test_sostituzione_unita.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 6 ottobre 2026.
 //
@@ -9,6 +9,7 @@
 //   2. Soppressione annullata in ARO (logica_aro.js)   -> l'Hub VIENE avvisato
 //   3. Infiltrazione fallita (roster_manager.js)       -> in schieramento: NO
 //   4. Deployable piazzato in schieramento (idem)      -> in schieramento: NO
+//      (dal 27 ottobre col Minelayer: piazzaConMinelayer, un pezzo, DEP-10)
 //  Si entra dai comandi dei pulsanti; i profili sono del database. L'invio
 //  all'Hub si conta sul mittente unico, window.inviaSchieramentoAllHub.
 //
@@ -119,14 +120,30 @@ ok(g.roster[0] === heck, 'sullo stesso oggetto');
 ok(g.invii.length === 0, 'e all\'Hub NON parte niente (prima della conferma dello schieramento)', g.invii);
 
 console.log('\n--- 4. Deployable piazzato in schieramento: NIENTE invio ---');
+// RISCRITTO il 27 ottobre (DEP-10, MOTORE 26.1; roster_manager 26.2). Chi ha
+// MINELAYER piazza in schieramento dal percorso del motore,
+// window.faseSchieramento.minelayer (bottone piazzaConMinelayer): UN pezzo, o
+// il numero fra parentesi, con le due domande dei requisiti. Prima passava da
+// schieraPiazzabile(0, 0), senza limite e senza domande.
+// E il portatore NON e` piu` lo stesso oggetto: minelayer.piazza mette in
+// roster[i] il portatore aggiornato dal motore (portatoreAggiornato). In
+// schieramento va bene: nessuno tiene un riferimento, e l'Hub non e` avvisato.
+// Si controlla quindi il roster, non l'identita` dell'oggetto.
 g = pagina2(/^Puppet Masters \(Minelayer\)/);
+// Le due domande: nemici nell'area NO, dentro la Zona di Schieramento SI`.
+g.confirm = (t) => { g.domande.push(String(t)); return !/nemiche|Marker Mimetici/i.test(String(t)); };
 const html = g.bottoniDeployables(0);
-ok(/schieraPiazzabile\(0, 0\)/.test(html), 'premessa: il Minelayer del database ha qualcosa da piazzare', String(html).replace(/<[^>]+>/g, ' ').slice(0, 200));
-const port = g.roster[0], primaUsi = JSON.stringify(port.usiSpesi || null); g.invii.length = 0;
-g.schieraPiazzabile(0, 0);
+const mm = String(html).match(/piazzaConMinelayer\(0, (\d+)\)/);
+ok(!!mm, 'premessa: il Minelayer del database ha qualcosa da piazzare, col bottone del Minelayer', String(html).replace(/<[^>]+>/g, ' ').slice(0, 200));
+ok(!/schieraPiazzabile\(/.test(html), 'e non piu` col percorso senza limite (schieraPiazzabile)');
+const primaUsi = JSON.stringify(g.roster[0].usiSpesi || null); g.invii.length = 0;
+if (mm) g.piazzaConMinelayer(0, +mm[1]);
 ok(g.roster.length === 2 && g.roster[1].deployable === true, 'il gettone entra nel roster', g.roster.map(x => x.nome || x.alias));
-ok(g.roster[0] === port && JSON.stringify(port.usiSpesi || null) !== primaUsi, 'e il portatore ha l\'uso scalato, sullo stesso oggetto', { prima: primaUsi, dopo: port.usiSpesi });
+ok(g.roster[0].id === 'u1' && g.roster[0].minelayerUsati === 1, 'e il portatore (stesso id) ha un pezzo del Minelayer speso', { minelayerUsati: g.roster[0].minelayerUsati, usiPrima: primaUsi, usiDopo: g.roster[0].usiSpesi });
 ok(g.invii.length === 0, 'e all\'Hub NON parte niente', g.invii);
+ok(g.domande.length >= 1, 'le domande dei requisiti si fanno', g.domande.length);
+g.piazzaConMinelayer(0, +((mm || [])[1] || 0));
+ok(g.roster.length === 2, 'CONTROPROVA: un secondo piazzamento non passa (un pezzo solo)', g.roster.length);
 
 console.log('\n' + passati + ' passati, ' + falliti + ' falliti');
 process.exit(falliti ? 1 : 0);

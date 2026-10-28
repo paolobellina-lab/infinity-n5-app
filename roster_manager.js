@@ -1,4 +1,4 @@
-// @versione 2026-10-26.2 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-28.2 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -242,8 +242,8 @@ window.renderStructures = () => {
                 ${u.skills && u.skills !== '-' ? `<span style="color:#777; font-size:12px;"> | ${u.skills}</span>` : ''}
                 ${window.modelloStrutturaMancante(u) ? `<div style="color:#ff6666; font-size:13px; font-weight:bold;">\u26a0\ufe0f ${window.cosaFareStrutturaMancante(u)}</div>` : ''}</div>
             <div style="display:flex; align-items:center; gap:14px;">
-                <div style="cursor:pointer; font-size:18px;" title="Assegna o cambia il soprannome" onclick="window.rinominaStruttura(${i})">✏️</div>
-                <div class="del-btn" style="color:red; cursor:pointer;" onclick="window.activeStructures.splice(${i}, 1); window.renderStructures();">X</div>
+                <button type="button" class="tasto-riga-lista" title="Assegna o cambia il soprannome" aria-label="Soprannome" onclick="window.rinominaStruttura(${i})">✏️</button>
+                <button type="button" class="tasto-riga-lista togli del-btn" aria-label="Togli" onclick="window.activeStructures.splice(${i}, 1); window.renderStructures();">X</button>
             </div>
         </div>`;
     });
@@ -426,8 +426,8 @@ window.disegnaRigheAmbigue = () => {
     box.innerHTML = `<div style="color:#ffcc66; font-size:14px; margin:8px 0;">\u26a0\ufe0f ${lista.length} ${lista.length === 1 ? 'riga ambigua' : 'righe ambigue'}: pi\u00f9 profili hanno gli stessi punti. Scegli tu quale.</div>` +
         lista.map((a, i) => `<div class="riga-ambigua" style="border:1px solid #886600; border-radius:5px; padding:8px; margin-bottom:8px; background:#1a1400;">
             <div style="color:#ddd; font-size:13px; margin-bottom:6px;">G${a.gruppo} \u00b7 ${a.riga.replace(/</g, '&lt;')}</div>
-            ${a.candidati.map(c => `<button class="btn-status btn-small" style="margin:3px 0; width:100%;" onclick="window.scegliRigaAmbigua(${i}, '${String(c.id).replace(/'/g, "\\'")}')">${c.nome}</button>`).join('')}
-            <button class="btn-status btn-small" style="margin:3px 0; width:100%; color:#888; border-color:#555;" onclick="window.scegliRigaAmbigua(${i}, null)">NESSUNO: SALTA LA RIGA</button>
+            ${a.candidati.map(c => `<button type="button" class="scelta-ambigua" onclick="window.scegliRigaAmbigua(${i}, '${String(c.id).replace(/'/g, "\\'")}')">${c.nome}</button>`).join('')}
+            <button type="button" class="scelta-ambigua salta" onclick="window.scegliRigaAmbigua(${i}, null)">NESSUNO: SALTA LA RIGA</button>
         </div>`).join('');
 };
 
@@ -635,9 +635,9 @@ window.renderRoster = () => {
     window.roster.forEach((u, i) => {
         const armaCorta = u.weapon.split('/')[0].split(',')[0];
         container.innerHTML += `<div class="roster-item"><div><b style="color:${groupColor};">[G${u.combatGroup}]</b> <b>${u.alias}</b> <span style="color:#aaa;">| ${armaCorta}</span></div>
-            <div style="display:flex; align-items:center; gap:14px;">
-                <div style="cursor:pointer; font-size:18px;" title="Assegna o cambia il soprannome" onclick="window.rinominaUnita(${i})">✏️</div>
-                <div class="del-btn" onclick="window.removeUnit(${i})">X</div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="tasto-riga-lista" title="Assegna o cambia il soprannome" aria-label="Soprannome" onclick="window.rinominaUnita(${i})">✏️</button>
+                <button type="button" class="tasto-riga-lista togli del-btn" aria-label="Togli" onclick="window.removeUnit(${i})">X</button>
             </div></div>`;
     });
 };
@@ -812,12 +812,24 @@ window.sendDataToServer = () => {
 };
 
 // --- FASE DI DISPIEGAMENTO (FOG OF WAR, DEPLOYABLES) ---
+// 27 ottobre sera: la ⓘ delle schermate dello schieramento (app.html).
+window.passoInfo = (idStep) => { if (typeof window.segnaStepCorrente === 'function') window.segnaStepCorrente(idStep); };
+// tasto: il data-nota del bottone a cui la nota appartiene (28 ottobre:
+// con l'opzione "sotto i tasti" la nota si disegna li`).
+window.infoSchieramento = (titolo, testo, tasto) => {
+    // Dal 28 ottobre passa da M.nota (MOTORE): senza app.html resta in window.INFO.
+    const M = window.MotoreN5;
+    if (M && typeof M.nota === 'function') M.nota('step-deploy-states', titolo, testo, { tipo: 'regole', tasto: tasto || '' });
+    else console.error('\u26d4 M.nota assente (serve motore_regole_n5.js dalla 2026-10-28.1): spiegazione persa: ' + titolo);
+};
+
 window.apriSchieramento = () => {
     if(window.roster.length === 0) return alert("Inserisci almeno un'unità prima di schierare!");
     
     document.getElementById('setup').style.display = 'none';
     document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
     document.getElementById('step-deploy-groups').style.display = 'flex';
+    window.passoInfo('step-deploy-groups');
     
     const container = document.getElementById('deploy-groups-container');
     container.innerHTML = "";
@@ -840,12 +852,14 @@ window.apriSchieramento = () => {
 window.tornaAlSetup = () => {
     document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
     document.getElementById('setup').style.display = 'block';
+    window.passoInfo('setup');
 };
 
 window.apriGruppoDeploy = (g) => {
     window.deployGroup = g;
     document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
     document.getElementById('step-deploy-units').style.display = 'flex';
+    window.passoInfo('step-deploy-units');
     window.renderDeployUnits();
 };
 
@@ -1194,82 +1208,80 @@ window.renderDeployUnits = () => {
     // nessuno indovina. Ora ogni unita` ha il suo pulsante, e il tocco lungo
     // resta come scorciatoia per chi lo conosce.
     container.innerHTML = window.pannelloTiriSchieramento() +
-        `<p style="color:#aaa; font-size:14px; text-align:center;">Tocco rapido = Schieramento e piazzamento<br>Tocco prolungato = Stati e Fireteam<br>Tocco sull'icona = Cambia foto</p>`;
+        `<p class="sottotitolo-step">Tocco rapido = Schieramento e piazzamento<br>Tocco prolungato = Stati e Fireteam<br>Tocco sulla foto = Cambia foto</p>`;
 
     let isNomads = window.isNomadsApp();
-    let aliasColor = isNomads ? 'var(--nomad-orange)' : '#00ffff';
-    let btnBorder = isNomads ? 'var(--nomad-orange)' : '#0088ff';
     let markerColor = isNomads ? 'orange' : '#00ccff';
-    let hiddenColor = isNomads ? 'red' : '#0088ff';
     let reserveColor = isNomads ? 'yellow' : '#00ffff';
 
     let truppeDelGruppo = window.roster.filter(u => parseInt(u.combatGroup) === window.deployGroup);
 
-    truppeDelGruppo.forEach(u => {
-        let originalIndex = window.roster.indexOf(u); 
-        let nomePuro = (u.nome || u.name || "").split('(')[0].trim();
-        let aliasDisplay = u.alias ? `<div style="color:${aliasColor}; font-size:15px; font-style:italic; margin-top:2px; line-height:1;">"${u.alias}"</div>` : "";
-        
-        // La foto e` quella ASSEGNATA (7 ottobre): la regola sta in un posto
-        // solo, window.fotoUnita (app.html).
-        let imgSrc = (typeof window.fotoUnita === 'function') ? window.fotoUnita(u) : '';
+    // 27 ottobre (collaudo grafico, B02-B03): la riga e` quella di tutti gli
+    // altri elenchi, window.rigaUnitaConFoto (app.html), con la foto, la
+    // forma, il soprannome. Prima era scritta a mano qui: un'altra forma,
+    // e senza foto un'immagine ROTTA col testo "TOCCA PER LA FOTO". Ora
+    // senza foto c'e` la sigla del tipo, e il tocco sulla foto (o sulla
+    // sigla) apre la galleria (opzione toccoFoto). Le note di schieramento
+    // vanno nella fascia bassa (opzione sotto).
+    if (typeof window.rigaUnitaConFoto !== 'function') {
+        console.error('⛔ window.rigaUnitaConFoto manca (app.html non caricato?): lista dello schieramento senza la riga con la foto.');
+    }
 
-        let stateLabel = "";
+    truppeDelGruppo.forEach(u => {
+        let originalIndex = window.roster.indexOf(u);
+        const note = [];
+        const dep = String(u.deployState || '').toUpperCase();
         // In N5 il Marker Mimetico e` UNO SOLO (chat REGOLE, regolamento
         // v5.1.1 riga 13607): il segnalino porta il MOD del Mimetismo della
-        // truppa, se ce l'ha, e nient'altro. I "livelli" CAMO_1/CAMO_2 non
-        // esistono piu`: erano un ricordo del TO Camouflage di N3.
-        // Si riconosce QUALUNQUE deployState che cominci per CAMO — cosi`
-        // le liste salvate prima di oggi (CAMO_0/1/2/3/6) e quello che scrive
-        // ancora logica_stati.js non perdono il segnalino. E` la stessa
-        // regola che usa il motore (indexOf('CAMO') === 0).
-        if (String(u.deployState || '').indexOf('CAMO') === 0) {
-            stateLabel += `<br><span style='color:${markerColor}; font-size:14px;'>[ SEGNALINO CAMO${window.testoMimetismo(u)} ]</span>`;
-        }
-        if(u.deployState === "IMP_1") stateLabel += `<br><span style='color:${markerColor}; font-size:14px;'>[ IMP-1 ]</span>`;
-        if(u.deployState === "IMP_2") stateLabel += `<br><span style='color:${markerColor}; font-size:14px;'>[ IMP-2 ]</span>`;
-        if(u.deployState === "HIDDEN") stateLabel += `<br><span style='color:${hiddenColor}; font-size:14px;'>[ HIDDEN DEPLOYMENT ]</span>`;
-        if(u.deployState === "RESERVE") stateLabel += `<br><span style='color:${reserveColor}; font-size:14px;'>[ RISERVA / AD ]</span>`;
-        
-        if(u.deployState === "FOXHOLE") stateLabel += `<br><span style='color:#ff8800; font-size:14px;'>[ FOXHOLE ]</span>`;
-        if(u.deployState === "SEED") stateLabel += `<br><span style='color:#00ff66; font-size:14px;'>[ SEED-EMBRYO ]</span>`;
-        if(u.deployState === "HOLOMASK") stateLabel += `<br><span style='color:#cc00ff; font-size:14px;'>[ HOLOMASK ]</span>`;
-
-        if(u.tipo === "HOLOECHO") stateLabel += `<br><span style='color:#00ffff; font-size:14px;'>[ OLO-ECO ]</span>`;
+        // truppa, se ce l'ha, e nient'altro. Si riconosce QUALUNQUE
+        // deployState che cominci per CAMO (liste salvate con CAMO_0..6).
+        if (dep.indexOf('CAMO') === 0) note.push(`<span style='color:${markerColor};'>[ SEGNALINO CAMO${window.testoMimetismo(u)} ]</span>`);
+        if (dep === "IMP_1") note.push(`<span style='color:${markerColor};'>[ IMP-1 ]</span>`);
+        if (dep === "IMP_2") note.push(`<span style='color:${markerColor};'>[ IMP-2 ]</span>`);
+        // 27 ottobre (MOTORE 27.5): con l'icona dell'Hidden Deployment (window.iconaSegnalinoSenzaNumero, app.html).
+        // 27 ottobre sera (Paolo): niente scritta [ HIDDEN DEPLOYMENT ]: il
+        // segnalino grande sta con le icone degli stati (vedi destra, sotto).
+        // 27 ottobre (BS-29): lo Schieramento Aereo e` lo stato 'AD'
+        // (M.opzioniSchieramento). La "Riserva" del regolamento non e` uno
+        // stato: una lista salvata prima di oggi con 'RESERVE' lo dice, e la
+        // truppa si rimette con la pagina degli stati.
+        if (dep === "AD") note.push(`<span class='etichetta-ad' style='color:${reserveColor};'>[ SCHIERAMENTO AEREO ]</span>`);
+        if (dep === "RESERVE") note.push(`<span class='etichetta-riserva-vecchia' style='color:#ffaa66;'>[ RISERVA: non e\` uno stato, sceglilo di nuovo ]</span>`);
+        if (dep === "FOXHOLE") note.push(`<span style='color:#ff8800;'>[ FOXHOLE ]</span>`);
+        if (dep === "SEED") note.push(`<span style='color:#00ff66;'>[ SEED-EMBRYO ]</span>`);
+        if (dep === "HOLOMASK") note.push(`<span style='color:#cc00ff;'>[ HOLOMASK ]</span>`);
+        if (u.tipo === "HOLOECHO") note.push(`<span style='color:#00ffff;'>[ OLO-ECO ]</span>`);
         // 26 ottobre: piloti a bordo, repliche (Decoy, Holoecho) e HoloMask.
-        if (String(u.deployState || '').toUpperCase() === 'A_BORDO') {
+        if (dep === 'A_BORDO') {
             const tag = (window.roster || []).find(t => t && t.id === u.aBordoDi);
-            stateLabel += `<br><span class='etichetta-a-bordo' style='color:#ccccff; font-size:14px;'>[ A BORDO ${tag ? 'DEL ' + String(tag.nome || tag.name || 'TAG').split('(')[0].trim().toUpperCase() : 'DEL TAG'}: NON SI SCHIERA ]</span>`;
+            note.push(`<span class='etichetta-a-bordo' style='color:#ccccff;'>[ A BORDO ${tag ? 'DEL ' + String(tag.nome || tag.name || 'TAG').split('(')[0].trim().toUpperCase() : 'DEL TAG'}: NON SI SCHIERA ]</span>`);
         }
         const Mr = window.MotoreN5;
-        if (u.replica) stateLabel += `<br><span class='etichetta-replica' style='color:#99ffff; font-size:14px;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'COPIA OLOGRAFICA'} ${u.numeroReplica || ''} \u2014 REPLICA ]</span>`;
-        else if (u.gruppoRepliche) stateLabel += `<br><span class='etichetta-replica' style='color:#99ffff; font-size:14px;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'} ${u.numeroReplica || ''} \u2014 VERA ]</span>`;
+        if (u.replica) note.push(`<span class='etichetta-replica' style='color:#99ffff;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'COPIA OLOGRAFICA'} ${u.numeroReplica || ''} — REPLICA ]</span>`);
+        else if (u.gruppoRepliche) note.push(`<span class='etichetta-replica' style='color:#99ffff;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'} ${u.numeroReplica || ''} — VERA ]</span>`);
         if (u.states && u.states.holomask && Mr && typeof Mr.mostraComeHolomask === 'function') {
             const mc = Mr.mostraComeHolomask(u);
-            stateLabel += `<br><span class='etichetta-holomask' style='color:#cc00ff; font-size:14px;'>[ HOLOMASK: SEMBRA ${mc ? String(mc.nome).toUpperCase() : '?'} ]</span>`;
+            note.push(`<span class='etichetta-holomask' style='color:#cc00ff;'>[ HOLOMASK: SEMBRA ${mc ? String(mc.nome).toUpperCase() : '?'} ]</span>`);
         }
 
-        container.innerHTML += `
-            <button class="huge-btn" style="background:#111; border:2px solid ${btnBorder}; padding:10px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; width:100%; max-height:120px; overflow:hidden;"
-                
-                onpointerdown="window.startDeployPress(${originalIndex}, event)" 
-                onpointerup="window.endDeployPress(${originalIndex})" 
+        const gesti = `onpointerdown="window.startDeployPress(${originalIndex}, event)"
+                onpointerup="window.endDeployPress(${originalIndex})"
                 onpointermove="window.moveDeployPress(event)"
-                onpointercancel="window.cancelDeployPress()"
-                oncontextmenu="return false;">
-                
-                <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center; text-align:center;">
-                    <div style="font-size:22px; line-height:1; color:#fff; font-weight:bold;">${nomePuro}${stateLabel}</div>
-                    ${aliasDisplay}
-                </div>
+                onpointercancel="window.cancelDeployPress()"`;
+        const sotto = note.length ? `<div class="note-schieramento" style="font-size:var(--fs-s, 14px); line-height:1.3; margin-top:2px; white-space:normal;">${note.join('<br>')}</div>` : '';
 
-                <img src="${imgSrc}" style="width:70px; height:70px; flex-shrink:0; object-fit:contain; margin-left:15px; background: rgba(0,0,0,0.5); border-radius:5px; border: 1px solid #444; position:relative; z-index:10; color:#555; text-align:center; font-size:10px;" 
-                    alt="TOCCA PER LA FOTO"
-                    onerror="this.onerror=null; this.src=''; this.style.backgroundColor='#222';" 
-                    onpointerdown="event.stopPropagation()" 
-                    onclick="window.cambiaIconaDeploy(event, ${originalIndex})">
-            </button>
-        `;
+        if (typeof window.rigaUnitaConFoto === 'function') {
+            // Il segnalino dell'Hidden Deployment sta con le icone degli
+            // stati (window.generaIconeStati, app.html), grande come loro.
+            container.innerHTML += window.rigaUnitaConFoto(u, {
+                fazione: 'PROPRIA', opacita: '1',
+                attributi: gesti, sotto: sotto,
+                toccoFoto: `window.cambiaIconaDeploy(event, ${originalIndex})`
+            });
+        } else {
+            const nomePuro = (u.nome || u.name || "").split('(')[0].trim();
+            container.innerHTML += `<button class="huge-btn" style="width:100%; margin-bottom:10px;" ${gesti} oncontextmenu="return false;">${nomePuro}${sotto}</button>`;
+        }
     });
 };
 
@@ -1377,7 +1389,7 @@ window.bottoneRemDriver = (index) => {
     }
 
     return rem.map(r => `
-        <button class="btn-status" style="margin:4px 0; border-color:#8888cc; color:#aab4ff;"
+        <button class="huge-btn tasto-opzione"
             onclick="window.assegnaRemDriverA(${index}, '${String(r.id).replace(/'/g, "\\'")}')">
             \u{1F916} REMDRIVER \u2192 ${r.alias || r.nome}
         </button>`).join('');
@@ -1403,104 +1415,117 @@ window.assegnaRemDriverA = (indexPilota, idRem) => {
     if (window.renderDeployUnits) window.renderDeployUnits();
 };
 
+// 27 ottobre sera (collaudo, B07): nella scelta HoloMask c'erano due
+// INDIETRO uno sotto l'altro, quello della scelta (al passo prima) e quello
+// dello step (alla lista). Durante la scelta quello dello step si nasconde.
+window.indietroDelloStepStati = (visibile) => {
+    const b = document.getElementById('indietro-deploy-stati');
+    if (b && b.style) b.style.display = visibile ? '' : 'none';
+};
+
+// L'icona di uno stato di schieramento, da mettere accanto alla scritta del
+// suo tasto: il segnalino dell'Hidden Deployment (M.segnalinoSenzaNumero),
+// l'icona del CAMO e quella dell'IMP (cartella dell'esercito, poi comune in
+// img/, poi l'emoji). '' per gli altri stati.
+window.iconaStatoSchieramento = (stato) => {
+    const px = 34;
+    if (stato === 'HIDDEN') return (typeof window.iconaSegnalinoSenzaNumero === 'function') ? window.iconaSegnalinoSenzaNumero({ deployState: 'HIDDEN' }, null, px) : '';
+    const file = stato === 'CAMO' ? 'icon_camo' : stato === 'IMP_1' ? 'icon_imp1' : stato === 'IMP_2' ? 'icon_imp2' : null;
+    if (!file || typeof window.attributiIconaStato !== 'function') return '';
+    const emoji = stato === 'CAMO' ? '\ud83d\udc7b' : '\ud83c\udfad';
+    return `<img class="icona-stato-schieramento" ${window.attributiIconaStato(file, window.fazionePropria(), `<span style=&quot;font-size:${px - 6}px; line-height:1;&quot;>${emoji}</span>`)} alt="" style="width:${px}px; height:${px}px; object-fit:contain;">`;
+};
+
 window.apriDeployStati = (index) => {
     window.unitToEdit = window.roster[index];
+    window.indietroDelloStepStati(true);
     document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
     document.getElementById('step-deploy-states').style.display = 'flex';
-    
+    window.passoInfo('step-deploy-states');
+    if (window.MotoreN5 && typeof window.MotoreN5.azzeraNote === 'function') window.MotoreN5.azzeraNote('step-deploy-states');
+    else console.error('\u26d4 M.azzeraNote assente (serve motore_regole_n5.js dalla 2026-10-28.1): note dello schieramento non azzerate.');
+
     let u = window.unitToEdit;
     let st = u.deployState || "NORMAL";
-    let skills = (u.skills || "").toLowerCase();
-    
-    let isNomads = window.isNomadsApp();
-    let btnBorderActive = isNomads ? '#00ff00' : '#00ffff';
-    let hiddenBg = isNomads ? '#8b0000' : '#002244';
-    let hiddenBorder = isNomads ? '#ff0000' : '#00ccff';
-    let markerBg = isNomads ? '#8b4500' : '#004466';
-    let markerBorder = isNomads ? '#ffa500' : '#00ccff';
 
-    let html = `<div style="background:#111; padding:15px; border:1px solid #444; border-radius:8px; display:flex; flex-direction:column; gap:10px; max-height:70vh; overflow-y:auto;">`;
-    
+    // 27 ottobre (collaudo grafico, B04-B08): le scelte di questa pagina
+    // sono EQUIVALENTI, e hanno lo stesso aspetto: tutta la larghezza, la
+    // stessa altezza, e la scelta attiva accesa nel colore della fazione
+    // (classe attivo; lo stile sta in app.html, #deploy-states-content).
+    // Prima: quattro colori diversi, e i tasti delle mine (CRAZYKOALAS,
+    // SHOCK MINE) stretti quanto il loro nome.
+    const tasto = (attivo, comando, testo, extra) =>
+        `<button class="huge-btn tasto-opzione${attivo ? ' attivo' : ''}${extra ? ' ' + extra : ''}" onclick="${comando}">${testo}</button>`;
+
+    let html = `<div class="opzioni-schieramento">`;
+
     // NORMALE
-    html += `<button class="huge-btn" style="background:${st === 'NORMAL' ? '#004400' : '#222'}; border-color:${st === 'NORMAL' ? btnBorderActive : '#555'};" onclick="window.setDeployState(${index}, 'NORMAL')">NORMALE</button>`;
-    
-    // CAMO
-    if (skills.includes('camo') || u.tipo === "MARKER") {
-        // Un solo Marker Mimetico, niente livelli da scegliere. Il MOD mostrato
-        // accanto e` quello di Mimetism (-N) letto dal motore: non si cerca
-        // il numero nella stringa delle skill, che su 54 profili pescava il
-        // -3 di "Surprise Attack (-3)" dell'Helot invece del Mimetismo.
-        // Hidden Deployment e` un'altra cosa \u2014 la truppa non e` sul tavolo \u2014
-        // e ha il suo pulsante qui sotto.
-        const attivoCamo = String(st || '').indexOf('CAMO') === 0;
-        html += `<button class="huge-btn" style="background:${attivoCamo ? markerBg : '#222'}; border-color:${attivoCamo ? markerBorder : '#555'}; min-height:50px;" onclick="window.setDeployState(${index}, 'CAMO')">SEGNALINO CAMO${window.testoMimetismo(u)}</button>`;
+    html += tasto(st === 'NORMAL', `window.setDeployState(${index}, 'NORMAL')`, 'NORMALE');
 
-        // Solo per chi e` nel caso: camuffato monouso, schierato come segnalino,
-        // infiltratore, e uso non ancora consumato.
-        if (window.puoFallireInfiltrazioneCamo(u)) {
-            html += `<button class="btn-status" style="border-color:#ffaa00; color:#ffaa00; margin:-4px 0 10px 0;" onclick="window.infiltrazioneFallita(${index})">TIRO DI INFILTRAZIONE FALLITO</button>`;
+    // GLI STATI DI SCHIERAMENTO (27 ottobre sera, MOTORE 27.9): tutti dal
+    // motore, M.opzioniSchieramento -> [{ stato, etichetta, nota, disponibile,
+    // acceso }], nell'ordine CAMO, IMP, FOXHOLE, SEED, AD, HIDDEN. NORMALE resta
+    // qui. Prima CAMO, IMPERSONATION, FOXHOLE e SEED si decidevano con quattro
+    // ricerche di parole nelle skill, e il MOD del Mimetismo lo aggiungevamo
+    // noi al testo del tasto: ora l'etichetta e` del motore, MOD compreso.
+    //   acceso      la scelta attuale (classe attivo)
+    //   disponibile false: tasto spento, con la nota del motore (Camouflage
+    //               1 Use gia` consumato, F07)
+    // La nota e` testo semplice: si scappa prima di metterla nell'HTML.
+    {
+        const M = window.MotoreN5;
+        const testo = (t) => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        if (!M || typeof M.opzioniSchieramento !== 'function') {
+            console.error('⛔ M.opzioniSchieramento assente (serve motore_regole_n5.js dalla 2026-10-27.9): nessuno stato di schieramento oltre NORMALE.');
+            html += `<p style="color:#ff6666;">⛔ Stati di schieramento: serve motore_regole_n5.js dalla 2026-10-27.9.</p>`;
+        } else {
+            (M.opzioniSchieramento(u) || []).forEach(v => {
+                if (typeof v.acceso !== 'boolean' || typeof v.disponibile !== 'boolean') {
+                    console.error('⛔ M.opzioniSchieramento: la voce ' + v.stato + ' non ha acceso/disponibile (serve motore_regole_n5.js dalla 2026-10-27.9).');
+                }
+                const stato = String(v.stato).replace(/[^A-Z0-9_]/gi, '');
+                // 27 ottobre sera (Paolo): il segnalino (Hidden, CAMO, IMP) a
+                // SINISTRA della scritta, sulla stessa riga; prima stava sopra.
+                const icona = window.iconaStatoSchieramento(stato);
+                const classi = 'huge-btn tasto-opzione opzione-schieramento' + (v.acceso === true ? ' attivo' : '');
+                const dentro = icona ? `<div class="voce-con-icona" style="display:flex; flex-direction:row; align-items:center; justify-content:center; gap:10px;">${icona}${testo(v.etichetta)}</div>` : testo(v.etichetta);
+                html += (v.disponibile === false)
+                    ? `<button class="${classi}" data-stato="${stato}" disabled>${dentro}</button>`
+                    : `<button class="${classi}" data-stato="${stato}" onclick="window.setDeployState(${index}, '${stato}')">${dentro}</button>`;
+                // 27 ottobre sera (Paolo): sotto le voci niente spiegazioni; la
+                // nota resta solo per una voce SPENTA, perche` dice perche`.
+                if (v.nota && v.disponibile === false) html += `<div class="nota-opzione">${testo(v.nota)}</div>`;
+                // Le note delle voci accese stanno nella ⓘ della pagina.
+                else if (v.nota) window.infoSchieramento(v.etichetta, v.nota);   // va al tasto con la stessa scritta
+                // Sotto la voce CAMO: il tiro di Infiltrazione fallito (Camouflage
+                // 1 Use, FAQ F07). Chi e` nel caso lo decide il motore
+                // (puoFallireInfiltrazioneCamo chiede M.camoUnUso e M.promemoriaSchieramento).
+                if (stato === 'CAMO' && window.puoFallireInfiltrazioneCamo(u)) {
+                    html += `<button class="tasto-uscita" style="border-color:#ffaa00; color:#ffaa00; margin:0 0 10px 0;" onclick="window.infiltrazioneFallita(${index})">TIRO DI INFILTRAZIONE FALLITO</button>`;
+                }
+            });
         }
-        if (u.camoUsato) {
-            html += `<div style="color:#ffaa66; font-size:14px; margin:-4px 0 10px 0;">Camouflage (1 Use) già consumato: niente più stato CAMO in questa partita.</div>`;
-        }
-    }
-    
-    // IMPERSONATION
-    if (skills.includes('impersonation') || skills.includes('impersonator') || skills.includes('imp-1') || skills.includes('imp-2')) {
-        let impType = "IMP_1"; let impLabel = "IMPERSONATION (IMP-1)";
-        if (skills.includes('impersonation-2') || skills.includes('imp-2') || skills.includes('imp 2')) { impType = "IMP_2"; impLabel = "IMPERSONATION (IMP-2)"; }
-        html += `<button class="huge-btn" style="background:${st.startsWith('IMP') ? markerBg : '#222'}; border-color:${st.startsWith('IMP') ? markerBorder : '#555'}; min-height:50px;" onclick="window.setDeployState(${index}, '${impType}')">${impLabel}</button>`;
-    }
-
-    // FOXHOLE (Sapper)
-    if (skills.includes('sapper') || skills.includes('zappatore')) {
-        html += `<button class="huge-btn" style="background:${st === 'FOXHOLE' ? '#442200' : '#222'}; border-color:${st === 'FOXHOLE' ? '#ff8800' : '#555'}; margin-top:10px;" onclick="window.setDeployState(${index}, 'FOXHOLE')">FOXHOLE (Sapper)</button>`;
-    }
-
-    // SEED-EMBRYO (Transmutation Hatching)
-    if (skills.includes('transmutation (hatching)') || skills.includes('seed-embryo') || skills.includes('seed embryo')) {
-        html += `<button class="huge-btn" style="background:${st === 'SEED' ? '#004422' : '#222'}; border-color:${st === 'SEED' ? '#00ff66' : '#555'}; margin-top:10px;" onclick="window.setDeployState(${index}, 'SEED')">SEED-EMBRYO</button>`;
     }
 
     // HOLOMASK (26 ottobre, MOTORE 26.1): si sceglie il Modello da imitare
-    // fra quelli che il motore ammette (M.profiliImitabili: stessa fazione,
-    // stessa Silhouette). Chi ha HoloMask lo dice il motore (M.applicaHolomask
-    // rifiuta chi non ce l'ha); qui si guarda equip e skill per mostrare il
-    // tasto, perche` il profilo la scrive fra gli equipaggiamenti.
+    // fra quelli che il motore ammette (M.profiliImitabili).
     html += window.bottoniHolomask(index);
 
-    // DECOY / HOLOECHO (26 ottobre): le repliche le crea il motore
-    // (M.creaRepliche), identiche alla vera e numerate a caso.
+    // DECOY / HOLOECHO (26 ottobre): le repliche le crea il motore.
     html += window.bottoniRepliche(index);
-    
-    // HIDDEN DEPLOYMENT
-    if (skills.includes('hidden deployment') || skills.includes('schieramento nascosto')) {
-        html += `<button class="huge-btn" style="background:${st === 'HIDDEN' ? hiddenBg : '#222'}; border-color:${st === 'HIDDEN' ? hiddenBorder : '#555'}; margin-top:10px;" onclick="window.setDeployState(${index}, 'HIDDEN')">HIDDEN DEPLOYMENT</button>`;
-    }
-    
-    // RISERVA / AD
-    if (skills.includes('parachutist') || skills.includes('combat jump') || skills.includes('ad:') || skills.includes('airborne deployment') || skills.includes('paracadutista')) {
-        html += `<button class="huge-btn" style="background:${st === 'RESERVE' ? '#444400' : '#222'}; border-color:${st === 'RESERVE' ? '#ffff00' : '#555'}; margin-top:10px;" onclick="window.setDeployState(${index}, 'RESERVE')">RISERVA / AD</button>`;
-    }
-    
+
     html += `</div>`;
 
     // Piazzamento nella stessa pagina: schieramento e mine si decidono nello
-    // stesso momento, e tenerli su due schermate costava un gesto in piu` per
-    // sapere se l'unita` aveva qualcosa da piazzare.
+    // stesso momento.
     const rem = window.bottoneRemDriver(index);
     if (rem) {
-        html += `<hr style="border-color:#333; margin:18px 0;">
-            <p style="color:#aab4ff; text-align:center; margin-bottom:6px; letter-spacing:1px;">REMDRIVER</p>
-            ${rem}`;
+        html += `<p class="titolo-opzioni">REMDRIVER</p>${rem}`;
     }
 
     const piazzabili = window.bottoniDeployables(index);
     if (piazzabili) {
-        const titleColor = window.isNomadsApp() ? 'var(--nomad-orange)' : '#00ccff';
-        html += `<hr style="border-color:#333; margin:18px 0;">
-            <p style="color:${titleColor}; text-align:center; margin-bottom:10px; letter-spacing:1px;">EQUIPAGGIAMENTO DA PIAZZARE</p>
-            ${piazzabili}`;
+        html += `<p class="titolo-opzioni">EQUIPAGGIAMENTO DA PIAZZARE</p>${piazzabili}`;
     }
 
     document.getElementById('deploy-states-content').innerHTML = html;
@@ -1528,11 +1553,11 @@ window.bottoniHolomask = (index) => {
     if (u.states && u.states.holomask) {
         return `<div class="riquadro-holomask" style="margin-top:10px; padding:10px; border:1px solid #cc00ff; border-radius:6px; background:#1a0022;">
             <div style="color:#e6aaff; font-size:15px;">\ud83c\udfad HOLOMASK: l'avversario vede <b>${mc ? mc.nome : '?'}</b>.</div>
-            <button class="huge-btn" style="background:#222; border-color:#cc00ff; margin-top:8px; min-height:50px;" onclick="window.apriSceltaHolomask(${index})">CAMBIA MODELLO IMITATO</button>
-            <button class="huge-btn" style="background:#222; border-color:#555; margin-top:8px; min-height:50px;" onclick="window.togliHolomask(${index})">TOGLI HOLOMASK</button>
+            <button class="huge-btn tasto-opzione" style="margin-top:8px;" onclick="window.apriSceltaHolomask(${index})">CAMBIA MODELLO IMITATO</button>
+            <button class="huge-btn tasto-opzione" onclick="window.togliHolomask(${index})">TOGLI HOLOMASK</button>
         </div>`;
     }
-    return `<button class="huge-btn" style="background:#222; border-color:#cc00ff; margin-top:10px;" onclick="window.apriSceltaHolomask(${index})">HOLOMASK: SCEGLI IL MODELLO DA IMITARE</button>`;
+    return `<button class="huge-btn tasto-opzione" onclick="window.apriSceltaHolomask(${index})">HOLOMASK: SCEGLI IL MODELLO DA IMITARE</button>`;
 };
 // 26 ottobre (motore 26.2): la scelta in DUE passi, come dice la regola
 // ("declaring which weapon option it is duplicating", pag. 161): prima la
@@ -1547,29 +1572,60 @@ window.apriSceltaHolomask = (index) => {
     if (!box) return;
     if (typeof M.profiliImitabiliRaggruppati !== 'function') {
         box.innerHTML = `<p style="color:#ff6666; text-align:center;">\u26d4 HoloMask: serve motore_regole_n5.js dalla 2026-10-26.2 (M.profiliImitabiliRaggruppati).</p>` +
-            `<button class="huge-btn" style="background:#222; border-color:#555; margin-top:12px;" onclick="window.apriDeployStati(${index})">INDIETRO</button>`;
+            `<button class="tasto-uscita" onclick="window.apriDeployStati(${index})">INDIETRO</button>`;
         return;
     }
     const gruppi = M.profiliImitabiliRaggruppati(u) || [];
     window._gruppiHolomask = gruppi;
+    window.indietroDelloStepStati(false);
+    // 27 ottobre (collaudo grafico, B07): 108 truppe, una pagina alta 9276 px.
+    // Secondo giro (sera): con la ricerca l'elenco restava lungo, perche` a
+    // campo vuoto c'erano tutte. Ora, con piu` di 8 truppe, l'elenco parte
+    // VUOTO: si scrive una parte del nome o si tocca l'iniziale, e compaiono
+    // solo quelle. Con 8 o meno si vedono subito tutte.
+    const molte = gruppi.length > 8;
+    const iniziali = [...new Set(gruppi.map(g => String(g.unita || '?').trim().charAt(0).toUpperCase()))].sort();
+    box.innerHTML = `<p style="color:#e6aaff; text-align:center;">HOLOMASK \u2014 ${String(u.nome || '').split('(')[0].trim()}: chi deve vedere l'avversario?<br><span style="color:#aaa; font-size:13px;">Una truppa della tua fazione con la stessa Silhouette. Poi l'opzione d'arma.</span></p>` +
+        (molte ? `<input type="search" id="cerca-holomask" class="cerca-holomask" placeholder="Cerca la truppa (${gruppi.length})\u2026" autocomplete="off" oninput="window.filtraHolomask(${index}, this.value)" style="margin:0 0 10px;">` +
+                 `<div class="lettere-holomask">${iniziali.map(l => `<button type="button" class="huge-btn lettera-holomask" onclick="window.filtraHolomask(${index}, '', '${l.replace(/'/g, "\\'")}')">${l}</button>`).join('')}</div>` : '') +
+        `<div id="lista-holomask">${molte ? window.righeHolomask(index, '', '', true) : window.righeHolomask(index, '')}</div>` +
+        `<button class="tasto-uscita" onclick="window.apriDeployStati(${index})">INDIETRO</button>`;
+};
+// I bottoni delle truppe imitabili: il nome contiene `testo`, oppure comincia
+// con `iniziale`. Vuoti tutti e due: tutte, o (vuotoSeNiente) nessuna con
+// l'invito a cercare. L'indice di ogni gruppo resta quello dell'elenco intero,
+// perche` lo usa apriVariantiHolomask.
+window.righeHolomask = (index, testo, iniziale, vuotoSeNiente) => {
+    const gruppi = window._gruppiHolomask || [];
+    const cerca = String(testo || '').trim().toUpperCase();
+    const lettera = String(iniziale || '').trim().toUpperCase();
+    if (!cerca && !lettera && vuotoSeNiente) {
+        return `<p class="invito-holomask" style="color:#aaa; text-align:center;">Scrivi una parte del nome o tocca l'iniziale.</p>`;
+    }
     const righe = gruppi.map((g, k) => {
+        const nome = String(g.unita || '').trim().toUpperCase();
+        if (cerca && nome.indexOf(cerca) < 0) return '';
+        if (lettera && nome.charAt(0) !== lettera) return '';
         const una = g.varianti.length === 1;
         const tocco = una ? `window.scegliHolomask(${index}, '${String(g.varianti[0].id).replace(/'/g, "\\'")}')` : `window.apriVariantiHolomask(${index}, ${k})`;
-        return `<button class="huge-btn scelta-holomask-unita" style="background:#1a0022; border-color:#cc00ff; margin-bottom:8px; min-height:55px;" onclick="${tocco}">${g.unita} <span style="color:#aaa; font-size:13px;">${una ? '' : '(' + g.varianti.length + ' opzioni d\'arma)'}</span></button>`;
+        return `<button class="huge-btn scelta-holomask-unita" onclick="${tocco}">${g.unita} <span style="color:#aaa; font-size:13px;">${una ? '' : '(' + g.varianti.length + ' opzioni d\'arma)'}</span></button>`;
     }).join('');
-    box.innerHTML = `<p style="color:#e6aaff; text-align:center;">HOLOMASK \u2014 ${String(u.nome || '').split('(')[0].trim()}: chi deve vedere l'avversario?<br><span style="color:#aaa; font-size:13px;">Una truppa della tua fazione con la stessa Silhouette. Poi l'opzione d'arma.</span></p>` +
-        (righe || `<p style="color:#888; text-align:center;">Nessun Modello imitabile.</p>`) +
-        `<button class="huge-btn" style="background:#222; border-color:#555; margin-top:12px;" onclick="window.apriDeployStati(${index})">INDIETRO</button>`;
+    return righe || `<p style="color:#888; text-align:center;">${cerca ? 'Nessuna truppa col nome che contiene \u201c' + String(testo).replace(/</g, '&lt;') + '\u201d.' : 'Nessun Modello imitabile.'}</p>`;
+};
+window.filtraHolomask = (index, testo, iniziale) => {
+    const lista = document.getElementById('lista-holomask');
+    if (lista) lista.innerHTML = window.righeHolomask(index, testo, iniziale, (window._gruppiHolomask || []).length > 8);
 };
 window.apriVariantiHolomask = (index, k) => {
     const u = (window.roster || [])[index];
     const g = (window._gruppiHolomask || [])[k];
     const box = document.getElementById('deploy-states-content');
     if (!u || !g || !box) return;
-    const righe = g.varianti.map(v => `<button class="huge-btn scelta-holomask" style="background:#1a0022; border-color:#cc00ff; margin-bottom:8px; min-height:55px;"
+    window.indietroDelloStepStati(false);
+    const righe = g.varianti.map(v => `<button class="huge-btn scelta-holomask"
             onclick="window.scegliHolomask(${index}, '${String(v.id).replace(/'/g, "\\'")}')">${v.nome}</button>`).join('');
     box.innerHTML = `<p style="color:#e6aaff; text-align:center;">HOLOMASK \u2014 sembra <b>${g.unita}</b>: quale opzione d'arma?</p>` + righe +
-        `<button class="huge-btn" style="background:#222; border-color:#555; margin-top:12px;" onclick="window.apriSceltaHolomask(${index})">INDIETRO</button>`;
+        `<button class="tasto-uscita" onclick="window.apriSceltaHolomask(${index})">INDIETRO</button>`;
 };
 window.scegliHolomask = (index, idProfilo) => {
     const M = window.MotoreN5;
@@ -1605,7 +1661,7 @@ window.bottoniRepliche = (index) => {
     if (gia.length) {
         return `<div class="riquadro-repliche" style="margin-top:10px; padding:10px; border:1px solid #00ffff; border-radius:6px; background:#002222;">
             <div style="color:#99ffff; font-size:15px;">\ud83e\ude9e ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'}: ${gia.length} replica/e schierate. Questa \u00e8 la VERA (numero ${u.numeroReplica || '?'}).</div>
-            <button class="huge-btn" style="background:#222; border-color:#555; margin-top:8px; min-height:50px;" onclick="window.togliRepliche(${index})">TOGLI LE REPLICHE</button>
+            <button class="huge-btn tasto-opzione" style="margin-top:8px;" onclick="window.togliRepliche(${index})">TOGLI LE REPLICHE</button>
         </div>`;
     }
     let html = '';
@@ -1613,7 +1669,7 @@ window.bottoniRepliche = (index) => {
         const ok = M.puoReplicare(u, tipo);
         if (!ok.puo) return;
         const testo = tipo === 'DECOY' ? `DECOY: ${ok.n} BERSAGLI DECOY` : `HOLOECHO: ${ok.n} COPIE OLOGRAFICHE`;
-        html += `<button class="huge-btn bottone-repliche" style="background:#004444; border-color:#00ffff; margin-top:10px;" onclick="window.creaRepliche(${index}, '${tipo}')">${testo}</button>`;
+        html += `<button class="huge-btn bottone-repliche" onclick="window.creaRepliche(${index}, '${tipo}')">${testo}</button>`;
     });
     return html;
 };
@@ -1741,10 +1797,13 @@ window.bottoniDeployables = (index) => {
     const armi = esito.armi || [];
     window._piazzabiliMostrati[index] = armi;
 
+    // 27 ottobre sera (Paolo): sotto il nome dell'equipaggiamento niente
+    // tratti (Intuitive Attack, Disposable...): solo il nome.
+    // I tratti, tolti dal tasto, stanno nella ⓘ della pagina.
+    armi.forEach(a => { if (a.traits) window.infoSchieramento(a.nome, Array.isArray(a.traits) ? a.traits.join(', ') : a.traits); });   // va al tasto col nome
     let html = armi.map((arma, k) => `
-        <button class="huge-btn" style="background:#222; border-color:#888; margin-bottom:8px; min-height:60px;" onclick="window.schieraPiazzabile(${index}, ${k})">
+        <button class="huge-btn tasto-opzione" onclick="window.schieraPiazzabile(${index}, ${k})">
             ${arma.nome}
-            ${arma.traits ? `<br><span style="font-size:12px; color:#aaa;">${Array.isArray(arma.traits) ? arma.traits.join(', ') : arma.traits}</span>` : ''}
         </button>`).join('');
 
     // Le escluse col motivo: "Usi esauriti (Disposable 1)" spiega perche` un
@@ -1770,7 +1829,7 @@ window.bottoniMinelayer = (index, ml) => {
     (ml.armi || []).forEach((a, k) => {
         const attivo = ml.restanti > 0 && a.disponibile;
         const usi = (a.usiResidui != null) ? `<br><span style="font-size:12px; color:#aaa;">Usi residui: ${a.usiResidui}</span>` : '';
-        html += `<button class="huge-btn bottone-minelayer" style="background:#222; border-color:${attivo ? '#ffaa00' : '#444'}; color:${attivo ? '#fff' : '#666'}; margin-bottom:8px; min-height:60px;" ${attivo ? `onclick="window.piazzaConMinelayer(${index}, ${k})"` : 'disabled'}>${a.nome}${usi}</button>`;
+        html += `<button class="huge-btn bottone-minelayer" ${attivo ? `onclick="window.piazzaConMinelayer(${index}, ${k})"` : 'disabled'}>${a.nome}${usi}</button>`;
     });
     if (!(ml.armi || []).length) html += `<p style="color:#888; text-align:center;">Nessuna arma da piazzare col Minelayer.</p>`;
     return html;
@@ -1903,6 +1962,11 @@ window.schieraDeployableSelezionato = (parentIndex, depId) => {
     window.renderDeployUnits();
 };
 
+// 27 ottobre: questa funzione NON e` quella che gira. fase_schieramento.js
+// (chat MOTORE), caricato dopo, ridefinisce window.confermaSchieramento con
+// faseSchieramento.concludiSchieramento. Lo Schieramento Aereo (BS-29) non ha
+// quindi bisogno di states.reserve: il motore legge deployState 'AD'
+// (statoBersaglio, vista pubblica, ARO). Segnalato a MOTORE.
 window.confermaSchieramento = () => {
     window.schieramentoCompletato = true;
     window.roster.forEach(u => {
@@ -1942,7 +2006,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-10-26.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-10-28.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,33 +1,33 @@
-CONTEGGIO DELLA SUITE — chat TEST, 27 ottobre 2026, mattina (giro 8) (cartella allineata al Project, impronte ricalcolate con M.impronta)
+CONTEGGIO DELLA SUITE — chat TEST, 27 ottobre 2026, giro 13 (motore 2026-10-27.9) (cartella allineata al Project, impronte ricalcolate con M.impronta)
 
 PRODUZIONE
-  motore_regole_n5.js         2026-10-27.2    8b0326af.830677
-  catalogo_n5.js              2026-10-26.1    af0de8a1.203727
-  motore_core.js              2026-10-26.1    7faeeb2c.47800
-  logica_stati.js             2026-10-26.1    67eca194.38580
-  logica_aro.js               2026-10-26.2    b6914a63.91699
-  app.html                    2026-10-26.1    27edf966.181134
+  motore_regole_n5.js         2026-10-27.9    862a894a.841608
+  catalogo_n5.js              2026-10-27.1    81432f37.203991
+  motore_core.js              2026-10-27.1    a8fa5873.47953
+  logica_stati.js             2026-10-27.2    69168fb0.40272
+  logica_aro.js               2026-10-27.3    63aa127c.95969
+  app.html                    2026-10-27.2    f7734b03.189912
   calcolatore_math.js         2026-10-26.2    e936f944.20207
   calcolatore_controller.js   2026-10-26.1    5228ab53.81440
-  roster_manager.js           2026-10-26.2    338c1888.104551
-  ordine_attacco_guidato.js   2026-10-18.1    b7c255f5.28397
-  ordine_attacco_bs.js        2026-10-27.1    d64843c5.58637
+  roster_manager.js           2026-10-27.3    cf82db91.103372
+  ordine_attacco_guidato.js   2026-10-27.1    52fb439f.28051
+  ordine_attacco_bs.js        2026-10-27.3    0134982f.58855
   ordine_coordinato.js        2026-10-20.1    8800e0b2.12127
   ordine_movimento.js         2026-10-26.1    1a8dbf26.20550
-  ordine_piazzamento.js       2026-10-26.1    de0235b5.28690
-  ordine_osservazione.js      2026-10-19.1    3898a752.27560
-  ordine_hacking.js           2026-10-18.1    1a899ef0.29030
-  ordine_scoprire.js          2026-10-18.1    2d7eeecd.22213
-  ordine_supporto.js          2026-10-22.1    16b12f20.21292
-  ordine_difesa.js            2026-10-26.1    f2443424.17331
-  ordine_attacco_intuitivo.js 2026-10-26.1    a0f44038.20859
-  ordine_fuoco_speculativo.js 2026-10-26.1    149cc2e5.42337
-  calcolatore_hub.html        2026-10-18.1    193af296.12840
+  ordine_piazzamento.js       2026-10-27.1    087237be.28253
+  ordine_osservazione.js      2026-10-27.1    65fee2ef.27097
+  ordine_hacking.js           2026-10-27.1    4ed80b1d.28593
+  ordine_scoprire.js          2026-10-27.1    20781b47.22002
+  ordine_supporto.js          2026-10-27.1    f423fc6f.20874
+  ordine_difesa.js            2026-10-27.1    787eb5f7.17150
+  ordine_attacco_intuitivo.js 2026-10-27.1    867b2ad7.20429
+  ordine_fuoco_speculativo.js 2026-10-27.1    ead69c44.41868
+  calcolatore_hub.html        2026-10-27.1    e39e770d.13800
   database_comune.js          2026-10-10.1    734da513.70750
   database_nomad.js           2026-10-20.1    c4178b53.174021
   database_panoceania.js      2026-10-20.1    7d578a3b.169522
   banco_confronto.js          2026-09-14.1    e8fdec78.34151
-  PIANO_COLLAUDO_N5.md        2026-10-27.2    d2ad2469.154038
+  PIANO_COLLAUDO_N5.md        2026-10-27.6    01577957.160190
 
 CONVENZIONE: un file = una riga di riepilogo; si somma su TUTTI i file
 test_*.js, test_collaudo_suite.js COMPRESO. banco_confronto.js NON
@@ -54,20 +54,20 @@ test_camo_cybermask.js                41        2026-10-06.1    7f955a97.11941  
 test_camouflage_un_uso.js             52        2026-10-09.1    c3f651e0.18884    TEST
 test_camuffato.js                     36        2026-10-26.1    f53a6537.12536    TEST
 test_caricamento_pagine.js             2        2026-10-06.1    679907c4.6117     TEST
-test_casi_regole.js                   20        2026-09-24.2    c1eb90c3.7070     TEST
+test_casi_regole.js                   24        2026-10-27.3    4d299acd.8457     TEST
 test_coerenza_dati.js                 38     1  2026-10-09.3    9a178774.32422    TEST
 test_collaudo_node.js                 58        2026-10-06.1    721b3e48.12963    TEST
 test_collaudo_suite.js                 7        2026-10-09.1    e5be7a72.5058     TEST
 test_confronto.js                     18        2026-09-23.1    85f1912b.4782     TEST
 test_contratto_payload.js             29        2026-09-23.2    07bb9543.9288     TEST
 test_coordinato.js                    82        2026-10-19.2    f799b175.23583    TEST
-test_correzioni_regole.js            175        2026-10-06.1    cb7eb6fa.47017    TEST
+test_correzioni_regole.js            177        2026-10-27.3    48d6c22b.47752    TEST
 test_creadeployable.js                41        2026-09-23.1    eb349363.7918     TEST
 test_dado_speciale.js                 15        2026-10-15.1    5a43dc5e.6172     TEST
 test_dcharges_percorso.js             33        2026-10-12.1    cd0af229.12480    TEST
 test_deployable.js                    94        2026-09-23.1    168ab722.17037    TEST
 test_detonazione.js                   12        2026-09-29.1    12fd1900.5768     TEST
-test_elenchi_e_tabellone.js          453        2026-10-26.2    e1e7abe9.188266   INTERFACCIA
+test_elenchi_e_tabellone.js          565        2026-10-27.5    e792dcba.225354   INTERFACCIA
 test_file_immutabili.js               16     3  2026-10-10.1    969e26ca.11217    TEST
 test_file_intestazioni.js              8        2026-10-05.1    ac73f610.3721     TEST
 test_finiture.js                     213        2026-09-23.1    918b7ab5.35864    TEST
@@ -82,10 +82,10 @@ test_integrazione.js                  39        2026-10-09.1    fde9f835.13039  
 test_marker_mimetico.js               34        2026-10-15.1    de4f4502.11355    TEST
 test_marker_salvezza.js               21        2026-10-05.1    8009613d.6636     MOTORE
 test_menu_stati.js                    27        2026-10-06.5    fa7bc13a.8360     INTERFACCIA
-test_minelayer.js                     49        2026-10-26.1    4746c341.16119    TEST
+test_minelayer.js                     49        2026-10-27.3    8f58c64b.16287    TEST
 test_mittente_unico.js                 8        2026-09-25.1    821373bf.4844     TEST
 test_mod_attacco.js                   33        2026-09-23.1    881344b3.6321     TEST
-test_modulo_aro.js                    44        2026-10-15.2    63336190.13569    TEST
+test_modulo_aro.js                    46        2026-10-27.3    63c606d1.14443    TEST
 test_modulo_bs.js                     70        2026-10-15.1    c88bf4b4.31305    TEST
 test_modulo_cc.js                     37        2026-09-23.1    66f3ee11.8405     TEST
 test_modulo_difesa.js                 47        2026-10-26.1    e1363c14.9246     TEST
@@ -107,13 +107,13 @@ test_munizioni_condizionali.js        80        2026-09-23.1    f993bb3d.12716  
 test_notazioni.js                    106        2026-09-23.1    c3dd9086.17180    TEST
 test_novita_18ott.js                  73        2026-10-19.2    4e3dcaea.34685    TEST
 test_novita_20ott.js                 124        2026-10-26.1    60a96fb2.48248    TEST
-test_novita_23ott.js                 114        2026-10-26.1    f36361ed.65874    TEST
-test_novita_26ott.js                 174        2026-10-27.2    1399c651.75484    TEST
+test_novita_23ott.js                 114        2026-10-27.1    f25cc45e.66142    TEST
+test_novita_26ott.js                 276        2026-10-27.6    a1bab359.110106   TEST
 test_novita_7ott.js                  127        2026-10-07.2    4c7a6e70.37687    TEST
 test_orchestratore.js                 35        2026-10-20.1    f8996613.7243     TEST
 test_ordini_senza_tiro.js             83        2026-10-07.1    47f53ab8.21658    MOTORE
 test_otto_decisioni.js                93     8  2026-10-09.1    cf922127.18140    TEST
-test_piano_schieramento.js            29        2026-10-27.2    61e6bd1a.22714    TEST
+test_piano_schieramento.js            29        2026-10-27.6    c43d4f9c.23229    TEST
 test_produttori_busta.js              21        2026-09-25.3    71d0754b.9486     TEST
 test_prosa_stati.js                   17        2026-09-24.1    7872300c.8821     TEST
 test_pulsante_calcolo.js              26        2026-09-23.1    1f742b1f.4441     TEST
@@ -134,7 +134,7 @@ test_scoprire_attacco.js             148        2026-10-08.2    3924085b.49893  
 test_seconda_meta.js                  18        2026-09-23.1    049bc9a2.5973     TEST
 test_seconda_meta_calcolo.js          21        2026-09-23.1    dab088e4.7034     TEST
 test_sei_casi.js                     140        2026-10-09.1    4f2c1217.37931    TEST
-test_sostituzione_unita.js            18        2026-10-06.1    475b1e13.8959     INTERFACCIA
+test_sostituzione_unita.js            21        2026-10-27.1    298823e4.10306    INTERFACCIA
 test_stati.js                         73        2026-10-19.1    57cd208a.10932    TEST
 test_stati_classi_foxhole.js          79        2026-10-06.1    61077425.14872    MOTORE
 test_template.js                      28        2026-09-23.1    04dc2fae.4842     TEST
@@ -144,8 +144,9 @@ test_usi_disposable.js                21        2026-09-29.1    77051b4c.7148   
 test_voce_cybermask.js                21        2026-10-19.1    47ba06ce.11379    INTERFACCIA
 test_voce_rientro_camo.js             15        2026-10-06.5    17ca4e43.8491     INTERFACCIA
 --------------------------------------------------------------------------------------------------
-TOTALE CON LE FONTI                 5519   passati su 101 file, 8 falliti, 0 non eseguite
-TOTALE COME IL PROJECT (senza)      5499   passati su 101 file, 8 falliti, 20 non eseguite
+TOTALE CON LE FONTI                 5752   prove su 101 file: NON MISURATO in questo giro, le tre
+                                           fonti non sono allegate. 5752 = 5732 + le 20 non eseguite
+TOTALE COME IL PROJECT (senza)      5732   passati su 101 file, 0 falliti, 20 non eseguite
 
 NON ESEGUITE PER FONTE ASSENTE
   test_coerenza_dati.js             1   501.json, 101.json
@@ -154,25 +155,31 @@ NON ESEGUITE PER FONTE ASSENTE
   test_otto_decisioni.js            8   REGOLE_N5_v5_1_1.txt
 
 SPACCATO PER PROPRIETA (con le fonti)
-  TEST + MOTORE                     4856   su 92 file
-  INTERFACCIA                        671   su 9 file
+  TEST + MOTORE                     4966   su 92 file
+  INTERFACCIA                        786   su 9 file
 
 banco_confronto.js: uscita 0, "da guardare 0" in tutte e quattro le sezioni
-  (scontro completo: identiche 354 | attese 294 | da guardare 0, come MOTORE).
+  (scontro completo: identiche 354 | attese 294 | da guardare 0, come al giro 12).
 
-GLI 8 FALLITI SONO TUTTI DI INTERFACCIA, nessuno di TEST o MOTORE (gli stessi
-dei giri 6 e 7: la 27.2 non tocca i loro file)
-  test_elenchi_e_tabellone.js 26.2   5   sez. 5 (attende img/mina_shock.png, il
-      catalogo 26.1 da` img/nomadi/mina_shock.png); sez. 24, tre prove e la
-      sezione caduta (cerca schieraPiazzabile, il koala del Taskmaster passa
-      dal Minelayer, roster_manager 26.2); sez. 34d CONTROPROVA (id
-      'shock_mine': nel database vero la mina e` 'mina_shock').
-  test_sostituzione_unita.js         3   sez. 4: cerca schieraPiazzabile(0, 0) per
-      il Minelayer del Puppet Masters (stessa causa della sez. 24).
-  TEST + MOTORE: 0 falliti su 92 file.
+NESSUN FALLITO, su tutti i 101 file (TEST, MOTORE e INTERFACCIA).
 
-GIRO 8 RISPETTO AL GIRO 7 (motore 2026-10-27.2): +2 prove, in test_novita_26ott.js
-  (172 -> 174: J1b e O girate, nessun difetto aperto nel banco). Piano rev 44,
-  test_piano_schieramento.js REV_MINIMA 44. Coi file del giro 7
-  test_novita_26ott.js 27.2 da` 3 rossi.
+GIRO 13 RISPETTO AL GIRO 12 (motore 2026-10-27.5 -> 2026-10-27.9; roster_manager
+27.1 -> 27.3, logica_aro 27.2 -> 27.3, app.html 27.1 -> 27.2, calcolatore_hub
+18.1 -> 27.1, logica_stati 26.1 -> 27.2, ordine_attacco_bs 27.1 -> 27.3 e
+gli altri dodici ordine_*.js a 2026-10-27.1): +134 prove.
+  test_elenchi_e_tabellone.js 2026-10-27.5 (INTERFACCIA, 479 -> 565): 38a-i e
+    39, misurati come INTERFACCIA li dichiara (565 passati, 0 falliti).
+  test_novita_26ott.js 2026-10-27.6 (TEST, 228 -> 276): nuove Q (motore:
+    M.opzioniSchieramento coi casi di MOTORE, Spektr [CAMO, HIDDEN], il Marker
+    senza skill, CAMO_1 acceso, Heckler F07, l'ordine delle sei voci, la regola
+    sui 745 profili, mai acceso e spento insieme), Q2 (la pagina vera fino
+    all'Hub, col tocco: Croc Man in CAMO arriva come «SEGNALINO MIMETICO (-6)
+    1», lo Spector in AD non arriva, il Moran dopo il tiro d'Infiltrazione
+    fallito resta acceso in CAMO e da NORMALE la voce e` spenta con F07) e Q3
+    (SCH-09 del piano). Girate 6 volte, stabili. Rotte sui file del giro 12
+    (motore 27.5 senza M.opzioniSchieramento esteso, roster_manager 27.1):
+    9 rossi su 48 (Q e Q2 cadono intere); col solo roster_manager 27.1 e il
+    motore 27.9: 7 rossi.
+  test_piano_schieramento.js 2026-10-27.6 (TEST, 29 = 29): REV_MINIMA 48.
+  PIANO_COLLAUDO_N5.md revisione 48: nuova SCH-09. Le prove passano a 314.
 File senza riga di riepilogo: nessuno.

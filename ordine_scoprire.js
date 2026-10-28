@@ -1,4 +1,4 @@
-// @versione 2026-10-18.1 | ordine_scoprire.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.4 | ordine_scoprire.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔍 SCOPRIRE (N5) - ordine_scoprire.js
 // ------------------------------------------
@@ -32,7 +32,20 @@
         return window.MotoreN5;
     }
 
-    const COL = { bordo: '#66ff66', sfondo: '#003300' };
+    // 28 ottobre (Paolo): il colore e` dell'ORDINE, non del modulo (M.COLORI_ORDINE nel
+    // motore: Movimenti blu, Abilita` Brevi verdi, Ordini Interi rossi). COL legge le
+    // tinte dell'Ordine in corso a ogni uso; 'SCOPRIRE' e` quello di casa. Prima: { bordo: '#66ff66', sfondo: '#003300' };.
+    const COL = (function () {
+        const ripiego = { bordo: '#66ff66', sfondo: '#003300', riquadro: '#003300', tenue: '#66ff66', testo: '#66ff66' };
+        const o = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) {
+            Object.defineProperty(o, k, { enumerable: true, get: function () {
+                const M = window.MotoreN5;
+                return (M && typeof M.colOrdine === 'function') ? M.colOrdine('SCOPRIRE')[k] : ripiego[k];
+            } });
+        });
+        return o;
+    })();
 
     window.avviaFaseScoprire = function (actionId, isSecondHalf) {
         window.currentOrder = window.currentOrder || {};
@@ -80,15 +93,14 @@
         window.targetsScartati = giudizi.filter(g => !g.ammesso).map(g => ({ nome: g.nome, motivo: g.motivo }));
 
         const container = document.getElementById('enemy-target-buttons');
+
+        window.MotoreN5.azzeraNote('step-wait-aro');
         if (!container) return;
 
-        container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:12px; border-radius:5px; margin-bottom:15px; text-align:center;">
-            <b style="color:${COL.bordo}; font-size:18px;">🔍 SCOPRIRE</b><br>
-            <span style="color:#aaa; font-size:13px;">Solo i Marker si possono Scoprire. Serve la Linea di Tiro.</span>
-        </div>`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `SCOPRIRE`, nota: `Solo i Marker si possono Scoprire. Serve la Linea di Tiro.` })}`;
 
         if (window.validTargets.length === 0) {
-            container.innerHTML += `<p style="color:#ff3333; text-align:center; font-weight:bold;">Nessun Marker nemico sul tavolo.</p>`;
+            container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-weight:bold;">Nessun Marker nemico sul tavolo.</p>`;
         } else {
             window.validTargets.forEach(function (u) {
                 const nome = M.nomeUnita(u);
@@ -100,17 +112,14 @@
                 // c'e` (i banchi) resta il bottone semplice.
                 const clic = `onclick="window.scegliBersaglioScoprire('${String(u.id).replace(/'/g, "\\'")}')"`;
                 container.innerHTML += (typeof window.rigaUnitaConFoto === 'function')
-                    ? window.rigaUnitaConFoto(u, { attributi: clic, fazione: 'NEMICA', sotto: `<span style="font-size:13px; color:${COL.bordo};">${tipo}</span>` })
-                    : `<button class="huge-btn" style="width:100%; min-height:60px; font-size:19px; margin-bottom:6px; background:#111; border-color:${COL.bordo};" ${clic}>
-                    🔍 ${nome}<br><span style="font-size:13px; color:${COL.bordo};">${tipo}</span></button>`;
+                    ? window.rigaUnitaConFoto(u, { attributi: clic, fazione: 'NEMICA', sotto: `<span style="font-size:var(--fs-s); color:${COL.bordo};">${tipo}</span>` })
+                    : `<button class="huge-btn" style="width:100%; min-height:60px; font-size:var(--fs-l); margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:${COL.bordo};" ${clic}>
+                    🔍 ${nome}<br><span style="font-size:var(--fs-s); color:${COL.bordo};">${tipo}</span></button>`;
             });
         }
 
-        if (window.targetsScartati.length > 0) {
-            container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
-                <b style="color:#aaa;">Non scopribili:</b><br>` +
-                window.targetsScartati.map(t => `• <b>${t.nome}</b> — ${t.motivo}`).join('<br>') + `</div>`;
-        }
+        // 28 ottobre (Paolo): perche` non si puo`, nella ⓘ (o sotto il tasto).
+        window.targetsScartati.forEach(t => window.MotoreN5.nota('step-wait-aro', t.nome + ' non scopribile', t.motivo, { tipo: 'nonpuo' }));
 
         window.goToStep('step-wait-aro');
     };
@@ -161,6 +170,7 @@
 
     window.renderScoprire = function () {
         const M = motore(); if (!M) return;
+        M.azzeraNote('step-modifiers');
         const unita = window.coordUnits[window.coordIndex];
         const t = window.combatTargets[0];
         const difTrovato = M.rosterNemico().find(u => String(u.id) === String(t.id)) || null;
@@ -188,66 +198,57 @@
         });
         window.scoprireEsito = e;
 
-        let seg = '', lab = '';
-        arma.bands.forEach(function (b, i) {
-            let cls = 'seg-2';
-            if (b.mod > 0) cls = 'seg-1'; else if (b.mod === -3) cls = 'seg-3'; else if (b.mod < -3) cls = 'seg-4';
-            seg += `<div class="range-seg ${cls} ${(!t.fuoriGittata && t.rangeIndex === i) ? 'active' : ''}" onclick="window.setRangeScoprire(${i})">${b.mod > 0 ? '+' + b.mod : b.mod}</div>`;
-            lab += `<span>${b.label}</span>`;
-        });
-        // 18 ottobre (Paolo): il FUORI GITTATA e` un segmento della barra,
-        // come nell'Attacco BS, e non un tasto a parte.
-        seg += `<div class="range-seg ${t.fuoriGittata ? 'active' : ''}" style="background:${t.fuoriGittata ? '#ffcc00' : '#332b00'}; color:${t.fuoriGittata ? '#000' : '#ffcc00'}; font-size:12px;" onclick="window.toggleFuoriGittataScoprire()">FUORI</div>`;
-        lab += `<span>oltre</span>`;
-        // 18 ottobre (Paolo): la barra c'e` anche col successo automatico, perche`
-        // il FUORI GITTATA si dichiara li`.
-        const barraGittata = `<div style="text-align:center; color:#aaa; font-size:12px; margin-bottom:5px;">Gittata (Scoprire ha bande proprie):</div>
-                <div class="range-bar">${seg}</div>
-                <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${lab}</div>`;
+        // 18 ottobre (Paolo): il FUORI GITTATA e` un segmento della barra, e la
+        // barra c'e` anche col successo automatico, perche` il FUORI si
+        // dichiara li`. 28 ottobre: la barra e` del motore (M.barraGittata),
+        // coi numeri sui confini.
+        const barraGittata = `<div style="text-align:center; color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); margin-bottom:5px;">Gittata (Scoprire ha bande proprie):</div>
+                ${M.barraGittata(arma.bands, { indice: t.rangeIndex, tocco: (i) => `window.setRangeScoprire(${i})`,
+                    fuori: 'window.toggleFuoriGittataScoprire()', fuoriAttivo: !!t.fuoriGittata, stile: '' })}`;
 
         let corpo;
         if (superato.superato) {
-            corpo = `<div style="text-align:center; padding:20px; background:#1a1a00; border:2px solid #ffcc00; border-radius:5px;">
-                <b style="color:#ffcc00; font-size:22px;">SCOPRIRE: NON SI TIRA</b><br>
-                <span style="color:#ddddaa; font-size:13px;">${superato.testo}</span></div>`;
+            corpo = `<div style="text-align:center; padding:20px; background:var(--mn-nota-fondo,#1a1000); border:2px solid var(--mn-attenzione,#ffcc00); border-radius:5px;">
+                <b style="color:var(--mn-attenzione,#ffcc00); font-size:var(--fs-l);">SCOPRIRE: NON SI TIRA</b><br>
+                <span style="color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s);">${superato.testo}</span></div>`;
         } else if (e.automatico) {
-            corpo = `<div style="text-align:center; padding:20px; background:#003300; border:2px solid #00ff00; border-radius:5px;">
-                <b style="color:#00ff00; font-size:22px;">✅ SUCCESSO AUTOMATICO</b><br>
-                <span style="color:#aaccaa; font-size:13px;">${e.note[0]}</span></div>
+            corpo = `<div style="text-align:center; padding:20px; background:var(--mn-si-fondo,#004400); border:2px solid var(--mn-si,#00ff00); border-radius:5px;">
+                <b style="color:var(--mn-si,#00ff00); font-size:var(--fs-l);">✅ SUCCESSO AUTOMATICO</b><br>
+                <span style="color:var(--mn-ordine-testo,#aaccaa); font-size:var(--fs-s);">${e.note[0]}</span></div>
                 <div style="margin-top:12px;">${barraGittata}</div>`;
         } else {
 
             const dettaglio = e.voci.length
                 ? e.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                        <span style="color:#aaa;">${v.motivo}</span>
-                        <b style="color:${v.valore >= 0 ? '#00ff00' : '#ff6666'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b></div>`).join('')
-                : `<div style="color:#888; text-align:center;">Nessun modificatore</div>`;
+                        <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
+                        <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b></div>`).join('')
+                : `<div style="color:var(--mn-spento,#888888); text-align:center;">Nessun modificatore</div>`;
 
-            const stileCop = t.cover ? 'background:var(--nomad-orange); color:#000;' : 'background:#111; color:#fff;';
+            const stileCop = t.cover ? 'background:var(--nomad-orange); color:var(--mn-scuro,#000000);' : 'background:var(--mn-fondo-tasto,#111111); color:var(--mn-testo,#ffffff);';
 
             corpo = `
-                <div style="background:#001a00; border:1px solid #005500; padding:12px; border-radius:5px; margin-bottom:12px;">
-                    <div style="text-align:center; color:#fff; margin-bottom:8px;">
-                        WIP ${e.base} → <b style="color:${COL.bordo}; font-size:24px;">${e.valore}</b>
-                        ${e.impossibile ? '<br><span style="color:#ff3333; font-size:13px;">Valore sotto 1: il tiro fallisce automaticamente</span>' : ''}
+                <div style="background:var(--mn-si-fondo,#004400); border:1px solid var(--mn-si-bordo,#005500); padding:12px; border-radius:5px; margin-bottom:12px;">
+                    <div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:8px;">
+                        WIP ${e.base} → <b style="color:${COL.bordo}; font-size:var(--fs-l);">${e.valore}</b>
+                        ${e.impossibile ? '<br><span style="color:var(--mn-errore,#ff3333); font-size:var(--fs-s);">Valore sotto 1: il tiro fallisce automaticamente</span>' : ''}
                     </div>
-                    <div style="border-top:1px solid #004400; padding-top:8px; font-size:14px;">${dettaglio}</div>
-                    ${e.critici && !e.critici.nessunTiro ? `<div style="text-align:center; color:#ffcc00; font-size:12px; margin-top:6px;">🎯 ${e.critici.testo}</div>` : ''}
+                    <div style="border-top:1px solid var(--mn-si-fondo,#004400); padding-top:8px; font-size:var(--fs-s);">${dettaglio}</div>
+                    ${e.critici && !e.critici.nessunTiro ? `<div style="text-align:center; color:var(--mn-attenzione,#ffcc00); font-size:var(--fs-xs); margin-top:6px;">🎯 ${e.critici.testo}</div>` : ''}
                 </div>
                 ${barraGittata}
-                <button class="huge-btn" style="width:100%; margin-top:12px; min-height:55px; font-size:16px; ${stileCop}"
+                <button class="huge-btn" style="width:100%; margin-top:12px; min-height:55px; font-size:var(--fs-m); ${stileCop}"
                     onclick="window.toggleCoverScoprire()">${t.cover ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverSi') : ''}BERSAGLIO IN COPERTURA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverNo') : ''}BERSAGLIO ALLO SCOPERTO`}</button>`;
         }
 
         document.getElementById('targets-allocation-container').innerHTML = `
-            <h2 style="color:${COL.bordo}; text-align:center; margin-bottom:20px;">SCOPRIRE</h2>
+            ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `SCOPRIRE` })}
             <div class="target-card" style="border-left:4px solid ${COL.bordo}; background:rgba(0,255,0,0.04); padding:15px; border-radius:5px;">
-                <b style="color:#fff; font-size:22px; display:block; margin-bottom:12px;">🔍 ${superato.superato ? (M.nomeUnita(difTrovato) || t.name) : t.name}</b>
+                <b style="color:var(--mn-testo,#ffffff); font-size:var(--fs-l); display:block; margin-bottom:12px;">🔍 ${superato.superato ? (M.nomeUnita(difTrovato) || t.name) : t.name}</b>
                 ${corpo}
                 ${superato.superato ? '' : M.rigaRequisiti(['lof'], t, 0, 'window.toggleRequisitoScoprire')}
-                ${(!superato.superato && e.note.length) ? `<div style="margin-top:12px; color:#888; font-size:12px; line-height:1.6;">` +
-                    e.note.map(n => `• ${n}`).join('<br>') + `</div>` : ''}
             </div>`;
+        // 28 ottobre (Paolo): le note del tiro nella ⓘ (o sotto il tasto).
+        if (!superato.superato) e.note.forEach(n => M.nota('step-modifiers', 'Scoprire', n, { tipo: 'regole' }));
 
         const btn = (document.getElementById('btn-esegui-calcolo') || document.querySelector('#step-modifiers .huge-btn'));
         if (btn) {
@@ -371,7 +372,7 @@
             calcDiv.innerHTML = `
                 <div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; background:rgba(0,255,0,0.1); margin-top:20px;">
                     <h2 style="color:${COL.bordo}; margin:0;">SCOPERTA INVIATA</h2>
-                    <p style="font-size:12px; color:#aaa;">${e.automatico ? 'Successo automatico col Multispectral Visor.' : 'Tiro WIP in corso...'}</p>
+                    <p style="font-size:var(--fs-xs); color:var(--mn-debole,#aaaaaa);">${e.automatico ? 'Successo automatico col Multispectral Visor.' : 'Tiro WIP in corso...'}</p>
                 </div>`;
             calcDiv.style.display = 'block';
         }
@@ -386,7 +387,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_scoprire.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_scoprire.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

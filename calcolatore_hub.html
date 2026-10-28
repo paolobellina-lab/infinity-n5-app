@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-18.1 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-27.2 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -15,7 +15,18 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Teko:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #111; color: #00ff00; font-family: 'Share Tech Mono', monospace; padding: 20px; }
+        /* 27 ottobre (collaudo grafico, punto 8): a 1280 px i caratteri da 13
+           px erano troppo piccoli e la pagina quasi vuota; a 820 px andava
+           bene. Le misure crescono con la larghezza dello schermo (clamp: un
+           minimo, che e` quello di prima a 820 px, e un massimo), senza
+           regole per schermi diversi: l'Hub resta a quattro colonne sempre.
+           Secondo giro (sera, H01): a 1280 px restava quasi vuoto. Ora fra
+           820 e 1280 px le misure salgono di piu`: testo 13 -> 16, righe
+           12 -> 15, nome 24 -> 28, miniatura 70 -> 110, icone 44 -> 56. */
+        :root { --hub-testo: clamp(13px, calc(0.652vw + 7.65px), 18px); --hub-riga: clamp(12px, calc(0.652vw + 6.65px), 17px);
+                --hub-nome: clamp(24px, calc(0.87vw + 16.87px), 32px); --hub-foto: clamp(70px, calc(8.696vw - 1.31px), 140px);
+                --hub-icona: clamp(44px, calc(2.609vw + 22.61px), 64px); --hub-gruppo: clamp(24px, calc(1.304vw + 13.3px), 34px); }
+        body { background: #111; color: #00ff00; font-family: 'Share Tech Mono', monospace; padding: 20px; font-size: var(--hub-testo); }
         .turn-controller { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-bottom:10px; margin-bottom:20px; border-bottom:2px dashed #00ff00; }
         .turno-centro { display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:center; flex:1; }
         .btn-turn { background: #00ff00; color: #000; font-family: 'Teko', sans-serif; font-size: 22px; padding: 6px 18px; cursor: pointer; border: none; font-weight: bold; border-radius: 5px; }
@@ -25,8 +36,8 @@
         #current-active-text { font-family:'Teko', sans-serif; font-size:32px; line-height:1; text-shadow:0 0 10px currentColor; }
         .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .faction-panel { border: 1px solid #555; padding: 10px; background: #222; border-radius: 5px; }
-        .log-container { background: #000; border: 1px solid #444; height: 200px; overflow-y: scroll; padding: 10px; font-size: 12px; margin-top: 20px; color: #888; }
-        .state-tag { display:inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin: 2px 4px 2px 0; text-transform: uppercase; background: #444; color: #fff; white-space: nowrap; letter-spacing: 0.5px; }
+        .log-container { background: #000; border: 1px solid #444; height: 200px; overflow-y: scroll; padding: 10px; font-size: var(--hub-riga); margin-top: 20px; color: #888; }
+        .state-tag { display:inline-block; padding: 2px 6px; border-radius: 3px; font-size: max(10px, calc(var(--hub-riga) - 2px)); margin: 2px 4px 2px 0; text-transform: uppercase; background: #444; color: #fff; white-space: nowrap; letter-spacing: 0.5px; }
         .state-tags-row { display:flex; flex-wrap:wrap; margin-top:4px; }
         /* L'ELENCO DELLE TRUPPE come la lista d'esercito (12 ottobre, Paolo).
            Due fazioni affiancate, ognuna su due colonne: quattro colonne,
@@ -35,26 +46,26 @@
            fazione) e per il telefono (una colonna sola) sono state tolte.
            Le schede si guardano e basta: nessuno stato scelto. */
         .gruppo-hub { margin: 4px 0 14px; }
-        .gruppo-hub-titolo { font-family:'Teko', sans-serif; font-size:24px; font-weight:700; color:#eee; letter-spacing:1px;
+        .gruppo-hub-titolo { font-family:'Teko', sans-serif; font-size:var(--hub-gruppo); font-weight:700; color:#eee; letter-spacing:1px;
             border-bottom:2px solid #bbb; margin-bottom:10px; }
         .gruppo-hub-schede { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
         /* Come la lista in PDF e il fac simile di Paolo: niente riquadro, una
            linea a L blu-grigia che parte dalla miniatura e chiude la scheda. */
-        .scheda-truppa { position:relative; display:flex; gap:10px; min-height:96px; padding:6px 8px 10px 0; background:transparent;
+        .scheda-truppa { position:relative; display:flex; gap:10px; min-height:calc(var(--hub-foto) + 26px); padding:6px 8px 10px 0; background:transparent;
             border-left:2px solid #6f8a99; border-bottom:2px solid #6f8a99; border-bottom-left-radius:2px; }
-        .scheda-truppa .st-foto { width:70px; min-height:90px; align-self:stretch; object-fit:contain; object-position:center bottom;
-            flex:0 0 70px; filter:drop-shadow(0 3px 6px rgba(0,0,0,.8)); }
-        .scheda-truppa .st-sigla { flex:0 0 70px; display:flex; align-items:center; justify-content:center; color:#777;
+        .scheda-truppa .st-foto { width:var(--hub-foto); min-height:calc(var(--hub-foto) + 20px); align-self:stretch; object-fit:contain; object-position:center bottom;
+            flex:0 0 var(--hub-foto); filter:drop-shadow(0 3px 6px rgba(0,0,0,.8)); }
+        .scheda-truppa .st-sigla { flex:0 0 var(--hub-foto); display:flex; align-items:center; justify-content:center; color:#777;
             font-family:'Teko', sans-serif; font-size:30px; }
         .scheda-truppa .st-testo { flex:1; min-width:0; }
-        .scheda-truppa .st-nome { font-family:'Teko', sans-serif; font-size:24px; line-height:1; font-weight:700;
-            text-transform:uppercase; color:var(--st-colore); overflow-wrap:anywhere; }
+        .scheda-truppa .st-nome { font-family:'Teko', sans-serif; font-size:var(--hub-nome); line-height:1; font-weight:700;
+            text-transform:uppercase; color:var(--st-colore); overflow-wrap:break-word; hyphens:auto; }
         .scheda-truppa .st-alias { text-transform:none; color:#bbb; font-weight:500; }
         .scheda-truppa .st-stati .state-icona { border-radius:50%; overflow:hidden; }
         .scheda-truppa .st-stati { gap:6px; margin:4px 0 2px; }
-        .scheda-truppa .st-stati .state-icona img { width:44px !important; height:44px !important; border-radius:50%;
+        .scheda-truppa .st-stati .state-icona img { width:var(--hub-icona) !important; height:var(--hub-icona) !important; border-radius:50%;
             box-shadow:0 0 0 3px #9a9a9a; background:#2a2a2a; }
-        .scheda-truppa .st-riga { color:#ccc; font-size:12px; line-height:1.35; margin-top:5px; overflow-wrap:anywhere; }
+        .scheda-truppa .st-riga { color:#ccc; font-size:var(--hub-riga); line-height:1.35; margin-top:5px; overflow-wrap:anywhere; }
         .scheda-truppa .st-riga b { color:#fff; }
         /* 18 ottobre: le icone del Fairy Dust accanto al nome della fazione. */
         .fairy-dust { display:inline-flex; gap:6px; vertical-align:middle; margin-left:8px; }
@@ -169,7 +180,7 @@
         // quello dove una copia vecchia (cache del telefono) e` piu` probabile.
         (function () {
             var g = (typeof window !== 'undefined') ? window : globalThis;
-            var v = { file: 'calcolatore_hub.html', versione: '2026-10-18.1', proprieta: 'INTERFACCIA' };
+            var v = { file: 'calcolatore_hub.html', versione: '2026-10-27.2', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();

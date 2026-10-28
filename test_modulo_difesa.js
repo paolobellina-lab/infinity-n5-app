@@ -1,4 +1,7 @@
-// @versione 2026-10-26.1 | test_modulo_difesa.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_modulo_difesa.js | proprieta`: chat TEST
+// 2026-10-28.1: motore 2026-10-28.1. RISCRITTA la prova della Sagoma esclusa
+//    dalla Soppressione: il motivo sta nella ⓘ (window.INFO['step-weapon'],
+//    tipo 'nonpuo'), non piu` a schermo. Nessuna prova in piu`.
 // .1 (26 ott): sez. 3 girata (ordine_difesa 2026-10-26.1): il tasto «sto schivando una
 //    Sagoma» e` tolto, la funzione resta.
 // Test end-to-end del modulo Difesa — node test_modulo_difesa.js
@@ -19,6 +22,10 @@ global.goToStep = () => {}; global.confirmMultiAro = () => {};
 
 require('./catalogo_n5.js'); require('./database_comune.js');
 const M = require('./motore_regole_n5.js');
+// 28 ottobre (motore 2026-10-28.1): le spiegazioni e le escluse stanno nella ⓘ
+// della schermata; senza app.html il motore le deposita in window.INFO[idStep].
+const noteDi = (st) => ((global.window && global.window.INFO) || {})[st] || [];
+
 require('./ordine_difesa.js');
 
 const alguacil = { id: 'n1', alias: 'Alguacil', ph: 10, wip: 12, arm: 1,
@@ -111,8 +118,9 @@ h = nodo('weapon-buttons-container').innerHTML;
 ok(h.includes('Heavy Machine Gun'), 'la Heavy Machine Gun è offerta');
 ok(h.includes('SF Mode: B3'), 'il Burst della SF Mode è 3');
 ok(h.includes('PS e munizioni invariati'), 'e la schermata dice cosa NON cambia');
-ok(h.includes('Chain Rifle') && h.includes('non ha il Tratto'),
-   'la Sagoma è esclusa perché il database dice che non ha il Tratto Suppressive Fire');
+// RISCRITTO il 28 ottobre: prima h.includes('Chain Rifle') && h.includes('non ha il Tratto').
+ok(noteDi('step-weapon').some(v => /^Chain Rifle non utilizzabile/.test(v.titolo) && /non ha il Tratto "Suppressive Fire"/.test(v.testo) && v.tipo === 'nonpuo') && !h.includes('non ha il Tratto'),
+   'la Sagoma è esclusa perché il database dice che non ha il Tratto Suppressive Fire (nella ⓘ, tipo nonpuo)');
 ok(h.includes('0 / 0 / -3'),
    'la schermata mostra le gittate SF ufficiali: 0 / 0 / -3');
 

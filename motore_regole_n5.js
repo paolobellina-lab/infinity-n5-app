@@ -1,4 +1,4 @@
-// @versione 2026-10-27.4 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.7 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-27.4';
+    M.VERSIONE = '2026-10-28.7';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -343,6 +343,28 @@
     };
     M.bersaglioPunto = function () {
         return { id: 'punto', name: 'PUNTO SUL TAVOLO', nome: 'PUNTO SUL TAVOLO', punto: true };
+    };
+    // D09 (28 ottobre, collaudo grafico): la riga per la schermata "IN
+    // ATTESA DI ARO..." (app.html, #wait-aro-msg). Dice contro CHI e` la
+    // prima meta`, e con un'arma Targetless che il bersaglio e` un punto
+    // del tavolo: senza, chi guarda non vede nessuna truppa segnata e non
+    // capisce cosa sta reagendo a cosa. Testo HTML semplice, '' se non c'e`
+    // niente da dire (nessun bersaglio: Movimento e simili).
+    M.rigaAttesaAro = function (bersagli, ordine) {
+        const bs = Array.isArray(bersagli) ? bersagli : (G.combatTargets || G.pendingTargets || []);
+        const o = ordine || G.currentOrder || {};
+        if (!bs.length) return '';
+        const esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); };
+        let arma = '';
+        try { const p = o.weapon ? M.profiloArma(o.weapon) : null; arma = String((p && p.nome) || o.weapon || '').replace(/ \((BS|CC) Mode\)/i, ''); } catch (e) { arma = ''; }
+        const punto = bs.some(t => t && (t.punto === true || String(t.id) === 'punto'));
+        const truppe = bs.filter(t => t && !(t.punto === true || String(t.id) === 'punto')).map(t => t.alias || t.name || t.nome).filter(Boolean);
+        const parti = [];
+        if (punto) parti.push('<b style="color:#ffaa33;">un punto del tavolo</b> (nessuna truppa)');
+        if (truppe.length) parti.push('<b style="color:#fff;">' + truppe.map(esc).join(', ') + '</b>');
+        return '<div class="riga-attesa-aro" style="color:#ddd; font-size:16px; margin-top:8px;">' +
+               (punto && !truppe.length ? 'Bersaglio: ' : (bs.length > 1 ? 'Bersagli: ' : 'Bersaglio: ')) + parti.join(' + ') +
+               (arma ? ' <span style="color:#aaa;">· ' + esc(arma) + '</span>' : '') + '</div>';
     };
     M.creaAttacco = function (input) {
         const errori = [];
@@ -6081,19 +6103,27 @@
             const dif = (ctx.trovaUnita ? ctx.trovaUnita(b.name || b.nome, b.id) : null) || b;
             const es = M.esitoSagomaAlleati(arma, M.statoBersaglio(dif), { alleatoNellaSagoma: b.alleatoNellaSagoma, alleatiInMischia: b.alleatiInMischia });
             if (es.annullato) b.sagome.forEach(L => { if (!annullate[L]) annullate[L] = b.name || b.nome || M.nomeUnita(dif); });
+            // D07 (28 ottobre): la risposta per LETTERA (ordine_attacco_bs,
+            // una domanda sola per tutte le Sagome). Annulla SOLO le lettere
+            // accese: un bersaglio sotto A e B, con un alleato sotto la A,
+            // resta preso dalla B. Fumo ed Eclipse non si annullano mai.
+            if (Array.isArray(b.sagomeConAlleato) && !M.sagomaInnocua(arma)) {
+                b.sagomeConAlleato.forEach(L => { if (b.sagome.indexOf(L) >= 0 && annullate[L] === undefined) annullate[L] = ''; });
+            }
         });
+        const perche = function (L) { return annullate[L] ? 'prende ' + annullate[L] + ' con un tuo alleato' : 'prende un tuo alleato o un neutrale'; };
         return bs.map(function (b) {
             if (!b || !Array.isArray(b.sagome)) return b;
             const sue = b.sagome.filter((L, i, a) => a.indexOf(L) === i);
-            const via = sue.filter(L => annullate[L]);
-            const restano = sue.filter(L => !annullate[L]);
+            const via = sue.filter(L => annullate[L] !== undefined);
+            const restano = sue.filter(L => annullate[L] === undefined);
             const c = Object.assign({}, b, { sagome: sue, sagomeAnnullate: via, sagomeValide: restano });
             if (via.length && restano.length) {
                 c.burst = restano.length;
-                c.notaSagome = 'Sagome ' + via.map(L => L + ' (annullata: prende ' + annullate[L] + ' con un tuo alleato)').join(', ') + '. Restano ' + restano.join(', ') + ': ' + restano.length + ' Tiro/i Salvezza.';
+                c.notaSagome = 'Sagome ' + via.map(L => L + ' (annullata: ' + perche(L) + ')').join(', ') + '. Restano ' + restano.join(', ') + ': ' + restano.length + ' Tiro/i Salvezza.';
             } else if (via.length) {
                 c.burst = sue.length;
-                c.sagomaAnnullataDaLettere = via.map(L => 'Sagoma ' + L + ' (' + annullate[L] + ')').join(', ');
+                c.sagomaAnnullataDaLettere = via.map(L => 'Sagoma ' + L + ' (' + (annullate[L] || 'alleato o neutrale sotto') + ')').join(', ');
             } else {
                 c.burst = sue.length;
                 c.notaSagome = 'Sotto le Sagome ' + sue.join(', ') + ': ' + sue.length + ' Tiro/i Salvezza.';
@@ -6162,7 +6192,8 @@
             // colpo annullato). Il tasto non scelto resta grigio spento.
             const tasto = function (val, testo) {
                 const si = (v === val);
-                const acceso = val ? 'background:#3a3000; border-color:#ffdd00; color:#ffdd00;'
+                // 28 ottobre (TEST, giro 17): lo stesso giallo della domanda per lettera dell'Attacco BS.
+                const acceso = val ? M.stileTavolozza('attenzione-fondo', 'attenzione', 'attenzione')
                                    : 'background:#003300; border-color:#00ff00; color:#00ff00;';
                 return `<button type="button" class="huge-btn" style="flex:1; margin:0; min-height:48px; font-size:16px; ${si ? acceso : 'background:#111; border-color:#444; color:#888;'}" onclick="${comando}(${indice}, ${val})">${testo}</button>`;
             };
@@ -6228,6 +6259,89 @@
         });
         return out;
     };
+    // ==================================================================
+    // LA BARRA DELLE GITTATE (28 ottobre, Paolo via INTERFACCIA).
+    // Sotto la barra UN numero per confine, sul cambio di colore (0 ... 8 ...
+    // 16 ...), non "0-8" "8-16" centrati sotto ogni casella. Le bande sono
+    // larghe uguali; il FUORI in coda e` largo 48 px; i numeri stanno sul
+    // confine con una posizione calcolata. E` il disegno che INTERFACCIA ha
+    // fatto per l'ARO (logica_aro.js 2026-10-28.1), qui in un posto solo per
+    // tutti i moduli: prima ogni modulo scriveva la sua barra (sette copie).
+    //   bande             arma.bands: [{ mod, label: '0-8"' }]
+    //   o.indice          la banda scelta (si accende solo se il FUORI e` spento)
+    //   o.tocco(i)        il codice onclick della banda i
+    //   o.fuori           il codice onclick del segmento FUORI; senza, niente FUORI
+    //   o.fuoriAttivo     il FUORI e` acceso
+    //   o.stile           stile del riquadro esterno (margin-bottom:15px)
+    // '' se l'arma non ha bande e non si chiede il FUORI.
+    // ==================================================================
+    M.classeBanda = function (mod) {
+        return mod > 0 ? 'seg-1' : mod === -3 ? 'seg-3' : mod < -3 ? 'seg-4' : 'seg-2';
+    };
+    // I numeri sui confini delle bande: 0, 8, 16, ... (n + 1 numeri).
+    M.confiniGittata = function (bande) {
+        const numero = function (t) { return String(t || '').replace(/["\u201d]/g, '').trim(); };
+        const out = [];
+        (bande || []).forEach(function (b, i, tutte) {
+            const pezzi = String(b.label || '').split('-');
+            out.push(numero(pezzi[0]));
+            if (i === tutte.length - 1) out.push(numero(pezzi[pezzi.length - 1]));
+        });
+        return out;
+    };
+    M.barraGittata = function (bande, o) {
+        o = o || {};
+        bande = bande || [];
+        // Senza bande resta il solo FUORI, se chi chiama lo vuole: il
+        // requisito della gittata si dichiara lo stesso.
+        if (!bande.length && !o.fuori) return '';
+        const tocco = (typeof o.tocco === 'function') ? o.tocco : function () { return ''; };
+        let seg = '';
+        bande.forEach(function (b, i) {
+            const attivo = (!o.fuoriAttivo && o.indice === i) ? 'active' : '';
+            seg += `<div class="range-seg ${M.classeBanda(b.mod)} ${attivo}" onclick="${tocco(i)}">${b.mod > 0 ? '+' + b.mod : b.mod}</div>`;
+        });
+        // L'ultimo segmento: oltre la gittata massima. Non e` una banda (non ha
+        // un MOD): e` un requisito che manca.
+        const fuori = o.fuori ? 48 : 0;
+        if (o.fuori) {
+            seg += `<div class="range-seg seg-fuori ${o.fuoriAttivo ? 'active' : ''}" style="flex:${bande.length ? '0 0 ' + fuori + 'px' : '1'}; background:${o.fuoriAttivo ? '#ffcc00' : '#332b00'}; color:${o.fuoriAttivo ? '#000' : '#ffcc00'}; font-size:12px;" onclick="${o.fuori}">FUORI</div>`;
+        }
+        const n = bande.length;
+        const lab = M.confiniGittata(bande).map(function (c, i) {
+            const sposta = (i === 0) ? '0' : (i === n && !fuori) ? '-100%' : '-50%';
+            return `<span class="confine-gittata" style="position:absolute; left:calc((100% - ${fuori}px) * ${i} / ${n}); transform:translateX(${sposta});">${c}</span>`;
+        }).join('');
+        return `<div style="${o.stile != null ? o.stile : 'margin-bottom:15px;'}"><div class="range-bar">${seg}</div>
+            <div class="confini-gittata" style="position:relative; height:16px; font-size:12px; color:#aaa; margin-top:4px;">${lab}</div></div>`;
+    };
+
+    // La barra delle gittate DENTRO il bottone dell'arma (vedi sopra): celle
+    // da M.gittateRaggruppate, scala di M.SCALA_GITTATA pollici.
+    M.SCALA_GITTATA = 96;
+    M.barraArma = function (celle) {
+        const S = M.SCALA_GITTATA;
+        const pc = function (v) { return Math.round(Math.min(v, S) / S * 10000) / 100; };
+        let da = 0, barra = '', numeri = '';
+        const numero = function (v, ultimo) {
+            const pos = v <= 0 ? 'left:0;' : (v >= S ? 'right:0;' : `left:${pc(v)}%; transform:translateX(-50%);`);
+            return `<span class="confine-arma" style="position:absolute; ${pos}">${v}</span>`;
+        };
+        numeri += numero(0);
+        celle.forEach(function (c) {
+            const fino = Math.min(c.fino, S);
+            if (fino <= da) return;
+            const k = c.mod > 0 ? ['#4CAF50', '#000'] : c.mod === 0 ? ['#03A9F4', '#000'] : c.mod === -3 ? ['#FFC107', '#000'] : ['#D32F2F', '#000']; // stessi colori di .seg-1..4 (app.html): scelta di Paolo 28/10, MOD 0 azzurro
+            barra += `<div class="cella-gittata" data-da="${da}" data-fino="${c.fino}" data-mod="${c.mod}" style="flex:0 0 ${pc(fino) - pc(da)}%; box-sizing:border-box; border-right:1px solid rgba(0,0,0,.35); background:${k[0]}; color:${k[1]}; font-size:16px; font-weight:700; line-height:22px; text-align:center; overflow:hidden; white-space:nowrap;">${c.mod > 0 ? '+' + c.mod : c.mod}</div>`;
+            da = fino;
+            numeri += numero(fino);
+        });
+        if (da < S) {
+            barra += `<div class="cella-gittata cella-fuori" data-da="${da}" data-fino="${S}" style="flex:1 1 auto; background:#1f242d; color:#8a93a3; font-family:'Share Tech Mono',monospace; font-size:10px; line-height:22px; text-align:center; overflow:hidden; white-space:nowrap;">${(S - da) >= 16 ? 'FUORI' : ''}</div>`;
+        }
+        return `<div class="barra-arma" style="display:flex; height:22px; border-radius:3px; overflow:hidden; border:1px solid rgba(0,0,0,.4);">${barra}</div>` +
+            `<div class="confini-arma" style="position:relative; height:13px; margin-top:2px; color:#333; font-family:'Share Tech Mono',monospace; font-size:11px; line-height:13px;">${numeri}</div>`;
+    };
     M.bottoneArma = function (p, o) {
         o = o || {};
         p = p || {};
@@ -6256,11 +6370,15 @@
         else if (p.isCC) bassa = scritta('CORPO A CORPO');
         else {
             const celle = M.gittateRaggruppate(p.bands);
-            bassa = celle.length ? `<div style="display:grid; gap:4px; text-align:center; grid-template-columns:repeat(${celle.length}, minmax(0,1fr));">` +
-                celle.map(function (c) {
-                    const k = c.mod > 0 ? ['#3f9a44', '#fff'] : c.mod === 0 ? ['#5a6475', '#fff'] : c.mod === -3 ? ['#ffb300', '#000'] : ['#e53935', '#fff'];
-                    return `<div style="display:flex; flex-direction:column; border-radius:3px; overflow:hidden; border:1px solid rgba(0,0,0,.3);"><span style="background:#1f242d; color:#b0b8a6; font-family:'Share Tech Mono',monospace; font-size:11px; padding:1px 0;">${c.fino}"</span><span style="font-size:17px; font-weight:700; padding:1px 0; background:${k[0]}; color:${k[1]};">${c.mod > 0 ? '+' + c.mod : c.mod}</span></div>`;
-                }).join('') + `</div>` : scritta('&nbsp;');
+            // 28 ottobre (Paolo, via INTERFACCIA): la barra delle gittate del
+            // bottone ha una SCALA COMUNE di 96" per tutte le armi: ogni fascia
+            // e` larga quanto i suoi pollici, cosi` un Combi (48") e un Missile
+            // (96") si confrontano a colpo d'occhio. Sotto, un numero per
+            // confine (0, 16, 32 ...), sul cambio di colore. Oltre la gittata
+            // massima, fino a 96", il FUORI in coda (grigio scuro).
+            // Ogni cella porta data-da, data-fino e data-mod: e` il modo di
+            // leggerla per chi la controlla (i banchi), invece del disegno.
+            bassa = celle.length ? M.barraArma(celle) : scritta('&nbsp;');
             if (tpl) bassa += scritta('+ SAGOMA CIRCOLARE', true);
         }
         // 26 ottobre (proposta di INTERFACCIA): gli USI di un'arma Disposable
@@ -6288,7 +6406,7 @@
             attributi: o.attributi,
             stile: esaurito ? 'opacity:.5;' : o.stile,
             sopra: img ? `<img src="${img}" alt="" style="position:absolute; left:-4px; top:6px; width:86px; height:52px; object-fit:contain; filter:drop-shadow(0 4px 8px rgba(0,0,0,.9)); z-index:5;" onerror="${ripiego ? `if(this.dataset.r){this.style.display='none';}else{this.dataset.r=1;this.src='${ripiego}';}` : `this.style.display='none';`}">` : '',
-            alta: `<div style="flex:1 1 auto; min-width:0; overflow-wrap:anywhere; font-size:26px; font-weight:700; color:#fff; text-transform:uppercase; line-height:.95; letter-spacing:1px;">${nome}</div>
+            alta: `<div style="flex:1 1 auto; min-width:0; overflow-wrap:break-word; hyphens:manual; font-size:${M.misuraNomeArma(nome)}px; font-weight:700; color:#fff; text-transform:uppercase; line-height:.95; letter-spacing:1px;">${nome}</div>
                 <div style="flex:0 0 auto; display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; max-width:40%;">${tag}</div>`,
             bassa: bassa
         });
@@ -6318,6 +6436,229 @@
     // Le misure di default sono quelle del fac simile di Paolo: con i
     // default l'uscita di M.bottoneArma e` identica a quella della .09.3.
     // ==================================================================
+    // 27 ottobre (collaudo grafico, Paolo): il nome dell'arma andava a capo
+    // a META` parola ("LIGHT FLAMETHRO WER"): overflow-wrap:anywhere spezza
+    // dove capita. Ora si va a capo solo fra le parole, e se la parola piu`
+    // lunga e` lunga il carattere scende: 26 px fino a 9 lettere, 24 fino a
+    // 11, 21 fino a 13, poi 18. Misure prese col carattere VERO (Teko, che e`
+    // stretto) nella colonna piu` stretta, quella dell'ARO: la prima taratura
+    // (21/17) era fatta sul ripiego Arial.
+    M.misuraNomeArma = function (nome) {
+        const lunga = String(nome || '').split(/\s+/).reduce(function (m, w) { return Math.max(m, w.length); }, 0);
+        return lunga <= 9 ? 26 : lunga <= 11 ? 24 : lunga <= 13 ? 21 : 18;
+    };
+
+    // ==================================================================
+    // COLORI E INTESTAZIONE DEI MODULI (27 ottobre, collaudo grafico).
+    // Il collaudo ha misurato 22 sfondi di tasto e colori scritti fissi in
+    // 25 file (#00ff00, #004400...). M.COLORI e` la tavolozza che i moduli
+    // ordine_*.js leggono al posto dei colori fissi: un posto solo per
+    // cambiarli. I valori sono quelli gia` in uso (nessun cambio visivo),
+    // tranne le conferme, che diventano tutte una.
+    // ==================================================================
+    M.COLORI = {
+        conferma: { sfondo: '#004400', bordo: '#00ff00', testo: '#fff' },
+        si: { sfondo: '#004400', bordo: '#00ff00', testo: '#00ff00' },
+        no: { sfondo: '#330000', bordo: '#ff3333', testo: '#fff' },
+        attenzione: { sfondo: '#554400', bordo: '#ffcc00', testo: '#ffcc00' },
+        spento: { sfondo: '#222', bordo: '#555', testo: '#888' },
+        nota: { sfondo: '#111', bordo: '#333', testo: '#aaa' }
+    };
+    M.stileColore = function (nome) {
+        const c = M.COLORI[nome] || M.COLORI.spento;
+        return 'background:' + c.sfondo + '; border-color:' + c.bordo + '; color:' + c.testo + ';';
+    };
+    // ==================================================================
+    // LA TAVOLOZZA (28 ottobre, Paolo: "raggruppa i colori").
+    // I colori di significato dei moduli ordine_*.js e di logica_stati: 23
+    // invece dei 73 scritti a mano (artifact "Tavolozza degli Ordini"). I
+    // moduli non scrivono piu` il colore ma var(--mn-<nome>,<colore>): il
+    // valore vero sta qui, e M.applicaTavolozza lo scrive su :root. Il
+    // colore dopo la virgola e` il ripiego dove la pagina non c'e` (banchi).
+    // Per cambiare un colore in tutta l'app basta cambiarlo qui.
+    M.TAVOLOZZA = {
+        'testo': '#ffffff', 'testo-2': '#cccccc', 'debole': '#aaaaaa', 'spento': '#888888', 'scuro': '#000000',
+        'nota-testo': '#ffcc66', 'nota-tenue': '#cc9955', 'nota-fondo': '#1a1000', 'nota-bordo': '#664400',
+        'attenzione': '#ffcc00', 'attenzione-fondo': '#554400', 'acceso': '#ffaa33',
+        'errore': '#ff3333', 'errore-testo': '#ff9999', 'errore-fondo': '#330000', 'errore-bordo': '#883333',
+        'si': '#00ff00', 'si-testo': '#88ff88', 'si-fondo': '#004400', 'si-bordo': '#005500',
+        'fondo-tasto': '#111111', 'fondo-riquadro': '#222222', 'bordo-spento': '#555555'
+    };
+    // Sfondo, bordo e testo dalla tavolozza, in una riga di stile.
+    M.stileTavolozza = function (sfondo, bordo, testo) {
+        return 'background:' + M.colore(sfondo) + '; border-color:' + M.colore(bordo) + '; color:' + M.colore(testo) + ';';
+    };
+    M.colore = function (nome) {
+        const v = M.TAVOLOZZA[nome];
+        if (!v) { if (G.console) G.console.error('⛔ M.colore: "' + nome + '" non e` nella tavolozza.'); return '#ff00ff'; }
+        return 'var(--mn-' + nome + ',' + v + ')';
+    };
+
+    // I COLORI DEGLI ORDINI (28 ottobre, Paolo): "per gli ordini gestisci un
+    // colore ciascuno, in modo da poterlo cambiare a piacimento, ma per ora
+    // mantieni la divisione attuale": Movimenti blu, Abilita` Brevi verdi,
+    // Ordini Interi rossi, come nel menu delle azioni (app.html).
+    // Ogni Ordine ha la SUA voce in M.COLORI_ORDINE: oggi dice solo la
+    // categoria; per cambiargli colore si aggiungono li` i campi da
+    // cambiare, per esempio
+    //   'HACKING': { categoria: 'breve', bordo: '#00ffff', sfondo: '#002244' }
+    // Le cinque tinte di un Ordine:
+    //   bordo     bordo e titolo dell'intestazione, accenti
+    //   sfondo    fondo dell'intestazione e delle scelte accese
+    //   riquadro  fondo dei riquadri del modulo (piu` scuro)
+    //   tenue     bordi e righe dei riquadri
+    //   testo     testo chiaro nei colori dell'Ordine
+    M.CATEGORIE_ORDINE = {
+        movimento: { nome: 'Movimento', bordo: '#00ffff', sfondo: '#002244', riquadro: '#001a22', tenue: '#005566', testo: '#aaeeff' },
+        breve:     { nome: 'Abilita` Breve', bordo: '#00ff00', sfondo: '#003300', riquadro: '#0d2018', tenue: '#1a4428', testo: '#aaffaa' },
+        intero:    { nome: 'Ordine Intero', bordo: '#ff0000', sfondo: '#440000', riquadro: '#220000', tenue: '#553333', testo: '#ffaaaa' }
+    };
+    M.COLORI_ORDINE = {
+        // Movimenti
+        'MOVIMENTO': { categoria: 'movimento' }, 'SCENDI DALLA MOTO': { categoria: 'movimento' }, 'RISALI SULLA MOTO': { categoria: 'movimento' },
+        'SCENDI DAL TAG': { categoria: 'movimento' }, 'RISALI SUL TAG': { categoria: 'movimento' },
+        // Abilita` Brevi
+        'ATTACCO BS': { categoria: 'breve' }, 'ATTACCO CC': { categoria: 'breve' }, 'HACKING': { categoria: 'breve' },
+        'WHITE NOISE': { categoria: 'breve' }, 'SCOPRIRE': { categoria: 'breve' }, 'MEDICO_INGEGNERE': { categoria: 'breve' },
+        'SCHIVATA': { categoria: 'breve' }, 'RESET': { categoria: 'breve' }, 'FORWARD OBSERVER': { categoria: 'breve' },
+        'SENSOR': { categoria: 'breve' }, 'DEACTIVATOR': { categoria: 'breve' }, 'PIAZZARE EQUIPAGGIAMENTO': { categoria: 'breve' },
+        'RICARICARE': { categoria: 'breve' }, 'INTERAGIRE OBIETTIVO': { categoria: 'breve' }, 'IDLE': { categoria: 'breve' },
+        // altri nomi delle stesse azioni (motore_core, ROUTER_AZIONI)
+        'CC_ATTACK': { categoria: 'breve' }, 'PROTHEION': { categoria: 'breve' }, 'INTERAGIRE': { categoria: 'breve' },
+        'PIAZZA_DEPLOYABLE': { categoria: 'breve' }, 'SUPPORTO_WIP': { categoria: 'breve' }, 'SUPPORTO_BS': { categoria: 'breve' },
+        // nomi interni delle reazioni ARO (logica_aro) e Fairy Dust (programma di Infoguerra, Abilita` Breve)
+        'BS_ATTACK': { categoria: 'breve' }, 'DODGE': { categoria: 'breve' }, 'FAIRY DUST': { categoria: 'breve' },
+        // Ordini Interi
+        'CAUTO': { categoria: 'intero' }, 'SALTO': { categoria: 'intero' }, 'ARRAMPICARSI': { categoria: 'intero' },
+        'SOPPRESSIONE': { categoria: 'intero' }, 'BERSERK': { categoria: 'intero' }, 'ATTACCO GUIDATO': { categoria: 'intero' },
+        'ATTACCO INTUITIVO': { categoria: 'intero' }, 'FUOCO SPECULATIVO': { categoria: 'intero' }, 'TRIANGULATED FIRE': { categoria: 'intero' },
+        'TRINCERARSI': { categoria: 'intero' }, 'RIENTRARE IN CAMO': { categoria: 'intero' }, 'CYBERMASK': { categoria: 'intero' },
+        'INGRESSO IN CAMPO': { categoria: 'intero' }, 'REQUEST SPEEDBALL': { categoria: 'intero' }
+    };
+    // Le tinte dell'Ordine `azione`; se l'azione non e` in tabella, quelle
+    // di `ripiego` (l'Ordine "di casa" del modulo che chiede).
+    M.coloreOrdine = function (azione, ripiego) {
+        const chiave = function (a) { return String(a || '').trim().toUpperCase(); };
+        const voce = M.COLORI_ORDINE[chiave(azione)] || M.COLORI_ORDINE[chiave(ripiego)] || { categoria: 'breve' };
+        const cat = M.CATEGORIE_ORDINE[voce.categoria] || M.CATEGORIE_ORDINE.breve;
+        const out = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) { out[k] = voce[k] || cat[k]; });
+        out.categoria = voce.categoria;
+        return out;
+    };
+    // Scrive su :root le tinte dell'Ordine in corso (--mn-ordine-*): i
+    // riquadri dei moduli le leggono con var(--mn-ordine-riquadro,...).
+    M.segnaColoreOrdine = function (c) {
+        const r = G.document && G.document.documentElement;
+        if (!c || !r || !r.style || typeof r.style.setProperty !== 'function') return c;
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) { r.style.setProperty('--mn-ordine-' + k, c[k]); });
+        return c;
+    };
+    // Il COL di un modulo: un oggetto con le tinte dell'Ordine IN CORSO
+    // (currentOrder.action), lette a ogni uso. `casa` e` l'Ordine del modulo,
+    // per quando l'azione non c'e` ancora o non e` in tabella.
+    M.colOrdine = function (casa) {
+        const leggi = function (k) {
+            const c = M.coloreOrdine(G.currentOrder && G.currentOrder.action, casa);
+            M.segnaColoreOrdine(c);
+            return c[k];
+        };
+        const col = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) {
+            Object.defineProperty(col, k, { enumerable: true, get: function () { return leggi(k); } });
+        });
+        return col;
+    };
+    // La tavolozza su :root della pagina, una volta (e di nuovo se cambia).
+    M.applicaTavolozza = function () {
+        const d = G.document;
+        if (!d || typeof d.createElement !== 'function' || !d.head || typeof d.head.appendChild !== 'function') return false;
+        let st = (typeof d.getElementById === 'function') ? d.getElementById('tavolozza-motore') : null;
+        if (!st) { st = d.createElement('style'); st.id = 'tavolozza-motore'; d.head.appendChild(st); }
+        st.textContent = ':root{' + Object.keys(M.TAVOLOZZA).map(function (k) { return '--mn-' + k + ':' + M.TAVOLOZZA[k] + ';'; }).join('') + '}';
+        return true;
+    };
+    try { M.applicaTavolozza(); } catch (e) { G.ultimaEccezione = e; }
+
+    // Il riquadro in cima a ogni Ordine (ATTACCO BS, SCOPRIRE, SUPPORTO...):
+    // prima ogni modulo lo scriveva a mano, con padding, misure e margini
+    // suoi; Sensor e Rientrare in CAMO usavano un titolo h2. Ora uno solo.
+    //   o.titolo   testo del titolo (senza icona davanti: vedi sotto)
+    //   o.nota     riga sotto, piccola (HTML ammesso)
+    //   o.colore   { bordo, sfondo } del modulo (il suo COL)
+    //   o.stile    stile aggiunto in coda al riquadro
+    // ==================================================================
+    // LE NOTE DELLA SCHERMATA (28 ottobre, contratto di INTERFACCIA in
+    // app.html 2026-10-28.1). Le spiegazioni non si scrivono piu` a schermo:
+    // si depositano, e le opzioni del telefono decidono se mostrarle nella ⓘ
+    // o sotto il loro tasto.
+    //   M.azzeraNote(idStep)                      all'inizio del disegno
+    //   M.nota(idStep, titolo, testo, { tipo, tasto })
+    //     tipo   'nonpuo' perche` una cosa non si puo` | 'mod' spiegazione di
+    //            un MOD | 'regole' regola o promemoria (predefinito)
+    //     tasto  il data-nota del bottone a cui la nota appartiene; senza, la
+    //            nota va al bottone che ha per scritta il suo titolo, o alla
+    //            schermata
+    // Titolo e testo arrivano come testo semplice (l'HTML del motore, <b> e
+    // <br>, si toglie qui): la pagina li scappa.
+    // Senza app.html (i banchi che caricano solo i moduli) la voce finisce in
+    // window.INFO[idStep] con la stessa forma che le da` app.html, e lo si
+    // dice una volta in console.
+    // ==================================================================
+    M.TIPI_NOTA = ['stato', 'nonpuo', 'mod', 'regole'];
+    M.soloTesto = function (h) {
+        return String(h == null ? '' : h).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+    };
+    let avvisoNoteSenzaPagina = false;
+    function noteSenzaPagina() {
+        if (!avvisoNoteSenzaPagina && G.console) { G.console.warn('window.aggiungiInfo assente (serve app.html dalla 2026-10-28.1): note in window.INFO, senza la ⓘ.'); }
+        avvisoNoteSenzaPagina = true;
+        G.INFO = G.INFO || {};
+        return G.INFO;
+    }
+    M.azzeraNote = function (idStep) {
+        if (!idStep) return;
+        if (typeof G.azzeraInfo === 'function') G.azzeraInfo(idStep);
+        else noteSenzaPagina()[idStep] = [];
+    };
+    // 28 ottobre (piano di collaudo grafico): nei testi del codice l'accento
+    // e` scritto con l'apice inverso ("puo`", "e`", "perche`"), e nella ⓘ si
+    // leggeva cosi`. Qui diventa la lettera accentata, per tutte le note.
+    M.accenti = function (t) {
+        return String(t == null ? '' : t)
+            .replace(/\b(perch|poich|finch|affinch|bench|sicch|purch|cosicch|nonch|ventitr|trentatr)e`/gi, function (m, r) { return r + (m.charAt(m.length - 2) === 'E' ? 'É' : 'é'); })
+            .replace(/\b([Nn])e`/g, function (m, n) { return n + 'é'; })
+            .replace(/a`/g, 'à').replace(/e`/g, 'è').replace(/i`/g, 'ì').replace(/o`/g, 'ò').replace(/u`/g, 'ù')
+            .replace(/A`/g, 'À').replace(/E`/g, 'È').replace(/I`/g, 'Ì').replace(/O`/g, 'Ò').replace(/U`/g, 'Ù');
+    };
+    M.nota = function (idStep, titolo, testo, extra) {
+        extra = extra || {};
+        const t = M.accenti(M.soloTesto(titolo)), x = M.accenti(M.soloTesto(testo));
+        if (!idStep || (!t && !x)) return;
+        const tipo = M.TIPI_NOTA.indexOf(extra.tipo) >= 0 ? extra.tipo : 'regole';
+        const ex = { tipo: tipo, tasto: extra.tasto ? String(extra.tasto) : '' };
+        if (typeof G.aggiungiInfo === 'function') { G.aggiungiInfo(idStep, t, x, ex); return; }
+        const I = noteSenzaPagina();
+        (I[idStep] = I[idStep] || []).push({ titolo: t, testo: x, tipo: ex.tipo, tasto: ex.tasto });
+    };
+
+    // Un titolo senza le icone (emoji) in testa: "🎯 ATTACCO BS" -> "ATTACCO BS".
+    M.senzaIconaIniziale = function (t) {
+        return String(t == null ? '' : t).replace(/^(?:[\u2190-\u2BFF\u2600-\u27BF\uFE0F\u200D\u20E3]|[\uD83C-\uDBFF][\uDC00-\uDFFF])+\s*/, '');
+    };
+    M.intestazioneOrdine = function (o) {
+        o = o || {};
+        const c = o.colore || {};
+        const bordo = c.bordo || '#888', sfondo = c.sfondo || '#111';
+        // 28 ottobre (Paolo, via INTERFACCIA): nessuna icona davanti al
+        // titolo (🎯 ATTACCO BS, 🩺 SUPPORTO...). I moduli non la passano
+        // piu`; qui la si toglie comunque, cosi` la regola sta in un posto.
+        const titolo = M.senzaIconaIniziale(o.titolo);
+        return `<div class="intestazione-ordine" style="background:${sfondo}; border:1px solid ${bordo}; padding:10px 12px; border-radius:5px; margin-bottom:15px; text-align:center;${o.stile ? ' ' + o.stile : ''}">` +
+            `<b style="color:${bordo}; font-size:18px; letter-spacing:1px;">${titolo}</b>` +
+            (o.nota ? `<br><span style="color:#aaa; font-size:13px;">${o.nota}</span>` : '') + `</div>`;
+    };
+
     M.formaBottone = function (o) {
         o = o || {};
         const colore = o.contorno || '#b4b8bf';
@@ -10815,7 +11156,12 @@
             const ingresso = az === (M.azioneCanonica('INGRESSO IN CAMPO') || 'INGRESSO IN CAMPO') || String(azione || '').toUpperCase() === 'INGRESSO IN CAMPO';
             if (inRiserva && !ingresso) {
                 bloccanti.push({ stato: 'riserva', motivo: 'In Riserva (Schieramento Aereo): l\'unico Ordine possibile e` INGRESSO IN CAMPO.' });
-            } else if (!inRiserva && ingresso && unita && unita.deployState) {
+            } else if (!inRiserva && ingresso && unita) {
+                // 27 ottobre (INTERFACCIA, collaudo): qui c'era anche
+                // "&& unita.deployState". Una truppa schierata normalmente
+                // spesso non ha il campo (NORMAL e` il default), quindi il
+                // blocco non scattava e il menu offriva INGRESSO IN CAMPO a
+                // chi era gia` sul tavolo. Campo assente = sul tavolo.
                 bloccanti.push({ stato: 'sulTavolo', motivo: 'E` gia` sul tavolo: l\'INGRESSO IN CAMPO serve solo a chi e` in Riserva.' });
             }
         }
@@ -13974,6 +14320,82 @@
     // e img/panoceania/. `fazione` e` quella del PROPRIETARIO del Marker:
     // accanto alle proprie unita` le proprie immagini, accanto a quelle
     // dell'avversario le sue. Senza fazione resta il percorso comune di prima.
+    // 27 ottobre (Paolo, BS-29): gli stati di SCHIERAMENTO che una truppa puo`
+    // scegliere fuori dal tavolo, decisi dal motore e non da una ricerca di
+    // parole nella pagina. Il caso che mancava: lo Spector (Parachutist,
+    // Combat Jump) non vedeva lo Schieramento Aereo.
+    //  - AD: le skill con l'etichetta Airborne Deployment (Parachutist riga
+    //    9455, Combat Jump riga 8042, "AD:" e Airborne Deployment): la truppa
+    //    resta fuori tavolo e entra con INGRESSO IN CAMPO. deployState 'AD'.
+    //  - HIDDEN: Hidden Deployment.
+    // La "riserva" del regolamento (righe 1743-1745) NON e` questo: e` l'ultima
+    // truppa schierata, comunque nella Fase di Schieramento. Non e` uno stato.
+    //   -> [{ stato, etichetta, nota }]
+    // 27 ottobre sera (Paolo, accordo con INTERFACCIA): TUTTE le scelte di
+    // schieramento oltre a NORMALE stanno qui. Prima CAMO, IMP, FOXHOLE e SEED
+    // le decideva apriDeployStati (roster_manager.js) cercando parole nelle
+    // skill, come succedeva per "RISERVA / AD" (BS-29).
+    //   -> [{ stato, etichetta, nota, disponibile, acceso }], nell'ordine in
+    //      cui vanno mostrate.
+    //   stato        il valore per setDeployState
+    //   etichetta    il testo del tasto, completo (col MOD di Mimetism)
+    //   nota         TESTO SEMPLICE (niente HTML), '' se non serve
+    //   disponibile  false = tasto spento, e la nota dice perche`
+    //   acceso       lo stato attuale della truppa e` questo (CAMO vale anche
+    //                per CAMO_x, IMP per IMP_1/IMP_2). Una voce accesa non e`
+    //                mai spenta: la truppa ci sta gia`.
+    M.opzioniSchieramento = function (unita) {
+        const s = skillsDi(unita);
+        const dep = String((unita && unita.deployState) || 'NORMAL').toUpperCase();
+        const out = [];
+        const voce = function (stato, etichetta, nota, acceso, disponibile) {
+            const d = acceso || disponibile !== false;
+            out.push({ stato: stato, etichetta: etichetta, nota: nota || '', disponibile: d, acceso: !!acceso });
+        };
+        // CAMO: chi ha Camouflage (anche 1 Use) o e` un MARKER delle liste
+        // vecchie (M.puoEntrareInCamo). Il Camouflage (1 Use) consumato spegne
+        // la voce, con il motivo del motore.
+        {
+            const pc = M.puoEntrareInCamo(unita || {});
+            if (pc.puo || pc.unUso) {
+                let mod = 0;
+                try { mod = M.valoreMimetismo(unita) || 0; } catch (e) { mod = 0; }
+                voce('CAMO', 'SEGNALINO CAMO' + (mod ? ' (' + mod + ')' : ''),
+                     pc.puo ? '' : String(pc.motivo || ''), dep.indexOf('CAMO') === 0, pc.puo);
+            }
+        }
+        // IMPERSONATION: il livello dalla skill (IMP-2 se scritto, se no IMP-1).
+        if (/IMPERSONATION|IMPERSONATOR|\bIMP-1\b|\bIMP-2\b/.test(s)) {
+            const due = /IMPERSONATION-2|\bIMP-2\b|\bIMP 2\b/.test(s);
+            voce(due ? 'IMP_2' : 'IMP_1', due ? 'IMPERSONATION (IMP-2)' : 'IMPERSONATION (IMP-1)', '', dep.indexOf('IMP') === 0);
+        }
+        if (/\bSAPPER\b|\bZAPPATORE\b/.test(s)) voce('FOXHOLE', 'FOXHOLE (Sapper)', '', dep === 'FOXHOLE');
+        if (/TRANSMUTATION \(HATCHING\)|SEED-EMBRYO|SEED EMBRYO/.test(s)) voce('SEED', 'SEED-EMBRYO', '', dep === 'SEED');
+        if (/\bPARACHUTIST\b|\bCOMBAT JUMP\b|\bAIRBORNE DEPLOYMENT\b|\bAD:/.test(s)) {
+            voce('AD', 'SCHIERAMENTO AEREO',
+                 'Resta fuori dal tavolo: entra nel tuo Turno Attivo con INGRESSO IN CAMPO, usando il suo Ordine. Finche` e` fuori non aggiunge il suo Ordine al Pool.',
+                 dep === 'AD');
+        }
+        if (/\bHIDDEN DEPLOYMENT\b/.test(s)) {
+            voce('HIDDEN', 'HIDDEN DEPLOYMENT',
+                 'Non si piazza niente: annota la posizione. Si rivela dichiarando un Ordine o un ARO, o se viene Scoperto.',
+                 dep === 'HIDDEN');
+        }
+        return out;
+    };
+    // Gli stati di schieramento che nella propria app hanno un'etichetta e
+    // un'icona ma non un numero: oggi il solo Hidden Deployment.
+    //   -> { tipo, etichetta, immagine } | null
+    M.segnalinoSenzaNumero = function (unita, fazione) {
+        if (!unita) return null;
+        const dep = String(unita.deployState || '').toUpperCase();
+        if (dep !== 'HIDDEN') return null;
+        const C = (((catalogo('SCHIERAMENTO') || {}).segnaliniSenzaNumero) || {}).HIDDEN || {};
+        const file = C.file || 'img/icon_hidden.png';
+        return { tipo: 'HIDDEN', etichetta: C.etichetta || 'HIDDEN',
+                 immagine: M.iconaDellaFazione ? M.iconaDellaFazione(file, fazione || (M.fazionePropria ? M.fazionePropria() : null)) : file,
+                 immagineComune: file };
+    };
     M.immagineMarker = function (tipo, n, fazione) {
         const S = catalogo('SCHIERAMENTO') || {};
         const C = (S.segnaliniNumerati || {})[tipo];
@@ -13994,6 +14416,12 @@
         return cart + p.slice(altra ? altra.length : 'img/'.length);
     };
     M.etichettaMarker = function (unita) {
+        // 27 ottobre (Paolo): l'Hidden Deployment non ha un segnalino sul
+        // tavolo (la posizione si annota), ma nella PROPRIA app accanto al nome
+        // va detto: «HIDDEN». Niente numero (non c'e` niente da distinguere al
+        // tavolo); all'avversario non arriva comunque (invisibili).
+        const H = M.segnalinoSenzaNumero(unita);
+        if (H) return H.etichetta;
         const t = unita && unita.tipoNumeroMarker, n = unita && unita.numeroMarker;
         if (!t || !n || M.segnalinoMarker(unita) !== t) return null;
         const C = ((catalogo('SCHIERAMENTO') || {}).segnaliniNumerati || {})[t] || {};

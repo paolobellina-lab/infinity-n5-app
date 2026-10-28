@@ -1,4 +1,4 @@
-<!-- @versione 2026-09-24.1 | scegli_fazione.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-28.1 | scegli_fazione.html | proprieta`: chat INTERFACCIA -->
 <!doctype html>
 <html lang="it">
 <head>
@@ -24,6 +24,26 @@
     .nomadi { background: #1a0000; border: 3px solid #cc0000; }
     .pano   { background: #001a33; border: 3px solid #00ccff; }
     .hub    { background: #1a1a00; border: 3px solid #ffaa00; }
+    /* 28 ottobre (Paolo): le opzioni delle note, per QUESTO telefono. */
+    .opzioni { min-height: 56px; font-size: 26px; background: #111; border: 2px solid #555; color: #bbb; }
+    #pannello-note { display: none; position: fixed; inset: 0; z-index: 10; background: rgba(0,0,0,.7); }
+    #pannello-note .foglio { position: absolute; left: 0; right: 0; bottom: 0; max-height: 90vh; overflow-y: auto; background: #1a1a1a;
+        border-top: 2px solid #ff6600; border-radius: 12px 12px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+    #pannello-note h2 { font-family: 'Teko', sans-serif; font-size: 30px; font-weight: 400; color: #ff6600; text-align: center; margin: 0 0 6px; }
+    #pannello-note .gruppo { font-family: 'Teko', sans-serif; font-size: 17px; color: #888; letter-spacing: 1px; margin: 6px 0 6px; border-bottom: 1px solid #333; }
+    #pannello-note .dove { display: flex; gap: 8px; margin-bottom: 12px; }
+    #pannello-note .dove button { flex: 1; min-height: 56px; max-width: none; font-size: 22px; background: #111; color: #888; border: 2px solid #555; border-radius: 5px; }
+    #pannello-note .dove button.attivo { background: #ff6600; color: #000; border-color: #ff6600; }
+    #pannello-note .tipo { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #333; cursor: pointer; }
+    #pannello-note .tipo .nome { font-family: 'Teko', sans-serif; font-size: 23px; line-height: 1; color: #fff; }
+    #pannello-note .tipo .desc { font-family: monospace; font-size: 13px; color: #aaa; margin-top: 3px; }
+    #pannello-note .tipo.fisso { cursor: default; }
+    #pannello-note .interruttore { flex: 0 0 auto; width: 58px; height: 32px; border-radius: 16px; border: 2px solid #555; background: #111; position: relative; box-sizing: border-box; }
+    #pannello-note .interruttore::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #666; }
+    #pannello-note .tipo.acceso .interruttore { border-color: #ff6600; background: #440000; }
+    #pannello-note .tipo.acceso .interruttore::after { left: auto; right: 3px; background: #ff6600; }
+    #pannello-note .tipo.fisso .interruttore { opacity: .55; }
+    #pannello-note .chiudi { min-height: 56px; max-width: none; margin-top: 14px; font-size: 26px; background: #222; color: #ff3333; border: 2px solid #ff3333; border-radius: 5px; }
 </style>
 </head>
 <body>
@@ -34,6 +54,9 @@
 <button class="nomadi" onclick="scegli('nomadi')">NOMADS</button>
 <button class="pano" onclick="scegli('panoceania')">PANOCEANIA</button>
 <button class="hub" onclick="apriHub()">HUB — REGISTA</button>
+<button class="opzioni" onclick="apriOpzioniNote()">OPZIONI DELLE NOTE</button>
+
+<div id="pannello-note" onclick="if (event.target === this) chiudiOpzioniNote()"></div>
 
 <script>
 // Questa pagina NON carica nessun modulo del progetto, ed e` il motivo per
@@ -51,6 +74,53 @@ function scegli(nome) {
 function apriHub() {
     location.replace('calcolatore_hub.html');
 }
+
+// LE OPZIONI DELLE NOTE (28 ottobre, Paolo). Le legge app.html
+// (window.opzioniNote): stessa chiave, stesso formato.
+//   { dove: 'info' | 'tasti', tipi: { stato, nonpuo, mod, regole } }
+// I cambi di stato restano sempre accesi: cambiano la partita.
+var TIPI_NOTE = [
+    { id: 'stato',  nome: 'CAMBI DI STATO',      desc: 'Marker rivelato, Foxhole perso… (sempre)', fisso: true },
+    { id: 'nonpuo', nome: 'PERCHÉ NON SI PUÒ',   desc: 'Reazione, arma o truppa non disponibile' },
+    { id: 'mod',    nome: 'SPIEGAZIONI DEI MOD', desc: 'Copertura −3/+3, zona, Targetless' },
+    { id: 'regole', nome: 'REGOLE E PROMEMORIA', desc: 'Mina, Foxhole, Burst, schieramento' }
+];
+function leggiOpzioniNote() {
+    var o = { dove: 'info', tipi: { stato: true, nonpuo: true, mod: true, regole: true } }, l = null;
+    try { l = JSON.parse(localStorage.getItem('opzioni_note') || 'null'); } catch (e) { l = null; }
+    if (l && (l.dove === 'info' || l.dove === 'tasti')) o.dove = l.dove;
+    if (l && l.tipi) TIPI_NOTE.forEach(function (t) { if (typeof l.tipi[t.id] === 'boolean') o.tipi[t.id] = l.tipi[t.id]; });
+    o.tipi.stato = true;
+    return o;
+}
+function salvaOpzioniNote(o) {
+    o.tipi.stato = true;
+    try { localStorage.setItem('opzioni_note', JSON.stringify(o)); } catch (e) {}
+    disegnaOpzioniNote();
+}
+function sceltaDove(dove) { var o = leggiOpzioniNote(); o.dove = dove; salvaOpzioniNote(o); }
+function sceltaTipo(id) {
+    var o = leggiOpzioniNote();
+    if (id === 'stato') return;
+    o.tipi[id] = !o.tipi[id]; salvaOpzioniNote(o);
+}
+function disegnaOpzioniNote() {
+    var o = leggiOpzioniNote();
+    var dove = function (id, testo) { return '<button type="button" class="' + (o.dove === id ? 'attivo' : '') + '" data-dove="' + id + '" onclick="sceltaDove(\'' + id + '\')">' + testo + '</button>'; };
+    document.getElementById('pannello-note').innerHTML = '<div class="foglio">' +
+        '<h2>OPZIONI DELLE NOTE</h2>' +
+        '<div class="gruppo">DOVE</div>' +
+        '<div class="dove">' + dove('tasti', 'SOTTO I TASTI') + dove('info', 'NELLA \u24d8') + '</div>' +
+        '<div class="gruppo">QUALI</div>' +
+        TIPI_NOTE.map(function (t) {
+            return '<div class="tipo' + (o.tipi[t.id] ? ' acceso' : '') + (t.fisso ? ' fisso' : '') + '" data-tipo="' + t.id + '" onclick="sceltaTipo(\'' + t.id + '\')">' +
+                   '<div style="flex:1;"><div class="nome">' + t.nome + '</div><div class="desc">' + t.desc + '</div></div>' +
+                   '<div class="interruttore"></div></div>';
+        }).join('') +
+        '<button type="button" class="chiudi" onclick="chiudiOpzioniNote()">CHIUDI</button></div>';
+}
+function apriOpzioniNote() { disegnaOpzioniNote(); document.getElementById('pannello-note').style.display = 'block'; }
+function chiudiOpzioniNote() { var p = document.getElementById('pannello-note'); p.innerHTML = ''; p.style.display = 'none'; }
 </script>
 
 </body>

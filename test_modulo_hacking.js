@@ -1,4 +1,7 @@
-// @versione 2026-10-12.3 | test_modulo_hacking.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_modulo_hacking.js | proprieta`: chat TEST
+// 2026-10-28.1: motore 2026-10-28.1. RISCRITTA la prova dei Supportware
+//    dell EVO: stanno nella ⓘ (window.INFO['step-weapon'], «<nome>: non
+//    gestito da questa schermata», tipo 'nonpuo'). Nessuna prova in piu`.
 // 2026-10-12.3: la prova del difetto di testo cambia verso (motore 2026-10-12.9,
 //    catalogo 2026-10-12.2): la nota "uno solo" nomina le fonti VERE coi loro
 //    valori. Quattro casi nominati, e la controprova con una fonte sola.
@@ -29,6 +32,10 @@ global.goToStep = () => {}; global.renderTargetButtons = () => {};
 
 require('./catalogo_n5.js'); require('./database_comune.js');
 const M = require('./motore_regole_n5.js');
+// 28 ottobre (motore 2026-10-28.1): le spiegazioni e le escluse stanno nella ⓘ
+// della schermata; senza app.html il motore le deposita in window.INFO[idStep].
+const noteDi = (st) => ((global.window && global.window.INFO) || {})[st] || [];
+
 require('./ordine_hacking.js');
 
 const interventor = { id: 'n1', alias: 'Interventor', wip: 14, skills: 'Hacker, Hacking Device' };
@@ -79,7 +86,9 @@ nuovo(evo);
 window.startUnitHackingLoop();
 h = nodo('weapon-buttons-container').innerHTML;
 ok(h.includes('Nessun programma d\'attacco'), 'EVO: nessun programma d attacco');
-ok(h.includes('ENHANCED REACTION'), 'ma i suoi Supportware sono elencati');
+// RISCRITTO il 28 ottobre: prima h.includes('ENHANCED REACTION').
+ok(noteDi('step-weapon').some(v => v.titolo === 'ENHANCED REACTION: non gestito da questa schermata' && v.tipo === 'nonpuo') && !h.includes('ENHANCED REACTION'),
+   'ma i suoi Supportware sono elencati (nella ⓘ: «ENHANCED REACTION: non gestito da questa schermata»)');
 
 console.log('\n=== 2. Dati dei programmi ===');
 const carb = M.armaDaProgramma('CARBONITE');

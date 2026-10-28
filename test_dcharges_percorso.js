@@ -1,4 +1,7 @@
-// @versione 2026-10-12.1 | test_dcharges_percorso.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_dcharges_percorso.js | proprieta`: chat TEST
+// 2026-10-28.1: motore 2026-10-28.1. RISCRITTA la prova dei bersagli rifiutati:
+//    il motivo sta nella ⓘ (window.INFO['step-wait-aro'], «<nome> non
+//    ammesso», tipo 'nonpuo'), non a schermo. Nessuna prova in piu`.
 // 2026-10-12.1: sezioni 6-8 — la Demolition Mode DETONA nello stesso Ordine
 //    (motore 2026-10-12.6, ordine_piazzamento 2026-10-12.1, righe 6043-6047):
 //    niente segnalino (E23 da creaDeployable), niente E16 all'invio, la busta
@@ -21,6 +24,10 @@ global.goToStep = () => {}; global.mostraTitoloUnitaCorrente = () => {};
 let spedito = null; global.inviaCalcoloAllHub = (p) => { spedito = p; };
 require('./catalogo_n5.js'); require('./database_comune.js');
 const M = require('./motore_regole_n5.js');
+// 28 ottobre (motore 2026-10-28.1): le spiegazioni e le escluse stanno nella ⓘ
+// della schermata; senza app.html il motore le deposita in window.INFO[idStep].
+const noteDi = (st) => ((global.window && global.window.INFO) || {})[st] || [];
+
 require('./ordine_piazzamento.js');
 
 const dc = M.profiloArma('D-Charges (Demolition Mode)');
@@ -51,7 +58,10 @@ const per = id => g.find(x => x.unita.id === id);
 ok(per('sano') && per('sano').ammesso === false, 'un nemico SANO: rifiutato dal modulo');
 ok(per('imm') && per('imm').ammesso === true, 'un nemico Immobilizzato: ammesso');
 ok(per('pos') && per('pos').ammesso === false, 'Immobilizzato ma Posseduto: rifiutato, l esclusione vince');
-ok(/Non ammessi/.test(nodo('enemy-target-buttons').innerHTML), 'e la schermata mostra i rifiutati col motivo');
+// RISCRITTO il 28 ottobre: prima /Non ammessi/ nella schermata.
+{ const na = noteDi('step-wait-aro').filter(v => / non ammesso$/.test(v.titolo) && v.tipo === 'nonpuo');
+  ok(na.length === 2 && na.some(v => /POSSEDUTO/.test(v.testo)) && na.some(v => /NEMICO_IMMOBILIZZATO/.test(v.testo)) && !/Non ammessi/.test(nodo('enemy-target-buttons').innerHTML),
+     'e i rifiutati col motivo stanno nella ⓘ: il sano e il Posseduto (' + na.map(v => v.titolo).join(', ') + ')'); }
 
 console.log('\n=== 3. Il click su un bersaglio rifiutato non passa ===');
 window.scegliBersaglioPiazzamento('sano');

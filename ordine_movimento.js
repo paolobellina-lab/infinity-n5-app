@@ -1,4 +1,4 @@
-// @versione 2026-10-26.1 | ordine_movimento.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.4 | ordine_movimento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏃 MOVIMENTO E INSTRADAMENTO (N5) - ordine_movimento.js
 // ------------------------------------------
@@ -229,6 +229,8 @@
         stepMod.style.display = 'flex';
 
         const cont = document.getElementById('targets-allocation-container');
+
+        window.MotoreN5.azzeraNote('step-modifiers');
         if (cont) cont.innerHTML = '';
         const btn = (document.getElementById('btn-esegui-calcolo') || document.querySelector('#step-modifiers .huge-btn'));
         if (btn) btn.style.display = 'none';
@@ -240,10 +242,10 @@
         const calcRes = document.getElementById('calc-result');
         if (calcRes) {
             calcRes.innerHTML = `
-                <div style="text-align:center; padding:20px; border:2px solid #00ff00; background:rgba(0,255,0,0.1); margin-top:20px;">
-                    <h2 style="color:#00ff00; margin:0;">${nome.toUpperCase()} REGISTRATO</h2>
-                    <p style="font-size:12px; color:#aaa;">Nessun tiro da calcolare. L'Hub risolverà eventuali ARO nemici.</p>
-                    ${info && info.note ? `<p style="font-size:12px; color:#888; margin-top:8px;">${info.note}</p>` : ''}
+                <div style="text-align:center; padding:20px; border:2px solid var(--mn-si,#00ff00); background:rgba(0,255,0,0.1); margin-top:20px;">
+                    <h2 style="color:var(--mn-si,#00ff00); margin:0;">${nome.toUpperCase()} REGISTRATO</h2>
+                    <p style="font-size:var(--fs-xs); color:var(--mn-debole,#aaaaaa);">Nessun tiro da calcolare. L'Hub risolverà eventuali ARO nemici.</p>
+                    ${info && info.note ? `<p style="font-size:var(--fs-xs); color:var(--mn-spento,#888888); margin-top:8px;">${info.note}</p>` : ''}
                 </div>`;
             calcRes.style.display = 'block';
         }
@@ -315,16 +317,20 @@
         const calcRes = document.getElementById('calc-result');
         if (calcRes) { calcRes.innerHTML = ''; calcRes.style.display = 'none'; }
         const cont = document.getElementById('targets-allocation-container');
+        window.MotoreN5.azzeraNote('step-modifiers');
         if (!cont) return;
-        cont.innerHTML = `
-            <div style="background:#111; border:1px solid #ff9900; padding:14px; border-radius:5px;">
-                <div style="text-align:center; color:#ccc; font-size:15px; margin-bottom:12px;">
-                    <b style="color:#ff9900;">MOVIMENTO CAUTO</b><br>
-                    <span style="font-size:13px;">Il movimento inizia E finisce fuori dalla LoF e dalla ZdC di ogni nemico?</span>
+        // 28 ottobre (piano grafico, GR-E33): il colore e` quello dell'Ordine
+        // (M.coloreOrdine('CAUTO'): Ordine Intero, rosso), con l'intestazione comune.
+        const M = window.MotoreN5;
+        const col = M.segnaColoreOrdine(M.coloreOrdine('CAUTO'));
+        cont.innerHTML = M.intestazioneOrdine({ colore: col, titolo: 'MOVIMENTO CAUTO', nota: 'Ordine Intero · il calcolatore non ha la mappa' }) + `
+            <div style="background:${col.riquadro}; border:1px solid ${col.tenue}; padding:14px; border-radius:5px;">
+                <div style="text-align:center; color:var(--mn-testo-2,#cccccc); font-size:var(--fs-m); margin-bottom:12px;">
+                    Il movimento inizia E finisce fuori dalla LoF e dalla ZdC di ogni nemico?
                 </div>
-                <button type="button" class="huge-btn" style="width:100%; min-height:55px; margin-bottom:8px; background:#004400; border-color:#00ff00; color:#00ff00;"
+                <button type="button" class="huge-btn" style="width:100%; min-height:55px; margin-bottom:8px; ${window.MotoreN5.stileColore('si')}"
                     onclick="window.rispondiCauto(true, '${dove}')">✅ SÌ, FUORI DA LoF E ZdC — nessun ARO</button>
-                <button type="button" class="huge-btn" style="width:100%; min-height:55px; background:#442200; border-color:#ff9900; color:#ff9900;"
+                <button type="button" class="huge-btn" style="width:100%; min-height:55px; background:var(--mn-nota-fondo,#1a1000); border-color:var(--mn-attenzione,#ffcc00); color:var(--mn-attenzione,#ffcc00);"
                     onclick="window.rispondiCauto(false, '${dove}')">⚠️ NO, DENTRO LoF o ZdC — ARO come al solito</button>
             </div>`;
     };
@@ -341,9 +347,9 @@
         if (!cont) return;
         const fuori = !!window.cautoFuoriLoF;
         cont.innerHTML = `
-            <div style="background:#111; border:1px solid #444; padding:10px; border-radius:5px; margin-bottom:15px; text-align:center; color:#ccc; font-size:13px;">
-                <b>MOVIMENTO CAUTO</b> — dichiarato ${fuori ? '<span style="color:#00ff00;">fuori da LoF e ZdC: nessun ARO</span>' : '<span style="color:#ff9900;">dentro LoF o ZdC: ARO come al solito</span>'}
-                <div style="color:#888; font-size:12px; margin-top:6px;">${(aro && aro.motivo) || ''}</div>
+            <div style="background:var(--mn-fondo-tasto,#111111); border:1px solid var(--mn-bordo-spento,#555555); padding:10px; border-radius:5px; margin-bottom:15px; text-align:center; color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s);">
+                <b>MOVIMENTO CAUTO</b> — dichiarato ${fuori ? '<span style="color:var(--mn-si,#00ff00);">fuori da LoF e ZdC: nessun ARO</span>' : '<span style="color:var(--mn-attenzione,#ffcc00);">dentro LoF o ZdC: ARO come al solito</span>'}
+                <div style="color:var(--mn-spento,#888888); font-size:var(--fs-xs); margin-top:6px;">${(aro && aro.motivo) || ''}</div>
             </div>` + cont.innerHTML;
     };
 
@@ -356,7 +362,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_movimento.js', versione: '2026-10-26.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_movimento.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

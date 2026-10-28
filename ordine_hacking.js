@@ -1,4 +1,4 @@
-// @versione 2026-10-18.1 | ordine_hacking.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.3 | ordine_hacking.js | proprieta`: chat MOTORE
 // ==========================================
 // 💻 INFOGUERRA (HACKING) N5 - ordine_hacking.js
 // ------------------------------------------
@@ -37,7 +37,20 @@
         return window.MotoreN5;
     }
 
-    const COL = { bordo: '#00ffff', sfondo: '#002244' };
+    // 28 ottobre (Paolo): il colore e` dell'ORDINE, non del modulo (M.COLORI_ORDINE nel
+    // motore: Movimenti blu, Abilita` Brevi verdi, Ordini Interi rossi). COL legge le
+    // tinte dell'Ordine in corso a ogni uso; 'HACKING' e` quello di casa. Prima: { bordo: '#00ffff', sfondo: '#002244' };.
+    const COL = (function () {
+        const ripiego = { bordo: '#00ffff', sfondo: '#002244', riquadro: '#002244', tenue: '#00ffff', testo: '#00ffff' };
+        const o = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) {
+            Object.defineProperty(o, k, { enumerable: true, get: function () {
+                const M = window.MotoreN5;
+                return (M && typeof M.colOrdine === 'function') ? M.colOrdine('HACKING')[k] : ripiego[k];
+            } });
+        });
+        return o;
+    })();
 
     window.avviaFaseHacking = function (actionId, isSecondHalf) {
         window.currentOrder = window.currentOrder || {};
@@ -75,14 +88,12 @@
 
         const esito = M.programmiAttacco(unita);
         const container = document.getElementById('weapon-buttons-container');
+        window.MotoreN5.azzeraNote('step-weapon');
 
-        container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:10px; margin-bottom:15px; text-align:center; color:#fff; border-radius:5px;">
-            <b style="color:${COL.bordo}; font-size:20px;">💻 INFOGUERRA</b><br>
-            <span style="font-size:14px; color:#ccc;">WIP ${unita.wip || '?'} · ${esito.dispositivi.length ? esito.dispositivi.join(' + ') : 'nessun dispositivo'}</span>
-        </div>`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `INFOGUERRA`, nota: `WIP ${unita.wip || '?'} · ${esito.dispositivi.length ? esito.dispositivi.join(' + ') : 'nessun dispositivo'}` })}`;
 
         if (esito.programmi.length === 0) {
-            container.innerHTML += `<p style="color:#ff3333; text-align:center; font-size:18px;">
+            container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-size:var(--fs-m);">
                 ❌ Nessun programma d'attacco disponibile con questo dispositivo.</p>`;
         } else {
             esito.programmi.forEach(function (p) {
@@ -128,15 +139,12 @@
 
         // I programmi non d'attacco esistono: si dicono, non si nascondono.
         esito.nonAttacco = esito.nonAttacco.filter(p => ['FAIRY DUST', 'CYBERMASK', 'WHITE NOISE'].indexOf(p.nome) < 0);
-        if (esito.nonAttacco.length > 0) {
-            container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
-                <b style="color:#aaa;">Altri programmi del dispositivo, non gestiti da questa schermata:</b><br>` +
-                esito.nonAttacco.map(p => `• <b>${p.nome}</b> — ${p.note || p.tipo}`).join('<br>') + `</div>`;
-            // Il Cybermask NON e` "non gestito": e` una Long Skill a se`, e la
-            // sua nota di catalogo dice dove si dichiara.
-        }
+        // Il Cybermask NON e` "non gestito": e` una Long Skill a se`, e la
+        // sua nota di catalogo dice dove si dichiara.
+        // 28 ottobre (Paolo): nella ⓘ (o in cima), non in un riquadro sotto.
+        esito.nonAttacco.forEach(p => M.nota('step-weapon', p.nome + ': non gestito da questa schermata', p.note || p.tipo, { tipo: 'nonpuo' }));
         if (esito.avvisi.length > 0) {
-            container.innerHTML += `<div style="margin-top:10px; padding:10px; background:#221100; border:1px solid #664400; border-radius:5px; color:#cc9955; font-size:13px;">` +
+            container.innerHTML += `<div style="margin-top:10px; padding:10px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-nota-bordo,#664400); border-radius:5px; color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s);">` +
                 esito.avvisi.map(a => `⚠️ ${a.messaggio}`).join('<br>') + `</div>`;
         }
 
@@ -150,15 +158,14 @@
         const M = motore(); if (!M) return;
         const unita = window.coordUnits[window.coordIndex];
         const container = document.getElementById('weapon-buttons-container');
+        window.MotoreN5.azzeraNote('step-weapon');
         if (!container) return;
         const lista = window.roster || [];
-        container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:10px; margin-bottom:15px; text-align:center; color:#fff; border-radius:5px;">
-            <b style="color:${COL.bordo}; font-size:20px;">💻 FAIRY DUST</b><br>
-            <span style="font-size:13px; color:#ccc;">Scegli il Tipo di Truppa della tua lista che riceve Firewall (-3) su tutto il tavolo.<br>Abilità Lunga: Ordine intero, nessun tiro.</span></div>` +
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `FAIRY DUST`, nota: `Scegli il Tipo di Truppa della tua lista che riceve Firewall (-3) su tutto il tavolo.<br>Abilità Lunga: Ordine intero, nessun tiro.` })}` +
             M.TIPI_FAIRY_DUST.map(function (tp) {
                 const quanti = lista.filter(u => String(u.tipo || '').toUpperCase() === tp).length;
-                return `<button class="huge-btn" style="width:100%; min-height:56px; margin-bottom:6px; background:#111; border-color:${COL.bordo};"
-                    onclick="window.eseguiFairyDust('${tp}')">${tp} <span style="color:#888; font-size:13px;">(${quanti} in lista)</span></button>`;
+                return `<button class="huge-btn" style="width:100%; min-height:56px; margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:${COL.bordo};"
+                    onclick="window.eseguiFairyDust('${tp}')">${tp} <span style="color:var(--mn-spento,#888888); font-size:var(--fs-s);">(${quanti} in lista)</span></button>`;
             }).join('');
         window.goToStep('step-weapon');
     };
@@ -186,7 +193,7 @@
         if (div) {
             div.innerHTML = `<div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; margin-top:20px;">
                 <h2 style="color:${COL.bordo}; margin:0;">FAIRY DUST SUI ${d.unitaAggiornata.states.fairyDust}</h2>
-                <p style="font-size:13px; color:#ccc;">${d.note.join('<br>')}</p></div>`;
+                <p style="font-size:var(--fs-s); color:var(--mn-testo-2,#cccccc);">${d.note.join('<br>')}</p></div>`;
             div.style.display = 'block';
         }
     };
@@ -226,7 +233,7 @@
         if (div) {
             div.innerHTML = `<div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; margin-top:20px;">
                 <h2 style="color:${COL.bordo}; margin:0;">CYBERMASK DICHIARATO</h2>
-                <p style="font-size:13px; color:#ccc;">${nota}</p></div>`;
+                <p style="font-size:var(--fs-s); color:var(--mn-testo-2,#cccccc);">${nota}</p></div>`;
             div.style.display = 'block';
         }
     };
@@ -308,13 +315,14 @@
         const unita = window.coordUnits[window.coordIndex];
         const programma = M.armaDaProgrammaDi(window.currentOrder.unit, window.currentOrder.weapon);
         const container = document.getElementById('targets-allocation-container');
+        window.MotoreN5.azzeraNote('step-modifiers');
 
         const assegnati = window.combatTargets.reduce((s, t) => s + (t.burst || 0), 0);
         const restanti = window.totalBurst - assegnati;
 
-        let html = `<div style="text-align:center; color:#fff; margin-bottom:5px; font-size:18px;">
-            PROGRAMMI DA ASSEGNARE: <b style="color:${COL.bordo}; font-size:24px;">${restanti}</b></div>
-            <div style="text-align:center; color:#888; font-size:12px; margin-bottom:15px;">
+        let html = `<div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:5px; font-size:var(--fs-m);">
+            PROGRAMMI DA ASSEGNARE: <b style="color:${COL.bordo}; font-size:var(--fs-l);">${restanti}</b></div>
+            <div style="text-align:center; color:var(--mn-spento,#888888); font-size:var(--fs-xs); margin-bottom:15px;">
                 ${programma.nome} · B${programma.burst} · ${programma.ammo} · PS ${programma.ps}
                 ${programma.dimezzaBTS ? ' · BTS dimezzato' : ' · BTS pieno'}</div>`;
 
@@ -327,48 +335,46 @@
 
             const dettaglio = mods.voci.length
                 ? mods.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                        <span style="color:#aaa;">${v.motivo}</span>
-                        <b style="color:${v.valore >= 0 ? '#00ff00' : '#ff6666'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b></div>`).join('')
-                : `<div style="color:#888; text-align:center;">Nessun modificatore</div>`;
+                        <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
+                        <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b></div>`).join('')
+                : `<div style="color:var(--mn-spento,#888888); text-align:center;">Nessun modificatore</div>`;
 
             html += `
             <div class="target-card" style="border-left:4px solid ${COL.bordo}; margin-bottom:20px; background:rgba(0,255,255,0.05); padding:15px; border-radius:5px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <b style="color:${COL.bordo}; font-size:20px;">${tgt.name}</b>
+                    <b style="color:${COL.bordo}; font-size:var(--fs-l);">${tgt.name}</b>
                     <div class="burst-ctrl" style="border-color:${COL.bordo};">
                         <button class="burst-btn" style="background:${COL.bordo};" onclick="window.adjustTargetBurstHacking(${index}, -1)">-</button>
-                        <span style="margin:0 10px; font-size:22px; font-weight:bold; color:${tgt.burst > 0 ? '#00ff00' : '#888'}">${tgt.burst} B</span>
+                        <span style="margin:0 10px; font-size:var(--fs-l); font-weight:bold; color:${tgt.burst > 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-spento,#888888)'}">${tgt.burst} B</span>
                         <button class="burst-btn" style="background:${COL.bordo}; opacity:${restanti > 0 ? 1 : 0.3}" onclick="window.adjustTargetBurstHacking(${index}, 1)">+</button>
                     </div>
                 </div>
 
-                <div style="background:#001a22; border:1px solid #005566; padding:10px; border-radius:5px; margin-bottom:10px; font-size:14px;">
-                    <div style="text-align:center; color:#fff; margin-bottom:6px;">
-                        WIP base <b>${mods.base}</b> → Valore di Successo <b style="color:${COL.bordo}; font-size:20px;">${mods.valore}</b>
+                <div style="background:var(--mn-ordine-riquadro,#001a22); border:1px solid var(--mn-ordine-tenue,#005566); padding:10px; border-radius:5px; margin-bottom:10px; font-size:var(--fs-s);">
+                    <div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:6px;">
+                        WIP base <b>${mods.base}</b> → Valore di Successo <b style="color:${COL.bordo}; font-size:var(--fs-l);">${mods.valore}</b>
                     </div>
-                    <div style="border-top:1px solid #004455; padding-top:6px;">${dettaglio}</div>
+                    <div style="border-top:1px solid var(--mn-ordine-tenue,#004455); padding-top:6px;">${dettaglio}</div>
                 </div>
 
                 <button onclick="window.toggleRepeaterNemicoHacking(${index})"
-                    style="width:100%; padding:12px; margin-bottom:10px; font-size:15px; font-weight:bold; border-radius:5px; cursor:pointer;
-                           background:${rep ? '#553300' : '#111'}; color:${rep ? '#ffaa33' : '#888'}; border:2px solid ${rep ? '#ffaa33' : '#444'};">
+                    style="width:100%; padding:12px; margin-bottom:10px; font-size:var(--fs-m); font-weight:bold; border-radius:5px; cursor:pointer;
+                           background:${rep ? 'var(--mn-attenzione-fondo,#554400)' : 'var(--mn-fondo-tasto,#111111)'}; color:${rep ? 'var(--mn-acceso,#ffaa33)' : 'var(--mn-spento,#888888)'}; border:2px solid ${rep ? 'var(--mn-acceso,#ffaa33)' : 'var(--mn-bordo-spento,#555555)'};">
                     📡 ${REP.pulsante || 'VIA REPEATER NEMICO'}: ${rep ? 'SÌ (Firewall ' + (REP.firewall || -3) + ')' : 'NO'}
                 </button>
-                ${rep ? `<div style="color:#aaa; font-size:12px; margin:-4px 0 10px; text-align:center;">${REP.spiegazione || ''}</div>` : ''}
+                ${rep ? `<div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); margin:-4px 0 10px; text-align:center;">${REP.spiegazione || ''}</div>` : ''}
                 <div style="margin-bottom:10px;">${M.rigaRequisiti(['area'], tgt, index, 'window.toggleRequisitoHacking')}</div>
-                ${mods.requisitoFallito ? `<div style="padding:10px; margin-bottom:10px; background:#330000; border:2px solid #ff3333; border-radius:5px; color:#ff9999; font-size:13px;">
+                ${mods.requisitoFallito ? `<div style="padding:10px; margin-bottom:10px; background:var(--mn-errore-fondo,#330000); border:2px solid var(--mn-errore,#ff3333); border-radius:5px; color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s);">
                     <b>⚠️ REQUISITO NON SODDISFATTO → IDLE</b><br>${mods.avvisi.join('<br>')}</div>` : ''}
 
-                <div style="text-align:center; padding:8px; background:#001122; border:1px solid ${COL.bordo}; color:${COL.bordo}; font-size:13px; border-radius:5px;">
+                <div style="text-align:center; padding:8px; background:var(--mn-ordine-riquadro,#001122); border:1px solid ${COL.bordo}; color:${COL.bordo}; font-size:var(--fs-s); border-radius:5px;">
                     Se fallisce il Tiro Salvezza: <b>${programma.effetto}</b>
                 </div>
             </div>`;
         });
 
-        html += `<div style="padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:12px; line-height:1.6;">
-            L'Hacking agisce nell'Area di Hacking: niente LoF, gittata, copertura né mimetismo.<br>
-            Solo truppe in forma di Modello sono bersagliabili: i Marker vanno Scoperti prima.
-        </div>`;
+        // 28 ottobre (Paolo): la regola nella ⓘ (o in cima), non a schermo.
+        M.nota('step-modifiers', 'Area di Hacking', 'Niente LoF, gittata, copertura né mimetismo. Solo truppe in forma di Modello sono bersagliabili: i Marker vanno Scoperti prima.', { tipo: 'mod' });
 
         container.innerHTML = html;
 
@@ -473,7 +479,7 @@
             calcDiv.innerHTML = `
                 <div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; background:rgba(0,255,255,0.1); margin-top:20px;">
                     <h2 style="color:${COL.bordo}; margin:0;">ATTACCO CYBER INVIATO</h2>
-                    <p style="font-size:12px; color:#aaa;">Risoluzione Infoguerra in corso all'Hub...</p>
+                    <p style="font-size:var(--fs-xs); color:var(--mn-debole,#aaaaaa);">Risoluzione Infoguerra in corso all'Hub...</p>
                 </div>`;
             calcDiv.style.display = 'block';
         }
@@ -488,7 +494,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_hacking.js', versione: '2026-10-18.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_hacking.js', versione: '2026-10-28.3', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,12 @@
-// @versione 2026-10-15.2 | test_modulo_aro.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_modulo_aro.js | proprieta`: chat TEST
+// 2026-10-28.1: logica_aro 2026-10-28.2 (INTERFACCIA). La ⓘ di app.html in
+//    piccolo (aggiungiInfo / azzeraInfo, voci in window.INFO); RISCRITTA la
+//    prova del vincolo "un bersaglio solo" della Soppressione: sta nella ⓘ dei
+//    modificatori (titolo «Burst»), non a schermo. Nessuna prova in piu`.
+// 2026-10-27.3: sezione 5 girata (logica_aro 2026-10-27.1, INTERFACCIA): il
+//   bottone porta il nome GREZZO del profilo, selezionaArmaAro('Heavy Machine
+//   Gun', false) per l SF Mode; prima 'Heavy Machine Gun (SF Mode)'. Esito
+//   uguale: B3 al tavolo, si sceglie col suo onclick vero.
 // 2026-10-15.2: sezione 6 girata (motore 2026-10-15.2, logica_aro 2026-10-15.2,
 //    Paolo): in ARO le modalita` della stessa arma sono UN bottone; i modi in
 //    window._modiAro['A:<famiglia>'], la scelta nella tendina delle munizioni
@@ -24,6 +32,13 @@ let rispostaAro = null; global.inviaRispostaAro = (p) => { rispostaAro = p; };
 
 require('./catalogo_n5.js'); require('./database_comune.js');
 const M = require('./motore_regole_n5.js');
+// 28 ottobre (logica_aro 2026-10-28.2): le spiegazioni vanno nella ⓘ della
+// pagina, window.aggiungiInfo di app.html, che questo banco non carica. Qui la
+// si fa in piccolo, con lo stesso contratto: aggiungiInfo(idStep, titolo,
+// testo, { tipo, tasto }) e azzeraInfo(idStep), le voci in window.INFO.
+global.INFO = global.INFO || {};
+if (typeof global.aggiungiInfo !== 'function') global.aggiungiInfo = (st, t, x, e) => { (global.INFO[st] = global.INFO[st] || []).push({ titolo: String(t || ''), testo: String(x || ''), tipo: (e && e.tipo) || 'regole', tasto: (e && e.tasto) || '' }); };
+if (typeof global.azzeraInfo !== 'function') global.azzeraInfo = (st) => { global.INFO[st] = []; };
 require('./logica_aro.js');
 
 const alguacil = { id: 'n1', alias: 'Alguacil', bs: 11, ph: 10, wip: 12,
@@ -102,17 +117,25 @@ window.avviaCicloAroUnita();
 window.selezionaAzioneAro('BS_ATTACK');
 let h = nodo('aro-weapon-list').innerHTML;
 ok(h.includes('SF Mode') || h.includes('SOPPRESSIONE'), 'la schermata segnala il profilo SF Mode');
-ok(h.includes('Heavy Machine Gun (SF Mode)'), 'l arma è offerta in SF Mode');
+// 27 ottobre (logica_aro 27.1): nel bottone il nome GREZZO, e il secondo
+// argomento dice il modo: false = SF Mode, true = modo normale.
+const ocSF = (h.match(/onclick="(window\.selezionaArmaAro\('Heavy Machine Gun', false\))"/) || [])[1];
+ok(!!ocSF, 'l arma è offerta in SF Mode: selezionaArmaAro(\'Heavy Machine Gun\', false), col nome grezzo');
+ok(!h.includes("selezionaArmaAro('Heavy Machine Gun (SF Mode)'"), '  e non piu` col nome composto «Heavy Machine Gun (SF Mode)»');
+ok(h.includes("selezionaArmaAro('Heavy Machine Gun', true)"), 'CONTROPROVA: il modo normale e` lo stesso nome con true');
 // Girata il 15 ottobre (INTERFACCIA): il bottone approvato da Paolo non
 // mostra il Burst. Il 3 compare dopo la scelta: lo prova aroCurrentConfig.burst
 // qui sotto, che e` il numero che arriva al tavolo.
 ok(!/\bB3\b/.test(h) && !/\bB1\b/.test(h), 'il bottone dell arma non mostra il Burst (ne` B3 ne` B1)');
 
-window.selezionaArmaAro('Heavy Machine Gun (SF Mode)');
+if (ocSF) eval(ocSF); else window.selezionaArmaAro('Heavy Machine Gun (SF Mode)');
 window.selezionaBersaglioAro('Fusilier');
-ok(window.aroCurrentConfig.burst === 3, 'il Burst in ARO è 3, non 1');
-ok(nodo('aro-modifiers-content').innerHTML.includes('bersaglio solo'),
-   'e il vincolo "tutto su un bersaglio solo" è mostrato');
+ok(window.aroCurrentConfig.burst === 3, 'il Burst in ARO è 3, non 1 (scelto col suo onclick vero)');
+// RISCRITTO il 28 ottobre (logica_aro 2026-10-28.2, INTERFACCIA): il vincolo sta
+// nella ⓘ dei modificatori (titolo «Burst»), non piu` a schermo. Prima:
+// aro-modifiers-content lo conteneva.
+ok(((window.INFO || {})['step-aro-modifiers'] || []).some(v => v.titolo === 'Burst' && /bersaglio solo/.test(v.testo)) && !nodo('aro-modifiers-content').innerHTML.includes('bersaglio solo'),
+   'e il vincolo "tutto su un bersaglio solo" è mostrato (nella ⓘ, «Burst»)');
 
 nuovo();
 window.selectedAroUnits = ['n1'];

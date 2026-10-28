@@ -1,4 +1,11 @@
-// @versione 2026-10-06.1 | test_correzioni_regole.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_correzioni_regole.js | proprieta`: chat TEST
+// 2026-10-28.1: logica_aro 2026-10-28.2 (INTERFACCIA). Nel blocco b1-b2 la ⓘ
+//    di app.html in piccolo (aggiungiInfo / azzeraInfo, voci in window.INFO);
+//    RISCRITTA la prova della nota di armiARO: sta nella ⓘ (step-aro-weapon,
+//    «Soppressione»), non sotto il riquadro. Nessuna prova in piu`.
+// 2026-10-27.3 (motore 2026-10-27.3, REGOLE 27 ottobre): GIRATO il Combi
+//   (+1B) col Total Reaction in ARO: 4, il (+1B) dell'arma si somma (righe
+//   10227-10228). Controprove: l'abilita` «BS Attack (+1B)» resta 3.
 // Correzioni segnalate dalla chat REGOLE, giro del 20 settembre
 // node test_correzioni_regole.js
 global.window = global;
@@ -477,9 +484,14 @@ ok(trB(combiM) === 3, 'Combi (B3): 3');
 ok(M.burstReattivo({ alias: 'N', skills: '', states: {} }, hmgS).valore === 1,
    'senza Total Reaction la HMG in ARO resta B1');
 const piu1 = M.burstReattivo(trS, M.profiloArma('Combi Rifle(+1B)'));
-ok(piu1.valore === 3, 'Combi (+1B) con Total Reaction: 3, il (+1B) non è applicato in ARO — comportamento invariato');
-// Deciso da REGOLE: in ARO il Total Reaction dà il Burst pieno dell'ARMA e il
-// (+1B) del profilo non si somma. Non è più un punto da verificare.
+ok(piu1.valore === 4 && piu1.voci.some(v => /\+1 Burst anche in ARO \(Total Reaction/.test(v.motivo)),
+   'Combi (+1B) con Total Reaction: 4, il (+1B) dell arma si somma in ARO (righe 10227-10228)', piu1.valore);
+ok(M.burstReattivo(Object.assign({}, trS, { skills: trS.skills + ', BS Attack (+1B)' }), M.profiloArma('Combi Rifle')).valore === 3,
+   'CONTROPROVA: Combi senza (+1B) ma con l abilita` «BS Attack (+1B)»: 3, l abilita` in ARO non vale');
+ok(M.burstReattivo({ alias: 'N', skills: '', states: {} }, M.profiloArma('Combi Rifle(+1B)')).valore === 1,
+   'CONTROPROVA: senza Total Reaction il Combi (+1B) in ARO resta 1');
+// 27 ottobre: REGOLE ha ritirato la decisione del 20 settembre («il (+1B) del
+// profilo non si somma»). Ora si somma; resta che non e` da verificare.
 ok(!piu1.note.some(n => /DA VERIFICARE/.test(n)),
    'e la nota non lo segnala più come da verificare: la regola è decisa');
 
@@ -594,6 +606,13 @@ console.log('\n=== b1, b2 passando da logica_aro.js ===');
     const docPrima = global.document;
     global.document = Object.assign({}, docPrima, { getElementById: nd, querySelector: () => nd('q'), querySelectorAll: () => [] });
     global.goToAroStep = () => {};
+    // 28 ottobre (logica_aro 2026-10-28.2): le spiegazioni vanno nella ⓘ della
+    // pagina, window.aggiungiInfo di app.html, che questo banco non carica. Qui la
+    // si fa in piccolo, con lo stesso contratto: aggiungiInfo(idStep, titolo,
+    // testo, { tipo, tasto }) e azzeraInfo(idStep), le voci in window.INFO.
+    global.INFO = global.INFO || {};
+    if (typeof global.aggiungiInfo !== 'function') global.aggiungiInfo = (st, t, x, e) => { (global.INFO[st] = global.INFO[st] || []).push({ titolo: String(t || ''), testo: String(x || ''), tipo: (e && e.tipo) || 'regole', tasto: (e && e.tasto) || '' }); };
+    if (typeof global.azzeraInfo !== 'function') global.azzeraInfo = (st) => { global.INFO[st] = []; };
     require('./logica_aro.js');
     window.roster = [trSopN];
     window.aroCurrentConfig = { id: 'ts' };
@@ -603,7 +622,11 @@ console.log('\n=== b1, b2 passando da logica_aro.js ===');
     const htmlArmi = nd('aro-weapon-list').innerHTML;
     // Niente scappatoie: la prima versione passava anche con l'HTML vuoto.
     ok(htmlArmi.length > 0, 'il passo delle armi disegna qualcosa');
-    ok(/si ANNULLA/.test(htmlArmi), 'la nota restituita compare sotto il riquadro');
+    // RISCRITTO il 28 ottobre (logica_aro 2026-10-28.2, INTERFACCIA): la nota di
+    // armiARO non sta piu` sotto il riquadro, sta nella ⓘ della schermata
+    // (step-aro-weapon, titolo «Soppressione»). Prima: /si ANNULLA/ in htmlArmi.
+    ok(((window.INFO || {})['step-aro-weapon'] || []).some(v => v.titolo === 'Soppressione' && /si ANNULLA/.test(v.testo)) && !/si ANNULLA/.test(htmlArmi),
+       'la nota restituita sta nella ⓘ della schermata (Soppressione: «si ANNULLA»), non sotto il riquadro');
     ok(/MODO NORMALE/.test(htmlArmi) && /ANNULLA LA SOPPRESSIONE/.test(htmlArmi),
        'e il modo normale compare con l avviso arancione');
     window.selezionaArmaAro('Heavy Machine Gun', true);

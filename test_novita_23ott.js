@@ -1,4 +1,7 @@
-// @versione 2026-10-26.1 | test_novita_23ott.js | proprieta`: chat TEST
+// @versione 2026-10-27.1 | test_novita_23ott.js | proprieta`: chat TEST
+// 2026-10-27.1: tx() salta i '>' dentro gli attributi (sez. 8). Da logica_aro 27.2
+//    l'etichetta NASCOSTO ha l'icona, e il suo ripiego mette una <span> dentro
+//    l'onerror: la vecchia regex chiudeva il tag li` e la scritta usciva sporca.
 // 2026-10-26.1: sez. 14, la partenza del Burst e` a giro (DIS-05, ordine_attacco_bs
 //    2026-10-26.2): il helper porta i dadi nei due versi, e una prova nuova sulla partenza.
 // 2026-10-23.5: sez. 9 e 12 girate (motore 2026-10-23.8, ordine_attacco_bs 2026-10-23.4):
@@ -136,7 +139,7 @@ function sezione(titolo, fn) {
     console.log('\n=== ' + titolo + ' ===');
     try { fn(); } catch (e) { falliti++; console.log('  ✗ la sezione e` caduta: ' + e.message + ' ' + ((e.stack || '').split('\n')[1] || '').trim()); }
 }
-const tx = (h) => String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+const tx = (h) => String(h).replace(/<(?:[^>"']|"[^"]*"|'[^']*')*>/g, ' ').replace(/\s+/g, ' ').trim();
 const tr = (p, a) => Object.assign(JSON.parse(J(p)), { states: {}, deployState: 'NORMAL', state: 'ACTIVE', combatGroup: 1 }, a);
 const ris = (T) => T.hub.el('step-resolution').style.display === 'block';
 const tab = (T) => tx(T.hub.el('clash-container').innerHTML);

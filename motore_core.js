@@ -1,4 +1,4 @@
-// @versione 2026-10-27.1 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.1 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -468,6 +468,11 @@ window.selectAction = (actionId, isSecondHalf = false) => {
     if (!isSecondHalf && !(window.coordMode && window.coordIndex > 0)) {
         window.currentOrder.id = 'ordine_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
         window.pulisciTokenDisattivati(window.currentOrder.id);
+        // 28 ottobre: le note (ⓘ) delle schermate dell'Ordine sono di
+        // quell'Ordine. Un modulo che non ne deposita non deve mostrare quelle
+        // dell'Ordine di prima.
+        const Mn = window.MotoreN5;
+        if (Mn && typeof Mn.azzeraNote === 'function') ['step-weapon', 'step-wait-aro', 'step-modifiers'].forEach(Mn.azzeraNote);
     }
     console.log(`🚥 Router: [${azione}]${isSecondHalf ? ' (seconda metà)' : ''}`);
 
@@ -860,7 +865,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-27.1', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-28.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

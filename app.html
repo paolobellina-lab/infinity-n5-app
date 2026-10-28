@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-26.1 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-28.4 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -181,6 +181,11 @@
             --bg-color: #0b0c10; --panel-bg: #1f1f1f; --nomad-red: #cc0000; 
             --nomad-darkred: #8b0000; --nomad-orange: #ff6600; 
             --text-main: #f0f0f0; --text-dim: #aaaaaa;
+            /* 27 ottobre sera (Paolo): il fondo dei tasti segue la fazione.
+               Prima era #1a0000 (rossiccio) anche per PanOceania. */
+            --tasto-sfondo: #1a0000;
+            /* Il tasto che porta avanti (VAI ALLO SCHIERAMENTO): piu` acceso. */
+            --tasto-forte: #440000;
         }
 
         /* PanOceania: blu profondo, azzurro e arancione per gli accenti.
@@ -202,6 +207,8 @@
             --bg-color: #000a14; --panel-bg: #001a33; --nomad-red: #00ccff;
             --nomad-darkred: #003366; --nomad-orange: #0088ff;
             --text-main: #e6f2ff; --text-dim: #88aacc;
+            --tasto-sfondo: #002244;
+            --tasto-forte: #003a66;
         }
 
         /* Fascia di fazione: due centimetri di colore in cima allo schermo.
@@ -211,8 +218,33 @@
             background: var(--nomad-red); z-index: 9998;
         }
 
-        body { background: var(--bg-color); color: var(--text-main); font-family: 'Share Tech Mono', monospace; padding: 10px; border: 2px solid var(--nomad-red); min-height: 100vh; box-sizing: border-box; margin: 0; display: flex; flex-direction: column; overscroll-behavior-y: none; touch-action: pan-x pan-y; }
-        h2 { font-family: 'Teko', sans-serif; font-size: 28px; color: #fff; text-shadow: 2px 2px 0px var(--nomad-red); text-align: center; text-transform: uppercase; border-bottom: 2px solid var(--nomad-red); padding-bottom: 5px; margin-top: 0; margin-bottom: 15px;}
+        body { background: var(--bg-color); color: var(--text-main); font-family: 'Share Tech Mono', monospace; padding: 10px; padding-bottom: calc(10px + var(--spazio-menu) + env(safe-area-inset-bottom, 0px)); border: 2px solid var(--nomad-red); min-height: 100vh; box-sizing: border-box; margin: 0; display: flex; flex-direction: column; overscroll-behavior-y: none; touch-action: pan-x pan-y; }
+        /* 27 ottobre (collaudo grafico di MOTORE, 63 schermate a 390 px).
+           LA SCALA: sei misure di carattere (prima ce n'erano 25, anche 13.26,
+           18.72, 24.18 e 58.5: i default del browser per h3 e h5 dentro i
+           tasti) e TRE livelli di titolo, col colore della fazione:
+             h1  titolo della schermata   Teko 42 (scende con lo schermo)
+             h2  titolo di un riquadro    Teko 28
+             h3  titolo di una sezione    mono 16
+           Le misure stanno in variabili: i moduli ordine_*.js possono usare
+           var(--fs-s) ecc. invece di un numero loro. */
+        :root { --fs-xs: 12px; --fs-s: 14px; --fs-m: 16px; --fs-l: 22px; --fs-xl: 32px; --fs-xxl: 42px; --fs-titolo-2: 28px;
+                /* Il verde delle conferme: i valori veri li scrive
+                   window.applicaColoriConferma da M.COLORI.conferma (motore),
+                   una fonte sola; questi restano se il motore manca. */
+                --conferma-sfondo: #004400; --conferma-bordo: #00ff00; --conferma-testo: #fff;
+                /* Lo spazio sotto ogni schermata: il tasto MENU e` fisso in
+                   basso e copriva l'ultimo tasto (INDIETRO, ANNULLA ORDINE,
+                   MOVIMENTO CAUTO, le ultime righe delle liste). */
+                --spazio-menu: 56px; }
+        h1 { font-family: 'Teko', sans-serif; font-size: clamp(26px, 9vw, var(--fs-xxl)); line-height: 1; color: var(--nomad-orange); letter-spacing: 1px; text-align: center; text-transform: uppercase; margin: 0 0 15px; overflow-wrap: anywhere; }
+        h2 { font-family: 'Teko', sans-serif; font-size: var(--fs-titolo-2); line-height: 1.1; color: #fff; text-shadow: 2px 2px 0px var(--nomad-red); text-align: center; text-transform: uppercase; border-bottom: 2px solid var(--nomad-red); padding-bottom: 5px; margin-top: 0; margin-bottom: 15px;}
+        h3 { font-family: 'Share Tech Mono', monospace; font-size: var(--fs-m); color: var(--nomad-orange); text-transform: uppercase; margin: 0 0 8px; }
+        /* Un titolo che e` un allarme (il turno dell'avversario): rosso e pulsante. */
+        .titolo-allarme { color: #ff3333; text-shadow: 0 0 10px #ff0000; animation: pulse 2s infinite; }
+        /* La riga piccola sotto il titolo. Prima aveva margin-top:-10px e
+           "(Tocco rapido...)" usciva tagliato in alto (C01, E16). */
+        .sottotitolo-step { text-align: center; color: #aaa; font-size: var(--fs-s); margin: 0 0 12px; }
         
         .section { background: var(--panel-bg); border-left: 4px solid var(--nomad-red); padding: 10px; margin-bottom: 10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.5); }
         input, select { background: #000; color: var(--text-main); border: 1px solid var(--nomad-red); width: 100%; padding: 15px; margin: 5px 0; font-size: 16px; box-sizing: border-box; }
@@ -226,9 +258,83 @@
            2px a destra (.rup-icone right:-2px) facevano comparire la barra di
            scorrimento ORIZZONTALE. Le righe non devono mai scorrere di lato. */
         .grid-buttons { display: flex; flex-direction: column; gap: 10px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 10px;}
-        .huge-btn { flex: 1; min-height: 80px; background: #1a0000; border: 2px solid var(--nomad-red); color: #fff; font-family: 'Teko', sans-serif; font-size: 32px; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; transition: 0.2s; border-radius: 5px; padding: 10px; text-align: center; line-height: 1.1; }
+        .huge-btn { flex: 1; min-height: 80px; background: var(--tasto-sfondo); border: 2px solid var(--nomad-red); color: #fff; font-family: 'Teko', sans-serif; font-size: 32px; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; transition: 0.2s; border-radius: 5px; padding: 10px; text-align: center; line-height: 1.1; }
         .huge-btn:active { background: var(--nomad-orange); color: #000; transform: scale(0.98); }
-        .huge-btn span { font-family: 'Share Tech Mono', monospace; font-size: 14px; color: var(--nomad-orange); font-weight: normal; margin-top: 5px; }
+        .huge-btn span { font-family: 'Share Tech Mono', monospace; font-size: var(--fs-s); color: var(--nomad-orange); font-weight: normal; margin-top: 5px; }
+        /* 27 ottobre (collaudo, punto 1): TASTI STIRATI. .huge-btn ha flex:1, e
+           dentro una colonna flessibile ogni tasto si allungava a riempire lo
+           schermo: ESEGUI CALCOLO 60 o 115 px, CONFERMA E PROCEDI 95/143/219,
+           RISPONDI ALLE DOMANDE 237, i riquadri delle armi fino a 541, i Gruppi
+           del radar a tutta altezza. Nelle colonne il tasto e` alto quanto il
+           suo contenuto (min-height resta). Dove due tasti si dividono una
+           RIGA (SI`/NO, COPERTURA/LINEA DI TIRO) chi li scrive mette flex:1
+           in linea, e quello vale. */
+        .grid-buttons > .huge-btn, .step-container > .huge-btn, #second-half-buttons-container > .huge-btn { flex: 0 0 auto; }
+
+        /* Punto 3: DUE uscite e UNA conferma.
+           .tasto-uscita    INDIETRO (il passo prima) e ANNULLA ORDINE (esce
+                            dall'Ordine). Prima i nomi erano cinque e gli
+                            stili tre (60, 80 e 86 px).
+           .tasto-conferma  il verde delle conferme, un'altezza sola. Prima sei
+                            varianti: due verdi, quattro altezze, e una rossa
+                            (CONFERMA SQUADRA E PROCEDI del Coordinato).
+           I moduli ordine_*.js usano le stesse classi. */
+        .tasto-uscita { display: block; width: 100%; min-height: 56px; margin-top: 12px; background: #222; color: var(--nomad-red); border: 2px solid var(--nomad-red); border-radius: 5px; font-family: 'Teko', sans-serif; font-size: var(--fs-l); font-weight: bold; text-transform: uppercase; cursor: pointer; flex: 0 0 auto; box-sizing: border-box; }
+        .huge-btn.tasto-conferma { flex: 0 0 auto; width: 100%; min-height: 64px; margin-top: 15px; background: var(--conferma-sfondo); border-color: var(--conferma-bordo); color: var(--conferma-testo); font-size: var(--fs-xl); box-sizing: border-box; }
+        /* Le scelte equivalenti hanno lo stesso aspetto: le reazioni in ARO
+           (prima quattro colori per quattro reazioni, G03) e gli stati e i
+           piazzamenti dello schieramento (B04-B08: quattro colori, e i tasti
+           delle mine stretti quanto il loro nome). */
+        .huge-btn.tasto-reazione { min-height: 64px; background: #111; border-color: var(--nomad-red); font-size: var(--fs-xl); }
+        .tasto-reazione .nota-reazione { display: block; font-family: 'Share Tech Mono', monospace; font-size: var(--fs-s); color: #ccc; font-weight: normal; text-transform: none; line-height: 1.3; margin-top: 4px; }
+        #deploy-states-content .huge-btn { flex: 0 0 auto; width: 100%; box-sizing: border-box; min-height: 56px; margin: 0 0 10px; font-size: var(--fs-l); background: #222; border-color: #555; color: #fff; }
+        #deploy-states-content .huge-btn.attivo { background: var(--nomad-darkred); border-color: var(--nomad-red); }
+        #deploy-states-content .huge-btn[disabled] { color: #666; border-color: #333; cursor: default; }
+        #deploy-states-content .nota-opzione { color: #aaa; font-size: var(--fs-s); margin: -4px 0 12px; line-height: 1.3; }
+        /* 27 ottobre sera (secondo giro del collaudo).
+           A03: matita e X della lista erano sotto i 44 px da dito. */
+        .tasto-riga-lista { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; box-sizing: border-box; cursor: pointer; border-radius: 5px; background: #222; font-size: 18px; }
+        .tasto-riga-lista.togli { color: var(--nomad-red); font-weight: bold; }
+        /* A05: le scelte delle righe ambigue erano rosso su rosso e sembravano
+           avvisi. Sono scelte: l'aspetto delle altre scelte. */
+        .scelta-ambigua { display: block; width: 100%; min-height: 48px; margin: 4px 0; padding: 8px 10px; box-sizing: border-box; background: #222; color: #fff; border: 2px solid #555; border-radius: 5px; font-family: 'Share Tech Mono', monospace; font-size: var(--fs-m); text-align: left; cursor: pointer; }
+        .scelta-ambigua.salta { color: #aaa; border-style: dashed; }
+        /* C03, G02: le etichette di una riga (CAMO 1, HIDDEN, VERA/REPLICA,
+           NON ATTIVABILE, Soppressione, Fireteam) stavano dentro il nome, che
+           sta su una riga e finisce coi puntini: "ATTIVARLA ANNU…",
+           "SPEKTR … N…". Ora vanno nella fascia bassa, che va a capo. */
+        .riga-unita-foto .rup-etichette { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; margin-top: 3px; font-family: 'Share Tech Mono', monospace; font-size: 13px; line-height: 1.25; text-transform: none; white-space: normal; }
+        /* B07: la scelta HoloMask per lettera. */
+        .lettere-holomask { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+        #deploy-states-content .lettere-holomask .huge-btn { width: 44px; min-height: 44px; margin: 0; padding: 0; font-size: var(--fs-l); }
+        /* 27 ottobre sera (Paolo): il tasto ⓘ e il pannello delle spiegazioni.
+           Le spiegazioni (note dei MOD, perche` una reazione o un'arma non si
+           puo` usare, cambio di stato...) escono dalla schermata e stanno qui:
+           un tasto per schermata, in alto a destra, che c'e` solo se la
+           schermata ha qualcosa da spiegare. */
+        #tasto-info { display: none; position: fixed; top: 12px; right: 12px; z-index: 9001; width: 44px; height: 44px; border-radius: 50%;
+            align-items: center; justify-content: center; background: var(--tasto-sfondo); color: var(--nomad-orange); border: 2px solid var(--nomad-orange);
+            font-family: 'Teko', sans-serif; font-size: 30px; font-weight: bold; line-height: 1; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.6); }
+        #pannello-info { display: none; position: fixed; inset: 0; z-index: 9600; background: rgba(0,0,0,.6); }
+        #pannello-info .info-foglio { position: absolute; left: 0; right: 0; bottom: 0; max-height: 65vh; overflow-y: auto; background: var(--panel-bg);
+            border-top: 3px solid var(--nomad-orange); border-radius: 12px 12px 0 0; padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+        #pannello-info .info-voce { margin: 0 0 12px; font-size: var(--fs-m); line-height: 1.35; color: var(--text-main); }
+        #pannello-info .info-voce b { color: var(--nomad-orange); }
+        /* Titolo che finirebbe sotto il tasto ⓘ (window.liberaSpazioInfo). */
+        .sotto-info { padding-left: 56px !important; padding-right: 56px !important; box-sizing: border-box; }
+        /* 28 ottobre (Paolo): titoli della ⓘ col nome del tasto, a gruppi. */
+        #pannello-info .info-voce .titolo-tasto { display: block; font-family: 'Teko', sans-serif; font-size: 22px; line-height: 1; color: var(--nomad-orange); letter-spacing: .5px; margin-bottom: 2px; }
+        #pannello-info .info-gruppo { font-family: 'Teko', sans-serif; font-size: 16px; color: #888; letter-spacing: 1px; margin: 4px 0 6px; border-bottom: 1px solid #333; }
+        /* Le note SOTTO I TASTI (window.disegnaNote): tasto e fascia sono un
+           tasto solo, stesso sfondo e stesso bordo, niente riga fra i due. */
+        .nota-gruppo.con-nota > button { border-bottom: 0 !important; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; padding-bottom: 4px; }
+        .nota-tasto { padding: 0 12px 10px; border: 2px solid; border-top: 0; border-radius: 0 0 5px 5px; font-family: 'Share Tech Mono', monospace;
+                      font-size: var(--fs-s); line-height: 1.35; text-align: center; text-transform: none; font-weight: normal; cursor: pointer; opacity: .92; }
+        .nota-tasto.spenta { cursor: default; }
+        .nota-tasto b, .nota-schermata b { color: var(--nomad-orange); font-weight: normal; }
+        .nota-schermata { margin: 0 0 12px; padding: 8px 12px; border: 2px solid #666; border-radius: 5px; background: rgba(0,0,0,.55);
+                          color: #e6e6e6; font-family: 'Share Tech Mono', monospace; font-size: var(--fs-s); line-height: 1.35; text-align: left; }
+        #deploy-states-content .titolo-opzioni { color: var(--nomad-orange); text-align: center; margin: 18px 0 10px; letter-spacing: 1px; font-size: var(--fs-m); }
 
         .flex-row { display: flex; gap: 10px; align-items: center; }
         .step-container { display: none; flex-direction: column; height: 100%; flex-grow: 1;}
@@ -313,6 +419,15 @@
         .riga-unita-foto .rup-icone img { width:64px !important; height:64px !important; margin:0 0 0 -8px !important;
             filter:drop-shadow(0 3px 6px rgba(0,0,0,.9)) !important; }
         .riga-unita-foto .rup-icone span { font-size:44px !important; margin:0 !important; line-height:1; filter:drop-shadow(0 3px 6px rgba(0,0,0,.9)); }
+        /* 27 ottobre (collaudo, G02): con due o piu` icone il nome restava con
+           pochi pixel ("SPEKTR" troncato). Le icone si fanno piu` piccole e si
+           accavallano di piu`: 32 px l'una invece di 56. */
+        .riga-unita-foto .rup-icone-molte img { width:46px !important; height:46px !important; margin:0 0 0 -14px !important; }
+        .riga-unita-foto .rup-icone-molte span { font-size:32px !important; }
+        /* Senza soprannome la fascia bassa porta l'opzione del profilo (D02, E11:
+           prima restava vuota). Non e` un soprannome: niente corsivo. */
+        .riga-unita-foto .rup-profilo { font-style:normal; color:#c8c8c8; }
+        .riga-unita-foto .rup-tocco-foto { pointer-events:auto; cursor:pointer; }
     </style>
 </head>
 <body>
@@ -328,6 +443,10 @@
                background:rgba(0,0,0,.75); color:#888; border:1px solid #444; border-radius:6px;
                padding:8px 12px; font-size:13px; letter-spacing:1px;">☰ MENU</button>
 
+    <!-- 27 ottobre sera: il tasto delle spiegazioni della schermata (window.apriInfo). -->
+    <button id="tasto-info" type="button" aria-label="Spiegazioni di questa schermata" onclick="window.apriInfo()">i</button>
+    <div id="pannello-info" onclick="if (event.target === this) window.chiudiInfo()"></div>
+
 
 
     <div id="setup">
@@ -341,7 +460,7 @@
         </div>
 
         <div class="section">
-            <h3 style="margin-top:0; color: var(--nomad-orange);">SCHIERAMENTO TRUPPE</h3>
+            <h3>SCHIERAMENTO TRUPPE</h3>
             
             <div style="background:#111; padding:10px; border:1px solid #444; border-radius:5px; margin-bottom:15px;">
                 <span style="color:var(--nomad-lightblue); font-size:14px; display:block; margin-bottom:5px; color:#00ffff;">Copia/Incolla la tua lista "Plain Text" dall'Army Builder:</span>
@@ -367,14 +486,14 @@
         </div>
 
         <div class="section">
-            <h3 style="margin-top:0; color: var(--nomad-orange);">AGGIUNGI UNITÀ</h3>
+            <h3>AGGIUNGI UNITÀ</h3>
             <div class="flex-row">
                 <select id="groupSelect" style="flex:2;" onchange="window.updateProfileSelect()"><option value="">-- 1. TRUPPA --</option></select>
-                <select id="combatGroupSelect" class="huge-btn" style="background:#111; color:#fff; padding:10px;">
-                    <option value="1">Gruppo Combattimento 1</option>
-                    <option value="2">Gruppo Combattimento 2</option>
-                    <option value="3">Gruppo Combattimento 3</option>
-                    <option value="4">Gruppo Combattimento 4</option>
+                <select id="combatGroupSelect" style="flex:1; min-width:0;" aria-label="Gruppo di Combattimento">
+                    <option value="1">Gruppo 1</option>
+                    <option value="2">Gruppo 2</option>
+                    <option value="3">Gruppo 3</option>
+                    <option value="4">Gruppo 4</option>
                 </select>
             </div>
             <select id="profileSelect" disabled><option value="">-- 2. SELEZIONA PROFILO --</option></select>
@@ -386,7 +505,7 @@
         </div>
 
         <div class="section">
-            <h3 style="margin:0; color:var(--nomad-orange);">TERRENI E ZONE DI GIOCO:</h3>
+            <h3>TERRENI E ZONE DI GIOCO:</h3>
             <div style="display:flex; gap:10px; margin-top:5px;">
                 <select id="terrainSelect" style="flex:2; padding:10px; background:#222; color:#fff; border:1px solid #444;">
                     <option value="">-- Seleziona Terreno --</option>
@@ -396,7 +515,7 @@
             <div id="activeTerrainsList" style="margin-top:10px; font-size:14px; color:#aaa;"><i>Nessun terreno speciale impostato.</i></div>
 
             <hr style="border-color:#333; margin: 15px 0;">
-            <h3 style="margin:0 0 8px 0; color:var(--nomad-orange);">ELEMENTI SCENICI</h3>
+            <h3>ELEMENTI SCENICI</h3>
             <p style="margin:0 0 8px 0; font-size:13px; color:#888;">Torrette, console, antenne, porte: stanno sul tavolo e non appartengono a nessuno dei due giocatori.</p>
             <div class="flex-row">
                 <select id="structureSelect" style="flex:2; padding:10px; background:#222; color:#fff; border:1px solid #444;">
@@ -406,44 +525,48 @@
             </div>
             <div id="activeStructuresList" style="margin-top:10px; font-size:14px; color:#aaa;"><i>Nessuna struttura schierata.</i></div>
             <br>
-            <button class="huge-btn" style="background:#440000; border-color:var(--nomad-orange); margin-top:10px; width: 100%;" onclick="window.apriSchieramento()">VAI ALLO SCHIERAMENTO</button>
+            <button class="huge-btn" style="background:var(--tasto-forte); border-color:var(--nomad-orange); margin-top:10px; width: 100%;" onclick="window.apriSchieramento()">VAI ALLO SCHIERAMENTO</button>
         </div>
     </div>
 	
     <div id="step-deploy-groups" class="step-container">
-        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-orange); letter-spacing:2px; margin-top:0;">DISPIEGAMENTO</h1>
-        <p style="text-align:center; color:#aaa; font-size:14px; margin-top:-10px; margin-bottom:15px;">Scegli il gruppo da schierare</p>
+        <h1>DISPIEGAMENTO</h1>
+        <p class="sottotitolo-step">Scegli il gruppo da schierare</p>
         <div class="grid-buttons" id="deploy-groups-container"></div>
-        <button class="huge-btn" style="background:#004400; border-color:#00ff00; margin-top:20px; min-height:60px; max-height:80px; flex:none; width:100%;" onclick="window.confermaSchieramento()">CONCLUDI SCHIERAMENTO <span>(Inizia Partita)</span></button>
-        <button class="btn-status" onclick="window.tornaAlSetup()">TORNA ALLA LISTA</button>
+        <button class="huge-btn tasto-conferma" onclick="window.confermaSchieramento()">CONCLUDI SCHIERAMENTO <span>(Inizia Partita)</span></button>
+        <button class="tasto-uscita" onclick="window.tornaAlSetup()">INDIETRO</button>
     </div>
 
     <div id="step-deploy-units" class="step-container">
-        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-orange); letter-spacing:2px; margin-top:0;">UNITÀ DA SCHIERARE</h1>
+        <h1>UNITÀ DA SCHIERARE</h1>
         <div class="grid-buttons" id="deploy-units-container" style="flex-grow:1; overflow-y:auto; padding:5px;"></div>
-        <button class="btn-status" onclick="window.goToStep('step-deploy-groups')">INDIETRO</button>
+        <button class="tasto-uscita" onclick="window.goToStep('step-deploy-groups')">INDIETRO</button>
     </div>
 
+    <!-- 27 ottobre sera (collaudo, terzo giro): gli step degli ARO avevano
+         style="padding:20px" e le righe erano 40 px piu` strette che negli
+         altri elenchi ("REAKTION Z…"): tolto. -->
     <div id="step-deploy-states" class="step-container">
-        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-orange); letter-spacing:2px; margin-top:0;">FOG OF WAR</h1>
+        <h1>FOG OF WAR</h1>
         <div id="deploy-states-content" style="text-align:left; flex-grow:1; overflow-y:auto;"></div>
-        <button class="btn-status" onclick="window.goToStep('step-deploy-units')">INDIETRO</button>
+        <!-- id: la scelta HoloMask ha il suo INDIETRO e nasconde questo (B07, due INDIETRO). -->
+        <button id="indietro-deploy-stati" class="tasto-uscita" onclick="window.goToStep('step-deploy-units')">INDIETRO</button>
     </div>
 
     <div id="step-deploy-actions" class="step-container">
-        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-orange); letter-spacing:2px; margin-top:0;">AZIONI DISPIEGAMENTO</h1>
+        <h1>AZIONI DISPIEGAMENTO</h1>
         <div id="deploy-action-list-container" style="overflow-y:auto; flex-grow:1; padding:5px; border:1px solid #444; background:#111; border-radius:5px;"></div>
-        <button class="btn-status" onclick="window.goToStep('step-deploy-units')">INDIETRO</button>
+        <button class="tasto-uscita" onclick="window.goToStep('step-deploy-units')">INDIETRO</button>
     </div>
 
     <div id="step-sync" class="step-container" style="flex-grow: 1; flex-direction: column; text-align:center; padding: 20px;">
-        <h2 style="color:#00ffff; font-family:'Teko'; font-size:32px;">CONNESSIONE STABILITA</h2>
+        <h1>CONNESSIONE STABILITA</h1>
         <p id="sync-status-msg" style="color:#aaa;">Squadra inviata al PC Centrale.<br>In attesa dispiegamento avversario...</p>
     </div>
 
     <div id="step-reactive-turn" class="step-container" style="text-align:center; padding: 20px 10px;">
-        <h2 style="color:#ff3333; font-family:'Teko'; font-size:36px; animation: pulse 2s infinite; text-shadow: 0 0 10px #ff0000;">⚠️ TURNO AVVERSARIO</h2>
-        <p style="color:#aaa; font-size:14px; margin-top:-10px;">(Tocco prolungato = Modifica Stati)</p>
+        <h1 class="titolo-allarme">⚠️ TURNO AVVERSARIO</h1>
+        <p class="sottotitolo-step">(Tocco prolungato = Modifica Stati)</p>
         
         <div id="aro-alert-banner" style="display:none; background:#8b0000; border:2px solid #ff0000; padding:15px; margin:15px 0; border-radius:8px; box-shadow:0 0 15px #ff0000;">
             <h3 id="aro-alert-text" style="color:#fff; margin:0 0 10px 0;">⚠️ AZIONE NEMICA RILEVATA!</h3>
@@ -463,50 +586,50 @@
         <div class="grid-buttons" id="reactive-roster-list" style="margin-top:10px; padding-bottom:20px; text-align:left;"></div>
     </div>
 
-    <div id="step-aro-selection" class="step-container" style="padding:20px;">
-        <h2 style="color:#ff0000; text-align:center; font-family:'Teko'; font-size:36px; margin-top:0; text-shadow: 0 0 10px #ff0000;">SELEZIONA ARO</h2>
-        <p style="text-align:center; color:#aaa; margin-top:-10px;">(Seleziona chi ha Linea di Tiro o si attiva in ZoC)</p>
+    <div id="step-aro-selection" class="step-container">
+        <h1>SELEZIONA ARO</h1>
+        <p class="sottotitolo-step">(Seleziona chi ha Linea di Tiro o si attiva in ZoC)</p>
         <div id="aro-selection-list" class="grid-buttons" style="margin-top:10px;"></div>
-        <button class="huge-btn" style="background:#004400; border-color:#00ff00; margin-top:20px; min-height: 60px;" onclick="window.confermaSelezioneAro()">AVANTI ➔</button>
-        <button class="huge-btn" style="background:#330000; border-color:#ff0000; margin-top:10px; min-height: 50px;" onclick="window.annullaAro()">❌ PASSA (NESSUN ARO)</button>
+        <button class="huge-btn tasto-conferma" onclick="window.confermaSelezioneAro()">AVANTI</button>
+        <button class="huge-btn" style="background:#330000; border-color:#ff0000; margin-top:10px; min-height: 50px;" onclick="window.annullaAro()">PASSA (NESSUN ARO)</button>
     </div>
 
-    <div id="step-aro-action" class="step-container" style="padding:20px;">
+    <div id="step-aro-action" class="step-container">
         <div id="aro-header-action" style="text-align:center; color:var(--nomad-orange); font-size:24px; font-weight:bold; margin-bottom:10px; background:#222; border:1px dashed var(--nomad-orange); padding:10px;"></div>
-        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-red); margin-top:0;">SCEGLI REAZIONE</h1>
+        <h1>SCEGLI REAZIONE</h1>
         <div id="aro-action-list" class="grid-buttons"></div>
-        <button class="btn-status" onclick="window.apriSelezioneAro()">⬅️ RICOMINCIA SELEZIONE</button>
+        <button class="tasto-uscita" onclick="window.apriSelezioneAro()">INDIETRO</button>
     </div>
 
-    <div id="step-aro-weapon" class="step-container" style="padding:20px;">
+    <div id="step-aro-weapon" class="step-container">
         <div id="aro-header-weapon" style="text-align:center; color:var(--nomad-orange); font-size:24px; font-weight:bold; margin-bottom:10px; background:#222; border:1px dashed var(--nomad-orange); padding:10px;"></div>
-        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-red); margin-top:0;">SCEGLI ARMA</h1>
+        <h1>SCEGLI ARMA</h1>
         <div id="aro-weapon-list" class="grid-buttons"></div>
-        <button class="btn-status" onclick="window.goToAroStep('step-aro-action')">INDIETRO</button>
+        <button class="tasto-uscita" onclick="window.goToAroStep('step-aro-action')">INDIETRO</button>
     </div>
 
-    <div id="step-aro-target" class="step-container" style="padding:20px;">
+    <div id="step-aro-target" class="step-container">
         <div id="aro-header-target" style="text-align:center; color:var(--nomad-orange); font-size:24px; font-weight:bold; margin-bottom:10px; background:#222; border:1px dashed var(--nomad-orange); padding:10px;"></div>
-        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-red); margin-top:0;">BERSAGLIO</h1>
+        <h1>BERSAGLIO</h1>
         <div id="aro-target-list" class="grid-buttons"></div>
-        <button class="btn-status" onclick="window.goToAroStep('step-aro-weapon')">INDIETRO</button>
+        <button class="tasto-uscita" onclick="window.goToAroStep('step-aro-weapon')">INDIETRO</button>
     </div>
 
-    <div id="step-aro-modifiers" class="step-container" style="padding:20px;">
+    <div id="step-aro-modifiers" class="step-container">
         <div id="aro-header-mods" style="text-align:center; color:var(--nomad-orange); font-size:24px; font-weight:bold; margin-bottom:10px; background:#222; border:1px dashed var(--nomad-orange); padding:10px;"></div>
-        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-red); margin-top:0;">MODIFICATORI ARO</h1>
+        <h1>MODIFICATORI ARO</h1>
         <div id="aro-modifiers-content"></div>
-        <button id="btn-conferma-aro" class="huge-btn" style="background:#004400; border-color:#00ff00; margin-top:20px; min-height: 80px;" onclick="window.salvaAroCorrente()">✅ CONFERMA E PROCEDI</button>
-        <button class="btn-status" onclick="window.goToAroStep('step-aro-target')">INDIETRO</button>
+        <button id="btn-conferma-aro" class="huge-btn tasto-conferma" onclick="window.salvaAroCorrente()">CONFERMA E PROCEDI</button>
+        <button class="tasto-uscita" onclick="window.goToAroStep('step-aro-target')">INDIETRO</button>
     </div>
 
-    <div id="step-states" class="step-container" style="padding:20px;">
-        <h2 id="states-header" style="color:#00ffff; text-align:center; font-family:'Teko'; font-size:32px; margin-top:0;">STATI UNITÀ</h2>
+    <div id="step-states" class="step-container">
+        <h1 id="states-header">STATI UNITÀ</h1>
         <div id="states-content" style="text-align:left;"></div>
     </div>
 
     <div id="battle" class="step-container">
-        <p style="text-align:center; color:#aaa; font-size:14px; margin-top:-10px;">
+        <p class="sottotitolo-step">
             (Tocco rapido = Ordine Normale | Tocco prolungato = Ordine Coordinato)
         </p>
         <div class="grid-buttons"></div>
@@ -514,34 +637,36 @@
 
     <div id="step-unit" class="step-container">
         <div class="grid-buttons" id="unit-buttons-container"></div>
-        <button class="btn-status" onclick="window.goToStep('step-group')">INDIETRO</button>
+        <button class="tasto-uscita" onclick="window.goToStep('step-group')">INDIETRO</button>
     </div>
 
     <div id="step-action" class="step-container">
-        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-red); letter-spacing:2px; text-shadow: 0 0 10px var(--nomad-red); margin-top:0;">1° METÀ ORDINE</h1>
+        <h1>1° METÀ ORDINE</h1>
         <div id="fireteam-banner" style="display:none; background:#8b4500; color:#fff; padding:10px; text-align:center; margin-bottom:15px; border-radius:5px; border:2px solid #ffa500; font-weight:bold; box-shadow: 0 0 10px #ffa500;"></div>
         <div id="action-list-container" style="overflow-y:auto; flex-grow:1; padding:5px; border:1px solid #444; background:#111; border-radius:5px;"></div>
-        <button class="btn-status" onclick="window.goToStep('step-unit')">ANNULLA E CAMBIA UNITÀ</button>
+        <button class="tasto-uscita" onclick="window.goToStep('step-unit')">INDIETRO</button>
     </div>
         
 
     <div id="step-weapon" class="step-container">
         <div class="grid-buttons" id="weapon-buttons-container"></div>
-        <button class="btn-status" onclick="window.goToStep('step-action')">INDIETRO</button>
+        <button class="tasto-uscita" onclick="window.goToStep('step-action')">INDIETRO</button>
     </div>
 
     <div id="step-wait-aro" class="step-container">
         <div class="grid-buttons" id="enemy-target-buttons" style="flex-grow:1; overflow-y:auto; padding:5px;"></div>
-        <button class="huge-btn" style="background:#004400; border-color:#00ff00; min-height: 60px; margin-top:10px; flex:none;" onclick="window.confirmMultiAro(false)">CONFERMA BERSAGLI <span>(Vai al Calcolo)</span></button>
-        <button class="btn-status" onclick="window.tornaAlRadar()">ANNULLA ORDINE</button>
+        <button class="huge-btn tasto-conferma" onclick="window.confirmMultiAro(false)">CONFERMA BERSAGLI <span>(Vai al Calcolo)</span></button>
+        <button class="tasto-uscita" onclick="window.tornaAlRadar()">ANNULLA ORDINE</button>
     </div>
 
     <div id="step-second-half" class="step-container">
-        <h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:var(--nomad-red); letter-spacing:2px; text-shadow: 0 0 10px var(--nomad-red); margin-top:0;">2° METÀ ORDINE</h1>
+        <h1>2° METÀ ORDINE</h1>
         
         <div id="wait-aro-msg" style="text-align:center; padding:20px; border:1px dashed var(--nomad-orange); margin-bottom:15px;">
-            <h3 style="color:var(--nomad-orange); font-family:'Teko'; font-size:28px;">IN ATTESA DI ARO...</h3>
+            <h2 style="border-bottom:none; text-shadow:none; color:var(--nomad-orange);">IN ATTESA DI ARO...</h2>
             <p style="color:#aaa;">Il nemico sta decidendo se e come reagire.</p>
+            <!-- 28 ottobre (D09): contro chi e` la prima meta`, anche un punto del tavolo (M.rigaAttesaAro). -->
+            <div id="wait-aro-bersagli"></div>
         </div>
 
         <div id="second-half-wrapper" style="display:none; overflow-y:auto; flex-grow:1;">
@@ -549,7 +674,7 @@
             <div id="second-half-buttons-container" style="display:flex; flex-direction:column; gap:10px;"></div>
         </div>
         
-        <button class="btn-status" onclick="window.tornaAlRadar()">ANNULLA ORDINE</button>
+        <button class="tasto-uscita" onclick="window.tornaAlRadar()">ANNULLA ORDINE</button>
     </div>
 
     <div id="step-modifiers" class="step-container">
@@ -574,7 +699,7 @@
              niente dentro. Ora vuoto non si vede (regola :empty nello stile)
              e l'azzeramento dell'Ordine lo spegne. -->
         <div id="calc-result"></div>
-        <button class="btn-status" style="margin-top:20px;" onclick="window.tornaAlRadar()">FINE ORDINE (TORNA AL RADAR)</button>
+        <button class="tasto-uscita" onclick="window.tornaAlRadar()">ANNULLA ORDINE</button>
     </div>
 
     <script>
@@ -592,10 +717,38 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-26.1', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-10-28.4', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
+
+        // 27 ottobre (collaudo, punto 7): i bersagli scelti esistono da subito.
+        // Prima pendingTargets nasceva solo quando un modulo lo azzerava: se il
+        // PRIMO Ordine della partita era una Schivata o un Reset
+        // (ordine_difesa.js chiama confirmMultiAro(true)), qui era undefined e
+        // "pendingTargets.map" faceva cadere il modulo, senza allarme all'Hub.
+        window.pendingTargets = window.pendingTargets || [];
+
+        // 27 ottobre (collaudo, punto 3): il verde delle conferme viene dal
+        // motore (M.COLORI.conferma), una fonte sola. Qui si scrive nelle
+        // variabili che usa .tasto-conferma; senza motore restano i valori
+        // scritti nel foglio di stile, e lo si dice.
+        window.applicaColoriConferma = () => {
+            const M = window.MotoreN5;
+            const c = M && M.COLORI && M.COLORI.conferma;
+            if (!c) {
+                console.error('\u26d4 M.COLORI assente (serve motore_regole_n5.js dalla 2026-10-27.7): conferme col verde scritto in app.html.');
+                return null;
+            }
+            const radice = document.documentElement;
+            if (radice && radice.style && typeof radice.style.setProperty === 'function') {
+                radice.style.setProperty('--conferma-sfondo', c.sfondo);
+                radice.style.setProperty('--conferma-bordo', c.bordo);
+                radice.style.setProperty('--conferma-testo', c.testo);
+            }
+            return { sfondo: c.sfondo, bordo: c.bordo, testo: c.testo };
+        };
+        window.applicaColoriConferma();
 
         // Database Azioni base per popolare i bottoni delle fasi
         window.dbAzioniN5 = {
@@ -1055,6 +1208,21 @@
             return window.attributiImmagine(window.imgDellaFazione(comune, fazione), [comune], finale);
         };
 
+        // 27 ottobre (MOTORE 27.5, Paolo): l'Hidden Deployment non ha un
+        // segnalino sul tavolo, ma nella PROPRIA app si vede accanto al nome:
+        // l'icona di M.segnalinoSenzaNumero (esercito, poi comune in img/, poi
+        // l'emoji 🫥). L'avversario e l'Hub la truppa non la ricevono.
+        // '' se la truppa non e` in un segnalino senza numero.
+        window.iconaSegnalinoSenzaNumero = (u, fazione, px) => {
+            const M = window.MotoreN5;
+            if (!M || typeof M.segnalinoSenzaNumero !== 'function') return '';
+            const f = (fazione === 'NOMADI' || fazione === 'PANOCEANIA') ? fazione : window.fazionePropria();
+            const sg = M.segnalinoSenzaNumero(u, f);
+            if (!sg) return '';
+            const dim = px || 22;
+            return `<img class="icona-segnalino-${String(sg.tipo).toLowerCase()}" ${window.attributiImmagine(sg.immagine, [sg.immagineComune], `<span style=&quot;font-size:${dim - 4}px;&quot;>🫥</span>`)} alt="${sg.etichetta}" style="width:${dim}px; height:${dim}px; object-fit:contain; vertical-align:middle; margin-right:4px;">`;
+        };
+
         window.generaIconeStati = (u, fazione) => {
             if (!u) return "";
             let s = u.states || {};
@@ -1114,6 +1282,11 @@
                 icone += ic('icon_tag_vuoto', scrittaTV, 'alt="TAG VUOTO" title="TAG vuoto: il pilota ha lasciato il TAG"');
             }
             
+            // 27 ottobre sera (Paolo): l'Hidden Deployment si vede come gli
+            // altri stati, col segnalino grande a destra (M.segnalinoSenzaNumero).
+            // Solo nella propria app: all'avversario la truppa non arriva.
+            if (String(u.deployState || '').toUpperCase() === 'HIDDEN') icone += window.iconaSegnalinoSenzaNumero(u, f, 45);
+
             if(isDead) icone = ic('icon_dead', emoji('☠️'));
             
             return icone;
@@ -1146,6 +1319,11 @@
         //                e` una truppa PROPRIA.
         //     scelta     true: la riga e` selezionata (nome piu` chiaro e
         //                contorno luminoso); diventa data-scelta="si"
+        //     etichette  HTML di etichette brevi (CAMO 1, HIDDEN, REPLICA...):
+        //                vanno nella fascia bassa, che va a capo, non nel nome
+        //     toccoFoto  codice JS (senza apici) eseguito toccando la foto o
+        //                la sigla, e SOLO quello: il tocco non arriva alla riga.
+        //                Lo usa lo schieramento per aprire la galleria.
         //   window.fotoUnita(unita) -> il percorso dell'immagine
         //
         // 7 ottobre (Paolo, dal tavolo): foto e carattere UGUALI in tutti gli
@@ -1378,8 +1556,16 @@
             if (opz.dopoNome) nome += opz.dopoNome;
             // 23 ottobre (Paolo): il Leader del Fireteam non si riconosceva
             // dalla riga, che diceva solo la squadra. Ora porta il segno.
-            if (s.fireteam) nome += ` <span class="segno-fireteam" style="color:#9ff; font-size:15px;">[ TEAM ${s.fireteam}${s.isFireteamLeader === true ? ' · ⭐ LEADER' : ''} ]</span>`;
-            const alias = (u && u.alias && u.alias !== nomePuro) ? `<div class="rup-alias">"${u.alias}"</div>` : '';
+            // 27 ottobre sera (G02): il segno sta nella fascia bassa, non nel nome.
+            const segnoFireteam = s.fireteam ? `<span class="segno-fireteam" style="color:#9ff;">[ TEAM ${s.fireteam}${s.isFireteamLeader === true ? ' · ⭐ LEADER' : ''} ]</span>` : '';
+            // 27 ottobre (collaudo, D02 e E11): quando il soprannome e` il nome
+            // stesso la fascia bassa restava VUOTA. Ci va l'opzione del profilo,
+            // cioe` quello che il nome porta fra parentesi ("Marksman Rifle"), o
+            // in mancanza la prima arma. Di un Marker non si scrive niente.
+            const aliasVero = (u && u.alias && u.alias !== nomePuro) ? u.alias : '';
+            const profiloRiga = aliasVero ? '' : window.opzioneDelProfilo(u);
+            const alias = aliasVero ? `<div class="rup-alias">"${aliasVero}"</div>`
+                        : (profiloRiga ? `<div class="rup-alias rup-profilo">${profiloRiga}</div>` : '');
             const destra = (opz.destra !== undefined) ? opz.destra : window.generaIconeStati(u, f);
             const attributi = `${opz.id ? `id="${opz.id}" ` : ''}data-fazione="${f}" data-scelta="${opz.scelta ? 'si' : 'no'}" oncontextmenu="return false;" ${opz.attributi || ''}`;
 
@@ -1392,18 +1578,26 @@
             // fermarsi prima, o finisce sotto. Lo spazio dipende da quante
             // sono (64px l'una, accavallate di 8).
             const quante = (String(destra).match(/<img/g) || []).length || (String(destra).trim() ? 1 : 0);
+            // Con due o piu` icone si stringono (32 px l'una, vedi .rup-icone-molte).
+            const molte = quante >= 2;
+            const spazioIcone = quante ? (molte ? 14 + 32 * quante : 56 * quante) : 0;
 
             // La foto e` un png senza sfondo: sta libera, intera, senza
             // cornice. Senza foto, la sigla del tipo, libera allo stesso posto.
             const fr = window.fotoUnitaConRipieghi(u, f);
             const foto = fr.src;
-            const sigla = String((u && u.tipo) || '').slice(0, 3) || '?';
+            // 27 ottobre (collaudo, E06): di un Marker la sigla era "MAR", il
+            // tipo troncato. Un Marker non dice chi e`: "?".
+            const eMarker = !!u && (String(u.nome || u.name || '') === 'MARKER' || String(u.tipo || '').toUpperCase() === 'MARKER');
+            const sigla = eMarker ? '?' : (String((u && u.tipo) || '').slice(0, 3) || '?');
+            const tocco = opz.toccoFoto ? ` onpointerdown="event.stopPropagation()" onclick="event.stopPropagation(); ${opz.toccoFoto}" title="Tocca per la foto"` : '';
+            const classeTocco = opz.toccoFoto ? ' rup-tocco-foto' : '';
             // 20 ottobre: se manca l'immagine numerata del segnalino si
             // ripiega sul segnalino comune, non sulla sigla "MAR". 26 ottobre:
             // i ripieghi li elenca fotoUnitaConRipieghi (esercito, poi comune).
             const immagine = foto
-                ? `<img class="rup-foto" ${window.attributiImmagine(foto, fr.ripieghi, `<span class=&quot;rup-sigla&quot;>${sigla}</span>`)} alt="">`
-                : `<span class="rup-sigla">${sigla}</span>`;
+                ? `<img class="rup-foto${classeTocco}" ${window.attributiImmagine(foto, fr.ripieghi, `<span class=&quot;rup-sigla${classeTocco}&quot;${tocco.replace(/"/g, '&quot;')}>${sigla}</span>`)} alt=""${tocco}>`
+                : `<span class="rup-sigla${classeTocco}"${tocco}>${sigla}</span>`;
 
             const ombra = 'drop-shadow(0 6px 12px rgba(0,0,0,0.6))';
             const variabili = `--rup-a-n:${t.alta}; --rup-a-s:${t.altaScelta}; --rup-c-n:${c.bordo}; --rup-c-s:${c.bordoScelto}; ` +
@@ -1414,18 +1608,33 @@
                 contorno: 'var(--rup-c)',
                 fondoAlta: 'var(--rup-a)',
                 fondoBassa: t.bassa,
-                spazioDestra: quante ? 16 + 56 * quante : 16,
+                spazioDestra: 16 + spazioIcone,
                 stile: `${variabili} opacity:${opacita}; filter:var(--rup-o);`,
                 // L'altezza minima conta anche lo spazio interno: lo garantisce
                 // il box-sizing:border-box della banda bassa di M.formaBottone
                 // (motore 2026-10-09.6). Fino alla 2026-10-09.5 lo ripetevo
                 // qui, perche` il motore non lo dichiarava e la banda veniva
                 // alta 44 invece di 30.
-                stileBassa: (quante ? `padding-right:${10 + 56 * quante}px; ` : '') + 'min-height:30px;',
-                sopra: immagine + `<div class="rup-icone">${destra}</div>`,
+                stileBassa: (quante ? `padding-right:${10 + spazioIcone}px; ` : '') + 'min-height:30px;',
+                sopra: immagine + `<div class="rup-icone${molte ? ' rup-icone-molte' : ''}">${destra}</div>`,
                 alta: `<div class="rup-nome">${nome}</div>`,
-                bassa: alias + (opz.sotto || '')
+                // Le etichette PRIMA del soprannome: si leggono fra il nome e il
+                // soprannome, come quando stavano in coda al nome (lo guardano
+                // anche i banchi di TEST, test_novita_23ott e _26ott).
+                bassa: ((opz.etichette || segnoFireteam) ? `<div class="rup-etichette" style="margin:0 0 3px;">${opz.etichette || ''}${segnoFireteam}</div>` : '') + alias + (opz.sotto || '')
             });
+        };
+
+        // L'opzione del profilo, per la fascia bassa della riga: quello che il
+        // nome porta fra parentesi, o la prima arma. '' per un Marker.
+        window.opzioneDelProfilo = (u) => {
+            if (!u) return '';
+            const nome = String(u.nome || u.name || '');
+            if (nome === 'MARKER' || String(u.tipo || '').toUpperCase() === 'MARKER') return '';
+            const a = nome.indexOf('('), b = nome.lastIndexOf(')');
+            if (a >= 0 && b > a) return nome.slice(a + 1, b).trim();
+            const arma = String(u.weapon || '').split(',')[0].split('/')[0].trim();
+            return (arma && arma !== '-') ? arma : '';
         };
 
         // L'intestazione di un Gruppo di Combattimento dentro un elenco.
@@ -1447,7 +1656,7 @@
                 // I segnalini piazzati non sono "Unita` Operative": non
                 // danno Ordini e non ne ricevono.
                 let truppeNelGruppo = window.roster.filter(u => window.gruppoDi(u) === g && u.state !== 'DEAD' && !u.deployable).length;
-                bottoniHtml += `<button class="huge-btn" style="min-height:80px; margin-bottom:15px; width:100%; border-color:var(--nomad-red); background:#1a0000;" 
+                bottoniHtml += `<button class="huge-btn" style="min-height:80px; margin-bottom:15px; width:100%; border-color:var(--nomad-red); background:var(--tasto-sfondo);" 
                     onpointerdown="if(window.startGroupPress) window.startGroupPress(${g})" 
                     onpointerup="if(window.endGroupPress) window.endGroupPress(${g})" 
                     onpointerleave="if(window.cancelPress) window.cancelPress()" 
@@ -1471,7 +1680,8 @@
             if(!container) return;
             container.innerHTML = "";
             
-            let truppeVisibili = window.roster.filter(u => u.deployState !== "HIDDEN" && u.deployState !== "RESERVE" && u.tipo !== "MARKER");
+            // 27 ottobre (BS-29): 'AD' (Schieramento Aereo) e` fuori dal tavolo come la vecchia Riserva.
+            let truppeVisibili = window.roster.filter(u => u.deployState !== "HIDDEN" && u.deployState !== "RESERVE" && u.deployState !== "AD" && u.tipo !== "MARKER");
 
             // Per Gruppi di Combattimento, nell'ordine dei Gruppi (7 ottobre).
             // Prima l'elenco era uno solo, nell'ordine del roster: con due
@@ -1563,15 +1773,22 @@
                         onpointermove="window.movimentoPressioneUnita(event)"
                         onpointercancel="if(window.cancelUnitPress) window.cancelUnitPress()"`
                 };
+                // 27 ottobre sera (collaudo, C03 e G02): le etichette vanno in
+                // `etichette` (fascia bassa); nel nome resta solo l'icona della
+                // Punta di Lancia.
                 let dopoNome = '';
+                let etichette = '';
                 const etichettaM = (MM && typeof MM.etichettaMarker === 'function') ? MM.etichettaMarker(u) : null;
-                if (etichettaM) dopoNome += ` <span class="etichetta-marker" style="color:#ffdd66; font-size:14px; font-weight:bold; border:1px solid #ffdd66; border-radius:4px; padding:1px 5px;">${etichettaM}</span>`;
+                // 27 ottobre sera (Paolo): l'Hidden Deployment non ha piu` la
+                // scritta HIDDEN: il suo segnalino grande sta con le icone degli
+                // stati (window.generaIconeStati).
+                if (etichettaM && String(u.deployState || '').toUpperCase() !== 'HIDDEN') etichette += ` <span class="etichetta-marker" style="color:#ffdd66; font-size:14px; font-weight:bold; border:1px solid #ffdd66; border-radius:4px; padding:1px 5px;">${window.iconaSegnalinoSenzaNumero(u, null, 18)}${etichettaM}</span>`;
                 // 26 ottobre (MOTORE 26.1): Decoy e Holoecho. Solo il
                 // proprietario sa chi e` la truppa vera: la riga lo dice, col
                 // numero che l'avversario vede sul segnalino.
                 const eReplica = !!(MM && typeof MM.eReplica === 'function' && MM.eReplica(u));
-                if (eReplica) dopoNome += ` <span class="etichetta-replica" style="color:#99ffff; font-size:14px; font-weight:bold; border:1px dashed #99ffff; border-radius:4px; padding:1px 5px;">\ud83e\ude9e REPLICA${u.numeroReplica ? ' ' + u.numeroReplica : ''}</span>`;
-                else if (u.gruppoRepliche && (u.states || {})[u.tipoRepliche === 'DECOY' ? 'decoy' : 'holoecho']) dopoNome += ` <span class="etichetta-replica" style="color:#99ffff; font-size:14px; font-weight:bold; border:1px solid #99ffff; border-radius:4px; padding:1px 5px;">\u2605 VERA${u.numeroReplica ? ' ' + u.numeroReplica : ''}</span>`;
+                if (eReplica) etichette += ` <span class="etichetta-replica" style="color:#99ffff; font-size:14px; font-weight:bold; border:1px dashed #99ffff; border-radius:4px; padding:1px 5px;">\ud83e\ude9e REPLICA${u.numeroReplica ? ' ' + u.numeroReplica : ''}</span>`;
+                else if (u.gruppoRepliche && (u.states || {})[u.tipoRepliche === 'DECOY' ? 'decoy' : 'holoecho']) etichette += ` <span class="etichetta-replica" style="color:#99ffff; font-size:14px; font-weight:bold; border:1px solid #99ffff; border-radius:4px; padding:1px 5px;">\u2605 VERA${u.numeroReplica ? ' ' + u.numeroReplica : ''}</span>`;
                 // 20 ottobre (Paolo): la Punta di Lancia del Coordinato si
                 // riconosceva solo dal bordo azzurro. Ora ha la sua icona
                 // (img/icon_spearhead.png; senza file, la scritta).
@@ -1581,7 +1798,7 @@
                 if (!ordinabile.ok && !pedina) {
                     if (!isDead) opzioni.opacita = '0.45';
                     opzioni.bordo = '2px dashed #777';
-                    dopoNome += ` <span style="color:#ff6666; font-size:13px; font-weight:bold;" title="${ordinabile.motivo || ''}">[${ordinabile.nome || ordinabile.stato} \u2014 NON ATTIVABILE]</span>`;
+                    etichette += ` <span style="color:#ff6666; font-weight:bold;" title="${ordinabile.motivo || ''}">[${ordinabile.nome || ordinabile.stato} \u2014 NON ATTIVABILE]</span>`;
                 }
                 if (pedina && !isDead) {
                     opzioni.sotto = `<div style="color:#999; font-size:13px; margin-top:3px;">${ordinabile.motivo || 'Non riceve Ordini.'}</div>`;
@@ -1591,13 +1808,14 @@
                 // Pool. Prima l'app lo trattava come non attivabile; ora e`
                 // attivabile, e la riga lo dice, con la nota del motore.
                 if (ordinabile.ok && ordinabile.soloIrregolare) {
-                    dopoNome += ` <span style="color:#ff99ff; font-size:13px; font-weight:bold;" title="${ordinabile.notaIrregolare || ''}">\ud83d\udcf5 ORDINE IRREGOLARE PROPRIO</span>`;
+                    etichette += ` <span style="color:#ff99ff; font-weight:bold;" title="${ordinabile.notaIrregolare || ''}">\ud83d\udcf5 ORDINE IRREGOLARE PROPRIO</span>`;
                     opzioni.sotto = `<div class="nota-irregolare" style="color:#ffccff; font-size:13px; margin-top:3px;">${ordinabile.notaIrregolare || ''}</div>`;
                 }
                 // Attivare una truppa in Fuoco di Soppressione annulla lo stato:
                 // va detto PRIMA che spenda l'Ordine, non dopo.
-                if (ordinabile.ok && ordinabile.annullaSoppressione) dopoNome += ` <br><span style="color:#ff9900; font-size:13px; font-weight:bold;" title="${ordinabile.nota || ''}">\u26a0\ufe0f ATTIVARLA ANNULLA LA SOPPRESSIONE</span>`;
+                if (ordinabile.ok && ordinabile.annullaSoppressione) etichette += ` <span class="avviso-soppressione" style="color:#ff9900; font-weight:bold;" title="${ordinabile.nota || ''}">\u26a0\ufe0f ATTIVARLA ANNULLA LA SOPPRESSIONE</span>`;
                 opzioni.dopoNome = dopoNome;
+                opzioni.etichette = etichette;
 
                 container.innerHTML += window.rigaUnitaConFoto(u, opzioni);
                 // Un'unita` non attivabile non riceve Ordini, ma i suoi stati
@@ -1640,7 +1858,7 @@
 
             if (window.isCoordinated) {
                 container.innerHTML += `
-                    <button class="huge-btn" style="background:#cc0000; border-color:#ff9900; margin-top:10px; min-height:60px; max-height:80px; flex:none; width:100%;" onclick="if(window.confermaCoordinato) window.confermaCoordinato()">
+                    <button class="huge-btn tasto-conferma" onclick="if(window.confermaCoordinato) window.confermaCoordinato()">
                         CONFERMA SQUADRA E PROCEDI
                     </button>
                 `;
@@ -1687,7 +1905,26 @@
         };
 
         // Crea il singolo bottone e lo collega al Router del Motore Core
+        // 28 ottobre (Paolo): il colore del tasto e` quello della categoria
+        // dell'Ordine scritta dal motore (M.coloreOrdine: movimento blu, breve
+        // verde, intero rosso), lo stesso delle schede e delle reazioni ARO.
+        // bg/border di chi chiama restano solo per un'azione che il motore non
+        // ha in tabella, e lo si dice in console.
+        window.coloreTastoOrdine = function (id, bg, border) {
+            const M = window.MotoreN5;
+            if (!M || typeof M.coloreOrdine !== 'function' || !M.COLORI_ORDINE) {
+                console.error('\u26d4 M.coloreOrdine assente (serve motore_regole_n5.js dalla 2026-10-28.4): tasti degli Ordini coi colori di prima.');
+                return { sfondo: bg, bordo: border };
+            }
+            if (!M.COLORI_ORDINE[String(id || '').trim().toUpperCase()]) {
+                console.error('\u26d4 M.COLORI_ORDINE non ha "' + id + '": tasto col colore di prima.');
+                return { sfondo: bg, bordo: border };
+            }
+            return M.coloreOrdine(id);
+        };
         window.creaBottoneAzione = function(act, isSecondHalf, bg, border) {
+            const c = window.coloreTastoOrdine(act.id, bg, border);
+            bg = c.sfondo; border = c.bordo;
             return `<button class="huge-btn" style="min-height:60px; font-size:20px; background:${bg}; border-color:${border}; margin-bottom:5px; width:100%;" 
                     onclick="window.selectAction('${act.id}', ${isSecondHalf})">
                     ${act.nome} <br><span style="color:#aaa; font-size:12px;">${act.desc}</span></button>`;
@@ -1779,6 +2016,7 @@
         window.SECONDA_META_SOLO_SINGOLO = ['PIAZZARE EQUIPAGGIAMENTO'];
 
         window.confirmMultiAro = (isMovementOnly = false) => {
+            window.pendingTargets = window.pendingTargets || [];
             if(!isMovementOnly && window.pendingTargets.length === 0) return alert("Seleziona almeno un bersaglio per continuare!");
             
             if(isMovementOnly) window.combatTargets = [];
@@ -1844,6 +2082,16 @@
             document.getElementById('battle-header').style.display = 'none';
             document.getElementById('wait-aro-msg').style.display = 'block';
             document.getElementById('second-half-wrapper').style.display = 'none';
+            // D09 (collaudo del 28 ottobre): la schermata d'attesa dice contro
+            // chi e` la prima meta`; con un'arma Targetless "un punto del
+            // tavolo". La riga la scrive il motore.
+            {
+                const riga = document.getElementById('wait-aro-bersagli');
+                if (riga) {
+                    if (window.MotoreN5 && typeof window.MotoreN5.rigaAttesaAro === 'function') riga.innerHTML = window.MotoreN5.rigaAttesaAro();
+                    else { riga.innerHTML = ''; console.error('\u26d4 M.rigaAttesaAro assente (serve motore_regole_n5.js dalla 2026-10-28.3): la schermata d\'attesa non dice i bersagli.'); }
+                }
+            }
             window.goToStep('step-second-half');
         };
 
@@ -1878,6 +2126,7 @@
 
             const wait = document.getElementById('wait-aro-msg');
             if (wait) wait.style.display = 'block';
+            svuota('wait-aro-bersagli');   // i bersagli dell'Ordine finito
             const wrapper = document.getElementById('second-half-wrapper');
             if (wrapper) wrapper.style.display = 'none';
             const banner = document.getElementById('fireteam-banner');
@@ -2047,7 +2296,7 @@
                     <h3 style="margin-top:0; color:#00ff00;">PARTITA IN CORSO</h3>
                     <div style="color:#aaa; font-size:14px;">${locale.roster.length} unit\u00e0${(locale.tokenPiazzati || []).length ? ' e ' + locale.tokenPiazzati.length + ' piazzati sul tavolo' : ''}, salvate il ${quando.toLocaleDateString()} alle ${quando.toLocaleTimeString()}.</div>
                     ${avvisoRete}
-                    <button class="huge-btn" style="background:#004400; border-color:#00ff00; margin-top:10px; min-height:70px;"
+                    <button class="huge-btn tasto-conferma"
                         onclick="window.riprendiPartita()">\u21a9\ufe0f RIPRENDI PARTITA</button>
                     <div style="color:#888; font-size:13px; margin-top:6px;">Oppure componi una lista nuova qui sotto: la partita salvata resta finch\u00e9 non la invii all'Hub.</div>
                 </div>`;
@@ -2215,10 +2464,12 @@
                       : ((typeof argomento === 'number') ? String(argomento) : `'${String(argomento).replace(/'/g, "\\'")}'`);
             // flex-direction:row scritto a mano: .huge-btn mette le cose in
             // COLONNA, e la freccia finiva sotto la scritta invece che accanto.
-            return `<button type="button" class="huge-btn scelta-terreno" data-valore="${valore}" title="${window.ETICHETTA_TERRENO}" aria-label="${window.ETICHETTA_TERRENO}"
-                        style="width:100%; margin:0; min-height:55px; font-size:16px; background:#111; color:#fff; border-color:#888; padding:0 12px; display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:8px; text-transform:none;"
+            // 27 ottobre sera (Paolo): scritta piu` grande e centrata, e niente
+            // suggerimento del browser (title) che compariva sotto la casella.
+            return `<button type="button" class="huge-btn scelta-terreno" data-valore="${valore}" aria-label="${window.ETICHETTA_TERRENO}"
+                        style="width:100%; margin:0; min-height:55px; font-size:20px; background:#111; color:#fff; border-color:#888; padding:0 12px; display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:8px; text-transform:none;"
                         onclick="window.apriSceltaTerreno('${comando}', ${arg}, '${valore}')">
-                        <span style="flex:1; min-width:0; color:#fff; text-align:left; line-height:1.15;">${voci.length ? 'Terreno: ' + voci.join(' + ') : 'Terreno: nessuno'}</span><span style="color:#888;">&#9660;</span></button>`;
+                        <span style="flex:1; min-width:0; color:#fff; text-align:center; line-height:1.15; font-family:'Teko', sans-serif; font-size:20px; margin:0;">${voci.length ? 'Terreno: ' + voci.join(' + ') : 'Terreno: nessuno'}</span><span style="color:#888;">&#9660;</span></button>`;
         };
 
         // IL RIQUADRO DELLE CASELLE. Uno solo per pagina (id pannello-terreno),
@@ -2776,22 +3027,244 @@
                         ${note.length ? '<div style="margin-top:6px; font-size:13px; color:#ddbb77;">' + note.join('<br>') + '</div>' : ''}
                     </div>`;
         };
+        // 27 ottobre sera (Paolo): il cambio di stato non sta piu` in un
+        // riquadro giallo in cima alla schermata: va nella ⓘ, in ogni
+        // schermata dello stesso Ordine (window.voceCambioStato). Il riquadro
+        // di prima, se c'e` ancora nella pagina, si spegne.
         window.aggiornaRiquadroCambioStato = (contenitore) => {
-            let box = document.getElementById('riquadro-cambio-stato');
-            const testo = contenitore ? window.testoCambioStato() : '';
-            if (!box) {
-                if (!testo) return;
-                box = document.createElement('div');
-                box.id = 'riquadro-cambio-stato';
+            const box = document.getElementById('riquadro-cambio-stato');
+            if (box && box.style) { box.innerHTML = ''; box.style.display = 'none'; }
+            window.aggiornaTastoInfo();
+        };
+        // Il cambio di stato di quest'Ordine come voce della ⓘ, o null. Le
+        // stesse condizioni di testoCambioStato (vedi sopra).
+        window.voceCambioStato = () => {
+            if (!window.testoCambioStato()) return null;
+            const c = window.ultimoCambioStato;
+            const nomi = { CAMO: 'Marker CAMO', IMP_1: 'Marker IMP-1', IMP_2: 'Marker IMP-2', IMP: 'Marker Impersonation',
+                           HIDDEN: 'Schieramento Nascosto', FOXHOLE: 'Foxhole', NORMAL: 'Modello sul tavolo' };
+            const dire = (x) => nomi[String(x || '').toUpperCase()] || String(x || '?');
+            const note = (Array.isArray(c.note) ? c.note : []).filter(Boolean);
+            return { titolo: (c.unita || 'La truppa') + ': ' + dire(c.prima) + ' \u2192 ' + dire(c.dopo) + ' (' + (c.azione || 'dichiarazione') + ')',
+                     testo: note.join(' ') };
+        };
+
+        // ==========================================
+        // ⓘ  LE SPIEGAZIONI DELLA SCHERMATA (27 ottobre sera, Paolo)
+        // ==========================================
+        // Chi disegna una schermata ci deposita le sue spiegazioni invece di
+        // scriverle a schermo:
+        //   window.azzeraInfo(idStep)                  all'inizio del disegno
+        //   window.aggiungiInfo(idStep, titolo, testo) una voce (testo semplice)
+        // Il tasto ⓘ in alto a destra c'e` solo se la schermata visibile ne ha;
+        // il tocco apre il pannello dal basso (window.apriInfo). Vale anche per
+        // i moduli degli Ordini (chat MOTORE): stessa chiamata, idStep dello
+        // step dove disegnano (step-modifiers, step-weapon...).
+        window.INFO = window.INFO || {};
+        window._stepCorrente = window._stepCorrente || null;
+        const testoInfo = (t) => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        window.azzeraInfo = (idStep) => { window.INFO[idStep] = []; window.aggiornaTastoInfo(); window.riallineaNote(); };
+
+        // ------------------------------------------
+        // LE OPZIONI DELLE NOTE (28 ottobre, Paolo)
+        // ------------------------------------------
+        // Si scelgono nella pagina della fazione (scegli_fazione.html) e
+        // valgono per QUESTO telefono: localStorage 'opzioni_note'.
+        //   dove: 'info'  -> le note stanno nella ⓘ della schermata
+        //         'tasti' -> ogni nota sotto il suo tasto, stesso sfondo
+        //                    (un tasto solo); quelle senza tasto in cima
+        //   tipi: quali note mostrare. I cambi di stato non si spengono.
+        // Chi deposita una nota dice di che tipo e`, e se puo` a quale tasto
+        // appartiene: aggiungiInfo(idStep, titolo, testo, { tipo, tasto }),
+        // dove tasto e` il data-nota del bottone. Senza tasto la nota si
+        // abbina al bottone che ha per scritta il suo titolo.
+        window.TIPI_NOTE = [
+            { id: 'stato',  nome: 'CAMBI DI STATO',      fisso: true },
+            { id: 'nonpuo', nome: 'PERCHÉ NON SI PUÒ' },
+            { id: 'mod',    nome: 'SPIEGAZIONI DEI MOD' },
+            { id: 'regole', nome: 'REGOLE E PROMEMORIA' }
+        ];
+        window.opzioniNote = () => {
+            const o = { dove: 'info', tipi: { stato: true, nonpuo: true, mod: true, regole: true } };
+            let letto = null;
+            try { letto = JSON.parse(localStorage.getItem('opzioni_note') || 'null'); } catch (e) { letto = null; }
+            if (letto && (letto.dove === 'info' || letto.dove === 'tasti')) o.dove = letto.dove;
+            if (letto && letto.tipi) window.TIPI_NOTE.forEach(t => { if (typeof letto.tipi[t.id] === 'boolean') o.tipi[t.id] = letto.tipi[t.id]; });
+            o.tipi.stato = true;
+            return o;
+        };
+        window.aggiungiInfo = (idStep, titolo, testo, extra) => {
+            if (!idStep || (!titolo && !testo)) return;
+            extra = extra || {};
+            let tipo = extra.tipo || 'regole';
+            if (!window.TIPI_NOTE.some(t => t.id === tipo)) {
+                console.error('⛔ aggiungiInfo: tipo di nota sconosciuto "' + tipo + '" (' + titolo + '): vale come regole.');
+                tipo = 'regole';
             }
-            box.innerHTML = testo;
-            box.style.display = testo ? 'block' : 'none';
-            // In cima alla schermata che si sta aprendo: cosi` segue il
-            // giocatore da un passo all'altro dello stesso Ordine.
-            if (testo && contenitore && typeof contenitore.insertBefore === 'function') {
-                contenitore.insertBefore(box, contenitore.firstChild || null);
+            (window.INFO[idStep] = window.INFO[idStep] || []).push({ titolo: String(titolo || ''), testo: String(testo || ''), tipo, tasto: extra.tasto ? String(extra.tasto) : '' });
+            window.aggiornaTastoInfo();
+            window.riallineaNote();   // nel browser: dopo che la schermata e` disegnata
+        };
+        // La schermata visibile: lo step acceso nella pagina; se il browser
+        // non lo dice (i banchi), l'ultimo aperto da goToStep e simili.
+        window.stepVisibile = () => {
+            const accesi = [].slice.call(document.querySelectorAll('.step-container') || []).filter(el => el && el.style && el.style.display === 'flex');
+            return (accesi.length === 1 && accesi[0].id) ? accesi[0].id : window._stepCorrente;
+        };
+        window.segnaStepCorrente = (idStep) => { window._stepCorrente = idStep; window.aggiornaTastoInfo(); window.riallineaNote(); };
+        // Le voci della schermata, gia` filtrate coi tipi scelti: prima il
+        // cambio di stato dell'Ordine (vale in ogni sua schermata), poi
+        // quelle depositate.
+        window.vociInfo = (idStep) => {
+            const id = idStep || window.stepVisibile();
+            const tipi = window.opzioniNote().tipi;
+            const voci = (window.INFO[id] || []).filter(v => tipi[v.tipo || 'regole'] !== false);
+            const cs = (id && id !== 'battle' && id !== 'setup') ? window.voceCambioStato() : null;
+            if (cs) voci.unshift(Object.assign({ tipo: 'stato', tasto: '' }, cs));
+            return voci;
+        };
+        // Abbina le voci ai tasti della schermata. tasti: [{ chiave, testo }]
+        // nell'ordine in cui stanno a schermo. Una voce va al tasto col suo
+        // data-nota; senza, a quello che ha per scritta il suo titolo.
+        // -> { perTasto: [[voci del tasto 0], ...], schermata: [voci senza tasto] }
+        const normaNota = (t) => String(t == null ? '' : t).toUpperCase().replace(/\s+/g, ' ').trim();
+        window.abbinaNote = (voci, tasti) => {
+            const perTasto = tasti.map(() => []), schermata = [];
+            voci.forEach(v => {
+                let k = v.tasto ? tasti.findIndex(t => t.chiave && t.chiave === v.tasto) : -1;
+                if (k < 0 && v.titolo) k = tasti.findIndex(t => normaNota(t.testo) === normaNota(v.titolo));
+                if (k >= 0) perTasto[k].push(v); else schermata.push(v);
+            });
+            return { perTasto, schermata };
+        };
+        // I tasti visibili di una schermata, per abbinarli. Fuori dal browser
+        // (i banchi) l'elenco e` vuoto: tutte le note sono "della schermata".
+        window.tastiDellaSchermata = (idStep) => {
+            const box = idStep ? document.getElementById(idStep) : null;
+            if (!box || typeof box.querySelectorAll !== 'function') return [];
+            return [].slice.call(box.querySelectorAll('button') || []).filter(b => !b.closest || !b.closest('.nota-tasto'));
+        };
+        window.aggiornaTastoInfo = () => {
+            const b = document.getElementById('tasto-info');
+            // Con le note sotto i tasti la ⓘ non serve: sono gia` a schermo.
+            if (b && b.style) b.style.display = (window.opzioniNote().dove === 'info' && window.vociInfo().length) ? 'flex' : 'none';
+            window.liberaSpazioInfo();
+        };
+        // Il tasto ⓘ e` fisso in alto a destra: un titolo lungo (h1,
+        // l'intestazione dell'Ordine del motore, le testate dell'ARO) ci
+        // finiva sotto («BERSAGLI DEL FUOCO SPECULATI…», collaudo grafico
+        // 28 ottobre). I titoli che toccano il tasto prendono la classe
+        // sotto-info: margine interno uguale ai due lati, cosi` il testo resta
+        // centrato e va a capo prima del tasto. Senza tasto la classe si toglie.
+        window.liberaSpazioInfo = () => {
+            const b = document.getElementById('tasto-info');
+            if (!b || typeof b.getBoundingClientRect !== 'function' || typeof document.querySelectorAll !== 'function') return;
+            [].slice.call(document.querySelectorAll('.sotto-info') || []).forEach(e => e.classList.remove('sotto-info'));
+            if (!b.style || b.style.display === 'none') return;
+            const r = b.getBoundingClientRect();
+            const id = window.stepVisibile(), box = (id && document.getElementById(id)) || document;
+            const titoli = [].slice.call(box.querySelectorAll('h1, h2, .intestazione-ordine, [id^="aro-header-"]') || []);
+            const testa = document.getElementById('battle-header');
+            if (testa) titoli.push(testa);
+            titoli.forEach(e => {
+                if (!e || e.offsetParent === null || typeof e.getBoundingClientRect !== 'function') return;
+                const q = e.getBoundingClientRect();
+                if (q.bottom > r.top && q.top < r.bottom && q.right > r.left && q.left < r.right) e.classList.add('sotto-info');
+            });
+        };
+        window.apriInfo = () => {
+            const p = document.getElementById('pannello-info');
+            if (!p) return;
+            const id = window.stepVisibile();
+            const voci = window.vociInfo(id);
+            const tasti = window.tastiDellaSchermata(id).map(b => ({ chiave: (b.dataset && b.dataset.nota) || '', testo: b.innerText || b.textContent || '' }));
+            const ab = window.abbinaNote(voci, tasti);
+            const voce = (titolo, testo) => `<div class="info-voce"><span class="titolo-tasto">${testoInfo(normaNota(titolo))}</span>${testoInfo(testo)}</div>`;
+            const dei = [];
+            ab.perTasto.forEach((vv, k) => vv.forEach(v => dei.push(voce(v.tasto ? tasti[k].testo : v.titolo, v.testo))));
+            const gruppi = dei.length
+                ? (ab.schermata.length ? `<div class="info-gruppo">QUESTA SCHERMATA</div>` + ab.schermata.map(v => voce(v.titolo, v.testo)).join('') : '') +
+                  `<div class="info-gruppo">I TASTI</div>` + dei.join('')
+                : ab.schermata.map(v => voce(v.titolo, v.testo)).join('');
+            p.innerHTML = `<div class="info-foglio" role="dialog" aria-label="Spiegazioni">` +
+                (voci.length ? gruppi : `<div class="info-voce">Niente da spiegare in questa schermata.</div>`) +
+                `<button type="button" class="tasto-uscita" onclick="window.chiudiInfo()">CHIUDI</button></div>`;
+            p.style.display = 'block';
+        };
+        window.chiudiInfo = () => {
+            const p = document.getElementById('pannello-info');
+            if (p) { p.innerHTML = ''; if (p.style) p.style.display = 'none'; }
+        };
+        // Le note SOTTO I TASTI: ogni nota diventa una fascia attaccata al suo
+        // tasto, con lo stesso sfondo e lo stesso bordo, e toccarla e` come
+        // toccare il tasto. Tasto e fascia stanno in un involucro che prende il
+        // posto del tasto (anche nelle righe con due tasti affiancati). Le note
+        // senza tasto vanno in un riquadro prima del primo tasto. Ridisegnare
+        // toglie prima quel che c'era.
+        window.disegnaNote = (idStep) => {
+            const id = idStep || window.stepVisibile();
+            const box = id ? document.getElementById(id) : null;
+            if (!box || typeof box.querySelectorAll !== 'function' || typeof document.createElement !== 'function') return;
+            [].slice.call(box.querySelectorAll('.nota-schermata') || []).forEach(n => n.remove());
+            [].slice.call(box.querySelectorAll('.nota-gruppo') || []).forEach(g => {
+                const t = g.querySelector('button');
+                if (t && g.parentNode) { t.style.margin = g.dataset.margine || ''; g.parentNode.insertBefore(t, g); }
+                g.remove();
+            });
+            if (window.opzioniNote().dove !== 'tasti') return;
+            const tasti = window.tastiDellaSchermata(id).filter(b => b.offsetParent !== null);
+            const ab = window.abbinaNote(window.vociInfo(id), tasti.map(b => ({ chiave: (b.dataset && b.dataset.nota) || '', testo: b.innerText || '' })));
+            ab.perTasto.forEach((vv, k) => {
+                if (!vv.length) return;
+                const t = tasti[k], cs = getComputedStyle(t);
+                const g = document.createElement('div');
+                g.className = 'nota-gruppo';
+                g.dataset.margine = t.style.margin || '';
+                g.style.cssText = `display:flex; flex-direction:column; flex:${cs.flexGrow} ${cs.flexShrink} ${cs.flexBasis}; margin:${cs.marginTop} ${cs.marginRight} ${cs.marginBottom} ${cs.marginLeft}; min-width:0;`;
+                t.parentNode.insertBefore(g, t);
+                g.appendChild(t);
+                t.style.margin = '0';
+                const n = document.createElement('div');
+                n.className = 'nota-tasto' + (t.disabled ? ' spenta' : '');
+                n.style.background = cs.backgroundColor;
+                n.style.borderColor = cs.borderTopColor;
+                n.style.color = cs.color;
+                n.innerHTML = vv.map(v => testoInfo(v.testo || v.titolo)).join('<br>');   // il titolo e` gia` il tasto
+                n.onclick = () => { if (!t.disabled) t.click(); };
+                g.appendChild(n);
+                g.classList.add('con-nota');
+            });
+            if (ab.schermata.length) {
+                const r = document.createElement('div');
+                r.className = 'nota-schermata';
+                r.innerHTML = ab.schermata.map(v => '<b>' + testoInfo(v.titolo) + '</b>' + (v.testo ? ': ' + testoInfo(v.testo) : '')).join('<br>');
+                // Prima del primo tasto della schermata; se il tasto sta in una
+                // riga con altri (flex orizzontale), prima di tutta la riga.
+                let primo = tasti[0] ? (tasti[0].parentNode && tasti[0].parentNode.classList && tasti[0].parentNode.classList.contains('nota-gruppo') ? tasti[0].parentNode : tasti[0]) : null;
+                const inRiga = (n) => { const c = n && n.parentNode && n.parentNode !== box && n.parentNode.nodeType === 1 ? getComputedStyle(n.parentNode) : null;
+                                        return !!c && /flex/.test(c.display) && !/column/.test(c.flexDirection); };
+                while (primo && inRiga(primo)) primo = primo.parentNode;
+                if (primo && primo.parentNode) primo.parentNode.insertBefore(r, primo); else box.appendChild(r);
             }
         };
+        // Le schermate che si aprono da altri file (motore_core, i moduli)
+        // senza passare da goToStep: tasto ⓘ e note si riallineano dopo ogni
+        // tocco. Niente setInterval: un secondo timer si aggiungeva a quello
+        // del ciclo di ascolto (motore_core) e, nei banchi che ne tengono uno
+        // solo, lo rimpiazzava.
+        // Una sola ripassata per giro: chi deposita dieci note ne chiede una.
+        window.riallineaNote = () => {
+            if (window._noteInAttesa) return;
+            window._noteInAttesa = true;
+            setTimeout(() => {
+                window._noteInAttesa = false;
+                try { window.aggiornaTastoInfo(); window.disegnaNote(); window.liberaSpazioInfo(); } catch (e) { window.ultimaEccezione = e; }
+            }, 0);
+        };
+        if (typeof document.addEventListener === 'function') {
+            document.addEventListener('click', window.riallineaNote, true);
+            document.addEventListener('pointerup', window.riallineaNote, true);
+        }
 
         window.goToStep = (stepId) => {
             let header = document.getElementById('battle-header');
@@ -2803,6 +3276,7 @@
                 // Ordine finito (o annullato): il riquadro sparisce, e cio`
                 // che c'e` in memoria diventa vecchio.
                 window.segnaCambioStatoVecchio();
+                window.segnaStepCorrente('battle');
                 window.aggiornaRiquadroCambioStato(null);
                 return;
             }
@@ -2811,6 +3285,7 @@
             const targetStep = document.getElementById(stepId);
             if(targetStep) targetStep.style.display = 'flex';
             if(header) header.style.display = 'block';
+            window.segnaStepCorrente(stepId);
             window.aggiornaRiquadroCambioStato(targetStep);
         };
 

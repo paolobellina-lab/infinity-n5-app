@@ -1,4 +1,4 @@
-// @versione 2026-10-26.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-10-27.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -945,6 +945,11 @@ window.CATALOGO_N5.SCHIERAMENTO = {
         'CAMO-6': { immagini: 10, file: 'img/camo-6_{n}.png', etichetta: 'CAMO-6', aliasExtra: '(-6)' },
         'IMP-1':  { immagini: 10, file: 'img/imp-1_{n}.png',  etichetta: 'IMP-1',  aliasExtra: '(IMP-1)' },
         'IMP-2':  { immagini: 10, file: 'img/imp-2_{n}.png',  etichetta: 'IMP-2',  aliasExtra: '(IMP-2)' }
+    },
+    // 27 ottobre (Paolo): l'Hidden Deployment nella propria app, accanto al
+    // nome: etichetta e icona, senza numero (non c'e` un segnalino sul tavolo).
+    segnaliniSenzaNumero: {
+        'HIDDEN': { etichetta: 'HIDDEN', file: 'img/icon_hidden.png' }
     },
     // 26 ottobre (Paolo): le immagini dei segnalini per esercito. Il nome del
     // file resta quello di `file` qui sopra, senza 'img/'.
@@ -2872,7 +2877,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-10-26.1', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-10-27.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

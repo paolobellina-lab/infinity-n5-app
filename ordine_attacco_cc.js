@@ -1,4 +1,4 @@
-// @versione 2026-10-09.1 | ordine_attacco_cc.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.3 | ordine_attacco_cc.js | proprieta`: chat MOTORE
 // ==========================================
 // ⚔️ CORPO A CORPO (N5) - ordine_attacco_cc.js
 // ------------------------------------------
@@ -49,7 +49,20 @@
         return window.MotoreN5;
     }
 
-    const COL = { bordo: '#ffcc00', sfondo: '#331a00' };
+    // 28 ottobre (Paolo): il colore e` dell'ORDINE, non del modulo (M.COLORI_ORDINE nel
+    // motore: Movimenti blu, Abilita` Brevi verdi, Ordini Interi rossi). COL legge le
+    // tinte dell'Ordine in corso a ogni uso; 'ATTACCO CC' e` quello di casa. Prima: { bordo: '#ffcc00', sfondo: '#331a00' };.
+    const COL = (function () {
+        const ripiego = { bordo: '#ffcc00', sfondo: '#331a00', riquadro: '#331a00', tenue: '#ffcc00', testo: '#ffcc00' };
+        const o = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) {
+            Object.defineProperty(o, k, { enumerable: true, get: function () {
+                const M = window.MotoreN5;
+                return (M && typeof M.colOrdine === 'function') ? M.colOrdine('ATTACCO CC')[k] : ripiego[k];
+            } });
+        });
+        return o;
+    })();
 
     window.avviaFaseCC = function (actionId, isSecondHalf) {
         window.currentOrder = window.currentOrder || {};
@@ -91,10 +104,8 @@
 
         const ma = M.livelloMartialArts(unita);
         const container = document.getElementById('weapon-buttons-container');
-        container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:10px; margin-bottom:15px; text-align:center; color:#fff; border-radius:5px;">
-            <b style="color:${COL.bordo}; font-size:20px;">⚔️ ${window.currentOrder.action === 'BERSERK' ? 'BERSERK' : 'ATTACCO IN MISCHIA'}</b><br>
-            <span style="font-size:14px; color:#ccc;">CC ${unita.cc || '?'}${ma ? ` · Martial Arts L${ma}` : ''}</span>
-        </div>`;
+        window.MotoreN5.azzeraNote('step-weapon');
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `${window.currentOrder.action === 'BERSERK' ? 'BERSERK' : 'ATTACCO IN MISCHIA'}`, nota: `CC ${unita.cc || '?'}${ma ? ` · Martial Arts L${ma}` : ''}` })}`;
 
         let armi = M.armiCC(unita);
 
@@ -108,7 +119,7 @@
         }
 
         if (armi.length === 0) {
-            container.innerHTML += `<p style="color:#ff3333; text-align:center; font-size:18px;">❌ Nessuna arma da Corpo a Corpo.</p>`;
+            container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-size:var(--fs-m);">❌ Nessuna arma da Corpo a Corpo.</p>`;
         } else {
             armi.forEach(function (p) {
                 // 🔴 Si passa il nome GREZZO, non quello spogliato.
@@ -200,33 +211,33 @@
         const unita = window.coordUnits[window.coordIndex];
         const arma = M.profiloArma(window.currentOrder.weapon);
         const container = document.getElementById('targets-allocation-container');
+        window.MotoreN5.azzeraNote('step-modifiers');
 
         const assegnati = window.combatTargets.reduce((s, t) => s + (t.burst || 0), 0);
         const restanti = window.totalBurst - assegnati;
         const alleati = window.ccAlleatiIngaggiati || 0;
 
-        let html = `<div style="text-align:center; color:#fff; margin-bottom:5px; font-size:18px;">
-            DADI CC DA ASSEGNARE: <b style="color:${COL.bordo}; font-size:24px;">${restanti}</b></div>`;
+        let html = `<div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:5px; font-size:var(--fs-m);">
+            DADI CC DA ASSEGNARE: <b style="color:${COL.bordo}; font-size:var(--fs-l);">${restanti}</b></div>`;
 
+        // 28 ottobre (Paolo): da dove viene il Burst, e il Dado Speciale, nella ⓘ.
         if (window.burstDettaglio) {
-            html += `<div style="text-align:center; color:#888; font-size:12px; margin-bottom:12px;">` +
-                window.burstDettaglio.voci.map(v => v.motivo).join(' · ') + `</div>`;
+            if (window.burstDettaglio.voci.length) M.nota('step-modifiers', 'Burst', window.burstDettaglio.voci.map(v => v.motivo).join(' · '), { tipo: 'regole' });
             if (window.burstDettaglio.sd > 0) {
-                html += `<div style="text-align:center; color:#00ff00; font-size:13px; margin-bottom:12px;">
-                    🎲 +${window.burstDettaglio.sd} SD: tira un dado in più e poi scartane uno. Non conta nel Burst.</div>`;
+                M.nota('step-modifiers', 'Dado Speciale', `+${window.burstDettaglio.sd} SD: tira un dado in più e poi scartane uno. Non conta nel Burst.`, { tipo: 'regole' });
             }
         }
 
         // Alleati nella mischia: dato non deducibile, lo dichiara il giocatore.
-        html += `<div style="background:#1a1a00; border:1px solid #666600; padding:12px; border-radius:5px; margin-bottom:15px;">
-            <div style="text-align:center; color:#cccc66; font-size:14px; margin-bottom:8px;">
+        html += `<div style="background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-attenzione-fondo,#554400); padding:12px; border-radius:5px; margin-bottom:15px;">
+            <div style="text-align:center; color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s); margin-bottom:8px;">
                 <b>Close Combat with Multiple Troopers</b><br>
-                <span style="font-size:12px; color:#999966;">Quanti TUOI alleati sono ingaggiati in questa mischia? (+1B ciascuno)</span>
+                <span style="font-size:var(--fs-xs); color:var(--mn-nota-tenue,#cc9955);">Quanti TUOI alleati sono ingaggiati in questa mischia? (+1B ciascuno)</span>
             </div>
             <div style="display:flex; justify-content:center; align-items:center; gap:15px;">
-                <button class="burst-btn" style="background:#666600;" onclick="window.setCCAlleati(${alleati - 1})">-</button>
-                <span style="font-size:24px; font-weight:bold; color:${alleati > 0 ? '#00ff00' : '#888'};">${alleati}</span>
-                <button class="burst-btn" style="background:#666600;" onclick="window.setCCAlleati(${alleati + 1})">+</button>
+                <button class="burst-btn" style="background:var(--mn-attenzione-fondo,#554400);" onclick="window.setCCAlleati(${alleati - 1})">-</button>
+                <span style="font-size:var(--fs-l); font-weight:bold; color:${alleati > 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-spento,#888888)'};">${alleati}</span>
+                <button class="burst-btn" style="background:var(--mn-attenzione-fondo,#554400);" onclick="window.setCCAlleati(${alleati + 1})">+</button>
             </div>
         </div>`;
 
@@ -238,9 +249,9 @@
 
             const dettaglio = mods.voci.length
                 ? mods.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                        <span style="color:#aaa;">${v.motivo}</span>
-                        <b style="color:${v.valore >= 0 ? '#00ff00' : '#ff6666'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b></div>`).join('')
-                : `<div style="color:#888; text-align:center;">Nessun modificatore</div>`;
+                        <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
+                        <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b></div>`).join('')
+                : `<div style="color:var(--mn-spento,#888888); text-align:center;">Nessun modificatore</div>`;
 
             const ammoHtml = arma.ammoOpzioni
                 .map(o => `<option value="${o}" ${o === tgt.ammo ? 'selected' : ''}>Munizioni: ${o}</option>`).join('');
@@ -248,42 +259,42 @@
             // Colpo di Grazia: sostituisce il tiro, o è bloccato da Dogged/NWI.
             let graziaHtml = '';
             if (grazia.applicabile) {
-                graziaHtml = `<div style="margin:12px 0; padding:12px; background:#330000; border:1px solid #ff0000; border-radius:5px; text-align:center;">
-                    <b style="color:#ff3333; font-size:16px;">☠️ COLPO DI GRAZIA</b><br>
-                    <span style="color:#ffaaaa; font-size:13px;">${grazia.motivo}<br>Nessun tiro d'attacco, nessun Tiro Salvezza.</span></div>`;
+                graziaHtml = `<div style="margin:12px 0; padding:12px; background:var(--mn-errore-fondo,#330000); border:1px solid var(--mn-errore,#ff3333); border-radius:5px; text-align:center;">
+                    <b style="color:var(--mn-errore,#ff3333); font-size:var(--fs-m);">☠️ COLPO DI GRAZIA</b><br>
+                    <span style="color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s);">${grazia.motivo}<br>Nessun tiro d'attacco, nessun Tiro Salvezza.</span></div>`;
             } else if (grazia.bloccatoDaSkill) {
-                graziaHtml = `<div style="margin:12px 0; padding:12px; background:#332200; border:1px solid #cc8800; border-radius:5px; text-align:center;">
-                    <b style="color:#ffaa33; font-size:15px;">⚠️ COLPO DI GRAZIA NON APPLICABILE</b><br>
-                    <span style="color:#ccaa88; font-size:13px;">${grazia.motivo}</span></div>`;
+                graziaHtml = `<div style="margin:12px 0; padding:12px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-nota-bordo,#664400); border-radius:5px; text-align:center;">
+                    <b style="color:var(--mn-acceso,#ffaa33); font-size:var(--fs-m);">⚠️ COLPO DI GRAZIA NON APPLICABILE</b><br>
+                    <span style="color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s);">${grazia.motivo}</span></div>`;
             }
 
             html += `
             <div class="target-card" style="border-left:4px solid ${COL.bordo}; margin-bottom:20px; background:rgba(255,204,0,0.05); padding:15px; border-radius:5px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <b style="color:${COL.bordo}; font-size:20px;">${tgt.name}</b>
+                    <b style="color:${COL.bordo}; font-size:var(--fs-l);">${tgt.name}</b>
                     <div class="burst-ctrl" style="border-color:${COL.bordo};">
                         <button class="burst-btn" style="background:${COL.bordo};" onclick="window.adjustTargetBurstCC(${index}, -1)">-</button>
-                        <span style="margin:0 10px; font-size:22px; font-weight:bold; color:${tgt.burst > 0 ? '#00ff00' : '#888'}">${tgt.burst} B</span>
+                        <span style="margin:0 10px; font-size:var(--fs-l); font-weight:bold; color:${tgt.burst > 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-spento,#888888)'}">${tgt.burst} B</span>
                         <button class="burst-btn" style="background:${COL.bordo}; opacity:${restanti > 0 ? 1 : 0.3}" onclick="window.adjustTargetBurstCC(${index}, 1)">+</button>
                     </div>
                 </div>
 
                 ${graziaHtml}
 
-                <div style="background:#1a1000; border:1px solid #664400; padding:10px; border-radius:5px; margin-bottom:12px; font-size:14px;">
-                    <div style="text-align:center; color:#fff; margin-bottom:6px;">
-                        CC base <b>${mods.base}</b> → Valore di Successo <b style="color:${COL.bordo}; font-size:20px;">${mods.valore}</b>
+                <div style="background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-nota-bordo,#664400); padding:10px; border-radius:5px; margin-bottom:12px; font-size:var(--fs-s);">
+                    <div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:6px;">
+                        CC base <b>${mods.base}</b> → Valore di Successo <b style="color:${COL.bordo}; font-size:var(--fs-l);">${mods.valore}</b>
                     </div>
-                    <div style="border-top:1px solid #443300; padding-top:6px;">${dettaglio}</div>
+                    <div style="border-top:1px solid var(--mn-nota-bordo,#664400); padding-top:6px;">${dettaglio}</div>
                 </div>
 
-                <select class="huge-btn" style="width:100%; margin:0; min-height:55px; font-size:16px; background:#000; color:#fff; border-color:${COL.bordo}; text-align:center; padding:0 10px;" onchange="window.setTargetAmmoCC(${index}, this.value)">
+                <select class="huge-btn" style="width:100%; margin:0; min-height:55px; font-size:var(--fs-m); background:var(--mn-scuro,#000000); color:var(--mn-testo,#ffffff); border-color:${COL.bordo}; text-align:center; padding:0 10px;" onchange="window.setTargetAmmoCC(${index}, this.value)">
                     ${ammoHtml}
                 </select>
                 ${M.rigaRequisiti(['contatto'], tgt, index, 'window.toggleRequisitoCC')}
 
-                ${mods.note.length ? `<div style="margin-top:10px; color:#888; font-size:12px; line-height:1.6;">` + mods.note.map(n => `• ${n}`).join('<br>') + `</div>` : ''}
             </div>`;
+            mods.note.forEach(n => M.nota('step-modifiers', (window.combatTargets.length > 1 ? tgt.name + ': ' : '') + 'Corpo a Corpo', n, { tipo: 'mod' }));
         });
 
         container.innerHTML = html;
@@ -389,7 +400,7 @@
             calcDiv.innerHTML = `
                 <div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; background:rgba(255,204,0,0.1); margin-top:20px;">
                     <h2 style="color:${COL.bordo}; margin:0;">INGAGGIO INVIATO</h2>
-                    <p style="font-size:12px; color:#aaa;">Risoluzione mischia in corso all'Hub...</p>
+                    <p style="font-size:var(--fs-xs); color:var(--mn-debole,#aaaaaa);">Risoluzione mischia in corso all'Hub...</p>
                 </div>`;
             calcDiv.style.display = 'block';
         }
@@ -404,7 +415,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_cc.js', versione: '2026-10-09.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_cc.js', versione: '2026-10-28.3', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

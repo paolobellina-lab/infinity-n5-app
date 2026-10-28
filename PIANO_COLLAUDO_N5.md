@@ -1,6 +1,6 @@
-<!-- @versione 2026-10-27.2 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-10-28.6 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 44)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 54)
 
 Bozza scritta dalla chat MOTORE il 15 ottobre, su richiesta di Paolo, da far
 adottare a TEST. Segue il motore **2026-10-15.1**, `motore_core.js`,
@@ -140,6 +140,99 @@ riconosce più (SCH-07); all'Hub il reattivo con l'arma esaurita porta la nota
 dello Scarico (banco). Resta la domanda a REGOLE sul (+1B) dell'arma in ARO con
 Total Reaction. Le prove restano 312.
 
+**Revisione 45** (TEST, 27 ottobre, sera): segue il motore **2026-10-27.3**,
+`motore_core.js` e `logica_aro.js` **2026-10-27.1**. REGOLE ha risposto: col
+Total Reaction (o Neurocinetics) il (+1B) dell'**arma** vale anche in ARO
+(righe 10227-10228), e il Burst pieno è **opzionale**: la pagina dell'ARO offre
+*«BURST PIENO (B n)»* e *«B1»*. L'**abilità** *BS Attack (+1B)* in ARO resta
+fuori. Il roster dei Nomadi passa a 47: Reaktion Zond (Thunderbolt) *(#47)*,
+il solo profilo vero con Total Reaction e un'arma (+1B). Nuova BS-16b; BS-16 e
+BS-17 dicono la scelta del Burst. Chiusa la domanda del capitolo 31, aperto un
+difetto nuovo (a un uso residuo la scelta c'è lo stesso). Le prove passano a 313.
+
+**Revisione 46** (TEST, 27 ottobre, sera): segue il motore **2026-10-27.4**.
+Chiuso il difetto della revisione 45: il tetto degli usi vale anche per la
+scelta del Burst. A un uso residuo la pagina dell'ARO non offre più *«BURST
+PIENO (B2)»* e *«B1»*: c'è solo B1, con *«Burst limitato agli usi residui: 1 su
+2»* (banco). Le prove restano 313.
+
+**Revisione 47** (TEST, 27 ottobre, sera): segue il motore **2026-10-27.5** e
+il catalogo **2026-10-27.1**, con `app.html` **2026-10-27.1**, `logica_aro.js`
+**2026-10-27.2** e `roster_manager.js` **2026-10-27.1**. Chi è in Hidden
+Deployment ha nella **propria** app, accanto al nome, l'etichetta *«HIDDEN»*
+con l'icona del suo esercito (`img/<esercito>/icon_hidden.png`, poi la copia
+comune, poi 🫥); senza numero. L'avversario e l'Hub continuano a non riceverlo.
+SCH-01 lo dice. Le prove restano 313.
+
+**Revisione 48** (TEST, 27 ottobre, sera): segue il motore **2026-10-27.9**,
+con `roster_manager.js` **2026-10-27.3** e `app.html` **2026-10-27.2**. Tutte
+le scelte di schieramento oltre a NORMALE (CAMO col MOD del Mimetismo,
+IMPERSONATION, FOXHOLE, SEED, SCHIERAMENTO AEREO, HIDDEN DEPLOYMENT) le decide
+il motore (`M.opzioniSchieramento`), nello stesso ordine; il Camouflage (1 Use)
+già usato spegne la voce CAMO con la nota della FAQ F07. Nuova **SCH-09**. Le
+prove passano a 314.
+
+**Revisione 49** (TEST, 28 ottobre): segue il motore e i moduli d'Ordine
+**2026-10-28.1**, `motore_core.js` **2026-10-28.1**, con `app.html`,
+`roster_manager.js` e `scegli_fazione.html` **2026-10-28.1** e `logica_aro.js`
+**2026-10-28.2**. Le spiegazioni (perché un'arma, una reazione o un bersaglio
+non si possono usare, le note dei MOD, le regole) non stanno più a schermo:
+stanno nella **ⓘ** della schermata, o sotto il loro tasto con l'opzione *SOTTO
+I TASTI* (quarta convenzione). Le intestazioni degli Ordini non hanno più
+l'icona davanti. Il bottone dell'arma ha le fasce su una **scala comune di
+96"**, la barra della scheda un numero per **confine**. Col Total Reaction la
+reazione è **sempre al Burst pieno**: i tasti *BURST PIENO / B1* sono tolti
+(Paolo, BS-16 B). Chi è in Hidden Deployment non ha più la scritta *HIDDEN*: il
+suo segnalino sta, grande, fra le icone degli stati. Riscritte BS-16, BS-16b,
+BS-30, DET-06, SCH-01 e SCH-09; nuova **BS-31**. Le prove passano a 315.
+
+**Revisione 50** (TEST, 28 ottobre): segue il motore **2026-10-28.3** e
+`ordine_attacco_bs.js` **2026-10-28.2** (D07 del collaudo grafico). Con un'arma
+a Sagoma che fa **due o più Sagome a lettere** la domanda *«un tuo alleato
+sotto la Sagoma»* è **una sola**, in cima, con un tasto per lettera; parte
+accesa sulle lettere dei bersagli Ingaggiati, e annulla solo le Sagome accese.
+Nel Coordinato la risposta si azzera per il partecipante successivo. Nel
+bottone dell'arma la fascia a MOD 0 è **azzurra**, le altre hanno i colori
+della barra della scheda, col numero nero. Riscritti l'inizio del capitolo 29 e
+**SG-09**. Le prove restano 315.
+
+**Revisione 51** (TEST, 28 ottobre): segue lo snellimento dei moduli di MOTORE:
+`ordine_attacco_bs.js` **2026-10-28.3**, gli altri `ordine_*.js`
+**2026-10-28.2**, `ordine_coordinato.js` e `logica_stati.js` **2026-10-28.1**.
+Nei moduli i caratteri vengono dalla scala di `app.html` (`--fs-xs` 12 …
+`--fs-xxl` 42), il verde *SÌ* e il giallo *attenzione* da `M.stileColore`: a
+schermo le misure possono cambiare di un px o due, i colori no. Nessun Atteso
+cambia; riga nuova nel capitolo 30. Le prove restano 315.
+
+**Revisione 52** (TEST, 28 ottobre): segue il motore **2026-10-28.5** coi
+colori raggruppati (scelta di Paolo), `ordine_attacco_bs.js` **2026-10-28.4**,
+gli altri `ordine_*.js` **2026-10-28.3**, `ordine_coordinato.js` e
+`logica_stati.js` **2026-10-28.2**, `app.html` **2026-10-28.3** e
+`logica_aro.js` **2026-10-28.5**. I colori di significato dei moduli vengono
+dalla tavolozza del motore (`M.TAVOLOZZA`, 23 nomi); l'intestazione e i
+riquadri di ogni Ordine hanno il colore della sua **categoria**, come nel menu
+delle azioni: Movimenti **blu**, Abilità Brevi **verdi**, Ordini Interi
+**rossi** (l'Attacco BS passa da azzurro a verde, il Fuoco Speculativo da
+viola a rosso; il Fuoco di Soppressione è rosso). Nessun Atteso nomina quei
+colori; riga nuova nel capitolo 30. Le prove restano 315.
+
+**Revisione 53** (TEST, 28 ottobre): segue il motore **2026-10-28.6** e
+`ordine_attacco_bs.js` **2026-10-28.5**. Il *SÌ: colpo annullato* ha un giallo
+solo: la domanda a Sagoma singola (SG-03 … SG-07) e la lettera accesa della
+domanda per lettera (SG-09) usano lo stesso stile «attenzione» della tavolozza
+(`M.stileTavolozza`). Nessun Atteso cambia. Le prove restano 315.
+
+**Revisione 54** (TEST, 28 ottobre): segue i quattro difetti del piano di
+collaudo grafico (`PIANO_COLLAUDO_GRAFICO_N5.md` 2026-10-28.2) corretti da
+MOTORE: undici `ordine_*.js` **2026-10-28.4** e il motore **2026-10-28.7** (gli
+accenti nelle note). La schermata dei MOD di dodici Ordini apre con
+l'intestazione comune (l'Attacco Guidato si chiama **ATTACCO GUIDATO**, la
+Schivata e il Reset **SCHIVATA** e **RESET**); il Movimento Cauto è nel
+**rosso** degli Ordini Interi; le etichette dei bersagli di Guidato e
+Speculativo stanno nella fascia bassa della riga; nel Supporto l'alleato si
+sceglie dalla riga con la foto. Nessun Atteso nomina i titoli vecchi; riga nuova
+nel capitolo 30. Le prove restano 315.
+
 Ogni prova dice **chi** agisce, **quale Ordine** dichiara, **con che cosa**,
 **contro chi**, **a che distanza** (in pollici) e **cosa si deve leggere**. Dove
 un dato non cambia il risultato è scelto comunque, così la prova si esegue senza
@@ -161,25 +254,33 @@ CODICE — titolo
 
 **Le distanze** sono in pollici, nelle fasce del Weapon Chart: 0-8", 8-16",
 16-24", 24-32", 32-40", 40-48" e così via. Sulla barra delle gittate della
-schermata si tocca la casella della fascia indicata. **FUORI** è l'ultima
-casella della barra.
+schermata si tocca la casella della fascia indicata; sotto la barra c'è un
+numero per **confine** (0, 8, 16…), sul cambio di colore. **FUORI** è l'ultima
+casella della barra. Nel bottone dell'arma le fasce sono disegnate su una scala
+comune fino a **96"**: la parte grigia in coda è fuori gittata.
 
-**Tre convenzioni** valgono per tutte le prove:
+**Quattro convenzioni** valgono per tutte le prove:
 1. **Stato non scritto = Normale.**
 2. **Ordine scritto con una sola azione** = si dichiara quella e basta. Per un
    Ordine in due metà la prova scrive tutte e due (*MUOVERE → ATTACCO BS*).
 3. **`ARO: nessuno`** vuol dire che il reattivo tocca **NESSUN ARO**. Non basta
    che resti fermo: l'Hub aspetta la risposta prima di calcolare, e senza
    risposta lo scontro non compare.
+4. **Una nota dell'app che a schermo non c'è sta nella ⓘ** (il tasto tondo in
+   alto a destra), sotto il nome del suo tasto; con l'opzione *SOTTO I TASTI*
+   (pagina della fazione, *OPZIONI DELLE NOTE*) sta invece sotto il tasto.
+   Vale per i motivi delle esclusioni (*«… non utilizzabile»*, *«… non
+   ammesso»*), le note dei MOD e le regole. Le note del **tabellone** dell'Hub
+   restano dove sono.
 
 **Il valore che si legge** sul tabellone è il **Valore di Successo**: attributo
 più tutti i MOD. Si tira 1d20 e serve **uguale o meno**. La salvezza si scrive
 **ARM VS 8 ×1**: ARM (o BTS, o PH) più il PS dell'arma, un dado.
 
-**Il conteggio.** Il piano contiene **312 prove, tutte nello stesso formato**:
-tutte e 312, nelle stesse cinque righe; le convenzioni servono a non scrivere
-la stessa riga 312 volte. I codici sono uno per prova: alla revisione 44 sono 312.
-Prove con un campo da completare: 0 prove su 312
+**Il conteggio.** Il piano contiene **315 prove, tutte nello stesso formato**:
+tutte e 315, nelle stesse cinque righe; le convenzioni servono a non scrivere
+la stessa riga 315 volte. I codici sono uno per prova: alla revisione 49 sono 315.
+Prove con un campo da completare: 0 prove su 315
 Il numero lo controlla `test_piano_schieramento.js`: non si cambia a mano.
 
 **Se un numero non torna**, guarda prima la scheda ufficiale della miniatura e
@@ -242,6 +343,7 @@ letto, cosa ti aspettavi.
 | 44 | **Gator (TAG)** | **nuova**: TAG col pilota di lista (LOG-08) |
 | 45 | **Gator Pilot (CC Attack [+9])** | **nuova**: il pilota del #44, a bordo (LOG-08) |
 | 46 | **Knauf (Surprise Attack (-3), Decoy (1))** | **nuova**: Decoy (1) (SCH-07) |
+| 47 | **Reaktion Zond (Thunderbolt)** | **nuova**: Total Reaction con un'arma (+1B), Thunderbolt(+1B) (BS-16b) |
 
 **PanOceania**
 
@@ -522,12 +624,17 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 **BS-16 — Total Reaction**
 - **Attivo:** Alguacil (Combi Rifle) *(Nomadi #1)* · MUOVERE → MUOVERE
 - **ARO:** Sierra Dronbot (Heavy Machine Gun) *(PanOceania #9)* → ATTACCO BS, Heavy Machine Gun, a 8-16", contro l'Alguacil
-- **Atteso:** Burst **4**, con le voci *«In Turno Reattivo il Burst è 1»* e *«Total Reaction: Burst pieno dell'arma in ARO»*.
+- **Atteso:** dopo la scelta dell'arma **nessun tasto del Burst**: la reazione è sempre al pieno (Paolo, 27 ottobre: il pieno è opzionale, riga 10224, ma nessuno sceglie B1). Burst **4**; nella ⓘ, alla voce *Burst*, *«In Turno Reattivo il Burst è 1 · Total Reaction: Burst pieno dell'arma in ARO (B4)»*; sul tabellone **4** dadi.
 
-**BS-17 — Il (+1B) non vale in ARO**
+**BS-16b — Total Reaction col (+1B) dell'arma**
+- **Attivo:** Fusilier (Combi Rifle) *(PanOceania #1)* · MUOVERE → MUOVERE
+- **ARO:** Reaktion Zond (Thunderbolt) *(Nomadi #47)* → ATTACCO BS, Thunderbolt(+1B), a 8-16", contro il Fusilier
+- **Atteso:** nessun tasto del Burst: sempre al pieno, Burst **3**; nella ⓘ, alla voce *Burst*, una riga sola: *«In Turno Reattivo il Burst è 1 · Total Reaction: Burst pieno dell'arma in ARO (B2) · Thunderbolt (+1B): +1 Burst anche in ARO (Total Reaction, righe 10227-10228)»*; sul tabellone **3** dadi. Se leggi **2** dadi, è tornata la lettura ritirata il 27 ottobre (il (+1B) dell'arma che in ARO non entra).
+
+**BS-17 — L'abilità BS Attack (+1B) non vale in ARO**
 - **Attivo:** Fusilier (Combi Rifle) *(PanOceania #1)* · MUOVERE → MUOVERE
 - **ARO:** Puppetbot (Red Fury) *(Nomadi #17)* → ATTACCO BS, Red Fury, a 8-16", contro il Fusilier
-- **Atteso:** Burst **1**, con la sola voce *«In Turno Reattivo il Burst è 1»*.
+- **Atteso:** Burst **1**, con la sola voce *«In Turno Reattivo il Burst è 1»*, e nessuna scelta del Burst (il Puppetbot non ha Total Reaction). Il (+1B) qui è un'**abilità**, non l'arma: in ARO non vale mai (BS-16b è l'altro caso).
 
 **BS-18 — Il (+1B) vale in attivo**
 - **Attivo:** Puppetbot (Red Fury) *(Nomadi #17)* · ATTACCO BS
@@ -616,7 +723,14 @@ Se PRE-01 o PRE-02 falliscono, fermati.
 
 **BS-30 — Le mine non si sparano** *(nuova)*
 - **Attivo:** Zero (Hacker, Killer Hacking Device) *(Nomadi #9)*, rivelato · ATTACCO BS
-- **Atteso:** le armi sono Combi Rifle e Pistol. La Shock Mine è fra le non utilizzabili: *«Shock Mine (si piazza con PIAZZARE EQUIPAGGIAMENTO, non si spara)»*. Controprova: in PIAZZARE EQUIPAGGIAMENTO la Shock Mine c'è.
+- **Atteso:** le armi sono Combi Rifle e Pistol. La Shock Mine non è a schermo: nella ⓘ, *«SHOCK MINE NON UTILIZZABILE»*, *«si piazza con PIAZZARE EQUIPAGGIAMENTO, non si spara»*. Controprova: in PIAZZARE EQUIPAGGIAMENTO la Shock Mine c'è.
+
+**BS-31 — Il bottone dell'arma, la barra della scheda e la ⓘ** *(nuova)*
+- **Attivo:** Clockmaker (Engineer) *(Nomadi #7)* · ATTACCO BS, si guarda la schermata delle armi e si tocca **ANNULLA ORDINE**; poi, Ordine nuovo, Alguacil (Combi Rifle) *(#1)* · ATTACCO BS
+- **Con:** Combi Rifle
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)*, a 16-24", copertura no
+- **ARO:** nessuno
+- **Atteso:** l'intestazione dice **ATTACCO BS**, senza l'icona davanti. Nel bottone del Combi Rifle (del Clockmaker e poi dell'Alguacil) tre fasce, **0-16 +3**, **16-32 −3**, **32-48 −6**, larghe un sesto della scala ciascuna, e in coda la parte grigia **fuori gittata** fino a 96". Il GizmoKit e il Deactivator non sono fra le armi: nella ⓘ *«GIZMOKIT NON UTILIZZABILE — si usa solo con la sua azione (SUPPORTO)»* e *«DEACTIVATOR NON UTILIZZABILE — si usa solo con la sua azione (DEACTIVATOR)»*. Ordine nuovo con l'Alguacil: nella ⓘ della schermata delle armi non resta niente del GizmoKit (le note sono dell'Ordine). Nella scheda del bersaglio la barra ha **sei** caselle (+3 +3 −3 −3 −6 −6) e **FUORI**; sotto, i numeri **0 8 16 24 32 40 48**, uno per confine. Tocca la terza casella (16-24"): sul tabellone l'Alguacil **8** (11 −3).
 
 ---
 
@@ -1623,7 +1737,7 @@ Tutte le prove: truppe dello stesso Gruppo, dove non è scritto altro. Bersaglio
 
 **SCH-01 — Anti-spoiler**
 - **Attivo:** PanOceania schiera Croc Man *(#6)* **Nascosto**, Fusilier (Combi Rifle) *(#1)* normale, Zulu-Cobra *(#10)* **Marker CAMO**, Fusilier (Missile Launcher) *(#2)* in **Riserva**
-- **Atteso:** l'app nomade riceve il Fusilier (Combi Rifle), un **SEGNALINO MIMETICO** al posto dello Zulu-Cobra e il Fusilier (Missile Launcher). Il Croc Man non compare.
+- **Atteso:** l'app nomade riceve il Fusilier (Combi Rifle), un **SEGNALINO MIMETICO** al posto dello Zulu-Cobra e il Fusilier (Missile Launcher). Il Croc Man non compare, né lì né all'Hub. Nell'app di **PanOceania** la riga del Croc Man ha, **grande fra le icone degli stati** a destra, il segnalino `img/panoceania/icon_hidden.png`, **senza numero** e **senza scritta** (niente *HIDDEN*: Paolo, 27 ottobre sera); lo Zulu-Cobra (Mimetismo −3) porta *CAMO-3 1*. Rivelato il Croc Man, il segnalino sparisce.
 
 **SCH-02 — Chi è nascosto non è sul tavolo**
 - **Attivo:** con lo schieramento di SCH-01, Alguacil (Combi Rifle) *(Nomadi #1)* · ATTACCO BS, poi SCOPRIRE; Alguacil (Missile Launcher) *(#3)* · ATTACCO BS in Blast Mode sul Fusilier #1
@@ -1655,6 +1769,10 @@ Tutte le prove: truppe dello stesso Gruppo, dove non è scritto altro. Bersaglio
 - **Bersaglio:** il Bashi, a 8-16", senza copertura
 - **ARO:** il Bashi → SCHIVATA
 - **Atteso:** fra le Truppe Imitabili **solo la stessa Silhouette**, raggruppate per Unità (circa **105** truppe, con le varianti dentro: non 290 voci). Sul tabellone il reattivo è **«Alguacil (Combi Rifle)»**, *SCHIVATA*, **10**; nessuna traccia di «Bashi», nemmeno nell'HTML; la salvezza è sull'ARM **vera** del Bashi, **ARM VS 9 ×1** (ARM 2 + PS 7: l'Alguacil ha ARM 1). Niente «Sconosciuta» nelle armi.
+
+**SCH-09 — Gli stati di schieramento li decide il motore** *(nuova)*
+- **Attivo:** in schieramento apri la pagina degli stati (tocco rapido sulla riga) di Croc Man (MULTI Sniper Rifle) *(PanOceania #6)*, poi di Alguacil (Combi Rifle) *(Nomadi #1)*, Zero (Hacker, Killer Hacking Device) *(#9)*, Spector (Parachutist, Combat Jump) *(#29)* e Moran (Surprise Attack [-3], Camouflage [1 Use], Combi Rifle) *(#19)*; il Croc Man → **SEGNALINO CAMO (-6)**, lo Spector → **SCHIERAMENTO AEREO**, il Moran in CAMO → **TIRO DI INFILTRAZIONE FALLITO**, poi **NORMALE**; conferma lo schieramento
+- **Atteso:** le scelte, in quest'ordine: Croc Man **NORMALE**, **SEGNALINO CAMO (-6)**, **HIDDEN DEPLOYMENT** (con l'icona `img/panoceania/icon_hidden.png` a sinistra della scritta; la nota *«Non si piazza niente: annota la posizione…»* sta nella ⓘ, sotto *HIDDEN DEPLOYMENT*); Alguacil solo **NORMALE**; Zero **NORMALE**, **SEGNALINO CAMO (-3)**; Spector **NORMALE**, **SCHIERAMENTO AEREO** (nella ⓘ *«…entra nel tuo Turno Attivo con INGRESSO IN CAMPO…»*); Moran **NORMALE**, **SEGNALINO CAMO (-3)**, e da nessuna parte *«RISERVA / AD»*. Riaprendo la pagina la scelta fatta è accesa. Dopo il tiro fallito il Moran resta in CAMO, la voce CAMO resta accesa e toccabile, il tasto del tiro sparisce; tornato **NORMALE**, la voce CAMO è **spenta** e non si tocca, con la nota *«Camouflage (1 Use): lo stato CAMO è già stato usato in questa partita (F07).»*. Confermato: l'app nomade vede il Croc Man come *«SEGNALINO MIMETICO (-6) 1»*, l'Hub come MARKER; lo Spector non arriva né all'Hub né a PanOceania.
 
 ---
 
@@ -1877,7 +1995,7 @@ già sul tavolo. Nel turno PanOceania si muove il **Fusilier (Combi Rifle)**
 **DET-06 — Le D-Charges detonano nello stesso Ordine**
 - **Attivo:** Moran *(Nomadi #19)*, schierato come Modello · IDLE → PIAZZARE EQUIPAGGIAMENTO
 - **Con:** D-Charges (Demolition Mode)
-- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* messo **IMM-A**. Un Fusilier sano è fra i *Non ammessi*, col motivo
+- **Bersaglio:** Fusilier (Combi Rifle) *(PanOceania #1)* messo **IMM-A**. Un Fusilier sano non è fra i bersagli: nella ⓘ *«… NON AMMESSO»*, col motivo
 - **ARO:** nessuno
 - **Atteso:** detonano subito, senza tiro, e nel roster non resta nessun segnalino. Sul tabellone il lato reattivo è il Fusilier: **SUBISCE L'ESPLOSIONE**, **3 Tiri Salvezza su ARM: riesce con 7 o meno**. Nessun E16, nessun E20. La terza carica parte, la quarta è bloccata.
 
@@ -2004,7 +2122,11 @@ la **Puppet Masters (Minelayer)** *(Nomadi #22)*, con la **Shock Mine**.
 Per arma senza Sagoma la domanda è *«quanti tuoi alleati in quella mischia»*
 (tasti 0, 1, 2, 3+) e compare solo se il bersaglio è Ingaggiato. Per arma a
 Sagoma è *«la Sagoma prende anche un tuo alleato?»* (tasti **NO** verde, **SÌ**
-giallo) e compare sempre. Per Fumo ed Eclipse non c'è domanda.
+giallo) e compare sempre. Se l'arma fa **due o più Sagome a lettere** (Burst
+pieno) la domanda è **una sola**, in cima ai bersagli, con un tasto per lettera:
+si accendono le Sagome che prendono un tuo alleato, e partono accese le lettere
+dei bersagli Ingaggiati (SG-09). Per Fumo ed Eclipse non c'è domanda, nemmeno a
+lettere.
 
 **SG-01 — Senza Sagoma: quattro tasti, e solo in mischia**
 - **Attivo:** Intruder (HMG) *(Nomadi #24)* · ATTACCO BS
@@ -2062,9 +2184,9 @@ giallo) e compare sempre. Per Fumo ed Eclipse non c'è domanda.
 **SG-09 — Due Sagome: ognuna vale per sé**
 - **Attivo:** Grenzer (Forward Observer, Sensor, NCO) *(Nomadi #12)* · ATTACCO BS
 - **Con:** Light Flamethrower(+1B): Burst 2, cioè **2 Sagome**, A e B
-- **Bersaglio:** Fusilier (Combi Rifle) *(#1)* **Ingaggiato**, e rispondi **SÌ**; Fusilier (Missile Launcher) *(#2)* non Ingaggiato
+- **Bersaglio:** Fusilier (Combi Rifle) *(#1)* **Ingaggiato**; Fusilier (Missile Launcher) *(#2)* non Ingaggiato
 - **ARO:** nessuno
-- **Atteso:** in testa *«2 SAGOME: per ogni bersaglio accendi le lettere delle Sagome che lo prendono.»* e *«Sagoma A: F1 · Sagoma B: F2»*: le lettere partono a giro (un bersaglio solo le prende tutte e due). Il #1 è annullato; il #2 è colpito da B, senza tiro (Sagoma Diretta), un Tiro Salvezza: *«Sagome B: 1 Tiro/i Salvezza.»*. Accendi anche la **A** sul #2: resta un Tiro Salvezza, *«Sagome A (annullata: prende F1 con un tuo alleato). Restano B: 1 Tiro/i Salvezza.»*. Con il #1 non Ingaggiato e il #2 sotto A e B: tutti e due colpiti, il #2 con **due** Tiri Salvezza, *«Sotto le Sagome A, B: 2 Tiro/i Salvezza.»*. Un bersaglio senza lettere blocca l'invio: *«⚠️ … nessuna Sagoma accesa…»*.
+- **Atteso:** in testa *«2 SAGOME: per ogni bersaglio accendi le lettere delle Sagome che lo prendono.»* e *«Sagoma A: F1 · Sagoma B: F2»*: le lettere partono a giro (un bersaglio solo le prende tutte e due). Sopra i bersagli c'è **una** domanda *«un tuo alleato sotto la Sagoma»*, con i tasti **A** e **B**; parte con la **A** accesa (la lettera del #1, Ingaggiato), e sulle schede non c'è domanda. Il #1 è annullato; il #2 è colpito da B, senza tiro (Sagoma Diretta), un Tiro Salvezza: *«Sagome B: 1 Tiro/i Salvezza.»*. Accendi anche la **A** sul #2: resta un Tiro Salvezza, *«Sagome A (annullata: prende F1 con un tuo alleato). Restano B: 1 Tiro/i Salvezza.»*. Con il #1 non Ingaggiato la domanda parte spenta; col #2 sotto A e B: tutti e due colpiti, il #2 con **due** Tiri Salvezza, *«Sotto le Sagome A, B: 2 Tiro/i Salvezza.»*. Un bersaglio senza lettere blocca l'invio: *«⚠️ … nessuna Sagoma accesa…»*.
 
 **SG-10 — Il secondario arriva sul tabellone**
 - **Attivo:** Vertigo Zond *(Nomadi #28)* · ATTACCO GUIDATO
@@ -2102,6 +2224,15 @@ quello indicato.
 | La consegna del 26 ottobre fino al tabellone: usi Disposable (Panzerfaust su tre Ordini, la busta e la risposta ARO con gli usi, il bottone uguale in BS, ARO, Speculativo e Intuitivo, Reload col Baggage, ricarica dall'Hub una volta sola), E62, Coordinato SCOPRIRE + ATTACCO a tre (sei scontri), Dado Speciale in CC, le mine fuori dall'Attacco BS, il Deactivator sul roster nemico, Minelayer ed E54, SCENDI DAL TAG e il pilota di lista, M.tagDelPilota, le Sagome a lettere e la domanda sul Principale, senzaCritico, repliche e HoloMask, icone per esercito, la mina in CAMO | `test_novita_26ott.js` |
 | La domanda doppia del piazzamento e i Deployable senza area d'innesco (Repeater, FastPanda, Deployable Cover, Disco Ball) | `test_modulo_piazzamento.js` sez. 4, 11-bis e 14 |
 | Le correzioni del 27 ottobre: la nota del secondario sul tabellone, identificativi e ordine delle repliche (200 giri), il Disco Baller fino alla Disco Ball, la nota del segnalino anche col Pitcher dello Speculativo, le icone fra eserciti, il tetto sugli usi residui in ARO (`M.burstReattivo` e l'Hub, con la controprova senza `r.usiSpesi`) | `test_novita_26ott.js` I3, J1, J1b, M, N, O |
+| L'Hidden Deployment nella propria app (27 ottobre, sera, e 28; SCH-01): senza scritta, il segnalino fra le icone; `M.etichettaMarker` *«HIDDEN»*, `M.segnalinoSenzaNumero` con la cartella dell'esercito e la copia comune, nessun numero; sulla riga vera dei Nomads e di PanOceania l'etichetta e l'icona, l'avversario, l'Hub e i canali del server senza traccia; controprove: a vista null, CAMO numerato invariato, `M.rosterPubblico` senza l'HIDDEN, rivelato l'etichetta sparisce | `test_novita_26ott.js` P, P2, P3 |
+| Gli stati di schieramento dal motore (27 ottobre, sera; SCH-09): `M.opzioniSchieramento` coi casi di MOTORE (Spektr e Croc Man [CAMO, HIDDEN], Spector [AD], Alguacil []), il Marker senza skill, `acceso` coi deployState vecchi, il Camouflage (1 Use) già usato (F07), l'ordine delle sei voci, la regola sui 745 profili; la pagina vera fino all'Hub | `test_novita_26ott.js` Q, Q2, Q3 |
+| Il (+1B) dell'arma col Total Reaction in ARO (27 ottobre, sera; dal 28 sempre al pieno): Panzerfaust (+1B) aggiunto al Salyut sulla pagina dell'ARO vera, nessun tasto del Burst, `r.burstPieno` true nella risposta, all'Hub B2 e due usi spesi; a un uso B1 con *«Burst limitato agli usi residui: 1 su 2»* nella ⓘ; a zero il bottone spento con la nota dello Scarico; il Fusilier senza Total Reaction B1; il Thunderbolt B3 e il Combi (+1B) B4, l'abilità *BS Attack (+1B)* fuori | `test_novita_26ott.js` O, O2; `test_casi_regole.js` 1; `test_correzioni_regole.js` |
+| La consegna di MOTORE del 28 ottobre (BS-31): intestazioni degli Ordini senza icona su sette Ordini; le note dell'Ordine azzerate dall'Ordine nuovo e non dalla seconda metà, i tipi spenti nelle opzioni delle note; il bottone dell'arma su scala di 96" (celle contigue, larghezza, FUORI fino a 96) e `M.barraGittata` (un segmento per banda, FUORI, n+1 confini) su 117 armi; `M.nota` e `M.azzeraNote` con e senza `app.html` | `test_novita_28ott.js` R1-R5 |
+| La D07 di MOTORE (28 ottobre, motore 28.3; SG-09): la domanda dell'alleato per lettera, una sola in cima (`toggleSagomaAlleatoBS`), la partenza dalle lettere degli Ingaggiati, `sagomeConAlleato` sui bersagli e `alleatoNellaSagoma` solo sull'Ingaggiato con tutte le lettere accese; alleato sotto A con un bersaglio sotto A+B colpito dalla B (1 TS), A e B accese tutti annullati; Fumo ed Eclipse a lettere senza domanda; nel Coordinato la risposta azzerata per il partecipante successivo; le celle del bottone coi colori di `.seg-1..4` e il MOD 0 azzurro #03A9F4 su 146 armi; `M.rigaAttesaAro`; SG-09 sulla pagina intera | `test_novita_28ott.js` S1-S6; `test_novita_26ott.js` I2 |
+| Lo snellimento dei moduli (28 ottobre, giro 16): nei 17 `ordine_*.js` e in `logica_stati.js` nessun *font-size* in px, 259 punti tutti su `var(--fs-…)` della scala, ognuna definita su `:root` di `app.html` (12 14 16 22 32 42); `M.stileColore('si' / 'attenzione')` uguale alle stringhe di prima e usato negli 11 punti, nessuno scritto a mano; il tasto della Sagoma Diretta verde, col FUORI giallo | `test_novita_28ott.js` T1-T2 |
+| I colori raggruppati (28 ottobre, giro 17): `M.TAVOLOZZA` coi 23 nomi, `M.colore` (*var(--mn-<nome>,<colore>)*, il nome sconosciuto #ff00ff con l'errore), `M.applicaTavolozza` (un solo `<style id="tavolozza-motore">` su `:root`, niente senza head), i 459 `var(--mn-…)` dei moduli col ripiego uguale alla tavolozza, `app.html` senza `--mn-*`; `M.CATEGORIE_ORDINE` (blu, verde, rosso, cinque tinte), `M.COLORI_ORDINE` per ogni valore di `M.AZIONI` più BS_ATTACK e DODGE, `M.coloreOrdine` (casa, maiuscole, ricolorare una voce), `M.colOrdine` (getter, `--mn-ordine-*`); sulla pagina le intestazioni nel colore della categoria e la Soppressione rossa; il riquadro del tiro dell'Osservazione dalla classe `riquadro-tiro`; dal motore 28.6 `M.stileTavolozza` e lo stesso giallo «attenzione» sul SÌ della Sagoma singola e sulla lettera accesa | `test_novita_28ott.js` U1-U6, S1; `test_scheda_osservazione.js` |
+| I quattro difetti del piano grafico (28 ottobre, giro 19): i titoli dei MOD di dodici Ordini da `M.intestazioneOrdine`, niente *LANCIO MISSILI GUIDATI* né *MODIFICATORI …*, `<h2>` solo sulle conferme, sulla pagina *SCHIVATA* e *RESET*; il Movimento Cauto rosso (intestazione e riquadro nelle tinte dell'Ordine Intero, SÌ e NO invariati); le etichette dei bersagli di Guidato e Speculativo in `opz.etichette` (nel nome solo il [tipo]); il Supporto con `rigaUnitaConFoto` e *🩺 Incosciente* nella fascia bassa | `test_novita_28ott.js` V1-V4 |
+| Le note nella ⓘ dei moduli d'Ordine (28 ottobre): le armi escluse (CC Weapon, CC Mode, GizmoKit, Deactivator, Deployable Cover, Tratto mancante per Soppressione, Speculativo, Guidato), i bersagli non ammessi delle D-Charges, i Supportware dell'EVO, il Dado Speciale, le regole dell'Intuitivo, la nota di `armiARO` e il vincolo del bersaglio solo in Soppressione; le celle del bottone (`data-da`, `data-fino`, `data-mod`) | `test_modulo_bs.js`, `test_modulo_cc.js`, `test_modulo_difesa.js`, `test_modulo_speculativo.js`, `test_modulo_guidato.js`, `test_dcharges_percorso.js`, `test_modulo_hacking.js`, `test_modulo_intuitivo.js`, `test_modulo_aro.js`, `test_correzioni_regole.js`, `test_bottone_arma.js` sez. 10, `test_integrazione.js`, `test_novita_23ott.js` sez. 10 e 12 |
 
 Una trappola da sapere scrivendo una prova nuova: la chiave di un requisito non
 è il nome del campo. `gittata` legge `fuoriGittata` (manca se **true**),
@@ -2122,7 +2253,6 @@ Una trappola da sapere scrivendo una prova nuova: la chiave di un requisito non
 | Con un MSV3 la nota del terreno dice "MSV2" | — (`test_terreni_combinati.js`) | MOTORE |
 | `profiloArma` scrive munizione N dove il database ha `null` (Deployable Cover) | — | MOTORE |
 | La gittata del Missile Launcher in TPL-04: da confermare con la foto della schermata | TPL-04 | Paolo |
-| Da chiarire: Total Reaction col Panzerfaust (+1B) è **B1** in ARO anche a usi pieni (il +1B non entra), e la pagina dell'ARO passa *«Panzerfaust»* senza la notazione. Il «B1 invece di B2» del 27 ottobre non si vede. MOTORE l'ha girata a REGOLE con la sua lettura (vale); fino alla risposta il (+1B) dell'arma in ARO non conta | — (`test_novita_26ott.js` O) | REGOLE, MOTORE |
 
 **Divergenze che restano per una ragione:** le mine non sanno se detonano (il
 motore risponde *non lo so* e l'app chiede di toglierle a mano: → DATABASE);

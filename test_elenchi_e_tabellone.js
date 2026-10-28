@@ -1,4 +1,4 @@
-// @versione 2026-10-27.2 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-28.7 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -98,6 +98,68 @@
 //  36a-b. ARO (MOTORE 27.2-27.3): il nome grezzo dell'arma, con le notazioni
 //      ("Thunderbolt(+1B)"); col Total Reaction la scelta BURST PIENO / B1,
 //      r.burstPieno nella risposta e gli usi del Panzerfaust (+1B) contati sulla scelta.
+//
+//  37. Hidden Deployment nella propria app (MOTORE 27.5): «HIDDEN» e l'icona
+//      icon_hidden (esercito, comune, 🫥) sulla riga e nello schieramento.
+//      RISCRITTO in 33a: l'etichetta NASCOSTO dell'ARO ora puo` avere l'icona
+//      davanti (prima: «👁️ NASCOSTO» subito dopo il tag).
+//
+//  38a-i. Il collaudo grafico di MOTORE (27 ottobre, 63 schermate a 390 px) e
+//      BS-29: tasti non stirati nelle colonne; spazio sotto il MENU; due
+//      uscite (INDIETRO, ANNULLA ORDINE) e una conferma verde da M.COLORI;
+//      tre livelli di titolo e sei misure; la riga con la foto nello
+//      schieramento, scelte uguali, ricerca HoloMask; testi tagliati (Gruppo,
+//      fascia del soprannome, sigla del Marker, icone, munizioni, reazioni);
+//      il primo Ordine Schivata; i caratteri dell'Hub; lo Schieramento Aereo
+//      da M.opzioniSchieramento.
+//      Nessun controllo di prima riscritto: le sezioni 1-37 passano uguali.
+//  39. Gli stati di schieramento tutti da M.opzioniSchieramento (motore
+//      27.9): CAMO col MOD, IMP, FOXHOLE, SEED, AD, HIDDEN; acceso e disponibile;
+//      Camouflage (1 Use) consumato; il Marker; la nota scappata.
+//      RISCRITTI in 38i (prima / dopo): il tasto ora porta data-stato e la
+//      classe attivo in coda; la controprova dell Alguacil guarda AD e HIDDEN.
+//  40. Secondo giro del collaudo (27 ottobre sera): tasti della lista a 44 px,
+//      righe ambigue come scelte, titoli nel colore della fazione, etichette
+//      nella fascia bassa (C03, G02).
+//      RISCRITTI: in 34e e 38e la scelta HoloMask parte vuota con piu` di 8
+//      truppe (lettere e ricerca); in 38h il calc dell Hub puo` avere "- N px".
+//  41. Terzo giro: gli step ARO e step-states senza padding in linea; un solo INDIETRO
+//      nella scelta HoloMask. Nessun controllo di prima riscritto.
+//  42. Pulizia dell interfaccia (Paolo, 27 ottobre sera): il tasto ⓘ e il suo
+//      pannello, simboli tolti, sfondo dei tasti della fazione, titolo ARO
+//      senza «(ARO)», numeri della gittata sui confini, icone di Linea di Tiro
+//      e Copertura, cambio di stato nella ⓘ invece del riquadro giallo.
+//      RISCRITTI (dalla 2026-10-27.9, prima/dopo nel commento di ciascuno):
+//      21 (testo del tasto Linea di Tiro dopo l icona), 24 (spiegazione della
+//      mina nella ⓘ), 31 (nota Targetless nella ⓘ), 36b intera (niente piu`
+//      scelta del burst: sempre pieno), 37 (HIDDEN: segnalino grande fra le
+//      icone, niente scritta), 38f G03 (reazioni coi loro colori) e G06
+//      (tendina munizioni senza huge-btn), 38i (nota AD nella ⓘ; icona a
+//      sinistra), 39 (testo delle voci dentro voce-con-icona; tiro fallito;
+//      nota scappata su una voce spenta), 40 G02 (niente etichetta HIDDEN).
+//  43. Le opzioni delle note (Paolo, 28 ottobre): pannello nella pagina della
+//      fazione, opzioni_note in memoria, tipi filtrati, ⓘ col nome del tasto
+//      a gruppi, abbinamento nota-tasto, tipo e tasto nelle note di logica_aro
+//      e dello schieramento. Il disegno delle fasce sotto i tasti vuole un DOM
+//      vero: lo prova foto/note_vere.js nel browser, non questo banco.
+//      RISCRITTI (dalla 2026-10-28.1): in 42 l ascoltatore del tocco
+//      (window.riallineaNote) e il formato della voce nella ⓘ.
+//  44. La barra della gittata in ARO e` M.barraGittata (motore 28.1): niente
+//      copia in logica_aro. RISCRITTO (dalla 2026-10-28.2): in 21 il bottone
+//      del Combi Rifle, ora su scala 96" con celle data-da/data-fino/data-mod.
+//  45. Le note di logica_aro e dello schieramento passano da M.nota /
+//      M.azzeraNote (motore 28.1): senza app.html restano in window.INFO.
+//  46. D09: la schermata IN ATTESA DI ARO dice i bersagli (M.rigaAttesaAro,
+//      motore 28.3), anche il punto del tavolo di un arma Targetless.
+//  47. Menu degli Ordini e reazioni ARO col colore della categoria del
+//      motore (M.coloreOrdine, motore 28.4). RISCRITTO (dalla 2026-10-28.5):
+//      38f, Attacco BS e Schivata non piu` di colori diversi ma della loro
+//      categoria. Dalla 2026-10-28.6 (motore 28.5, gli id delle reazioni in
+//      tabella): niente traduzione in logica_aro; la prova sposta DODGE.
+//  48. Il tasto ⓘ non copre i titoli lunghi: classe sotto-info sui titoli che
+//      lo toccano (window.liberaSpazioInfo); testata ARO senza "--" da solo.
+//      RISCRITTO (dalla 2026-10-28.7): 38i, la nota nella ⓘ ha gli accenti
+//      del motore (M.accenti, motore 28.7).
 //
 //  SOLO=34a,35a node test_elenchi_e_tabellone.js  gira solo quelle sezioni.
 //
@@ -1035,12 +1097,25 @@ sezione('21. Dal tavolo di Paolo, 13-14 ottobre (sette punti di MOTORE)', () => 
         P.selezionaAzioneAro('BS_ATTACK');
         const wl = T.pano.el('aro-weapon-list').innerHTML;
         const combi = (wl.match(/<button type="button" class="bottone-arma"[\s\S]*?<\/button>/g) || []).find(b => /selezionaArmaAro\('Combi Rifle'[,)]/.test(b)) || '';  // dal 15.2 il tocco porta anche ", false" (modo normale no)
-        ok(/COMBI RIFLE|Combi Rifle/.test(combi) && /grid-template-columns:repeat/.test(combi), 'il Combi Rifle in ARO e` il bottone approvato, con le gittate');
+        // RISCRITTO il 28 ottobre (MOTORE 2026-10-28.1: la barra del bottone e`
+        // su scala comune di 96", fasce proporzionali). Prima: una griglia
+        // grid-template-columns:repeat(...) con una colonna per banda. Ora:
+        // celle cella-gittata con data-da/data-fino/data-mod, contigue, e una
+        // cella-fuori fino a 96.
+        const celle = [...combi.matchAll(/<div class="cella-gittata" data-da="(\d+)" data-fino="(\d+)" data-mod="(-?\d+)"/g)].map(x => ({ da: +x[1], fino: +x[2], mod: +x[3] }));
+        const contigue = celle.length > 0 && celle[0].da === 0 && celle.every((c, i) => i === 0 || c.da === celle[i - 1].fino);
+        const fuori = (combi.match(/<div class="cella-gittata cella-fuori" data-da="(\d+)" data-fino="(\d+)"/) || []);
+        ok(/COMBI RIFLE|Combi Rifle/.test(combi) && contigue && +fuori[1] === celle[celle.length - 1].fino && fuori[2] === '96',
+           'il Combi Rifle in ARO e` il bottone approvato, con le gittate su scala 96 (' + J(celle.map(c => c.fino + ':' + c.mod)) + ', fuori ' + fuori[1] + '-' + fuori[2] + ')');
         vmTocco(T.pano, (combi.match(/onclick="([^"]*)"/) || [])[1] || 'void 0');
         P.selezionaBersaglioAro('Spara');
         const html = () => T.pano.el('aro-modifiers-content').innerHTML;
         const RQ = P.MotoreN5.REQUISITI_TAVOLO;
-        const lof = () => (html().match(/<button[^>]*tasto-lof-aro[^>]*onclick="([^"]*)"[^>]*>([^<]*)</) || []);
+        // RISCRITTO il 27 ottobre sera (Paolo: l icona della Linea di Tiro non si
+        // vedeva). Prima: il testo del tasto subito dopo il '>' del bottone,
+        // ([^<]*)<. Ora prima del testo c e l icona (44 px, sopra la scritta):
+        // si prende il testo che chiude il tasto.
+        const lof = () => (html().match(/<button[^>]*tasto-lof-aro[^>]*onclick="([^"]*)"[^>]*>[\s\S]*?([^<>]*)<\/button>/) || []);
         ok(lof()[2] && lof()[2].trim() === RQ.lof.si, 'c e il tasto LINEA DI TIRO, col testo del motore (' + (lof()[2] || 'assente').trim() + ')');
         ok(/class="range-seg seg-fuori[^"]*"[^>]*onclick="window\.toggleAroRequisito\('gittata'\)">FUORI</.test(html()), 'e il segmento FUORI in coda alla barra delle bande');
         ok(/toggleAroCover\(\)[\s\S]*?<\/button>\s*<button[^>]*tasto-lof-aro/.test(html()), 'copertura e Linea di Tiro sulla stessa riga, come nell attivo');
@@ -1335,7 +1410,12 @@ sezione('24. Le foto dei deployable: koala in sequenza, mine in ARO come i koala
         ok(/apriDetonazione\(/.test(riga) && lista.indexOf('id="dep-' + mina.id + '"') < 0, 'niente piu` riquadro viola con le domande nell elenco');
         vmTocco(T.nomadi, (riga.match(/onclick="([^"]*)"/) || [])[1] || 'void 0');
         const azioni = T.nomadi.el('aro-action-list').innerHTML;
-        ok((azioni.match(/<button/g) || []).length === 1 && /DETONAZIONE/.test(azioni) && /Non lo sceglie la mina/.test(azioni), 'la sua pagina: una sola azione, DETONAZIONE, con la spiegazione della mina');
+        // RISCRITTO il 27 ottobre sera (Paolo: le descrizioni nella ⓘ). Prima:
+        // la spiegazione «Non lo sceglie la mina» stava dentro il tasto. Ora
+        // il tasto ha solo DETONAZIONE e la spiegazione e` nella ⓘ della pagina.
+        const vociDet = N.vociInfo('step-aro-action');
+        ok((azioni.match(/<button/g) || []).length === 1 && /DETONAZIONE/.test(azioni) && !/Non lo sceglie la mina/.test(azioni)
+           && vociDet.some(v => /Non lo sceglie la mina/.test(v.testo)), 'la sua pagina: una sola azione, DETONAZIONE; la spiegazione della mina e` nella ⓘ');
         vmTocco(T.nomadi, (azioni.match(/onclick="([^"]*)"/) || [])[1] || 'void 0');
         const prima = (N.MotoreN5.domandeDeployable('INNESCO_MINA')[0] || {}).id;
         ok(T.nomadi.el('aro-action-list').innerHTML.indexOf("rispondiInnesco('" + mina.id + "', '" + prima + "', true)") >= 0, 'dentro, la prima delle tre domande della mina (' + prima + ')');
@@ -1755,10 +1835,13 @@ sezione('31. ARO con arma Targetless: niente tasto Copertura (DIF-14)', () => {
         T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
         P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro();
         P.selezionaAzioneAro('BS_ATTACK'); P.selezionaArmaAro(arma); P.selezionaBersaglioAro('Muove');
+        prova.info = P.vociInfo('step-aro-modifiers');
         return String(T.pano.el('aro-modifiers-content').innerHTML);
     };
     const h = prova('Smoke Grenades');
-    ok(!/toggleAroCover/.test(h) && /nota-targetless/.test(h), 'Smoke Grenades in ARO: niente tasto Copertura, e la nota che dice perche`');
+    // RISCRITTO il 27 ottobre sera (Paolo: le descrizioni nella ⓘ). Prima: la
+    // nota-targetless stava sotto i tasti. Ora sta nella ⓘ della schermata.
+    ok(!/toggleAroCover/.test(h) && !/nota-targetless/.test(h) && prova.info.some(v => /Targetless/.test(v.titolo)), 'Smoke Grenades in ARO: niente tasto Copertura, e il perche` e` nella ⓘ');
     ok(/tasto-lof-aro/.test(h) && /range-seg/.test(h), 'restano la Linea di Tiro e la gittata');
     const h2 = prova('Rifle');
     ok(/toggleAroCover/.test(h2) && !/nota-targetless/.test(h2), 'CONTROPROVA: col Rifle il tasto Copertura c e');
@@ -1810,7 +1893,7 @@ sezione('33. Dal collaudo di Paolo, 23 ottobre (MOTORE): Hidden in ARO, bersagli
     T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
     P.apriSelezioneAro();
     const lista = String(T.pano.el('aro-selection-list').innerHTML);
-    ok(/id="aro-btn-p6"/.test(lista) && /class="etichetta-nascosto"[^>]*>👁️ NASCOSTO: reagendo si rivela/.test(lista),
+    ok(/id="aro-btn-p6"/.test(lista) && /class="etichetta-nascosto"[^>]*>(<img [\s\S]*?alt="HIDDEN"[^>]*>)?👁️ NASCOSTO: reagendo si rivela/.test(lista),
        'il Croc Man in Hidden Deployment e` fra chi puo` reagire, con «NASCOSTO: reagendo si rivela» (prima: saltato)');
     ok(!/aro-btn-p2/.test(lista) && !/Lontano/.test(lista), 'CONTROPROVA: chi e` in Riserva non compare, nemmeno fra gli esclusi: non e` sul tavolo');
     ok(!/etichetta-nascosto/.test(lista.replace(/[\s\S]*?(id="aro-btn-p1"[\s\S]*?<\/button>)[\s\S]*/, '$1')), 'CONTROPROVA: il Fusilier a vista non porta l etichetta');
@@ -1945,7 +2028,13 @@ sezione('34e. HoloMask: l avversario e l Hub vedono il Modello imitato', () => {
         // la truppa (M.profiliImitabiliRaggruppati) e poi l'opzione d'arma.
         const gruppi = N.MotoreN5.profiliImitabiliRaggruppati(bashi);
         N.apriSceltaHolomask(0);
-        const pag1 = String(T.nomadi.el('deploy-states-content').innerHTML);
+        // RISCRITTO il 27 ottobre sera (secondo giro del collaudo, B07): prima
+        // i bottoni delle truppe erano tutti nella pagina appena aperta; ora,
+        // con piu` di 8 truppe, l'elenco parte vuoto e si riempie per
+        // iniziale (o con la ricerca). Si toccano tutte le iniziali e si
+        // guarda l'insieme.
+        const iniz = [...String(T.nomadi.el('deploy-states-content').innerHTML).matchAll(/class="huge-btn lettera-holomask" onclick="window\.filtraHolomask\(0, '', '([^']*)'\)"/g)].map(x => x[1]);
+        const pag1 = iniz.map(l => { N.filtraHolomask(0, '', l); return String(T.nomadi.el('lista-holomask').innerHTML); }).join('');
         const scelte = (pag1.match(/class="huge-btn scelta-holomask-unita"/g) || []).length;
         ok(scelte === gruppi.length && gruppi.length < imitabili.length, 'primo passo: un bottone per TRUPPA (' + scelte + ' truppe, non ' + imitabili.length + ' profili)');
         ok(!/class="huge-btn scelta-holomask"/.test(pag1), 'e nessuna opzione d arma, ancora');
@@ -2126,8 +2215,14 @@ sezione('36a. ARO: si passa il nome GREZZO dell arma, con la notazione (TEST, MO
     ok(nF.indexOf('Combi Rifle') >= 0, 'CONTROPROVA: un arma senza notazione resta il suo nome (' + J(nF) + ')');
 });
 
-sezione('36b. ARO col Total Reaction: BURST PIENO o B1, a scelta (REGOLE riga 10224, MOTORE 2026-10-27.3)', () => {
-    const giro = (arma, scelta) => {
+sezione('36b. ARO col Total Reaction: sempre BURST PIENO, niente scelta (Paolo 27 ottobre sera; REGOLE riga 10224)', () => {
+    // RISCRITTO il 27 ottobre sera (Paolo, test BS-16 B: «togli i tasti di
+    // selezione del burst; anche se e` opzionale nessuno scegliera` un B1»).
+    // Prima: due tasti, «BURST PIENO (B3)» e «B1», con N.sceltaBurstAro(false)
+    // che riduceva a 1 e spediva burstPieno false; Panzerfaust a B1 spendeva un
+    // uso. Ora: nessun tasto, sceltaBurstAro non c e piu`, la reazione e`
+    // sempre al pieno e lo dichiara (burstPieno true) al motore.
+    const giro = (arma) => {
         const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
         const zond = truppa(profilo(T, /^Reaktion Zond \(Thunderbolt\)/), { id: 'n1', alias: 'Zond' });
         if (arma) zond.weapon = arma;
@@ -2136,29 +2231,23 @@ sezione('36b. ARO col Total Reaction: BURST PIENO o B1, a scelta (REGOLE riga 10
         N.apriSelezioneAro(); N.toggleAroUnit('n1'); N.confermaSelezioneAro(); N.selezionaAzioneAro('BS_ATTACK');
         const nome = ((String(T.nomadi.el('aro-weapon-list').innerHTML).match(/selezionaArmaAro\('([^']+)'/) || [])[1]);
         N.selezionaArmaAro(nome); N.selezionaBersaglioAro('Uno');
-        const pag = () => String(T.nomadi.el('aro-modifiers-content').innerHTML);
-        const prima = pag(), cfgPrima = Object.assign({}, N.aroCurrentConfig);
-        if (scelta === false) N.sceltaBurstAro(false);
-        const dopo = pag(), cfgDopo = Object.assign({}, N.aroCurrentConfig);
+        const pag = String(T.nomadi.el('aro-modifiers-content').innerHTML), cfg = Object.assign({}, N.aroCurrentConfig);
         const spedite = []; const orig = N.inviaRispostaAro;
         N.inviaRispostaAro = function (payload, f) { spedite.push(JSON.parse(JSON.stringify(payload))); return orig.apply(this, arguments); };
         N.salvaAroCorrente(); T.giro();
-        return { T, N, nome, prima, dopo, cfgPrima, cfgDopo, spedite, zond: N.roster.find(u => u.id === 'n1') };
+        return { T, N, nome, pag, cfg, spedite, zond: N.roster.find(u => u.id === 'n1') };
     };
     // --- Thunderbolt (+1B), B2+1 = B3 col Total Reaction ---
-    const a = giro(null, false);
-    ok(/class="huge-btn tasto-burst-pieno"[^>]*>BURST PIENO \(B3\)/.test(a.prima) && /class="huge-btn tasto-burst-ridotto"[^>]*>B1</.test(a.prima),
-       'due tasti: «BURST PIENO (B3)» (B2 del Thunderbolt + il suo (+1B)) e «B1»');
-    ok(a.cfgPrima.burst === 3 && a.cfgPrima.burstPieno === true, 'parte dal pieno: B3 (' + a.cfgPrima.burst + ')');
-    ok(a.cfgDopo.burst === 1 && a.cfgDopo.burstPieno === false, 'scelto B1: la reazione ha burst 1 e burstPieno false (' + a.cfgDopo.burst + ', ' + a.cfgDopo.burstPieno + ')');
+    const a = giro(null);
+    ok(!/tasto-burst-pieno|tasto-burst-ridotto|scelta-burst-aro|sceltaBurstAro/.test(a.pag) && typeof a.N.sceltaBurstAro === 'undefined',
+       'niente tasti del burst, e la funzione sceltaBurstAro non c e piu`');
+    ok(a.cfg.burst === 3 && a.cfg.burstPieno === true, 'la reazione e` al pieno: B3 (B2 del Thunderbolt + il suo (+1B)), burstPieno true (' + a.cfg.burst + ', ' + a.cfg.burstPieno + ')');
     const r = a.spedite[0] || {};
-    ok(((r.reazioni || [])[0] || {}).burstPieno === false, 'e la risposta ARO spedita porta burstPieno: false (' + J(((r.reazioni || [])[0] || {}).burstPieno) + ')');
-    // --- Panzerfaust (+1B), Disposable (2): B2 brucia due usi, B1 uno ---
-    const b1 = giro('Panzerfaust (+1B)', false);
-    ok(/BURST PIENO \(B2\)/.test(b1.prima), 'Panzerfaust (+1B): «BURST PIENO (B2)» (' + b1.nome + ')');
-    ok(J(b1.zond.usiSpesi) === J({ 'PANZERFAUST': 1 }) || Object.values(b1.zond.usiSpesi || {})[0] === 1, 'scelto B1: speso UN uso, ne resta uno (' + J(b1.zond.usiSpesi) + ')');
-    const b2 = giro('Panzerfaust (+1B)', true);
-    ok(Object.values(b2.zond.usiSpesi || {})[0] === 2, 'CONTROPROVA: col pieno (B2) spesi tutti e due gli usi (' + J(b2.zond.usiSpesi) + ')');
+    ok(((r.reazioni || [])[0] || {}).burstPieno === true, 'e la risposta ARO spedita porta burstPieno: true (' + J(((r.reazioni || [])[0] || {}).burstPieno) + ')');
+    // --- Panzerfaust (+1B), Disposable (2): al pieno B2 brucia due usi ---
+    const b2 = giro('Panzerfaust (+1B)');
+    ok(b2.cfg.burst === 2, 'Panzerfaust (+1B): B2 (' + b2.nome + ', ' + b2.cfg.burst + ')');
+    ok(Object.values(b2.zond.usiSpesi || {})[0] === 2, 'al pieno (B2) spesi tutti e due gli usi (' + J(b2.zond.usiSpesi) + ')');
     // --- senza Total Reaction nessuna scelta ---
     const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
     const alg = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Fante' });
@@ -2166,8 +2255,691 @@ sezione('36b. ARO col Total Reaction: BURST PIENO o B1, a scelta (REGOLE riga 10
     T.apriMenu(T.pano, 0); P.selectAction('MOVIMENTO', false); T.giro();
     N.apriSelezioneAro(); N.toggleAroUnit('n1'); N.confermaSelezioneAro(); N.selezionaAzioneAro('BS_ATTACK');
     N.selezionaArmaAro('Combi Rifle'); N.selezionaBersaglioAro('Uno');
-    ok(!/scelta-burst-aro/.test(T.nomadi.el('aro-modifiers-content').innerHTML) && N.aroCurrentConfig.burstPieno === undefined,
-       'CONTROPROVA: un Alguacil (senza Total Reaction) non ha la scelta, e la reazione non porta burstPieno');
+    ok(N.aroCurrentConfig.burstPieno === undefined && N.aroCurrentConfig.burst === 1,
+       'CONTROPROVA: un Alguacil (senza Total Reaction) resta B1 e la reazione non porta burstPieno');
+});
+
+sezione('37. Hidden Deployment nella propria app: il segnalino grande fra le icone, niente scritta (Paolo, 27 ottobre sera)', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+    const nasc = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Ombra', deployState: 'HIDDEN', states: { hidden: true } });
+    const vista = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Vista' });
+    T.schiera([nasc, vista], [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+    N.currentGroup = 1; N.isCoordinated = false; N.selectedCoordinatedUnits = []; N.aggiornaGraficaRoster();
+    const righe = String(T.nomadi.el('unit-buttons-container').innerHTML).split(/(?=<button)/).filter(r => /riga-unita/.test(r));
+    const rOmbra = righe.find(r => /Ombra/.test(r)) || '', rVista = righe.find(r => /Vista/.test(r)) || '';
+    // RISCRITTO il 27 ottobre sera (Paolo: «togli la scritta HIDDEN e metti il
+    // token in grande a destra come gli altri token»). Prima: etichetta-marker
+    // «HIDDEN» con l icona piccola accanto al nome. Ora: niente scritta, il
+    // segnalino a 45 px fra le icone degli stati (rup-icone).
+    const iconeOmbra = (rOmbra.match(/<div class="rup-icone">([\s\S]*?)<\/div>/) || ['', ''])[1];
+    ok(/<img class="icona-segnalino-hidden" src="img\/nomadi\/icon_hidden\.png" data-rip="img\/icon_hidden\.png"[\s\S]*?alt="HIDDEN" style="width:45px; height:45px;/.test(iconeOmbra)
+       && !/etichetta-marker/.test(rOmbra) && !/>HIDDEN</.test(rOmbra),
+       'propria app: il segnalino HIDDEN grande (45 px) fra le icone degli stati, img/nomadi/icon_hidden.png con ripiego img/icon_hidden.png; niente scritta');
+    ok(/🫥/.test(rOmbra), 'e se mancano i due file, l emoji 🫥');
+    ok(!/etichetta-marker/.test(rVista), 'CONTROPROVA: una truppa a vista non ha l etichetta');
+    ok(!P.MotoreN5.rosterNemico().some(u => u.id === 'n1') && !(H.gameState.nomads || []).some(u => u.id === 'n1'), 'l avversario e l Hub non la ricevono (invisibile)');
+    N.roster = [nasc, vista]; N.deployGroup = 1; N.renderDeployUnits();
+    // RISCRITTO il 27 ottobre sera (Paolo: «togli la scritta HIDDEN DEPLOYMENT
+    // e metti il token grande»). Prima: «[ HIDDEN DEPLOYMENT ]» con l icona
+    // piccola. Ora: niente scritta, lo stesso segnalino a 45 px fra le icone.
+    const dep = String(T.nomadi.el('deploy-units-container').innerHTML);
+    ok(!/HIDDEN DEPLOYMENT/.test(dep) && !/etichetta-hidden/.test(dep) && /<div class="rup-icone"><img class="icona-segnalino-hidden"[\s\S]*?width:45px/.test(dep),
+       'lista dello schieramento: niente «[ HIDDEN DEPLOYMENT ]», il segnalino grande fra le icone');
+});
+
+// 38: il collaudo grafico di MOTORE (27 ottobre, 63 schermate a 390 px) e
+// BS-29. Una sezione per punto. Il DOM del banco e` finto: altezze e misure
+// non si misurano, si guarda il foglio di stile e l'HTML prodotto.
+const paginaApp = () => fs.readFileSync(DIR + 'app.html', 'utf8');
+const stileApp = () => (paginaApp().match(/<style>([\s\S]*?)<\/style>/) || ['', ''])[1];
+// Il corpo della pagina senza gli script: i tasti scritti nell'HTML.
+const markupApp = () => paginaApp().replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style>[\s\S]*?<\/style>/, '');
+
+sezione('38a. Tasti stirati: nelle colonne un tasto e` alto quanto il suo contenuto (collaudo, punto 1)', () => {
+    const css = stileApp();
+    const regola = (css.match(/([^{}]*)\{\s*flex:\s*0 0 auto;\s*\}/) || []);
+    const sel = String(regola[1] || '');
+    ok(/\.grid-buttons > \.huge-btn/.test(sel) && /\.step-container > \.huge-btn/.test(sel) && /#second-half-buttons-container > \.huge-btn/.test(sel),
+       'una regola dice flex: 0 0 auto ai tasti dentro .grid-buttons, gli step e la seconda meta` (' + sel.split('*/').pop().trim().replace(/\s+/g, ' ') + ')');
+    ok(/\.huge-btn \{ flex: 1;/.test(css), 'CONTROPROVA: il tasto da solo resta flex:1, per le righe dove due tasti si dividono lo spazio');
+    // Dalla porta del giocatore: i Gruppi del radar sono figli diretti della colonna.
+    const T = creaTavolo(DIR); const N = T.nomadi.g;
+    T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Uno' })], [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
+    N.aggiornaMenuGruppi();
+    ok(/^\s*<button class="huge-btn"/.test(T.nomadi.el('q:#battle .grid-buttons').innerHTML), 'i Gruppi del radar sono tasti direttamente nella colonna .grid-buttons: la regola li prende');
+});
+
+sezione('38b. Il tasto MENU non copre l ultimo tasto (collaudo, punto 2)', () => {
+    const css = stileApp();
+    const spazio = parseInt((css.match(/--spazio-menu:\s*(\d+)px/) || [])[1], 10);
+    ok(spazio >= 56, 'c e uno spazio per il MENU, --spazio-menu (' + spazio + ' px)');
+    ok(/body \{[^}]*padding-bottom: calc\(10px \+ var\(--spazio-menu\) \+ env\(safe-area-inset-bottom, 0px\)\)/.test(css), 'e il fondo della pagina lo lascia libero sotto ogni schermata (body padding-bottom)');
+    ok(/id="btn-menu"[^>]*position:fixed; left:10px; bottom:calc\(10px/.test(markupApp()), 'il MENU resta dov era, in basso a sinistra');
+});
+
+sezione('38c. Due uscite, una conferma (collaudo, punto 3)', () => {
+    const m = markupApp();
+    const uscite = [...m.matchAll(/<button class="tasto-uscita"[^>]*>([^<]*)<\/button>/g)].map(x => x[1].trim());
+    ok(uscite.length >= 12 && uscite.every(t => t === 'INDIETRO' || t === 'ANNULLA ORDINE'), 'le uscite della pagina si chiamano solo INDIETRO o ANNULLA ORDINE (' + uscite.length + ': ' + J([...new Set(uscite)]) + ')');
+    ok(!/ANNULLA E CAMBIA UNIT|FINE ORDINE \(TORNA AL RADAR\)|RICOMINCIA SELEZIONE|TORNA ALLA LISTA/.test(m), 'non restano ANNULLA E CAMBIA UNITA`, FINE ORDINE, RICOMINCIA SELEZIONE, TORNA ALLA LISTA');
+    ok(!/<button class="btn-status"[^>]*(goToStep|goToAroStep|tornaAlRadar|tornaAlSetup|apriSelezioneAro)/.test(m), 'nessuna uscita col vecchio stile btn-status');
+    const conferme = ['confermaSchieramento()', 'confermaSelezioneAro()', 'salvaAroCorrente()', 'confirmMultiAro(false)']
+        .map(c => (m.match(new RegExp('<button[^>]*onclick="window\\.' + c.replace(/[()]/g, '\\$&') + '"[^>]*>')) || [''])[0]);
+    ok(conferme.every(b => /class="huge-btn tasto-conferma"/.test(b) && !/style=/.test(b)), 'CONCLUDI SCHIERAMENTO, AVANTI, CONFERMA E PROCEDI, CONFERMA BERSAGLI: classe tasto-conferma, nessun colore o altezza in linea');
+    ok(/\.huge-btn\.tasto-conferma \{[^}]*background: var\(--conferma-sfondo\); border-color: var\(--conferma-bordo\)/.test(stileApp()), 'il verde della conferma sta nelle variabili');
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, M = N.MotoreN5;
+    const c = N.applicaColoriConferma();
+    ok(c && J(c) === J({ sfondo: M.COLORI.conferma.sfondo, bordo: M.COLORI.conferma.bordo, testo: M.COLORI.conferma.testo }), 'e le variabili vengono dal motore, M.COLORI.conferma (' + J(c) + ')');
+    // C06: CONFERMA SQUADRA E PROCEDI del Coordinato, prima rossa.
+    T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Capo' }), truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Gregario' })],
+              [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+    N.currentGroup = 1; N.isCoordinated = true; N.selectedCoordinatedUnits = []; N.spearheadUnit = null;
+    N.selezionaUnita(0); N.selezionaUnita(1);
+    const sq = (String(T.nomadi.el('unit-buttons-container').innerHTML).match(/<button[^>]*confermaCoordinato[^>]*>/) || [''])[0];
+    ok(/class="huge-btn tasto-conferma"/.test(sq) && !/#cc0000/.test(sq), 'Coordinato: CONFERMA SQUADRA E PROCEDI e` verde come le altre, non piu` rossa (' + sq.slice(0, 60) + ')');
+    N.isCoordinated = false; N.selectedCoordinatedUnits = []; N.spearheadUnit = null;
+    // ARO: il tasto di conferma lascia il colore alla classe; solo l'IDLE e` scritto in linea.
+    T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
+    P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro(); P.selezionaAzioneAro('BS_ATTACK'); P.selezionaArmaAro('Combi Rifle'); P.selezionaBersaglioAro('Capo');
+    const tasto = T.pano.el('btn-conferma-aro');
+    ok(tasto.style.background === '' && /CONFERMA/.test(tasto.innerText), 'ARO: CONFERMA E PROCEDI senza fondo in linea, lo da` la classe (' + J(tasto.style.background) + ')');
+    P.toggleAroRequisito('lof');
+    ok(/IDLE/.test(tasto.innerText) && tasto.style.background !== '', 'senza Linea di Tiro diventa IDLE, col suo giallo (' + tasto.style.background + ')');
+    P.toggleAroRequisito('lof');
+    ok(tasto.style.background === '' && tasto.style.borderColor === '', 'e tornata la Linea di Tiro, il giallo se ne va');
+});
+
+sezione('38d. Tre livelli di titolo e sei misure di carattere (collaudo, punto 4)', () => {
+    const css = stileApp(), m = markupApp();
+    const scala = ['xs', 's', 'm', 'l', 'xl', 'xxl'].map(k => parseInt((css.match(new RegExp('--fs-' + k + ':\\s*(\\d+)px')) || [])[1], 10));
+    ok(J(scala) === J([12, 14, 16, 22, 32, 42]), 'la scala sta in sei variabili: 12, 14, 16, 22, 32, 42 (' + J(scala) + ')');
+    ok(/\n\s*h1 \{ font-family: 'Teko', sans-serif; font-size: clamp\(26px, 9vw, var\(--fs-xxl\)\);[^}]*color: var\(--nomad-orange\)/.test(css), 'h1: Teko 42 (scende con lo schermo), col colore della fazione');
+    ok(/\n\s*h2 \{ font-family: 'Teko', sans-serif; font-size: var\(--fs-titolo-2\)/.test(css) && /--fs-titolo-2:\s*28px/.test(css), 'h2: Teko 28');
+    ok(/\n\s*h3 \{ font-family: 'Share Tech Mono', monospace; font-size: var\(--fs-m\); color: var\(--nomad-orange\)/.test(css), 'h3: mono 16, col colore della fazione');
+    const conMisura = [...m.matchAll(/<h[123][^>]*style="[^"]*(font-size|font-family)[^"]*"/g)].map(x => x[0].slice(0, 40));
+    ok(conMisura.length === 0, 'nessun titolo della pagina si scrive carattere o misura in linea (' + J(conMisura) + ')');
+    ok(!/margin-top:\s*-10px/.test(m) && (m.match(/class="sottotitolo-step"/g) || []).length === 4, 'le righe sotto il titolo non hanno piu` margin-top:-10px (C01, E16: \"(Tocco rapido...)\" tagliato in alto)');
+    ok(/<h1 class="titolo-allarme">⚠️ TURNO AVVERSARIO<\/h1>/.test(m), 'il turno avversario resta un allarme rosso, con la classe titolo-allarme');
+});
+
+sezione('38e. Schieramento: la riga con la foto, niente immagine rotta, scelte uguali, ricerca HoloMask (collaudo, punto 5)', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g;
+    N.FOTO_MINIATURE = ['alguaciles.png'];
+    N.roster = [truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Uno' }), truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Due', imgVariant: 'alguaciles.png', deployState: 'CAMO', states: { camo: true } })];
+    N.apriSchieramento(); N.apriGruppoDeploy(1);
+    const lista = String(T.nomadi.el('deploy-units-container').innerHTML);
+    const righe = lista.split(/(?=<button)/).filter(r => /riga-unita-foto/.test(r));
+    ok(righe.length === 2, 'le truppe da schierare hanno la riga di tutti gli elenchi, rigaUnitaConFoto (' + righe.length + ')');
+    ok(!/TOCCA PER LA FOTO/.test(lista) && !/<img src=""/.test(lista), 'niente piu` immagine vuota col testo TOCCA PER LA FOTO');
+    ok(/<span class="rup-sigla rup-tocco-foto" onpointerdown="event\.stopPropagation\(\)" onclick="event\.stopPropagation\(\); window\.cambiaIconaDeploy\(event, 0\)"/.test(righe[0]), 'senza foto: la sigla del tipo, e toccarla apre la galleria');
+    ok(/<img class="rup-foto rup-tocco-foto" src="img\/nomadi\/alguaciles\.png"[\s\S]*?onclick="event\.stopPropagation\(\); window\.cambiaIconaDeploy\(event, 1\)"/.test(righe[1]), 'con la foto: la foto, e toccarla apre la galleria');
+    ok(/startDeployPress\(0, event\)/.test(righe[0]) && /endDeployPress\(0\)/.test(righe[0]), 'il tocco sulla riga resta quello di prima (breve: schieramento; lungo: stati)');
+    ok(/class="note-schieramento"[^>]*>[\s\S]*SEGNALINO CAMO/.test(righe[1]), 'la nota di schieramento sta nella fascia bassa della riga');
+    vmTocco(T.nomadi, (righe[0].match(/onclick="event\.stopPropagation\(\); (window\.cambiaIconaDeploy\(event, 0\))"/) || [])[1].replace('event', 'null'));
+    ok(T.nomadi.el('galleria-foto').style.display === 'block' && /assegnaFoto\(0, 'alguaciles\.png'\)/.test(T.nomadi.el('galleria-foto').innerHTML) === false, 'toccata la sigla si apre la galleria (la foto libera e` gia` presa da Due: non compare)');
+    N.chiudiGalleriaFoto();
+    // Le scelte della pagina degli stati: tutte uguali, la scelta accesa con la classe.
+    const zero = truppa(profilo(T, /^Zero \(Minelayer\)/), { id: 'n3', alias: 'Zero' });
+    N.roster.push(zero);
+    N.apriDeployStati(2);
+    const pag = String(T.nomadi.el('deploy-states-content').innerHTML);
+    const tasti = pag.match(/<button class="huge-btn[^"]*"[^>]*>/g) || [];
+    ok(tasti.length >= 3 && tasti.every(b => !/style="[^"]*(background|border-color)/.test(b)), 'nella pagina degli stati nessun tasto ha colori suoi (' + tasti.length + ' tasti)');
+    ok(/<button class="huge-btn tasto-opzione attivo" onclick="window\.setDeployState\(2, 'NORMAL'\)">NORMALE/.test(pag), 'la scelta attiva e` accesa con la classe attivo');
+    ok(/class="huge-btn bottone-minelayer" onclick=/.test(pag), 'i tasti del Minelayer non sono piu` stretti e colorati a parte: stessa regola delle altre scelte');
+    ok(/#deploy-states-content \.huge-btn \{[^}]*width: 100%;[^}]*background: #222; border-color: #555;/.test(stileApp()) && /#deploy-states-content \.huge-btn\.attivo \{ background: var\(--nomad-darkred\); border-color: var\(--nomad-red\);/.test(stileApp()),
+       'la regola: tutta la larghezza, un colore per tutte, la scelta nel colore della fazione');
+    // HoloMask: il campo di ricerca.
+    const bashi = truppa(profilo(T, /^Bashi Bazouk/), { id: 'n4', alias: 'Bashi' });
+    N.roster.push(bashi);
+    N.apriSceltaHolomask(3);
+    const gruppi = N._gruppiHolomask || [];
+    const pagH = String(T.nomadi.el('deploy-states-content').innerHTML);
+    ok(/<input type="search" id="cerca-holomask"[^>]*oninput="window\.filtraHolomask\(3, this\.value\)"/.test(pagH), 'HoloMask: sopra l elenco un campo di ricerca (' + gruppi.length + ' truppe)');
+    N.filtraHolomask(3, 'alg');
+    const filtrata = String(T.nomadi.el('lista-holomask').innerHTML);
+    const nomi = [...filtrata.matchAll(/class="huge-btn scelta-holomask-unita" onclick="[^"]*">([^<]*)</g)].map(x => x[1].trim());
+    const attesi = gruppi.filter(g => /ALG/i.test(g.unita)).map(g => g.unita);
+    ok(nomi.length > 0 && nomi.length < gruppi.length && J(nomi) === J(attesi), 'scritto \"alg\": restano solo le truppe col nome che lo contiene (' + J(nomi) + ')');
+    const k = gruppi.findIndex(g => g.unita === nomi[0]);
+    ok(new RegExp('apriVariantiHolomask\\(3, ' + k + '\\)|scegliHolomask\\(3, ').test(filtrata), 'e il tocco porta ancora alla truppa giusta (indice ' + k + ' dell elenco intero)');
+    N.filtraHolomask(3, 'zzz');
+    ok(/Nessuna truppa/.test(T.nomadi.el('lista-holomask').innerHTML), 'niente che corrisponde: lo dice');
+    // RISCRITTO il 27 ottobre sera (B07, secondo giro): prima 'campo vuoto:
+    // tornano tutte'; ora a campo vuoto l'elenco e` vuoto con l'invito, e
+    // l'iniziale mostra le truppe che cominciano con quella lettera.
+    N.filtraHolomask(3, '');
+    ok(!/scelta-holomask-unita/.test(T.nomadi.el('lista-holomask').innerHTML) && /class="invito-holomask"/.test(T.nomadi.el('lista-holomask').innerHTML), 'campo vuoto: nessuna truppa, l invito a cercare o a toccare l iniziale');
+    N.filtraHolomask(3, '', 'A');
+    const conA = [...String(T.nomadi.el('lista-holomask').innerHTML).matchAll(/class="huge-btn scelta-holomask-unita" onclick="[^"]*">([^<]*)</g)].map(x => x[1].trim());
+    ok(conA.length > 0 && J(conA) === J(gruppi.filter(g => /^A/i.test(String(g.unita).trim())).map(g => String(g.unita).trim())), 'toccata la A: solo le truppe che cominciano per A (' + conA.length + ')');
+    ok((String(T.nomadi.el('deploy-states-content').innerHTML).match(/class="huge-btn lettera-holomask"/g) || []).length === new Set(gruppi.map(g => String(g.unita).trim().charAt(0).toUpperCase())).size, 'una lettera per ogni iniziale delle truppe');
+});
+
+sezione('38f. Testi tagliati (collaudo, punto 6)', () => {
+    const m = markupApp();
+    const sel = (m.match(/<select id="combatGroupSelect"[^>]*>[\s\S]*?<\/select>/) || [''])[0];
+    ok(sel && !/huge-btn/.test(sel) && /<option value="1">Gruppo 1<\/option>/.test(sel), 'A02: la tendina del Gruppo non e` piu` un tasto da 32 px, e dice \"Gruppo 1\" (prima \"GRUP.\")');
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+    // D02/E11: la fascia del soprannome.
+    const nisse = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Alguacil' });
+    const rN = String(N.rigaUnitaConFoto(nisse, {}));
+    ok(/<div class="rup-alias rup-profilo">Combi Rifle<\/div>/.test(rN), 'soprannome uguale al nome: nella fascia bassa l opzione del profilo, non il vuoto');
+    ok(/<div class="rup-alias">"Rosso"<\/div>/.test(String(N.rigaUnitaConFoto(Object.assign({}, nisse, { alias: 'Rosso' }), {}))), 'CONTROPROVA: con un soprannome vero resta il soprannome');
+    const marker = { id: 'x', nome: 'MARKER', alias: 'SEGNALINO MIMETICO 1', tipo: 'MARKER', states: {} };
+    const rM = String(N.rigaUnitaConFoto(marker, { fazione: 'NEMICA' }));
+    ok(!/rup-profilo/.test(rM), 'di un Marker non si scrive il profilo');
+    // E06: la sigla del Marker.
+    ok(!/>MAR</.test(rM) && /rup-sigla&quot;>\?</.test(rM), 'E06: un Marker senza immagine ha la sigla \"?\", non \"MAR\"');
+    // G02: con piu` icone il nome ha piu` spazio.
+    const una = String(N.rigaUnitaConFoto(truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'A', states: { targeted: true } }), {}));
+    const tre = String(N.rigaUnitaConFoto(truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n3', alias: 'B', states: { targeted: true, stunned: true, isolated: true } }), {}));
+    ok(/padding:10px 72px 34px 92px/.test(una) && !/rup-icone-molte/.test(una), 'un icona: come prima (72 px a destra)');
+    ok(/<div class="rup-icone rup-icone-molte">/.test(tre) && /padding:10px 126px 34px 92px/.test(tre), 'tre icone: piu` piccole e accavallate, il nome perde 126 px invece di 184 (G02, \"SPEKTR\")');
+    ok(/\.riga-unita-foto \.rup-icone-molte img \{ width:46px !important; height:46px !important; margin:0 0 0 -14px !important; \}/.test(stileApp()), 'la regola delle icone strette: 46 px, accavallate di 14');
+    // G03 e G06: le reazioni e le munizioni in ARO.
+    T.schiera([truppa(profilo(T, /^Alguacil \(HMG/), { id: 'n1', alias: 'Spara' })], [truppa(T.profilo(T.pano, /^Orc \(MULTI Rifle\)/), { id: 'p1', alias: 'Orco' })], 'NOMADI');
+    T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Heavy Machine Gun');
+    N.toggleTargetSelection('p1'); N.confirmMultiAro(false); T.giro();
+    P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro();
+    const az = String(T.pano.el('aro-action-list').innerHTML);
+    const reazioni = az.match(/<button class="huge-btn[^"]*"[^>]*selezionaAzioneAro[^>]*>/g) || [];
+    // RISCRITTO il 27 ottobre sera (Paolo: «prima c erano i colori come per
+    // gli Ordini attivi, ripristinali»). Prima: tutte con la stessa classe e
+    // nessuno style. Ora: stessa classe (misure), e ognuna il suo colore come
+    // nel menu degli Ordini (BS/Hacking/CC azzurro, Schivata/Reset verde).
+    // E la nota non sta piu` nel tasto: va nella ⓘ.
+    const colore = (id) => ((reazioni.find(b => b.indexOf("selezionaAzioneAro('" + id + "')") >= 0) || '').match(/style="background:([^;]+); border-color:([^;]+);"/) || []).slice(1).join(' ');
+    ok(reazioni.length >= 3 && reazioni.every(b => /class="huge-btn tasto-reazione" style="background:#[0-9a-f]+; border-color:#[0-9a-f]+;"/i.test(b)), 'G03: le reazioni hanno la stessa classe tasto-reazione e il loro colore (' + reazioni.length + ')');
+    // RISCRITTO il 28 ottobre (Paolo: «allinea alla categoria del motore»).
+    // Prima: Attacco BS azzurro e Schivata verde, colori diversi scritti qui.
+    // Ora ogni reazione ha il colore della categoria del suo Ordine N5
+    // (M.coloreOrdine): se il motore cambia categoria, cambia anche qui.
+    const MC = P.MotoreN5, del = (n) => { const c = MC.coloreOrdine(n); return c.sfondo + ' ' + c.bordo; };
+    ok(colore('BS_ATTACK') === del('BS_ATTACK') && colore('DODGE') === del('DODGE'), 'Attacco BS e Schivata hanno il colore della categoria del motore (' + colore('BS_ATTACK') + ' / ' + colore('DODGE') + ')');
+    ok(!/nota-reazione/.test(az) && !/font-size:12px; color:#ff9900/.test(az), 'nessuna nota dentro i tasti delle reazioni');
+    P.selezionaAzioneAro('BS_ATTACK');
+    const multi = (String(T.pano.el('aro-weapon-list').innerHTML).match(/selezionaArmaAro\('MULTI[^"]*/) || [''])[0];
+    vmTocco(T.pano, 'window.' + multi.replace(/&quot;/g, '"'));
+    P.selezionaBersaglioAro('Spara');
+    const h = String(T.pano.el('aro-modifiers-content').innerHTML);
+    // RISCRITTO il 27 ottobre sera (Paolo: la scritta della tendina va
+    // centrata). Prima: class="huge-btn tendina-munizioni" style="flex:1 1
+    // 100%; width:100%;. Ora la classe huge-btn non c e (impediva di centrare
+    // il testo) e la tendina e` display:block, sempre tutta la riga.
+    ok(/<div class="riga-munizioni-terreno" style="display:flex; flex-wrap:wrap;/.test(h) && /<select class="tendina-munizioni" style="display:block; flex:1 1 100%; width:100%;[^"]*text-align:center; text-align-last:center;/.test(h),
+       'G06: la tendina delle munizioni ha tutta la riga, il terreno va sotto (' + ((h.match(/<option[^>]*>([^<]*)</) || [])[1] || '') + ')');
+});
+
+sezione('38g. Il primo Ordine della partita puo` essere una Schivata (collaudo, punto 7)', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+    ok(Array.isArray(N.pendingTargets) && N.pendingTargets.length === 0, 'pendingTargets esiste da subito, vuoto (' + J(N.pendingTargets) + ')');
+    T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Uno' })], [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
+    T.apriMenu(T.nomadi, 0); N.selectAction('SCHIVATA', false); T.giro();
+    const caduti = N.errori.filter(e => /Difesa/.test(e) && /map/.test(e));
+    ok(caduti.length === 0, 'primo Ordine: SCHIVATA, il modulo non cade (' + (caduti[0] || 'nessun errore').slice(0, 80) + ')');
+    ok(P.currentAttackData && P.currentAttackData.azione === 'SCHIVATA', 'e l allarme arriva all avversario (' + J(P.currentAttackData && P.currentAttackData.azione) + ')');
+    N.tornaAlRadar();
+    ok(J(N.pendingTargets) === '[]', 'e dopo l Ordine resta vuoto');
+});
+
+sezione('38h. Hub: a schermo largo i caratteri crescono (collaudo, punto 8)', () => {
+    const h = fs.readFileSync(DIR + 'calcolatore_hub.html', 'utf8');
+    // RISCRITTO il 27 ottobre sera (H01, secondo giro): prima la parte fissa
+    // del calc era sempre "+ N px"; ora puo` essere "- N px" (la miniatura).
+    const v = (n) => (h.match(new RegExp('--' + n + ':\\s*clamp\\((\\d+)px, calc\\(([\\d.]+)vw ([+-]) ([\\d.]+)px\\), (\\d+)px\\)')) || []);
+    const a = (n, w) => { const x = v(n); return Math.min(+x[5], Math.max(+x[1], +x[2] * w / 100 + (x[3] === '-' ? -1 : 1) * +x[4])); };
+    ok(v('hub-riga').length && Math.round(a('hub-riga', 820)) === 12 && a('hub-riga', 1280) >= 14, 'le righe delle schede: 12 px a 820 (come prima), ' + a('hub-riga', 1280).toFixed(1) + ' px a 1280');
+    ok(v('hub-testo').length && a('hub-testo', 820) >= 13 && a('hub-testo', 820) < 13.5 && a('hub-testo', 1280) >= 15, 'il testo: 13 px a 820, ' + a('hub-testo', 1280).toFixed(1) + ' a 1280');
+    ok(v('hub-foto').length && a('hub-foto', 820) <= 70 && a('hub-foto', 1280) >= 85, 'la miniatura: 70 px a 820, ' + a('hub-foto', 1280).toFixed(0) + ' a 1280: la pagina si riempie');
+    ok(/\.st-riga \{ color:#ccc; font-size:var\(--hub-riga\);/.test(h) && /\.st-nome \{ font-family:'Teko', sans-serif; font-size:var\(--hub-nome\);/.test(h) && /body \{[^}]*font-size: var\(--hub-testo\);/.test(h), 'le schede e la pagina usano quelle misure');
+    ok(!/@media/.test(h), 'CONTROPROVA: nessuna regola per schermi diversi, quattro colonne sempre (sezione 20)');
+});
+
+sezione('38i. BS-29: lo Schieramento Aereo lo decide il motore (M.opzioniSchieramento)', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+    const spector = truppa(profilo(T, /^Spector \(Parachutist/), { id: 'n1', alias: 'Spec' });
+    const alg = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Alg' });
+    N.roster = [spector, alg];
+    N.apriSchieramento(); N.apriGruppoDeploy(1); N.apriDeployStati(0);
+    const pag = String(T.nomadi.el('deploy-states-content').innerHTML);
+    const voce = N.MotoreN5.opzioniSchieramento(spector)[0] || {};
+    // RISCRITTO il 27 ottobre sera (motore 27.9): prima il tasto era
+    // class="huge-btn tasto-opzione opzione-schieramento" onclick=...; ora porta
+    // anche data-stato, e la classe attivo va in coda.
+    const tasto = (pag.match(/<button class="huge-btn tasto-opzione opzione-schieramento" data-stato="AD" onclick="(window\.setDeployState\(0, 'AD'\))">([^<]*)<\/button>/) || []);
+    ok(!!tasto[1] && tasto[2] === 'SCHIERAMENTO AEREO', 'Spector (Parachutist, Combat Jump): il tasto SCHIERAMENTO AEREO, con l etichetta del motore');
+    // RISCRITTO il 27 ottobre sera (Paolo: le descrizioni nella ⓘ). Prima: la
+    // nota del motore sotto il tasto. Ora: sotto niente, la nota e` nella ⓘ
+    // della pagina (resta sotto solo per una voce spenta: dice perche`).
+    // RISCRITTO il 28 ottobre sera (motore 28.7: M.nota passa il testo per
+    // M.accenti, «puo`» -> «può»). Prima: v.testo === voce.nota (grezza).
+    // Ora: v.testo === M.accenti(voce.nota); sotto il tasto ne` l una ne` l altra.
+    const accentata = N.MotoreN5.accenti(voce.nota);
+    ok(voce.nota && pag.indexOf(voce.nota) < 0 && pag.indexOf(accentata) < 0 && N.vociInfo('step-deploy-states').some(v => v.testo === accentata), 'la nota del motore (con gli accenti) e` nella ⓘ, non sotto il tasto');
+    ok(!/RISERVA/.test(pag) && !/'RESERVE'/.test(pag), 'niente piu` \"RISERVA / AD\" ne` lo stato RESERVE');
+    vmTocco(T.nomadi, tasto[1] || 'void 0');
+    ok(N.roster[0].deployState === 'AD', 'toccato: deployState AD (' + N.roster[0].deployState + ')');
+    ok(/class='etichetta-ad'[^>]*>\[ SCHIERAMENTO AEREO \]/.test(T.nomadi.el('deploy-units-container').innerHTML), 'nella lista dello schieramento: «[ SCHIERAMENTO AEREO ]»');
+    N.apriDeployStati(0);
+    ok(/tasto-opzione opzione-schieramento attivo" data-stato="AD" onclick="window\.setDeployState\(0, 'AD'\)/.test(T.nomadi.el('deploy-states-content').innerHTML), 'riaprendo, la scelta e` accesa');
+    N.apriDeployStati(1);
+    ok(!/data-stato="(AD|HIDDEN)"/.test(T.nomadi.el('deploy-states-content').innerHTML), 'CONTROPROVA: un Alguacil non ha Schieramento Aereo ne` Hidden');
+    N.confermaSchieramento(); T.giro();
+    ok(!(H.gameState.nomads || []).some(u => u.id === 'n1') && !P.MotoreN5.rosterNemico().some(u => u.id === 'n1'), 'l Hub e l avversario non lo vedono: e` fuori dal tavolo');
+    if (H.gameState.activeFaction !== 'NOMADI') H.toggleTurn(); T.giro();
+    const menu = T.apriMenu(T.nomadi, 0);
+    ok(/selectAction\('INGRESSO IN CAMPO', false\)/.test(menu), 'nel suo turno il menu gli offre INGRESSO IN CAMPO');
+    N.renderReactiveRoster();
+    ok(!/Spec/.test(T.nomadi.el('reactive-roster-list').innerHTML) && /Alg/.test(T.nomadi.el('reactive-roster-list').innerHTML), 'nel turno reattivo non compare fra le truppe sul tavolo (prima l elenco toglieva solo RESERVE)');
+    // Hidden Deployment: anche quello dal motore, con l'icona.
+    const croc = truppa(T.profilo(T.pano, /^Croc Man \(MULTI Sniper/), { id: 'p9', alias: 'Croc' });
+    P.roster = [croc]; P.apriDeployStati(0);
+    // RISCRITTO il 27 ottobre sera (Paolo: «l icona non sopra la scritta ma a
+    // sinistra»). Prima: <img> e poi il testo, dentro il tasto. Ora icona e
+    // testo stanno su una riga, in un div voce-con-icona.
+    ok(/<button class="huge-btn tasto-opzione opzione-schieramento" data-stato="HIDDEN" onclick="window\.setDeployState\(0, 'HIDDEN'\)"><div class="voce-con-icona" style="display:flex; flex-direction:row;[^"]*"><img class="icona-segnalino-hidden"[\s\S]*?HIDDEN DEPLOYMENT<\/div><\/button>/.test(T.pano.el('deploy-states-content').innerHTML), 'Croc Man: HIDDEN DEPLOYMENT dal motore, con l icona a sinistra sulla stessa riga');
+});
+
+sezione('39. Gli stati di schieramento tutti dal motore (M.opzioniSchieramento, MOTORE 2026-10-27.9)', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g, M = N.MotoreN5;
+    const pagina = () => String(T.nomadi.el('deploy-states-content').innerHTML);
+    // RISCRITTO il 27 ottobre sera (icona a sinistra della scritta). Prima: il
+    // testo era il contenuto del tasto, al piu` con un <img> davanti. Ora le
+    // voci con segnalino hanno <div class="voce-con-icona"><img ...>TESTO</div>:
+    // il testo e` quello che chiude il tasto.
+    const voci = () => [...pagina().matchAll(/<button class="huge-btn tasto-opzione opzione-schieramento( attivo)?" data-stato="([A-Z0-9_]+)"( disabled| onclick="[^"]*")>([\s\S]*?)<\/button>/g)]
+        .map(x => ({ stato: x[2], acceso: !!x[1], spento: x[3] === ' disabled', testo: (x[4].match(/([^<>]*)(?:<\/div>)?$/) || ['', ''])[1] }));
+    const prova = (u) => { N.roster = [u]; N.apriDeployStati(0); return voci(); };
+    const tr = (p, a) => truppa(p, a);
+    // CAMO: l'etichetta del motore, MOD compreso; NORMALE resta prima.
+    const zero = tr(profilo(T, /^Zero \(Minelayer\)/), { id: 'n1', alias: 'Zero' });
+    const vz = prova(zero), attese = M.opzioniSchieramento(zero);
+    ok(J(vz.map(v => [v.stato, v.testo])) === J(attese.map(v => [v.stato, v.etichetta])), 'Zero: le voci e le etichette sono quelle del motore, nello stesso ordine (' + J(vz.map(v => v.testo)) + ')');
+    ok(/SEGNALINO CAMO \(-3\)/.test(vz[0] && vz[0].testo), 'il MOD del Mimetismo lo mette il motore nell etichetta (' + (vz[0] && vz[0].testo) + ')');
+    ok(pagina().indexOf("setDeployState(0, 'NORMAL')") < pagina().indexOf('opzione-schieramento'), 'NORMALE resta nostro, prima delle voci del motore');
+    // acceso: anche con i deployState vecchi CAMO_x.
+    zero.deployState = 'CAMO_2';
+    const va = prova(zero).find(v => v.stato === 'CAMO');
+    ok(va && va.acceso && !/tasto-opzione attivo" onclick="window\.setDeployState\(0, 'NORMAL'\)/.test(pagina()), 'deployState CAMO_2: la voce CAMO e` accesa, NORMALE no');
+    // IMP, FOXHOLE, SEED: nessun profilo dei due database li ha; truppe di prova.
+    const sint = (sk) => ({ id: 'z', nome: 'Prova', alias: 'Prova', tipo: 'LI', skills: sk, equip: '', weapon: 'Combi Rifle', states: {}, deployState: 'NORMAL', state: 'ACTIVE', combatGroup: 1 });
+    ok(J(prova(sint('Impersonation-2')).map(v => v.stato + ':' + v.testo)) === J(['IMP_2:IMPERSONATION (IMP-2)']), 'Impersonation-2: IMPERSONATION (IMP-2), stato IMP_2');
+    ok(J(prova(sint('Sapper')).map(v => v.stato)) === J(['FOXHOLE']) && J(prova(sint('Transmutation (Hatching)')).map(v => v.stato)) === J(['SEED']), 'Sapper: FOXHOLE; Transmutation (Hatching): SEED');
+    const imp = sint('Impersonation-2'); imp.deployState = 'IMP_2';
+    ok(prova(imp)[0].acceso, 'IMP_2: la voce e` accesa');
+    // Il Marker delle liste vecchie: CAMO anche senza la skill.
+    ok(J(prova(Object.assign(sint(''), { tipo: 'MARKER' })).map(v => v.stato)) === J(['CAMO']), 'tipo MARKER senza skill: la voce CAMO c e (M.puoEntrareInCamo)');
+    ok(prova(sint('')).length === 0, 'CONTROPROVA: senza skill, nessuna voce oltre NORMALE');
+    // Camouflage (1 Use) consumato.
+    const moran = tr(profilo(T, /^Moran/), { id: 'n2', alias: 'Moran', camoUsato: true });
+    const vm1 = prova(moran).find(v => v.stato === 'CAMO');
+    ok(vm1 && vm1.spento && !vm1.acceso && pagina().indexOf('<div class="nota-opzione">' + M.opzioniSchieramento(moran)[0].nota + '</div>') >= 0, 'Moran col CAMO gia` usato, fuori dal CAMO: voce spenta, con la nota del motore (F07)');
+    moran.deployState = 'CAMO';
+    const vm2 = prova(moran).find(v => v.stato === 'CAMO');
+    ok(vm2 && vm2.acceso && !vm2.spento, 'ancora in CAMO: accesa e toccabile');
+    ok(!/già consumato: niente più stato CAMO/.test(pagina()), 'e la nota scritta da noi non c e piu`: la dice il motore');
+    // TIRO DI INFILTRAZIONE FALLITO subito sotto la voce CAMO.
+    const m3 = tr(profilo(T, /^Moran/), { id: 'n3', alias: 'Moran', deployState: 'CAMO', states: { camo: true } });
+    prova(m3);
+    // RISCRITTO il 27 ottobre sera: prima il tasto CAMO conteneva solo testo
+    // ([^<]*); ora ha il div voce-con-icona col segnalino. Si guarda che fra il
+    // tasto CAMO e quello del tiro fallito non ci siano altri tasti.
+    ok(/data-stato="CAMO"(?:(?!<button)[\s\S])*?<\/button>\s*<button class="tasto-uscita"[^>]*infiltrazioneFallita\(0\)/.test(pagina()), 'Moran in CAMO: TIRO DI INFILTRAZIONE FALLITO subito sotto la voce CAMO');
+    // Il tocco.
+    zero.deployState = 'NORMAL'; prova(zero);
+    vmTocco(T.nomadi, (pagina().match(/data-stato="CAMO" onclick="([^"]*)"/) || [])[1] || 'void 0');
+    ok(N.roster[0].deployState === 'CAMO' && N.roster[0].states.camo === true, 'toccata la voce: deployState CAMO, states.camo (' + N.roster[0].deployState + ')');
+    // La nota e` testo: si scappa.
+    const vera = M.opzioniSchieramento;
+    // RISCRITTO il 27 ottobre sera: la nota resta sotto il tasto solo per una
+    // voce spenta (le altre vanno nella ⓘ); prima la voce di prova era
+    // disponibile: true, ora e` disponibile: false.
+    M.opzioniSchieramento = () => [{ stato: 'AD', etichetta: 'A<b>', nota: 'n <i>x</i> & y', disponibile: false, acceso: false }];
+    prova(zero);
+    M.opzioniSchieramento = vera;
+    ok(/A&lt;b&gt;<\/button>/.test(pagina()) && /<div class="nota-opzione">n &lt;i&gt;x&lt;\/i&gt; &amp; y<\/div>/.test(pagina()), 'etichetta e nota sono testo: < e & arrivano scappati');
+    // Non restano le ricerche di parole.
+    const rm = fs.readFileSync(DIR + 'roster_manager.js', 'utf8');
+    const corpo = (rm.match(/window\.apriDeployStati = [\s\S]*?\n\};/) || [''])[0];
+    ok(corpo && !/skills\.includes|testoMimetismo/.test(corpo), 'in apriDeployStati non ci sono piu` skills.includes ne` testoMimetismo');
+});
+
+sezione('40. Collaudo grafico, secondo giro (27 ottobre sera): A03, A05, B10/F01, C03/G02', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g;
+    // A03: matita e X a 44 px.
+    N.roster = [truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Uno' })]; N.renderRoster();
+    const lista = String(T.nomadi.el('localRoster').innerHTML);
+    ok((lista.match(/<button type="button" class="tasto-riga-lista[^"]*"/g) || []).length === 2 && /rinominaUnita\(0\)/.test(lista) && /removeUnit\(0\)/.test(lista), 'A03: matita e X della lista sono tasti tasto-riga-lista');
+    ok(/\.tasto-riga-lista \{[^}]*min-width: 44px; min-height: 44px;/.test(stileApp()), 'grandi almeno 44 x 44 px');
+    // A05: le righe ambigue.
+    T.nomadi.el('army-import-text').value = 'GROUP 1\nALGUACIL Combi Rifle / MediKit, Pistol, CC Weapon. (0 | 14)'; N.roster = []; N.importaDaTesto();
+    const amb = String(T.nomadi.el('import-ambigue').innerHTML);
+    ok(/<button type="button" class="scelta-ambigua" onclick="window\.scegliRigaAmbigua\(0, /.test(amb) && /class="scelta-ambigua salta"/.test(amb) && !/btn-status/.test(amb), 'A05: le scelte delle righe ambigue sono scelte (scelta-ambigua), non tasti rossi');
+    ok(/\.scelta-ambigua \{[^}]*background: #222; color: #fff; border: 2px solid #555;/.test(stileApp()), 'grigie come le altre scelte');
+    // B10, F01: i titoli nel colore della fazione.
+    const m = markupApp();
+    ok(/<h1>CONNESSIONE STABILITA<\/h1>/.test(m) && /<h1 id="states-header">STATI UNITÀ<\/h1>/.test(m) && !/<h1[^>]*#00ffff/.test(m), 'B10, F01: CONNESSIONE STABILITA e STATI UNITA` senza l azzurro in linea');
+    // C03, G02: le etichette nella fascia bassa, prima del soprannome.
+    const zond = truppa(profilo(T, /^Reaktion Zond/), { id: 'n2', alias: 'Zond', states: { suppressive: true } });
+    const spek = truppa(profilo(T, /^Spektr/), { id: 'n3', alias: 'Ombra', deployState: 'HIDDEN', states: { hidden: true } });
+    N.roster = [zond, spek]; N.currentGroup = 1; N.isCoordinated = false; N.selectedCoordinatedUnits = []; N.aggiornaGraficaRoster();
+    const righe = String(T.nomadi.el('unit-buttons-container').innerHTML).split(/(?=<button)/).filter(r => /riga-unita/.test(r));
+    const nome = (r) => (r.match(/<div class="rup-nome">([\s\S]*?)<\/div>/) || ['', ''])[1];
+    ok(/ATTIVARLA ANNULLA LA SOPPRESSIONE/.test(righe[0]) && !/ATTIVARLA/.test(nome(righe[0])), 'C03: l avviso della Soppressione non e` piu` nel nome (che finiva coi puntini), e` nella fascia bassa');
+    // RISCRITTO il 27 ottobre sera (Paolo: «togli la scritta HIDDEN e metti il
+    // token in grande a destra»). Prima: l etichetta HIDDEN in rup-etichette,
+    // prima del soprannome. Ora non c e nessuna etichetta: il segnalino sta
+    // fra le icone degli stati, e nome e fascia bassa restano puliti.
+    ok(!/etichetta-marker/.test(righe[1]) && !/HIDDEN/.test(nome(righe[1])), 'G02: niente etichetta HIDDEN, ne` nel nome ne` altrove');
+    ok(!/rup-etichette/.test(righe[1]) && /<div class="rup-icone"><img class="icona-segnalino-hidden"/.test(righe[1]), 'il segnalino e` fra le icone, la fascia bassa non ha etichette');
+    const capo = String(N.rigaUnitaConFoto(truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n4', alias: 'Capo', states: { fireteam: 'A', isFireteamLeader: true } }), {}));
+    ok(!/TEAM A/.test(nome(capo)) && /rup-etichette[\s\S]*TEAM A/.test(capo), 'il segno del Fireteam lo stesso: fuori dal nome');
+});
+
+sezione('41. Collaudo grafico, terzo giro (27 ottobre sera): larghezza degli ARO, un solo INDIETRO in HoloMask', () => {
+    const m = markupApp();
+    const conPadding = ['selection', 'action', 'weapon', 'target', 'modifiers'].filter(x => new RegExp('<div id="step-aro-' + x + '" class="step-container" style="[^"]*padding').test(m));
+    ok(conPadding.length === 0 && /<div id="step-aro-selection" class="step-container">/.test(m), 'gli step degli ARO non hanno piu` padding in linea: le righe hanno la larghezza degli altri elenchi (' + J(conPadding) + ')');
+    ok(/<div id="step-states" class="step-container">/.test(m), 'nemmeno la pagina degli stati (step-states): stessa larghezza degli altri step');
+    const T = creaTavolo(DIR); const N = T.nomadi.g;
+    const bashi = truppa(profilo(T, /^Bashi Bazouk/), { id: 'n1', alias: 'Bashi' });
+    N.roster = [bashi];
+    N.apriDeployStati(0);
+    const passo = () => T.nomadi.el('indietro-deploy-stati').style.display;
+    ok(/<button id="indietro-deploy-stati" class="tasto-uscita"/.test(m) && passo() === '', 'pagina degli stati: l INDIETRO dello step si vede');
+    N.apriSceltaHolomask(0);
+    const pag = String(T.nomadi.el('deploy-states-content').innerHTML);
+    ok(passo() === 'none' && (pag.match(/class="tasto-uscita"[^>]*>INDIETRO</g) || []).length === 1, 'scelta HoloMask: un INDIETRO solo, quello della scelta; quello dello step e` nascosto (B07)');
+    const k = (N._gruppiHolomask || []).findIndex(g => g.varianti.length > 1);
+    N.apriVariantiHolomask(0, k);
+    ok(passo() === 'none', 'anche nel secondo passo (opzioni d arma)');
+    N.apriDeployStati(0);
+    ok(passo() === '', 'tornati alla pagina degli stati, l INDIETRO dello step torna');
+});
+
+sezione('42. Pulizia dell interfaccia (Paolo, 27 ottobre sera): la ⓘ per schermata, simboli, colori, gittata', () => {
+    const m = markupApp(), st = stileApp();
+    // --- simboli tolti ---
+    ok(/onclick="window\.confermaSelezioneAro\(\)">AVANTI<\/button>/.test(m) && />PASSA \(NESSUN ARO\)<\/button>/.test(m), 'AVANTI e PASSA (NESSUN ARO) senza freccia e croce');
+    ok(/id="btn-conferma-aro"[^>]*>CONFERMA E PROCEDI<\/button>/.test(m), 'CONFERMA E PROCEDI senza il simbolo davanti');
+    // --- sfondo dei tasti della fazione ---
+    ok(/--tasto-sfondo:\s*#1a0000/.test(st) && /--tasto-sfondo:\s*#002244/.test(st) && /\.huge-btn \{[^}]*background: var\(--tasto-sfondo\)/.test(st),
+       'i tasti hanno lo sfondo della fazione: rossiccio per i Nomadi, azzurrino per PanOceania');
+    ok(/style="background:var\(--tasto-forte\);[^"]*"[^>]*onclick="window\.apriSchieramento\(\)">VAI ALLO SCHIERAMENTO/.test(m) && /--tasto-forte:\s*#003a66/.test(st), 'VAI ALLO SCHIERAMENTO col colore forte della fazione (azzurro per PanOceania)');
+    // --- la ⓘ ---
+    // Il tasto si riallinea dopo ogni tocco, non con un timer: un secondo
+    // setInterval rimpiazzava, nei banchi che ne tengono uno, il ciclo di
+    // ascolto di motore_core (test_giro_da_selectaction: il reattivo non
+    // riceveva piu` l Ordine).
+    // RISCRITTO il 28 ottobre: prima l ascoltatore si chiamava riallinea
+    // (locale); ora e` window.riallineaNote, che ridisegna anche le note
+    // sotto i tasti.
+    ok(!/setInterval\(/.test(paginaApp().replace(/\/\/.*$/gm, '')) && /addEventListener\('click', window\.riallineaNote, true\)/.test(paginaApp()), 'il tasto ⓘ si riallinea dopo ogni tocco, senza un setInterval in app.html');
+    ok(/<button id="tasto-info"[^>]*onclick="window\.apriInfo\(\)"/.test(m) && /<div id="pannello-info"/.test(m) && /#tasto-info\s*\{[^}]*position:\s*fixed/.test(st), 'c e il tasto ⓘ (fisso in alto) e il pannello delle spiegazioni');
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+    T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Muove' })], [truppa(profilo(T, /^Yuan Yuan \(Rifle/), { id: 'p1', alias: 'Rea' })], 'NOMADI');
+    const tasto = () => (T.pano.el('tasto-info').style || {}).display;
+    P.segnaStepCorrente('step-prova'); P.azzeraInfo('step-prova');
+    ok(tasto() === 'none', 'schermata senza spiegazioni: il tasto ⓘ non si vede');
+    P.aggiungiInfo('step-prova', 'Titolo <x>', 'testo & altro');
+    ok(tasto() === 'flex', 'con una spiegazione depositata il tasto si vede');
+    P.apriInfo();
+    const pan = String(T.pano.el('pannello-info').innerHTML);
+    // RISCRITTO il 28 ottobre (Paolo: nella ⓘ il titolo e` il nome del tasto,
+    // in maiuscolo, sopra la nota). Prima: <b>Titolo</b>: testo.
+    ok(/<span class="titolo-tasto">TITOLO &lt;X&gt;<\/span>testo &amp; altro/.test(pan) && /onclick="window\.chiudiInfo\(\)">CHIUDI</.test(pan) && T.pano.el('pannello-info').style.display === 'block', 'il tocco apre il pannello: la voce (scappata) e CHIUDI');
+    P.chiudiInfo();
+    ok(T.pano.el('pannello-info').style.display === 'none', 'CHIUDI lo spegne');
+    // --- ARO: titolo, reazioni, gittata ---
+    T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
+    P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro();
+    ok(!/\(ARO\)/.test(T.pano.el('aro-header-action').innerHTML) && /REA|YUAN/.test(T.pano.el('aro-header-action').innerHTML.toUpperCase()), 'il titolo della reazione e` il nome della truppa, senza «(ARO)» (' + T.pano.el('aro-header-action').innerHTML + ')');
+    ok(P._stepCorrente === 'step-aro-action', 'la ⓘ sa che la schermata e` la scelta della reazione');
+    P.selezionaAzioneAro('BS_ATTACK');
+    P.selezionaArmaAro('Rifle'); P.selezionaBersaglioAro('Muove');
+    const mod = String(T.pano.el('aro-modifiers-content').innerHTML);
+    const numeri = [...mod.matchAll(/<span class="confine-gittata"[^>]*>([^<]*)<\/span>/g)].map(x => x[1]);
+    const bande = (mod.match(/class="range-seg seg-[1-4]/g) || []).length;
+    ok(numeri.length === bande + 1 && numeri[0] === '0' && numeri.every(x => /^\d+$/.test(x)), 'barra della gittata: un numero solo per confine (0, 8, 16...), non «0-8»; uno in piu` delle bande (' + J(numeri) + ', ' + bande + ' bande)');
+    ok(/<span class="confine-gittata" style="position:absolute; left:calc\(\(100% - 48px\) \* 1 \/ \d+\)/.test(mod) && /class="range-seg seg-fuori[^"]*"[^>]*>FUORI</.test(mod), 'i numeri stanno sul cambio di colore (posizione calcolata), e in coda resta FUORI largo 48 px');
+    ok(/<button type="button" class="huge-btn tasto-lof-aro"[^>]*min-height:90px; font-size:20px; flex-direction:column;[^>]*><img class="icona-interruttore"[^>]*height:44px/.test(mod), 'Linea di Tiro: l icona (44 px) sopra la scritta, tasto da 90 px');
+    ok(/<button type="button" class="huge-btn tasto-cover-aro"[^>]*><img class="icona-interruttore"[^>]*height:44px/.test(mod), 'Copertura: l icona alla stessa misura');
+    P.toggleAroCover();
+    ok(!/-3 al tuo tiro/.test(String(T.pano.el('aro-modifiers-content').innerHTML)) && P.vociInfo('step-aro-modifiers').some(v => /-3 al tuo tiro/.test(v.testo)), 'la spiegazione della Copertura e` nella ⓘ, non a schermo');
+    // --- cambio di stato: niente riquadro giallo, la voce nella ⓘ ---
+    P.ultimoCambioStato = { unita: 'Rea', prima: 'CAMO', dopo: 'NORMAL', azione: 'Attacco BS', note: ['Rivelata.'], cambiato: true };
+    const vc = P.voceCambioStato();
+    P.aggiornaRiquadroCambioStato(null);
+    const box = T.pano.el('riquadro-cambio-stato');
+    ok(!box || !box.style || box.style.display === 'none', 'il riquadro giallo del cambio di stato e` spento');
+    ok(vc && /Rea: Marker CAMO → Modello sul tavolo \(Attacco BS\)/.test(vc.titolo) && vc.testo === 'Rivelata.' && P.vociInfo('step-aro-modifiers')[0].titolo === vc.titolo, 'il cambio di stato e` la prima voce della ⓘ (' + J(vc && vc.titolo) + ')');
+    ok(!P.vociInfo('battle').some(v => v.titolo === vc.titolo), 'CONTROPROVA: non nella schermata dell elenco (battle)');
+});
+
+sezione('43. Le opzioni delle note (Paolo, 28 ottobre): dove (ⓘ o sotto i tasti) e quali tipi', () => {
+    // --- la pagina della fazione: il pannello e cosa salva ---
+    const pf = fs.readFileSync(DIR + 'scegli_fazione.html', 'utf8');
+    ok(/<button class="opzioni" onclick="apriOpzioniNote\(\)">OPZIONI DELLE NOTE<\/button>/.test(pf) && /<div id="pannello-note"/.test(pf), 'nella pagina della fazione c e il tasto OPZIONI DELLE NOTE e il suo pannello');
+    const mem = {}, nodi = {};
+    const nodo = (id) => nodi[id] = nodi[id] || { id, innerHTML: '', style: {} };
+    const gF = { localStorage: { getItem: k => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); } }, location: { replace() {} },
+                 document: { getElementById: nodo }, JSON };
+    vm.runInNewContext((pf.match(/<script>([\s\S]*?)<\/script>/) || ['', ''])[1], gF);
+    gF.apriOpzioniNote();
+    const pan = () => nodo('pannello-note').innerHTML;
+    ok(nodo('pannello-note').style.display === 'block' && /<button type="button" class="attivo" data-dove="info"/.test(pan()) && (pan().match(/class="tipo acceso/g) || []).length === 4,
+       'al primo avvio: nella ⓘ, i quattro tipi accesi');
+    gF.sceltaDove('tasti'); gF.sceltaTipo('mod'); gF.sceltaTipo('stato');
+    const salvato = JSON.parse(mem.opzioni_note || '{}');
+    ok(salvato.dove === 'tasti' && salvato.tipi.mod === false && salvato.tipi.stato === true && salvato.tipi.regole === true && salvato.tipi.nonpuo === true,
+       'scelti SOTTO I TASTI e spenti i MOD: salvato in opzioni_note; i cambi di stato non si spengono (' + mem.opzioni_note + ')');
+    ok(/class="attivo" data-dove="tasti"/.test(pan()) && /class="tipo fisso" data-tipo="stato"/.test(pan()) === false && /class="tipo acceso fisso" data-tipo="stato"/.test(pan()) && /class="tipo" data-tipo="mod"/.test(pan()),
+       'il pannello si ridisegna: SOTTO I TASTI acceso, MOD spento, CAMBI DI STATO acceso e fisso');
+    gF.chiudiOpzioniNote();
+    ok(nodo('pannello-note').style.display === 'none', 'CHIUDI lo spegne');
+
+    // --- l'app legge le stesse opzioni ---
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+    ok(J(P.opzioniNote()) === J({ dove: 'info', tipi: { stato: true, nonpuo: true, mod: true, regole: true } }), 'app senza scelte: nella ⓘ, tutti i tipi (' + J(P.opzioniNote()) + ')');
+    P.localStorage.setItem('opzioni_note', JSON.stringify({ dove: 'tasti', tipi: { stato: false, mod: false } }));
+    ok(J(P.opzioniNote()) === J({ dove: 'tasti', tipi: { stato: true, nonpuo: true, mod: false, regole: true } }), 'le legge da opzioni_note; i cambi di stato restano accesi anche se il salvataggio dice no');
+    P.localStorage.setItem('opzioni_note', '{rotto');
+    ok(P.opzioniNote().dove === 'info', 'un salvataggio rotto vale come nessuna scelta');
+
+    // --- tipi e filtro ---
+    P.localStorage.setItem('opzioni_note', JSON.stringify({ dove: 'info', tipi: { mod: false } }));
+    P.segnaStepCorrente('step-prova'); P.azzeraInfo('step-prova');
+    P.aggiungiInfo('step-prova', 'Copertura', '-3', { tipo: 'mod', tasto: 'copertura' });
+    P.aggiungiInfo('step-prova', 'Senza tipo', 'x');
+    const nErr = P.errori.length;
+    P.aggiungiInfo('step-prova', 'Strana', 'y', { tipo: 'boh' });
+    const voci = P.vociInfo('step-prova');
+    ok(J(voci.map(v => v.titolo + '/' + v.tipo)) === J(['Senza tipo/regole', 'Strana/regole']), 'MOD spenti: la Copertura non c e; senza tipo vale regole (' + J(voci.map(v => v.titolo)) + ')');
+    ok(P.errori.length === nErr + 1 && /tipo di nota sconosciuto "boh"/.test(P.errori[P.errori.length - 1]), 'un tipo sconosciuto lo dice in console e vale regole');
+    P.ultimoCambioStato = { unita: 'Rea', prima: 'CAMO', dopo: 'NORMAL', azione: 'Attacco BS', note: [], cambiato: true };
+    P.localStorage.setItem('opzioni_note', JSON.stringify({ dove: 'info', tipi: { stato: false, nonpuo: false, mod: false, regole: false } }));
+    ok(J(P.vociInfo('step-prova').map(v => v.tipo)) === J(['stato']), 'tutto spento: resta solo il cambio di stato');
+    P.ultimoCambioStato = null;
+
+    // --- dove: con le note sotto i tasti la ⓘ non serve ---
+    P.localStorage.setItem('opzioni_note', JSON.stringify({ dove: 'info' }));
+    P.aggiornaTastoInfo();
+    ok(T.pano.el('tasto-info').style.display === 'flex', 'nella ⓘ: con delle note il tasto ⓘ si vede');
+    P.localStorage.setItem('opzioni_note', JSON.stringify({ dove: 'tasti' }));
+    P.aggiornaTastoInfo();
+    ok(T.pano.el('tasto-info').style.display === 'none', 'sotto i tasti: il tasto ⓘ non c e (le note sono a schermo)');
+
+    // --- abbinamento delle note ai tasti ---
+    const ab = P.abbinaNote([
+        { titolo: 'Copertura', testo: 'a', tasto: 'copertura' },
+        { titolo: 'Attacco in Corpo a Corpo', testo: 'b' },
+        { titolo: 'Hacking non disponibile', testo: 'c' },
+        { titolo: 'Reset', testo: 'd', tasto: 'reazione-RESET' }
+    ], [{ chiave: '', testo: 'ATTACCO IN  CORPO\nA CORPO' }, { chiave: 'copertura', testo: 'IN COPERTURA' }, { chiave: 'reazione-RESET', testo: 'RESET' }]);
+    ok(J(ab.perTasto.map(x => x.map(v => v.testo))) === J([['b'], ['a'], ['d']]) && J(ab.schermata.map(v => v.testo)) === J(['c']),
+       'ogni nota al suo tasto: per data-nota o per scritta uguale al titolo; le altre sono della schermata (' + J(ab) .slice(0, 80) + '…)');
+
+    // --- la ⓘ: titolo = nome del tasto, a gruppi, nell ordine dei tasti ---
+    P.localStorage.setItem('opzioni_note', JSON.stringify({ dove: 'info' }));
+    P.azzeraInfo('step-prova');
+    P.aggiungiInfo('step-prova', 'Reset', 'nota reset', { tasto: 'reazione-RESET' });
+    P.aggiungiInfo('step-prova', 'Hacking non disponibile', 'non e` un Hacker', { tipo: 'nonpuo' });
+    P.aggiungiInfo('step-prova', 'Attacco in Corpo a Corpo', 'contatto');
+    const box = T.pano.el('step-prova');
+    box.querySelectorAll = () => [{ dataset: {}, innerText: 'ATTACCO IN CORPO A CORPO' }, { dataset: { nota: 'reazione-RESET' }, innerText: 'RESET' }];
+    P.apriInfo();
+    const h = String(T.pano.el('pannello-info').innerHTML);
+    ok(/<div class="info-gruppo">QUESTA SCHERMATA<\/div><div class="info-voce"><span class="titolo-tasto">HACKING NON DISPONIBILE<\/span>non e` un Hacker<\/div><div class="info-gruppo">I TASTI<\/div><div class="info-voce"><span class="titolo-tasto">ATTACCO IN CORPO A CORPO<\/span>contatto<\/div><div class="info-voce"><span class="titolo-tasto">RESET<\/span>nota reset/.test(h),
+       'la ⓘ: prima le note della schermata, poi quelle dei tasti nell ordine dei tasti, col nome del tasto per titolo');
+    box.querySelectorAll = () => [];
+    P.apriInfo();
+    ok(!/info-gruppo/.test(String(T.pano.el('pannello-info').innerHTML)), 'CONTROPROVA: senza tasti abbinati niente gruppi, solo le voci');
+    P.chiudiInfo();
+
+    // --- chi deposita dice tipo e tasto ---
+    P.localStorage.setItem('opzioni_note', JSON.stringify({ dove: 'info' }));
+    T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Muove' })], [truppa(profilo(T, /^Yuan Yuan \(Rifle/), { id: 'p1', alias: 'Rea' })], 'NOMADI');
+    T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
+    P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro();
+    const az = String(T.pano.el('aro-action-list').innerHTML);
+    const vA = P.vociInfo('step-aro-action');
+    const conTasto = vA.filter(v => v.tasto);
+    ok(conTasto.length >= 1 && conTasto.every(v => /^reazione-/.test(v.tasto) && az.indexOf('data-nota="' + v.tasto + '"') >= 0 && v.tipo === 'regole'),
+       'le note delle reazioni portano il data-nota del loro tasto (' + J(conTasto.map(v => v.tasto)) + ')');
+    ok(vA.filter(v => / non disponibile$/.test(v.titolo)).every(v => v.tipo === 'nonpuo'), 'le reazioni non disponibili sono «perche` non si puo`»');
+    P.selezionaAzioneAro('BS_ATTACK'); P.selezionaArmaAro('Rifle'); P.selezionaBersaglioAro('Muove');
+    if (!P.aroCurrentConfig.cover) P.toggleAroCover();
+    const cop = P.vociInfo('step-aro-modifiers').find(v => v.titolo === 'Copertura') || {};
+    ok(cop.tipo === 'mod' && cop.tasto === 'copertura' && /class="huge-btn tasto-cover-aro" data-nota="copertura"/.test(T.pano.el('aro-modifiers-content').innerHTML), 'la Copertura e` un MOD e va sotto il suo tasto (data-nota="copertura")');
+    P.localStorage.setItem('opzioni_note', JSON.stringify({ dove: 'info', tipi: { mod: false } }));
+    ok(!P.vociInfo('step-aro-modifiers').some(v => v.titolo === 'Copertura'), 'MOD spenti: la nota della Copertura sparisce');
+    P.localStorage.setItem('opzioni_note', JSON.stringify({ dove: 'info' }));
+    // la pagina degli stati: la nota va al tasto con la stessa scritta
+    const spector = truppa(profilo(T, /^Spector \(Parachutist/), { id: 'n7', alias: 'Spec' });
+    N.roster = [spector]; N.apriDeployStati(0);
+    const vS = N.vociInfo('step-deploy-states');
+    ok(vS.length >= 1 && vS.every(v => v.tipo === 'regole') && N.abbinaNote(vS, [{ chiave: '', testo: 'SCHIERAMENTO AEREO' }]).perTasto[0].length >= 1,
+       'schieramento: le note sono regole e si abbinano al tasto con la stessa scritta (' + J(vS.map(v => v.titolo)) + ')');
+});
+
+sezione('44. ARO: la barra della gittata e` quella del motore (M.barraGittata, MOTORE 2026-10-28.1)', () => {
+    const aro = fs.readFileSync(DIR + 'logica_aro.js', 'utf8');
+    ok(!/confine-gittata/.test(aro) && /M\.barraGittata\(arma\.bands/.test(aro), 'logica_aro non ha piu` una sua copia della barra: chiama M.barraGittata');
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+    T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Muove' })], [truppa(profilo(T, /^Yuan Yuan \(Rifle/), { id: 'p1', alias: 'Rea' })], 'NOMADI');
+    T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
+    P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro();
+    P.selezionaAzioneAro('BS_ATTACK'); P.selezionaArmaAro('Rifle'); P.selezionaBersaglioAro('Muove');
+    const h = String(T.pano.el('aro-modifiers-content').innerHTML);
+    const cfg = P.aroCurrentConfig;
+    const attesa = P.MotoreN5.barraGittata(P.MotoreN5.profiloArma(cfg.arma).bands, { indice: cfg.rangeIndex, tocco: (i) => `window.setAroRange(${i})`, fuori: "window.toggleAroRequisito('gittata')", fuoriAttivo: !!cfg.fuoriGittata });
+    ok(attesa.length > 0 && h.indexOf(attesa) >= 0, 'nella pagina dei modificatori c e esattamente la barra del motore, col tocco sulle bande e su FUORI');
+    P.toggleAroRequisito('gittata');
+    ok(/class="range-seg seg-fuori active"/.test(String(T.pano.el('aro-modifiers-content').innerHTML)) && P.aroCurrentConfig.fuoriGittata === true, 'toccato FUORI: acceso, e la reazione e` fuori gittata');
+});
+
+sezione('45. Le note di logica_aro e dello schieramento passano da M.nota (proposta di MOTORE, 28 ottobre)', () => {
+    const aro = fs.readFileSync(DIR + 'logica_aro.js', 'utf8'), ros = fs.readFileSync(DIR + 'roster_manager.js', 'utf8');
+    ok(!/window\.aggiungiInfo\(/.test(aro) && !/window\.azzeraInfo\(/.test(aro) && /M\.nota\(idStep, titolo, testo, extra\)/.test(aro) && /M\.azzeraNote\(idStep\)/.test(aro),
+       'logica_aro deposita con M.nota e azzera con M.azzeraNote, non piu` con aggiungiInfo/azzeraInfo');
+    ok(!/window\.aggiungiInfo\(/.test(ros) && !/window\.azzeraInfo\(/.test(ros) && /M\.nota\('step-deploy-states'/.test(ros), 'roster_manager lo stesso (pagina degli stati di schieramento)');
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+    T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Muove' })], [truppa(profilo(T, /^Yuan Yuan \(Rifle/), { id: 'p1', alias: 'Rea' })], 'NOMADI');
+    T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
+    const M = P.MotoreN5, vera = M.nota, chiamate = [];
+    M.nota = function () { chiamate.push([].slice.call(arguments, 0, 2)); return vera.apply(this, arguments); };
+    P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro();
+    M.nota = vera;
+    ok(chiamate.length > 0 && chiamate.every(c => c[0] === 'step-aro-action') && P.vociInfo('step-aro-action').length >= chiamate.length,
+       'le note della scelta della reazione arrivano da M.nota e finiscono nella ⓘ (' + chiamate.length + ')');
+    // senza la pagina (aggiungiInfo assente) la nota non si perde: window.INFO
+    const ai = P.aggiungiInfo, az = P.azzeraInfo; P.aggiungiInfo = undefined; P.azzeraInfo = undefined;
+    const nErr = P.errori.length;
+    P.avviaCicloAroUnita();
+    P.aggiungiInfo = ai; P.azzeraInfo = az;
+    ok((P.INFO['step-aro-action'] || []).some(v => v.tipo === 'regole' && v.tasto === 'reazione-CC_ATTACK') && !P.errori.slice(nErr).some(e => /spiegazione persa/.test(e)),
+       'senza aggiungiInfo le note restano in window.INFO, con tipo e tasto, e nessun «spiegazione persa»');
+});
+
+sezione('46. D09: la schermata IN ATTESA DI ARO dice contro chi (M.rigaAttesaAro, MOTORE 2026-10-28.3)', () => {
+    ok(/<p style="color:#aaa;">Il nemico sta decidendo se e come reagire\.<\/p>\s*<!--[^>]*-->\s*<div id="wait-aro-bersagli"><\/div>/.test(markupApp()), 'sotto «Il nemico sta decidendo...» c e il contenitore wait-aro-bersagli');
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+    const f = profilo(T, /^Fusilier \(Combi/);
+    T.schiera([truppa(profilo(T, /^Intruder \(HMG/), { id: 'n1', alias: 'Spara' })], [truppa(f, { id: 'p1', alias: 'Uno' }), truppa(f, { id: 'p2', alias: 'Due' })], 'NOMADI');
+    const riga = () => testo(T.nomadi.el('wait-aro-bersagli').innerHTML);
+    T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Heavy Machine Gun');
+    N.toggleTargetSelection('p1'); N.toggleTargetSelection('p2'); N.confirmMultiAro(false);
+    ok(/^Bersagli: Uno, Due · Heavy Machine Gun$/.test(riga()) && /class="riga-attesa-aro"/.test(T.nomadi.el('wait-aro-bersagli').innerHTML), 'due bersagli: «Bersagli: Uno, Due · Heavy Machine Gun» (' + riga() + ')');
+    ok(T.nomadi.el('wait-aro-bersagli').innerHTML === N.MotoreN5.rigaAttesaAro(), 'la riga e` quella del motore, tale e quale');
+    N.tornaAlRadar(); T.giro();
+    ok(riga() === '', 'finito l Ordine, la riga si svuota');
+    // Targetless: il bersaglio e` un punto del tavolo
+    const T2 = creaTavolo(DIR); const N2 = T2.nomadi.g, P2 = T2.pano.g;
+    T2.schiera([truppa(profilo(T2, /^Alguacil \(Combi/), { id: 'n1', alias: 'Fante' })], [truppa(profilo(T2, /^Yuan Yuan \(Rifle/), { id: 'p1', alias: 'Fumo' })], 'PANOCEANIA');
+    T2.apriMenu(T2.pano, 0); P2.selectAction('ATTACCO BS', false); P2.declareAttackBS('Smoke Grenades');
+    const r2 = testo(T2.pano.el('wait-aro-bersagli').innerHTML);
+    ok(/^Bersaglio: un punto del tavolo \(nessuna truppa\) · Smoke Grenades$/.test(r2), 'arma Targetless: «Bersaglio: un punto del tavolo (nessuna truppa) · Smoke Grenades» (' + r2 + ')');
+    // senza la funzione del motore: riga vuota e lo si dice
+    const vera = P2.MotoreN5.rigaAttesaAro; P2.MotoreN5.rigaAttesaAro = undefined;
+    const nErr = P2.errori.length;
+    P2.confirmMultiAro(false);
+    P2.MotoreN5.rigaAttesaAro = vera;
+    ok(T2.pano.el('wait-aro-bersagli').innerHTML === '' && P2.errori.slice(nErr).some(e => /M\.rigaAttesaAro assente/.test(e)), 'CONTROPROVA: senza M.rigaAttesaAro la riga resta vuota e la console lo dice');
+});
+
+sezione('47. Colori per categoria dell Ordine (Paolo, 28 ottobre): menu e reazioni come le schede (M.coloreOrdine)', () => {
+    ok(!/ORDINE_DELLA_REAZIONE/.test(fs.readFileSync(DIR + 'logica_aro.js', 'utf8')), 'logica_aro non traduce piu` gli id delle reazioni: li usa la tabella del motore (28.5)');
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, M = N.MotoreN5;
+    T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Muove' })], [truppa(profilo(T, /^Yuan Yuan \(Rifle/), { id: 'p1', alias: 'Rea' })], 'NOMADI');
+    const menu = T.apriMenu(T.nomadi, 0);
+    const tasti = [...String(menu).matchAll(/<button class="huge-btn" style="[^"]*background:([^;]+); border-color:([^;]+);[^"]*"\s*onclick="window\.selectAction\('([^']+)'/g)].map(x => ({ id: x[3], col: x[1] + ' ' + x[2] }));
+    const giusti = tasti.filter(t => { const c = M.coloreOrdine(t.id); return t.col === c.sfondo + ' ' + c.bordo; });
+    ok(tasti.length >= 5 && giusti.length === tasti.length, 'menu degli Ordini: ogni tasto ha il colore della sua categoria nel motore (' + giusti.length + '/' + tasti.length + ')');
+    const cat = (id) => M.coloreOrdine(id).categoria;
+    ok(cat('MOVIMENTO') === 'movimento' && cat('ATTACCO BS') === 'breve' && tasti.some(t => t.id === 'MOVIMENTO') && tasti.some(t => t.id === 'ATTACCO BS')
+       && tasti.find(t => t.id === 'MOVIMENTO').col !== tasti.find(t => t.id === 'ATTACCO BS').col, 'Movimento (movimento) e Attacco BS (breve) hanno colori diversi');
+    // un'azione che il motore non ha: colore di chi chiama, e lo si dice
+    const nErr = N.errori.length;
+    const h = N.creaBottoneAzione({ id: 'AZIONE_DI_PROVA', nome: 'Prova', desc: '' }, false, '#123456', '#654321');
+    ok(/background:#123456; border-color:#654321;/.test(h) && N.errori.slice(nErr).some(e => /M\.COLORI_ORDINE non ha "AZIONE_DI_PROVA"/.test(e)), 'CONTROPROVA: un azione fuori tabella tiene il colore passato e la console lo dice');
+    // se il motore cambia la categoria, il tasto la segue (Paolo pensa a Reset, Schivata e IDLE in blu)
+    // RISCRITTO il 28 ottobre (motore 28.5: la tabella ha gli id delle
+    // reazioni). Prima si spostava la voce SCHIVATA, che logica_aro traduceva
+    // da DODGE; ora si sposta DODGE, che logica_aro usa direttamente.
+    const PM = P.MotoreN5, prima = PM.COLORI_ORDINE.DODGE;   // chi reagisce e` PanOceania: il suo motore
+    PM.COLORI_ORDINE.DODGE = Object.assign({}, prima, { categoria: 'movimento' });
+    N.selectAction('MOVIMENTO', false); T.giro();
+    P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro();
+    const az = String(T.pano.el('aro-action-list').innerHTML);
+    const blu = P.MotoreN5.CATEGORIE_ORDINE.movimento;
+    const dodge = (az.match(/<button class="huge-btn tasto-reazione" style="background:([^;]+); border-color:([^;]+);" data-nota="reazione-DODGE"/) || []);
+    PM.COLORI_ORDINE.DODGE = prima;
+    ok(dodge[1] === blu.sfondo && dodge[2] === blu.bordo, 'se il motore mette la Schivata fra i movimenti, la reazione diventa blu da sola (' + dodge.slice(1).join(' ') + ')');
+});
+
+sezione('48. Il tasto ⓘ non copre i titoli lunghi (collaudo grafico 28 ottobre: GR-E08, E11, E25, E26, E36)', () => {
+    ok(/\.sotto-info \{ padding-left: 56px !important; padding-right: 56px !important;/.test(stileApp()), 'c e la classe sotto-info: margine interno di 56 px ai due lati (il tasto e` 44 px + 12)');
+    const T = creaTavolo(DIR); const N = T.nomadi.g;
+    // DOM finto: il tasto in alto a destra, tre titoli nello step visibile
+    const rett = (l, t, r, b) => () => ({ left: l, top: t, right: r, bottom: b });
+    const titolo = (nome, r) => { const cl = new Set(); return { nome, offsetParent: {}, getBoundingClientRect: r, classList: { add: (c) => cl.add(c), remove: (c) => cl.delete(c), has: (c) => cl.has(c) } }; };
+    const sotto = titolo('intestazione lunga', rett(12, 10, 378, 60));      // tocca il tasto
+    const basso = titolo('titolo piu` giu`', rett(12, 200, 378, 240));     // non lo tocca
+    const nascosto = Object.assign(titolo('nascosto', rett(12, 10, 378, 60)), { offsetParent: null });
+    const tasto = T.nomadi.el('tasto-info');
+    tasto.getBoundingClientRect = rett(334, 12, 378, 56);
+    N.segnaStepCorrente('step-prova48'); N.azzeraInfo('step-prova48'); N.aggiungiInfo('step-prova48', 'Prova', 'x');
+    T.nomadi.el('step-prova48').querySelectorAll = () => [sotto, basso, nascosto];
+    N.liberaSpazioInfo();
+    ok(tasto.style.display === 'flex' && sotto.classList.has('sotto-info') && !basso.classList.has('sotto-info') && !nascosto.classList.has('sotto-info'),
+       'col tasto visibile: solo il titolo che lo tocca prende sotto-info (non quello piu` in basso, non quello nascosto)');
+    N.localStorage.setItem('opzioni_note', JSON.stringify({ dove: 'tasti' }));
+    N.document.querySelectorAll = (sel) => sel === '.sotto-info' ? [sotto, basso, nascosto].filter(e => e.classList.has('sotto-info')) : [];
+    N.aggiornaTastoInfo();
+    ok(tasto.style.display === 'none' && !sotto.classList.has('sotto-info'), 'senza il tasto (note sotto i tasti) la classe si toglie');
+    const aro = fs.readFileSync(DIR + 'logica_aro.js', 'utf8');
+    ok(/`--\\u00a0\$\{String\(nome\)\.toUpperCase\(\)\}\\u00a0--`/.test(aro), 'testata dell ARO: i trattini attaccati al nome (spazio che non va a capo)');
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

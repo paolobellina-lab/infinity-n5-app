@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | ordine_rientro_camo.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.3 | ordine_rientro_camo.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎭 ENTRARE IN FORMA DI MARKER (N5) - ordine_rientro_camo.js
 // ------------------------------------------
@@ -47,7 +47,20 @@
         return window.MotoreN5;
     }
 
-    const COL = { bordo: '#66aa88', sfondo: '#18251f' };
+    // 28 ottobre (Paolo): il colore e` dell'ORDINE, non del modulo (M.COLORI_ORDINE nel
+    // motore: Movimenti blu, Abilita` Brevi verdi, Ordini Interi rossi). COL legge le
+    // tinte dell'Ordine in corso a ogni uso; 'RIENTRARE IN CAMO' e` quello di casa. Prima: { bordo: '#66aa88', sfondo: '#18251f' };.
+    const COL = (function () {
+        const ripiego = { bordo: '#66aa88', sfondo: '#18251f', riquadro: '#18251f', tenue: '#66aa88', testo: '#66aa88' };
+        const o = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) {
+            Object.defineProperty(o, k, { enumerable: true, get: function () {
+                const M = window.MotoreN5;
+                return (M && typeof M.colOrdine === 'function') ? M.colOrdine('RIENTRARE IN CAMO')[k] : ripiego[k];
+            } });
+        });
+        return o;
+    })();
 
     // Le due Abilita`. `ok` e` l'esito del motore che vuol dire "entra".
     // Tutto cio` che e` regola (chi puo`, le domande, l'esito) viene dalle
@@ -117,14 +130,16 @@
         if (window.mostraTitoloUnitaCorrente) window.mostraTitoloUnitaCorrente();
 
         const container = document.getElementById('targets-allocation-container');
+
+        window.MotoreN5.azzeraNote('step-modifiers');
         if (!container) return;
 
         const pre = A.puo(unita);
         if (!pre.puo) {
-            container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid #883333; padding:16px; border-radius:5px; text-align:center;">
-                <b style="color:#ff6666; font-size:18px;">🎭 ${A.titolo} NON DISPONIBILE</b>
-                <div style="color:#ccc; font-size:14px; margin-top:10px;">${pre.motivo}</div>
-                ${pre.blocchi.length > 1 ? `<div style="color:#888; font-size:12px; margin-top:8px;">` +
+            container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid var(--mn-errore-bordo,#883333); padding:16px; border-radius:5px; text-align:center;">
+                <b style="color:var(--mn-errore,#ff3333); font-size:var(--fs-m);">🎭 ${A.titolo} NON DISPONIBILE</b>
+                <div style="color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s); margin-top:10px;">${pre.motivo}</div>
+                ${pre.blocchi.length > 1 ? `<div style="color:var(--mn-spento,#888888); font-size:var(--fs-xs); margin-top:8px;">` +
                     pre.blocchi.slice(1).map(b => `• ${b}`).join('<br>') + `</div>` : ''}
             </div>`;
             window.aggiornaPulsanteRientroCamo('NON_DISPONIBILE');
@@ -145,50 +160,48 @@
             const r = R[d.id];
             // Il colore segue l'ESITO della risposta, non la parola: rosso se
             // vieta, arancio se porta a un Idle, verde se lascia passare.
-            const cattivo = (d.seBloccata === 'IDLE') ? 'background:#553300; border-color:#ffaa33;' : 'background:#440000; border-color:#ff3333;';
-            const buono = 'background:#004400; border-color:#00ff00;';
+            const cattivo = (d.seBloccata === 'IDLE') ? 'background:var(--mn-attenzione-fondo,#554400); border-color:var(--mn-acceso,#ffaa33);' : 'background:var(--mn-errore-fondo,#330000); border-color:var(--mn-errore,#ff3333);';
+            const buono = 'background:var(--mn-si-fondo,#004400); border-color:var(--mn-si,#00ff00);';
             const coloreSi = (d.rispostaBloccante === false) ? buono : cattivo;
             const coloreNo = (d.rispostaBloccante === false) ? cattivo : buono;
             return `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:14px; border-radius:5px; margin-bottom:10px;">
-                <div style="color:#fff; font-size:16px; margin-bottom:12px;">${d.testo}</div>
+                <div style="color:var(--mn-testo,#ffffff); font-size:var(--fs-m); margin-bottom:12px;">${d.testo}</div>
                 <div style="display:flex; gap:8px;">
-                    <button class="huge-btn" style="flex:1; min-height:50px; ${r === true ? coloreSi : 'background:#111;'}"
+                    <button class="huge-btn" style="flex:1; min-height:50px; ${r === true ? coloreSi : 'background:var(--mn-fondo-tasto,#111111);'}"
                         onclick="window.rispondiRientroCamo('${d.id}', true)">SÌ</button>
-                    <button class="huge-btn" style="flex:1; min-height:50px; ${r === false ? coloreNo : 'background:#111;'}"
+                    <button class="huge-btn" style="flex:1; min-height:50px; ${r === false ? coloreNo : 'background:var(--mn-fondo-tasto,#111111);'}"
                         onclick="window.rispondiRientroCamo('${d.id}', false)">NO</button>
                 </div>
             </div>`;
         };
 
         container.innerHTML = `
-            <h2 style="color:${COL.bordo}; text-align:center; margin-bottom:8px;">🎭 ${A.titolo}</h2>
-            <div style="color:#aaa; font-size:13px; text-align:center; margin-bottom:16px;">
-                Ordine Intero, nessun tiro. Il calcolatore non ha la mappa.</div>
+            ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `${A.titolo}`, nota: 'Ordine Intero, nessun tiro. Il calcolatore non ha la mappa.' })}
 
-            ${pre.unUso ? `<div style="margin-bottom:12px; padding:10px; background:#2a2410; border:1px solid #ccaa44; border-radius:4px; color:#eedd99; font-size:13px;">
+            ${pre.unUso ? `<div style="margin-bottom:12px; padding:10px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-acceso,#ffaa33); border-radius:4px; color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-s);">
                 ⚠️ Camouflage (1 Use): rientrando si consuma l'unico uso (FAQ F07).</div>` : ''}
-            ${(pre.avvisi || []).map(a => `<div style="margin-bottom:12px; padding:10px; background:#2a2410; border:1px solid #ccaa44; border-radius:4px; color:#eedd99; font-size:13px;">⚠️ ${a}</div>`).join('')}
+            ${(pre.avvisi || []).map(a => `<div style="margin-bottom:12px; padding:10px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-acceso,#ffaa33); border-radius:4px; color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-s);">⚠️ ${a}</div>`).join('')}
 
-            ${cambio ? `<div style="margin-bottom:12px; padding:10px; background:#2a2410; border:1px solid #ccaa44; border-radius:4px; color:#eedd99; font-size:13px;">
+            ${cambio ? `<div style="margin-bottom:12px; padding:10px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-acceso,#ffaa33); border-radius:4px; color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-s);">
                 ⚠️ ${cambio.note.join('<br>')}</div>` : ''}
 
             ${pre.domande.map(riquadro).join('')}
 
-            ${esito.esito === 'VIETATO' ? `<div style="margin-top:14px; padding:14px; background:#330000; border:2px solid #ff3333; border-radius:5px;">
-                <b style="color:#ff6666; font-size:16px;">⛔ NON SI PUÒ: ${A.titolo}</b>
-                <div style="color:#ddd; font-size:13px; margin-top:8px;">${esito.motivo}</div>
-                <div style="color:#ffaaaa; font-size:13px; margin-top:6px;">L'Ordine NON è speso: torna indietro e dichiara altro.</div>
+            ${esito.esito === 'VIETATO' ? `<div style="margin-top:14px; padding:14px; background:var(--mn-errore-fondo,#330000); border:2px solid var(--mn-errore,#ff3333); border-radius:5px;">
+                <b style="color:var(--mn-errore,#ff3333); font-size:var(--fs-m);">⛔ NON SI PUÒ: ${A.titolo}</b>
+                <div style="color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s); margin-top:8px;">${esito.motivo}</div>
+                <div style="color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s); margin-top:6px;">L'Ordine NON è speso: torna indietro e dichiara altro.</div>
             </div>` : ''}
 
-            ${esito.esito === 'IDLE' ? `<div style="margin-top:14px; padding:14px; background:#332200; border:2px solid #ffaa33; border-radius:5px;">
-                <b style="color:#ffaa33; font-size:16px;">⚠️ LA TRUPPA ESEGUE UN IDLE</b>
-                <div style="color:#ddd; font-size:13px; margin-top:8px;">${esito.motivo}</div>
-                <div style="color:#ffcc88; font-size:13px; margin-top:6px;">L'Ordine è comunque speso. Se puoi, torna indietro e dichiara altro.</div>
+            ${esito.esito === 'IDLE' ? `<div style="margin-top:14px; padding:14px; background:var(--mn-nota-fondo,#1a1000); border:2px solid var(--mn-acceso,#ffaa33); border-radius:5px;">
+                <b style="color:var(--mn-acceso,#ffaa33); font-size:var(--fs-m);">⚠️ LA TRUPPA ESEGUE UN IDLE</b>
+                <div style="color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s); margin-top:8px;">${esito.motivo}</div>
+                <div style="color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-s); margin-top:6px;">L'Ordine è comunque speso. Se puoi, torna indietro e dichiara altro.</div>
             </div>` : ''}
 
-            ${esito.esito === A.ok ? `<div style="margin-top:14px; padding:14px; background:#16281e; border:2px solid #66cc99; border-radius:5px;">
-                <b style="color:#88ffbb; font-size:16px;">${A.riquadro}</b>
-                <div style="color:#999; font-size:12px; margin-top:8px; line-height:1.6;">
+            ${esito.esito === A.ok ? `<div style="margin-top:14px; padding:14px; background:var(--mn-ordine-riquadro,#16281e); border:2px solid var(--mn-ordine-bordo,#66cc99); border-radius:5px;">
+                <b style="color:var(--mn-si-testo,#88ff88); font-size:var(--fs-m);">${A.riquadro}</b>
+                <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); margin-top:8px; line-height:1.6;">
                     ${esito.note.map(n => `• ${n}`).join('<br>')}
                 </div>
             </div>` : ''}`;
@@ -291,7 +304,7 @@
         if (div) {
             div.innerHTML = `<div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; background:rgba(102,170,136,0.1); margin-top:20px;">
                 <h2 style="color:${COL.bordo}; margin:0;">${esito.esito === A.ok ? A.fatto : 'IDLE'}</h2>
-                <p style="font-size:13px; color:#ccc;">${(esito.note || [])[0] || esito.motivo || ''}</p>
+                <p style="font-size:var(--fs-s); color:var(--mn-testo-2,#cccccc);">${(esito.note || [])[0] || esito.motivo || ''}</p>
             </div>`;
             div.style.display = 'block';
         }
@@ -303,7 +316,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_rientro_camo.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_rientro_camo.js', versione: '2026-10-28.3', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

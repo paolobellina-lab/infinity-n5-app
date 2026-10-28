@@ -1,4 +1,8 @@
-// @versione 2026-10-23.1 | test_modulo_speculativo.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_modulo_speculativo.js | proprieta`: chat TEST
+// 2026-10-28.1: motore 2026-10-28.1. RISCRITTE le due prove delle armi escluse:
+//    il motivo sta nella ⓘ (window.INFO['step-weapon'], titolo «<arma> non
+//    utilizzabile per il Fuoco Speculativo», tipo 'nonpuo'), non a schermo.
+//    Nessuna prova in piu`.
 // 2026-10-23.1: sezione 8 girata (SPEC-06, MOTORE 23 ott): col Pitcher il solo
 //    PUNTO SUL TAVOLO; controprove Smoke (punto + nemici) e Grenades (niente punto).
 // 2026-10-15.1: sezione 8a girata (ordine_fuoco_speculativo 2026-10-15.1, Paolo):
@@ -28,6 +32,10 @@ global.goToStep = () => {}; global.renderTargetButtons = () => {};
 
 require('./catalogo_n5.js'); require('./database_comune.js');
 const M = require('./motore_regole_n5.js');
+// 28 ottobre (motore 2026-10-28.1): le spiegazioni e le escluse stanno nella ⓘ
+// della schermata; senza app.html il motore le deposita in window.INFO[idStep].
+const noteDi = (st) => ((global.window && global.window.INFO) || {})[st] || [];
+
 require('./ordine_fuoco_speculativo.js');
 
 const granatiere = { id: 'n1', alias: 'Granatiere', bs: 11, ph: 12, wip: 13,
@@ -54,15 +62,16 @@ window.avviaFaseSpeculativo('FUOCO SPECULATIVO', false);
 let h = nodo('weapon-buttons-container').innerHTML;
 ok(h.includes('Nessuna arma col Tratto'),
    'Missile/Rocket/Adhesive Launcher: NESSUNA offerta (prima le offriva tutte per via di "LAUNCHER" nel nome)');
-ok(h.includes('Missile Launcher') && h.includes('non ha il Tratto'),
-   'e il motivo dell esclusione è scritto');
+// RISCRITTO il 28 ottobre: prima h.includes('Missile Launcher') && h.includes('non ha il Tratto').
+ok(noteDi('step-weapon').some(v => /^Missile Launcher .* non utilizzabile per il Fuoco Speculativo$/.test(v.titolo) && /non ha il Tratto Speculative Attack/.test(v.testo) && v.tipo === 'nonpuo') && !h.includes('non ha il Tratto'),
+   'e il motivo dell esclusione è scritto (nella ⓘ, tipo nonpuo)');
 
 nuovo(granatiere);
 window.startUnitSpeculativoLoop();
 h = nodo('weapon-buttons-container').innerHTML;
 ok(h.includes('Grenades'), 'Grenades offerta');
-ok(h.includes('Combi Rifle') && h.includes('non ha il Tratto'),
-   'Combi Rifle esclusa perché il database dice che non ha il Tratto Speculative Attack');
+ok(noteDi('step-weapon').some(v => v.titolo === 'Combi Rifle non utilizzabile per il Fuoco Speculativo' && /non ha il Tratto Speculative Attack/.test(v.testo) && v.tipo === 'nonpuo') && !h.includes('non ha il Tratto'),
+   'Combi Rifle esclusa perché il database dice che non ha il Tratto Speculative Attack (nella ⓘ)');
 
 console.log('\n=== 2. ERRORE CORRETTO: le Granate tirano su PH ===');
 // 🔴 GIRATA IL 9 OTTOBRE. Sotto il nome, sul bottone, Paolo non vuole piu`

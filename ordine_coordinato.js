@@ -1,4 +1,4 @@
-// @versione 2026-10-20.1 | ordine_coordinato.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.1 | ordine_coordinato.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔗 ORDINE COORDINATO E SELEZIONE (N5) - ordine_coordinato.js
 // ------------------------------------------
@@ -73,9 +73,12 @@ window.apriSelezioneTruppe = (groupNum, isCoord) => {
     
     if (isCoord) {
         // Colori dinamici in base alla fazione (Nomadi = Rosso, PanO = Azzurro)
-        const accentColor = document.title.includes("NOMADS") ? "var(--nomad-red)" : "#00ccff";
-        header.innerHTML = `<h1 style="text-align:center; margin-bottom:15px; font-family:'Teko'; font-size:42px; color:${accentColor}; letter-spacing:2px; text-shadow: 0 0 10px ${accentColor};">ORDINE COORDINATO</h1>
-                            <p style="text-align:center; color:#aaa; font-size:14px; margin-top:-10px;">(Max 4 unità. Tieni premuto per cambiare Punta di Lancia)</p>`;
+        // 27 ottobre sera (collaudo grafico, C06): il titolo aveva carattere,
+        // misura, colore e alone scritti qui, e la riga sotto margin-top:-10px.
+        // Ora e` l'h1 di tutte le schermate e la .sottotitolo-step di app.html:
+        // il colore lo da` la fazione.
+        header.innerHTML = `<h1>ORDINE COORDINATO</h1>
+                            <p class="sottotitolo-step">(Max 4 unità. Tieni premuto per cambiare Punta di Lancia)</p>`;
         header.style.border = "none";
         header.style.background = "transparent";
     } else {
@@ -261,8 +264,8 @@ window.mostraTitoloUnitaCorrente = () => {
         let lanciaStr = isSpearhead 
             // 20 ottobre (Paolo): l'icona della Punta di Lancia. Se il file
             // manca torna il 🎯 di prima.
-            ? `<br><span style="font-size:16px; color:#00ff00;">[<img src="img/icon_spearhead.png" class="spearhead-token" style="margin:0 6px 0 0;" alt="" onerror="this.outerHTML='🎯 '">PUNTA DI LANCIA — metà Burst${dadi}]</span>` 
-            : `<br><span style="font-size:16px; color:#ff9900;">[GREGARIO — Burst 1]</span>`;
+            ? `<br><span style="font-size:var(--fs-m); color:#00ff00;">[<img src="img/icon_spearhead.png" class="spearhead-token" style="margin:0 6px 0 0;" alt="" onerror="this.outerHTML='🎯 '">PUNTA DI LANCIA — metà Burst${dadi}]</span>` 
+            : `<br><span style="font-size:var(--fs-m); color:#ff9900;">[GREGARIO — Burst 1]</span>`;
         
         header.style.display = 'block';
         header.innerHTML = `<h2 style="margin-bottom:0;">-- ${nomePuro}${testoAlias} --</h2>${lanciaStr}`;
@@ -277,7 +280,7 @@ window.mostraTitoloUnitaCorrente = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_coordinato.js', versione: '2026-10-20.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_coordinato.js', versione: '2026-10-28.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

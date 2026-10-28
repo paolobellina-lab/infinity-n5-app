@@ -1,4 +1,4 @@
-// @versione 2026-10-06.5 | test_riquadro_cambio_stato.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-28.1 | test_riquadro_cambio_stato.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 6 ottobre 2026 (richiesta di Paolo).
 //
@@ -10,6 +10,14 @@
 //  database. Prima il cambio avveniva in silenzio.
 //
 //  NON PROVA quando uno stato cambia: e` M.statoDopoAbilita, del MOTORE.
+//
+//  RISCRITTO il 28 ottobre (Paolo, 27 sera: le spiegazioni nella ⓘ). Prima
+//  si leggeva il riquadro giallo #riquadro-cambio-stato. Ora il riquadro e`
+//  spento e il cambio e` la PRIMA voce della ⓘ (window.voceCambioStato, tipo
+//  'stato') in ogni schermata dello stesso Ordine; con l opzione "sotto i
+//  tasti" va nel riquadro delle note in cima. g.box() legge quella voce; le
+//  attese (chi, da cosa a cosa, per quale Abilita`, note, quando sparisce)
+//  sono le stesse di prima. In piu`: il riquadro giallo resta spento.
 //
 //  USO:  CARTELLA=/percorso/ node test_riquadro_cambio_stato.js
 // ============================================================================
@@ -64,7 +72,12 @@ function con(re, stati) {
   g.roster = [{ ...p, id: 'u1', alias: 'Ombra', states: stati || {}, combatGroup: 1 }];
   g.gameState = { nomads: g.roster, panoceania: [] };
   g.menu = () => { g.spearheadUnit = g.roster[0]; g.selectedCoordinatedUnits = []; g.currentOrder = {}; g.procediAlleAzioni(); };
-  g.box = () => { const b = g.el('riquadro-cambio-stato'); return (b.style.display === 'none') ? '' : String(b.innerHTML || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); };
+  // Una pagina senza la ⓘ (prima della 2026-10-27.6) non deve far cadere il
+  // banco: la voce manca e i controlli diventano rossi, col riepilogo.
+  g.box = () => { if (typeof g.voceCambioStato !== 'function') return '(manca window.voceCambioStato)'; const v = g.voceCambioStato(); return v ? (v.titolo + ' ' + v.testo).replace(/\s+/g, ' ').trim() : ''; };
+  // la voce sta davvero in testa alla ⓘ della schermata in cui si e`
+  g.inTesta = () => { if (typeof g.vociInfo !== 'function') return false; const v = g.vociInfo(g._stepCorrente)[0]; return !!v && v.tipo === 'stato' && (v.titolo + ' ' + v.testo).replace(/\s+/g, ' ').trim() === g.box(); };
+  g.gialloSpento = () => { const b = g.el('riquadro-cambio-stato'); return b.style.display === 'none' || !String(b.innerHTML || '').trim(); };
   g.menu();
   return g;
 }
@@ -72,20 +85,21 @@ console.log('--- la pagina ---');
 let g = con(/^Intruder \(HMG/);
 ok(assenti.length === 0 && nonCaricati.length === 0, 'tutti gli script si caricano', assenti.concat(nonCaricati).slice(0, 3));
 ok(g.MotoreN5.statoBersaglio(g.roster[0]).camo === true, 'premessa: l\'Intruder del database e` Marker CAMO');
-ok(g.box() === '', 'a menu aperto, prima di dichiarare: nessun riquadro', g.box());
+ok(g.box() === '', 'a menu aperto, prima di dichiarare: nessuna voce di cambio', g.box());
 
 console.log('\n--- un Marker CAMO dichiara Attacco BS ---');
 g.selectAction('ATTACCO BS', false);
 ok(g.MotoreN5.statoBersaglio(g.roster[0]).camo === false, 'premessa: il router lo ha rivelato');
-ok(/Ombra/.test(g.box()) && /Marker CAMO/.test(g.box()) && /Modello sul tavolo/.test(g.box()) && /ATTACCO BS/.test(g.box()), 'il riquadro dice chi, da cosa a cosa, e per quale Abilita`', g.box());
+ok(/Ombra/.test(g.box()) && /Marker CAMO/.test(g.box()) && /Modello sul tavolo/.test(g.box()) && /ATTACCO BS/.test(g.box()), 'la voce della ⓘ dice chi, da cosa a cosa, e per quale Abilita`', g.box());
 const note = (g.ultimoCambioStato.note || []).filter(Boolean);
-ok(note.every(n => g.el('riquadro-cambio-stato').innerHTML.includes(n)), 'con le note del motore, testo per testo (' + note.length + ')', note);
+ok(note.length > 0 && note.every(n => g.box().includes(String(n).replace(/\s+/g, ' ').trim())), 'con le note del motore, testo per testo (' + note.length + ')', note);
+ok(g.gialloSpento(), 'il riquadro giallo di prima resta spento');
 
 console.log('\n--- resta a schermo durante l\'Ordine ---');
 g.goToStep('step-weapon');
-ok(/Marker CAMO/.test(g.box()), 'passando a un\'altra schermata dello stesso Ordine c\'e` ancora');
+ok(/Marker CAMO/.test(g.box()) && g.inTesta(), 'passando a un\'altra schermata dello stesso Ordine c\'e` ancora, prima voce della ⓘ');
 g.goToStep('step-second-half');
-ok(/Marker CAMO/.test(g.box()), 'e anche alla seconda meta`');
+ok(/Marker CAMO/.test(g.box()) && g.inTesta(), 'e anche alla seconda meta`');
 
 console.log('\n--- e sparisce a Ordine finito ---');
 g.tornaAlRadar();
@@ -97,17 +111,17 @@ ok(g.box() === '', 'nemmeno dichiarando di nuovo Attacco BS (ora e` un Modello: 
 
 console.log('\n--- chi non cambia stato non vede niente ---');
 let a = con(/^Alguacil \(Combi/); a.selectAction('ATTACCO BS', false);
-ok(a.box() === '', 'Alguacil, Attacco BS: nessun riquadro', a.box());
+ok(a.box() === '', 'Alguacil, Attacco BS: nessuna voce di cambio', a.box());
 let c = con(/^Intruder \(HMG/); c.selectAction('CAUTO', false);
-ok(c.MotoreN5.statoBersaglio(c.roster[0]).camo === true && c.box() === '', 'Marker CAMO in Movimento Cauto: resta Marker, nessun riquadro', c.box());
+ok(c.MotoreN5.statoBersaglio(c.roster[0]).camo === true && c.box() === '', 'Marker CAMO in Movimento Cauto: resta Marker, nessuna voce di cambio', c.box());
 
 console.log('\n--- Foxhole cancellato ---');
 let f = con(/^Alguacil \(Combi/, { foxhole: true }); f.rispostaConferma = true;
 f.selectAction('MOVIMENTO', false); f.goToStep('step-second-half');
-ok(/Foxhole/.test(f.box()) && /Modello sul tavolo/.test(f.box()), 'OK alla domanda: il riquadro dice Foxhole -> Modello, con le note', f.box().slice(0, 300));
+ok(/Foxhole/.test(f.box()) && /Modello sul tavolo/.test(f.box()), 'OK alla domanda: la voce dice Foxhole -> Modello, con le note', f.box().slice(0, 300));
 f = con(/^Alguacil \(Combi/, { foxhole: true }); f.rispostaConferma = false;
 f.selectAction('MOVIMENTO', false); f.goToStep('step-second-half');
-ok(f.box() === '', 'Annulla: lo stato non cambia, nessun riquadro', f.box());
+ok(f.box() === '', 'Annulla: lo stato non cambia, nessuna voce di cambio', f.box());
 
 console.log('\n' + passati + ' passati, ' + falliti + ' falliti');
 process.exit(falliti ? 1 : 0);

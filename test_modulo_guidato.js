@@ -1,4 +1,9 @@
-// @versione 2026-10-19.1 | test_modulo_guidato.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_modulo_guidato.js | proprieta`: chat TEST
+// 2026-10-28.1: motore 2026-10-28.1. RISCRITTE: le armi escluse e il loro
+//    motivo stanno nella ⓘ (window.INFO['step-weapon'], tipo 'nonpuo'), non a
+//    schermo (sez. 1 e l elenco delle escluse con solo ECM); il segmento FUORI
+//    acceso della barra e` ora "range-seg seg-fuori active" (M.barraGittata).
+//    Nessuna prova in piu`.
 // 2026-10-19.1: GUI-03 (Marker CAMO solo secondario) e FUORI GITTATA come segmento della barra (guidato 2026-10-18.1).
 // 2026-10-15.1: sezione 3 girata (ordine_attacco_guidato 2026-10-15.1, Paolo):
 //    niente piu` primary-guided-container e secondary-guided-container, la
@@ -44,6 +49,10 @@ global.goToStep = () => {}; global.confirmMultiAro = () => {};
 
 require('./catalogo_n5.js'); require('./database_comune.js');
 const M = require('./motore_regole_n5.js');
+// 28 ottobre (motore 2026-10-28.1): le spiegazioni e le escluse stanno nella ⓘ
+// della schermata; senza app.html il motore le deposita in window.INFO[idStep].
+const noteDi = (st) => ((global.window && global.window.INFO) || {})[st] || [];
+
 require('./ordine_attacco_guidato.js');
 
 const rem     = { id: 'n1', alias: 'Missile REM', bs: 12, weapon: 'Missile Launcher, Light Shotgun', skills: 'BS Attack (Guided)' };
@@ -71,9 +80,11 @@ window.avviaFaseGuidato('ATTACCO GUIDATO', false);
 let h = nodo('weapon-buttons-container').innerHTML;
 ok(!h.includes('Smart Missile'), 'niente "Smart Missile (Guided)", che nel database non esiste');
 ok(h.includes('Missile Launcher (Blast'), 'offre le Blast Mode reali dell arma');
-ok(h.includes('Missile Launcher (Hit Mode)') && h.includes('Impact Template'),
-   'la Hit Mode è esclusa col motivo: non ha il Tratto Impact Template');
-ok(h.includes('Impact Template'), 'la motivazione dell esclusione cita il Tratto richiesto');
+// RISCRITTE il 28 ottobre: prima il nome e il motivo si cercavano in h.
+{ const hit = noteDi('step-weapon').find(v => v.titolo === 'Missile Launcher (Hit Mode) non utilizzabile per il Guidato');
+  ok(!!hit && hit.tipo === 'nonpuo' && !h.includes('Missile Launcher (Hit Mode)'),
+     'la Hit Mode è esclusa col motivo (nella ⓘ, tipo nonpuo; non a schermo)');
+  ok(!!hit && /Impact Template/.test(hit.testo), 'la motivazione dell esclusione cita il Tratto richiesto (' + (hit && hit.testo) + ')'); }
 
 console.log('\n=== 2. ERRORE CORRETTO: la Skill è un requisito ===');
 nuovo(senzaSk);
@@ -221,7 +232,7 @@ prontoG();
     ok(/class="range-seg[^"]*"[^>]*onclick="window\.toggleFuoriGittataGuidato\(\)">FUORI</.test(hG), 'FUORI GITTATA e` un segmento in coda alla barra delle bande');
     ok(!/toggleRequisitoGuidato\(0, 'gittata'\)/.test(hG), 'e non c e piu` il tasto del requisito gittata (rigaRequisiti senza gittata)');
     (typeof window.toggleFuoriGittataGuidato === 'function' ? window.toggleFuoriGittataGuidato : () => {})();
-    ok(window.combatTargets[0].fuoriGittata === true && /range-seg active"[^>]*toggleFuoriGittataGuidato/.test(nodo('targets-allocation-container').innerHTML), 'toccato FUORI: il Primario e` fuori gittata e il segmento si accende');
+    ok(window.combatTargets[0].fuoriGittata === true && /range-seg seg-fuori active"[^>]*toggleFuoriGittataGuidato/.test(nodo('targets-allocation-container').innerHTML), 'toccato FUORI: il Primario e` fuori gittata e il segmento si accende (range-seg seg-fuori active, M.barraGittata)');
     window.setTargetRangeGuidato(0);
     ok(window.combatTargets[0].fuoriGittata === false, 'scelta una banda: torna in gittata');
 }
@@ -464,7 +475,9 @@ const avvisoG = (html) => html.includes('non ha "BS Attack (Guided)"');
 let hG = schermataG(finto('', 'ECM (Guided -6)'));
 ok(avvisoG(hG) && bottoniG(hG) === 0,
    `solo ECM, con un Missile Launcher in mano: avviso e 0 bottoni (avviso ${avvisoG(hG)}, bottoni ${bottoniG(hG)})`);
-ok(hG.includes('Non utilizzabili per il Guidato'), 'e l elenco delle escluse resta a schermo');
+// RISCRITTO il 28 ottobre: prima hG.includes('Non utilizzabili per il Guidato').
+ok(noteDi('step-weapon').some(v => / non utilizzabile per il Guidato$/.test(v.titolo) && v.tipo === 'nonpuo') && !hG.includes('Non utilizzabili per il Guidato'),
+   'e l elenco delle escluse resta (nella ⓘ, non a schermo)');
 hG = schermataG(finto('', ''));
 ok(avvisoG(hG) && bottoniG(hG) === 0,
    `niente Skill e niente ECM: avviso e 0 bottoni (avviso ${avvisoG(hG)}, bottoni ${bottoniG(hG)})`);

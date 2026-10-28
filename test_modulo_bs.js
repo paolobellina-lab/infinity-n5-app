@@ -1,4 +1,9 @@
-// @versione 2026-10-15.1 | test_modulo_bs.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_modulo_bs.js | proprieta`: chat TEST
+// 2026-10-28.1: motore 2026-10-28.1. RISCRITTE: le bande del bottone si
+//    leggono dalle celle data-da / data-fino / data-mod (prima dal disegno);
+//    le armi escluse (CC Weapon, CC Mode, GizmoKit, Deactivator, Deployable
+//    Cover) si leggono dalla ⓘ della schermata, window.INFO['step-weapon'],
+//    tipo 'nonpuo', e a schermo non ci sono piu`. Nessuna prova in piu`.
 // 2026-10-15.1: "MULTI Sniper espansa" girata (ordine_attacco_bs 2026-10-14.3,
 //    Paolo al tavolo il 14 ottobre): UN bottone per arma, le modalita` in
 //    window._modiBS nei due versi col motore, la scelta nella tendina delle
@@ -48,6 +53,9 @@ const DIR_DB = (process.env.CARTELLA ? process.env.CARTELLA.replace(/\/?$/, '/')
 require('./catalogo_n5.js');
 require('./database_comune.js');
 const M = require('./motore_regole_n5.js');
+// Le note della schermata delle armi (28 ottobre): senza app.html il motore le
+// deposita in window.INFO[idStep].
+const noteArmi = () => ((typeof window !== 'undefined' && window.INFO) || {})['step-weapon'] || [];
 require('./ordine_attacco_bs.js');
 
 // --- tavolo ---
@@ -97,7 +105,7 @@ ok(htmlArmi.includes('Combi Rifle') && htmlArmi.includes('Pistol'), 'Alguacil: C
 // motore legge dal database. La stringa di prima controllava i sei MOD e non
 // i pollici; questa controlla anche quelli, e nomina la banda che non torna.
 function bandeDalBottone(html) {
-    const celle = [...String(html).matchAll(/font-size:11px; padding:1px 0;">(\d+)"<\/span><span style="font-size:17px[^"]*">([+-]?\d+)</g)]
+    const celle = [...String(html).matchAll(/<div class="cella-gittata" data-da="\d+" data-fino="(\d+)" data-mod="(-?\d+)"/g)]
         .map(x => ({ fino: Number(x[1]), mod: Number(x[2]) }));
     const bande = []; let da = 0;
     celle.forEach(c => { for (; da < c.fino; da += 8) bande.push({ mod: c.mod, label: `${da}-${da + 8}"` }); });
@@ -192,8 +200,11 @@ ok(!/<option value="\d+\|/.test(tuttoC) && /<option value="N"[^>]*>Munizioni: N<
 nuovoOrdine(multiman);
 window.startUnitAllocationLoopBS();
 htmlArmi = nodo('weapon-buttons-container').innerHTML;
-ok(htmlArmi.includes('arma da Corpo a Corpo'),
-   'la CC Weapon non è offerta, ma il motivo è scritto (non sparisce in silenzio)');
+// RISCRITTO il 28 ottobre (motore 2026-10-28.1): il motivo non sta piu` a
+// schermo, sta nella ⓘ della schermata (M.nota; senza app.html in
+// window.INFO['step-weapon']), tipo 'nonpuo'. Prima: htmlArmi lo conteneva.
+ok(noteArmi().some(v => v.titolo === 'CC Weapon non utilizzabile' && v.testo === 'arma da Corpo a Corpo' && v.tipo === 'nonpuo') && !htmlArmi.includes('arma da Corpo a Corpo'),
+   'la CC Weapon non è offerta, ma il motivo è scritto (nella ⓘ, tipo nonpuo, non a schermo)');
 
 console.log('\n=== 3. Selezione bersaglio: gli esclusi restano visibili ===');
 nuovoOrdine(alguacil);
@@ -455,7 +466,12 @@ const schermataBS = (u) => {
     return nodo('weapon-buttons-container').innerHTML;
 };
 const bottoniBS = (h) => (String(h).match(/declareAttackBS\('([^']+)'\)/g) || []).map(x => x.slice(17, -2));
-const esclusiBS = (h) => (String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').match(/Non utilizzabili qui:(.*)$/) || ['', ''])[1];
+// RISCRITTO il 28 ottobre: le escluse stanno nella ⓘ (M.nota, tipo 'nonpuo',
+// titolo "<nome> non utilizzabile", testo = motivo). Prima: la riga
+// "Non utilizzabili qui:" sotto i bottoni. Si ricompone la stessa forma,
+// "<nome> (<motivo>)", e si controlla che a schermo non ci sia piu`.
+const esclusiBS = (h) => /Non utilizzabili qui/.test(String(h)) ? 'ANCORA A SCHERMO' : noteArmi().filter(v => v.tipo === 'nonpuo')
+    .map(v => v.titolo.replace(/ non utilizzabile.*$/, '') + ' (' + v.testo + ')').join(' ');
 const dueVersi = (visti, attesi) => ({ comparsi: visti.filter(x => attesi.indexOf(x) < 0), spariti: attesi.filter(x => visti.indexOf(x) < 0) });
 const salvaRosterE = M._rosterProprio;
 

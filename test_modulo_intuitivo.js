@@ -1,4 +1,8 @@
-// @versione 2026-10-15.1 | test_modulo_intuitivo.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_modulo_intuitivo.js | proprieta`: chat TEST
+// 2026-10-28.1: motore 2026-10-28.1. RISCRITTA la prova delle regole spiegate:
+//    stanno nella ⓘ (window.INFO['step-modifiers']: Critico, Copertura,
+//    Reazione del bersaglio, Se il tiro fallisce), non a schermo. Nessuna
+//    prova in piu`.
 // 2026-10-15.1: requisiti girati (ordine_attacco_intuitivo 2026-10-15.1, Paolo
 //    al tavolo): resta solo "sagoma". La Linea di Tiro mancante NON manda piu`
 //    in IDLE: e` proprio il caso per cui l'Intuitivo esiste (dietro il Fumo);
@@ -46,6 +50,10 @@ global.confirmMultiAro = () => {};
 
 require('./catalogo_n5.js'); require('./database_comune.js');
 const M = require('./motore_regole_n5.js');
+// 28 ottobre (motore 2026-10-28.1): le spiegazioni e le escluse stanno nella ⓘ
+// della schermata; senza app.html il motore le deposita in window.INFO[idStep].
+const noteDi = (st) => ((global.window && global.window.INFO) || {})[st] || [];
+
 require('./ordine_attacco_intuitivo.js');
 
 const lanciafiamme = { id: 'n1', alias: 'Moran', wip: 13, weapon: 'Light Flamethrower, Combi Rifle', states: {} };
@@ -140,7 +148,11 @@ ok(regole.criticoSoloSulPrincipale, 'Critico solo sul Principale');
 ok(regole.coperturaAnnullaSalvezza, 'niente +3 al Tiro Salvezza per Copertura');
 ok(regole.contaComeBsAttack && regole.plusUnSD === false,
    'conta come BS Attack per i MOD, ma niente +1 SD (è una Long Skill)');
-ok(h.includes('Faccia a Faccia') && h.includes('Critico'), 'le regole sono spiegate a schermo');
+// RISCRITTO il 28 ottobre: prima h.includes('Faccia a Faccia') && h.includes('Critico').
+{ const tit = noteDi('step-modifiers').map(v => v.titolo);
+  const rea = noteDi('step-modifiers').find(v => v.titolo === 'Reazione del bersaglio') || {};
+  ok(['Critico', 'Copertura', 'Reazione del bersaglio', 'Se il tiro fallisce'].every(t => tit.indexOf(t) >= 0) && /Faccia a Faccia/.test(rea.testo) && !h.includes('Critico'),
+     'le regole sono spiegate nella ⓘ: Critico, Copertura, Reazione del bersaglio (Faccia a Faccia), Se il tiro fallisce (' + JSON.stringify(tit) + ')'); }
 
 console.log('\n=== 6. Invio: il Marker CAMO passa ===');
 // Il caso che DEVE arrivare in fondo. Se cadesse questo, il divieto

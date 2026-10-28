@@ -1,4 +1,10 @@
-// @versione 2026-10-27.2 | test_piano_schieramento.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_piano_schieramento.js | proprieta`: chat TEST
+// 2026-10-28.1: REV_MINIMA = 49 (consegna del 28 ottobre: note nella ⓘ, scala di 96", Burst pieno sempre; nuova BS-31). Le prove passano a 315.
+// 2026-10-27.6: REV_MINIMA = 48 (nuova SCH-09: gli stati di schieramento dal motore). Le prove passano a 314.
+// 2026-10-27.5: REV_MINIMA = 47 (SCH-01: l etichetta HIDDEN nella propria app). Le prove restano 313.
+// 2026-10-27.4: REV_MINIMA = 46 (chiuso il difetto della scelta del Burst a un uso residuo). Le prove restano 313.
+// 2026-10-27.3: REV_MINIMA = 45; roster 47 Nomadi + 16 PanOceania = 63 (nuovo Reaktion Zond
+//    (Thunderbolt) #47, Total Reaction con un arma (+1B): BS-16b). Le prove passano a 313.
 // 2026-10-27.2: REV_MINIMA = 44 (SCH-07: la vera non si riconosce dal <n>). Le prove restano 312.
 // 2026-10-27.1: REV_MINIMA = 43 (TPL-06, SCH-07, DEP-09: tre difetti chiusi). Le prove restano 312.
 // 2026-10-26.1: REV_MINIMA = 42; roster 46 Nomadi + 16 PanOceania = 62 (nuovi Bashi Bazouk
@@ -162,7 +168,7 @@ const perFazione = voci.reduce(function (m, v) { m[v.fazione] = (m[v.fazione] ||
 // (Il 7 ottobre ho cambiato questi numeri senza alzare la versione del
 // banco, e due chat hanno letto due contenuti diversi sotto la stessa
 // 2026-10-07.1. Da qui la .2.)
-const REV_MINIMA = 44;
+const REV_MINIMA = 49;
 const testoPiano = fs.readFileSync(PIANO, 'utf8');
 const revisione = (/revisione\s+(\d+)/.exec(testoPiano) || [])[1];
 ok(revisione !== undefined && parseInt(revisione, 10) >= REV_MINIMA,
@@ -227,9 +233,9 @@ ok(dcDichiarate !== undefined && parseInt(dcDichiarate, 10) === incompiute,
 // sostituirne una avrebbe tolto il soggetto a quella prova. Aggiungere non
 // costa nessuna prova; costa solo questi due numeri.
 // 10 ottobre: da 43 a 52, sempre aggiungendo (vedi la nota in testa).
-ok(perFazione.NOMADI === 46 && perFazione.PANOCEANIA === 16,
-   `righe lette per fazione: 46 Nomadi e 16 PanOceania (${JSON.stringify(perFazione)})`);
-ok(voci.length === 62, `righe di schieramento lette dal piano: 62 (${voci.length})`);
+ok(perFazione.NOMADI === 47 && perFazione.PANOCEANIA === 16,
+   `righe lette per fazione: 47 Nomadi e 16 PanOceania (${JSON.stringify(perFazione)})`);
+ok(voci.length === 63, `righe di schieramento lette dal piano: 63 (${voci.length})`);
 ok(voci.some(v => v.fazione === 'NOMADI') && voci.some(v => v.fazione === 'PANOCEANIA'),
    'e vengono da entrambe le tabelle');
 // CONTROPROVA della lettura: se il formato della tabella cambiasse, qui si

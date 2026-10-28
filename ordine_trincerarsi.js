@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | ordine_trincerarsi.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.4 | ordine_trincerarsi.js | proprieta`: chat MOTORE
 // ==========================================
 // 🕳️ TRINCERARSI / SAPPER (N5) - ordine_trincerarsi.js
 // ------------------------------------------
@@ -25,7 +25,20 @@
         return window.MotoreN5;
     }
 
-    const COL = { bordo: '#aa8855', sfondo: '#2a2218' };
+    // 28 ottobre (Paolo): il colore e` dell'ORDINE, non del modulo (M.COLORI_ORDINE nel
+    // motore: Movimenti blu, Abilita` Brevi verdi, Ordini Interi rossi). COL legge le
+    // tinte dell'Ordine in corso a ogni uso; 'TRINCERARSI' e` quello di casa. Prima: { bordo: '#aa8855', sfondo: '#2a2218' };.
+    const COL = (function () {
+        const ripiego = { bordo: '#aa8855', sfondo: '#2a2218', riquadro: '#2a2218', tenue: '#aa8855', testo: '#aa8855' };
+        const o = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) {
+            Object.defineProperty(o, k, { enumerable: true, get: function () {
+                const M = window.MotoreN5;
+                return (M && typeof M.colOrdine === 'function') ? M.colOrdine('TRINCERARSI')[k] : ripiego[k];
+            } });
+        });
+        return o;
+    })();
 
     window.avviaFaseTrincerarsi = function (actionId, isSecondHalf) {
         const M = motore(); if (!M) return;
@@ -47,13 +60,14 @@
 
         const pre = M.puoTrincerarsi(unita);
         const container = document.getElementById('targets-allocation-container');
+        window.MotoreN5.azzeraNote('step-modifiers');
         if (!container) return;
 
         if (!pre.puo) {
-            container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid #883333; padding:16px; border-radius:5px; text-align:center;">
-                <b style="color:#ff6666; font-size:18px;">🕳️ TRINCERARSI NON DISPONIBILE</b>
-                <div style="color:#ccc; font-size:14px; margin-top:10px;">${pre.motivo}</div>
-                ${pre.blocchi.length > 1 ? `<div style="color:#888; font-size:12px; margin-top:8px;">` +
+            container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid var(--mn-errore-bordo,#883333); padding:16px; border-radius:5px; text-align:center;">
+                <b style="color:var(--mn-errore,#ff3333); font-size:var(--fs-m);">🕳️ TRINCERARSI NON DISPONIBILE</b>
+                <div style="color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s); margin-top:10px;">${pre.motivo}</div>
+                ${pre.blocchi.length > 1 ? `<div style="color:var(--mn-spento,#888888); font-size:var(--fs-xs); margin-top:8px;">` +
                     pre.blocchi.slice(1).map(b => `• ${b}`).join('<br>') + `</div>` : ''}
             </div>`;
             window.aggiornaPulsanteTrincera(true);
@@ -64,30 +78,30 @@
         const r = window.trinceraSpazio;
 
         container.innerHTML = `
-            <h2 style="color:${COL.bordo}; text-align:center; margin-bottom:8px;">🕳️ TRINCERARSI</h2>
-            <div style="color:#aaa; font-size:13px; text-align:center; margin-bottom:16px;">
+            ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `🕳️ TRINCERARSI` })}
+            <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-s); text-align:center; margin-bottom:16px;">
                 Ordine Intero, nessun tiro. Il calcolatore non ha la mappa.</div>
 
             <div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:14px; border-radius:5px;">
-                <div style="color:#fff; font-size:16px; margin-bottom:12px;">${pre.domanda}</div>
+                <div style="color:var(--mn-testo,#ffffff); font-size:var(--fs-m); margin-bottom:12px;">${pre.domanda}</div>
                 <div style="display:flex; gap:8px;">
-                    <button class="huge-btn" style="flex:1; min-height:50px; ${r === true ? 'background:#004400; border-color:#00ff00;' : 'background:#111;'}"
+                    <button class="huge-btn" style="flex:1; min-height:50px; ${r === true ? 'background:var(--mn-si-fondo,#004400); border-color:var(--mn-si,#00ff00);' : 'background:var(--mn-fondo-tasto,#111111);'}"
                         onclick="window.rispondiTrincera(true)">SÌ</button>
-                    <button class="huge-btn" style="flex:1; min-height:50px; ${r === false ? 'background:#553300; border-color:#ffaa33;' : 'background:#111;'}"
+                    <button class="huge-btn" style="flex:1; min-height:50px; ${r === false ? 'background:var(--mn-attenzione-fondo,#554400); border-color:var(--mn-acceso,#ffaa33);' : 'background:var(--mn-fondo-tasto,#111111);'}"
                         onclick="window.rispondiTrincera(false)">NO</button>
                 </div>
             </div>
 
-            ${r === false ? `<div style="margin-top:14px; padding:14px; background:#332200; border:2px solid #ffaa33; border-radius:5px;">
-                <b style="color:#ffaa33; font-size:16px;">⚠️ LA TRUPPA ESEGUE UN IDLE</b>
-                <div style="color:#ddd; font-size:13px; margin-top:8px;">${esito.motivo}</div>
-                <div style="color:#ffcc88; font-size:13px; margin-top:6px;">L'Ordine è comunque speso.</div>
+            ${r === false ? `<div style="margin-top:14px; padding:14px; background:var(--mn-nota-fondo,#1a1000); border:2px solid var(--mn-acceso,#ffaa33); border-radius:5px;">
+                <b style="color:var(--mn-acceso,#ffaa33); font-size:var(--fs-m);">⚠️ LA TRUPPA ESEGUE UN IDLE</b>
+                <div style="color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s); margin-top:8px;">${esito.motivo}</div>
+                <div style="color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-s); margin-top:6px;">L'Ordine è comunque speso.</div>
             </div>` : ''}
 
-            ${r === true ? `<div style="margin-top:14px; padding:14px; background:#1a2a18; border:2px solid #66cc66; border-radius:5px;">
-                <b style="color:#88ff88; font-size:16px;">🕳️ ENTRA IN STATO FOXHOLE</b>
-                <div style="color:#ccc; font-size:13px; margin-top:8px;">${esito.token}</div>
-                <div style="color:#999; font-size:12px; margin-top:8px; line-height:1.6;">
+            ${r === true ? `<div style="margin-top:14px; padding:14px; background:var(--mn-ordine-riquadro,#1a2a18); border:2px solid var(--mn-ordine-bordo,#66cc66); border-radius:5px;">
+                <b style="color:var(--mn-si-testo,#88ff88); font-size:var(--fs-m);">🕳️ ENTRA IN STATO FOXHOLE</b>
+                <div style="color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s); margin-top:8px;">${esito.token}</div>
+                <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); margin-top:8px; line-height:1.6;">
                     ${esito.note.map(n => `• ${n}`).join('<br>')}
                 </div>
             </div>` : ''}`;
@@ -178,7 +192,7 @@
         if (div) {
             div.innerHTML = `<div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; background:rgba(170,136,85,0.1); margin-top:20px;">
                 <h2 style="color:${COL.bordo}; margin:0;">${esito.entra ? 'TRINCERATO' : 'IDLE'}</h2>
-                <p style="font-size:13px; color:#ccc;">${esito.entra ? esito.token : esito.motivo}</p>
+                <p style="font-size:var(--fs-s); color:var(--mn-testo-2,#cccccc);">${esito.entra ? esito.token : esito.motivo}</p>
             </div>`;
             div.style.display = 'block';
         }
@@ -190,7 +204,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_trincerarsi.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_trincerarsi.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

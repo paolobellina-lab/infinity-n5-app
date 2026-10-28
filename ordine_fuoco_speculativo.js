@@ -1,4 +1,4 @@
-// @versione 2026-10-26.1 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.4 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
 // ==========================================
 // ☄️ FUOCO SPECULATIVO (N5) - ordine_fuoco_speculativo.js
 // ------------------------------------------
@@ -34,7 +34,20 @@
         return window.MotoreN5;
     }
 
-    const COL = { bordo: '#cc00ff', sfondo: '#330033' };
+    // 28 ottobre (Paolo): il colore e` dell'ORDINE, non del modulo (M.COLORI_ORDINE nel
+    // motore: Movimenti blu, Abilita` Brevi verdi, Ordini Interi rossi). COL legge le
+    // tinte dell'Ordine in corso a ogni uso; 'FUOCO SPECULATIVO' e` quello di casa. Prima: { bordo: '#cc00ff', sfondo: '#330033' };.
+    const COL = (function () {
+        const ripiego = { bordo: '#cc00ff', sfondo: '#330033', riquadro: '#330033', tenue: '#cc00ff', testo: '#cc00ff' };
+        const o = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) {
+            Object.defineProperty(o, k, { enumerable: true, get: function () {
+                const M = window.MotoreN5;
+                return (M && typeof M.colOrdine === 'function') ? M.colOrdine('FUOCO SPECULATIVO')[k] : ripiego[k];
+            } });
+        });
+        return o;
+    })();
 
     window.avviaFaseSpeculativo = function (actionId, isSecondHalf) {
         window.currentOrder = window.currentOrder || {};
@@ -72,15 +85,14 @@
         if (window.mostraTitoloUnitaCorrente) window.mostraTitoloUnitaCorrente();
 
         const container = document.getElementById('weapon-buttons-container');
-        container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:10px; margin-bottom:15px; text-align:center; color:#fff; border-radius:5px;">
-            <b style="color:${COL.bordo}; font-size:20px;">☄️ FUOCO SPECULATIVO</b><br>
-            <span style="font-size:14px; color:#ccc;">Ordine Intero · Non richiede LoF · -6 fisso · Burst 1</span>
-        </div>`;
+
+        window.MotoreN5.azzeraNote('step-weapon');
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `FUOCO SPECULATIVO`, nota: `Ordine Intero · Non richiede LoF · -6 fisso · Burst 1` })}`;
 
         const esito = M.armiSpeculative(unita);
 
         if (esito.armi.length === 0) {
-            container.innerHTML += `<p style="color:#ff3333; text-align:center; font-size:18px;">❌ Nessuna arma col Tratto "Speculative Attack".</p>`;
+            container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-size:var(--fs-m);">❌ Nessuna arma col Tratto "Speculative Attack".</p>`;
         } else {
             esito.armi.forEach(function (p) {
                 const attr = M.attributoArma(p, M.AZIONI.SPECULATIVO);
@@ -103,13 +115,10 @@
         }
 
         // Le armi escluse col motivo: prima sparivano o, peggio, comparivano a torto.
-        if (esito.escluse.length > 0) {
-            container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
-                <b style="color:#aaa;">Non utilizzabili per il Fuoco Speculativo:</b><br>` +
-                esito.escluse.map(x => `• <b>${x.nome}</b> — ${x.motivo}`).join('<br>') + `</div>`;
-        }
+        // 28 ottobre (Paolo): perche` non si puo`, nella ⓘ (o sotto il tasto).
+        esito.escluse.forEach(x => window.MotoreN5.nota('step-weapon', x.nome + ' non utilizzabile per il Fuoco Speculativo', x.motivo, { tipo: 'nonpuo' }));
         if (esito.avvisi.length > 0) {
-            container.innerHTML += `<div style="margin-top:10px; padding:10px; background:#221100; border:1px solid #664400; border-radius:5px; color:#cc9955; font-size:13px;">
+            container.innerHTML += `<div style="margin-top:10px; padding:10px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-nota-bordo,#664400); border-radius:5px; color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s);">
                 ⚠️ ${esito.avvisi[0].messaggio}</div>`;
         }
 
@@ -186,33 +195,32 @@
     window.renderBersagliSpeculativo = function () {
         const M = motore(); if (!M) return;
         const c = document.getElementById('enemy-target-buttons'); if (!c) return;
+        window.MotoreN5.azzeraNote('step-wait-aro');
         const G = giudiziSpeculativo(M);
         window.pendingTargets = window.pendingTargets || [];
         const scelti = window.pendingTargets.map(function (t) { return String(t.id); });
-        let html = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:10px; margin-bottom:12px; text-align:center; color:#fff; border-radius:5px;">
-            <b style="color:${COL.bordo}; font-size:18px;">☄️ BERSAGLI DEL FUOCO SPECULATIVO</b><br>
-            <span style="font-size:13px; color:#ccc;">${G.sagoma
-                ? 'Il primo che tocchi è il <b>Bersaglio Principale</b>. Poi tocca chi altro sta sotto la Sagoma: un Marker è ammesso, ma non come Principale.'
-                : 'Un solo bersaglio: quest\'arma non ha una Sagoma Circolare.'}</span></div>`;
+        let html = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `BERSAGLI DEL FUOCO SPECULATIVO`, nota: `${G.sagoma ? 'Il primo che tocchi è il <b>Bersaglio Principale</b>. Poi tocca chi altro sta sotto la Sagoma: un Marker è ammesso, ma non come Principale.' : 'Un solo bersaglio: quest\'arma non ha una Sagoma Circolare.'}` })}`;
         // Il PUNTO del tavolo, per le armi Targetless.
         if (G.targetless) {
             const preso = scelti.indexOf('punto') === 0;
-            html += `<button type="button" class="huge-btn bersaglio-punto" style="width:100%; min-height:70px; margin-bottom:10px; background:${preso ? '#553300' : '#111'}; border-color:${COL.bordo}; color:#fff;" onclick="window.toccaBersaglioSpeculativo('punto')">
-                📍 PUNTO SUL TAVOLO${preso ? ' <span style="color:#ff66ff; font-size:15px;">[ SCELTO ]</span>' : ''}
+            html += `<button type="button" class="huge-btn bersaglio-punto" style="width:100%; min-height:70px; margin-bottom:10px; background:${preso ? 'var(--mn-attenzione-fondo,#554400)' : 'var(--mn-fondo-tasto,#111111)'}; border-color:${COL.bordo}; color:var(--mn-testo,#ffffff);" onclick="window.toccaBersaglioSpeculativo('punto')">
+                📍 PUNTO SUL TAVOLO${preso ? ' <span style="color:var(--mn-ordine-testo,#ff66ff); font-size:var(--fs-m);">[ SCELTO ]</span>' : ''}
                 <span>${G.soloPunto ? 'Arma Targetless: si lancia su un punto, non su un nemico. Se il tiro riesce, il segnalino si piazza lì.' : 'Arma Targetless: puoi lanciarla su un punto invece che su un nemico.'}</span></button>`;
         }
         G.voci.forEach(function (v) {
             const k = scelti.indexOf(String(v.unita.id));
-            const etichetta = k === 0 ? ' <span style="color:#ff66ff; font-size:15px;">[ PRINCIPALE ]</span>'
-                            : (k > 0 ? ' <span style="color:#cc99cc; font-size:15px;">[ SOTTO LA SAGOMA ]</span>'
-                            : (!v.principale ? ' <span style="color:#888; font-size:13px;">(solo sotto la Sagoma)</span>' : ''));
+            const etichetta = k === 0 ? ' <span style="color:var(--mn-ordine-testo,#ff66ff); font-size:var(--fs-m);">[ PRINCIPALE ]</span>'
+                            : (k > 0 ? ' <span style="color:var(--mn-ordine-testo,#cc99cc); font-size:var(--fs-m);">[ SOTTO LA SAGOMA ]</span>'
+                            : (!v.principale ? ' <span style="color:var(--mn-spento,#888888); font-size:var(--fs-s);">(solo sotto la Sagoma)</span>' : ''));
             const id = String(v.unita.id).replace(/'/g, "\\'");
             if (typeof window.rigaUnitaConFoto === 'function') {
                 html += window.rigaUnitaConFoto(v.unita, { fazione: 'NEMICA', scelta: k >= 0, opacita: '1',
-                    dopoNome: ` <span style="color:#aaa; font-size:14px; font-weight:normal;">[${v.unita.tipo || 'LI'}]</span>` + etichetta,
+                    dopoNome: ` <span style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-s); font-weight:normal;">[${v.unita.tipo || 'LI'}]</span>`,
+                    // 28 ottobre (GR-E14): l'etichetta nella fascia bassa, non nel nome (si troncava).
+                    etichette: etichetta,
                     attributi: `onclick="window.toccaBersaglioSpeculativo('${id}')"` });
             } else {
-                html += `<button type="button" class="huge-btn" style="width:100%; ${k >= 0 ? 'background:#553300;' : ''}" onclick="window.toccaBersaglioSpeculativo('${id}')">${M.nomeUnita(v.unita)}${etichetta}</button>`;
+                html += `<button type="button" class="huge-btn" style="width:100%; ${k >= 0 ? 'background:var(--mn-attenzione-fondo,#554400);' : ''}" onclick="window.toccaBersaglioSpeculativo('${id}')">${M.nomeUnita(v.unita)}${etichetta}</button>`;
             }
         });
         c.innerHTML = html;
@@ -318,82 +326,70 @@
         const arma = M.profiloArma(window.currentOrder.weapon);
         const tgt = window.combatTargets[0];
         const regole = M.regoleSpeculativo(arma, { rangeIndex: tgt.rangeIndex });
+        // 28 ottobre (Paolo): le spiegazioni nella ⓘ (o sotto il tasto), non a schermo.
+        M.azzeraNote('step-modifiers');
+        M.nota('step-modifiers', 'Cosa NON si applica a questo tiro', 'Mimetismo del bersaglio: ignorato. Copertura: ignorata (né il -6 al tiro, né il +3 alla salvezza del bersaglio). LoF: non serve, bersaglio e punto d\'impatto si scelgono senza vederli.', { tipo: 'mod' });
+        M.nota('step-modifiers', 'Si applica invece', 'La gittata, che nell\'Attacco Intuitivo non conta.', { tipo: 'mod' });
+        if (regole.noteSagoma) M.nota('step-modifiers', 'Sagoma Circolare', regole.noteSagoma, { tipo: 'regole' });
 
         const valoreBase = unita[String(regole.attributo).toLowerCase()] || 0;
         const domDB = window.statoDomandeDropBear();
 
-        let segmenti = '', etichette = '';
-        arma.bands.forEach(function (b, i) {
-            let cls = 'seg-2';
-            if (b.mod > 0) cls = 'seg-1'; else if (b.mod === -3) cls = 'seg-3'; else if (b.mod < -3) cls = 'seg-4';
-            const attivo = (!tgt.fuoriGittata && tgt.rangeIndex === i) ? 'active' : '';
-            segmenti += `<div class="range-seg ${cls} ${attivo}" onclick="window.setTargetRangeSpeculativo(${i})">${b.mod > 0 ? '+' + b.mod : b.mod}</div>`;
-            etichette += `<span>${b.label}</span>`;
-        });
-        // 15 ottobre (Paolo): il FUORI GITTATA e` un segmento della barra,
-        // come nell'Attacco BS, e non un tasto a parte.
-        segmenti += `<div class="range-seg ${tgt.fuoriGittata ? 'active' : ''}" style="background:${tgt.fuoriGittata ? '#ffcc00' : '#332b00'}; color:${tgt.fuoriGittata ? '#000' : '#ffcc00'}; font-size:12px;" onclick="window.toggleFuoriGittataSpeculativo()">FUORI</div>`;
-        etichette += `<span>oltre</span>`;
+        // 28 ottobre (Paolo): la barra e` del motore (M.barraGittata), coi
+        // numeri sui confini; il FUORI GITTATA e` il segmento in coda.
+        const barra = M.barraGittata(arma.bands, { indice: tgt.rangeIndex, tocco: (i) => `window.setTargetRangeSpeculativo(${i})`,
+            fuori: 'window.toggleFuoriGittataSpeculativo()', fuoriAttivo: !!tgt.fuoriGittata, stile: '' });
 
         const dettaglio = regole.voci.map(v =>
             `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                <span style="color:#aaa;">${v.motivo}</span>
-                <b style="color:${v.valore >= 0 ? '#00ff00' : '#ff6666'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b>
+                <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
+                <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b>
              </div>`).join('');
 
         document.getElementById('targets-allocation-container').innerHTML = `
-            <h2 style="color:${COL.bordo}; text-align:center; margin-bottom:20px;">FUOCO SPECULATIVO</h2>
+            ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `FUOCO SPECULATIVO` })}
 
-            <div style="background:#220022; border:1px solid ${COL.bordo}; padding:15px; border-radius:5px; margin-bottom:20px;">
+            <div style="background:var(--mn-ordine-riquadro,#220022); border:1px solid ${COL.bordo}; padding:15px; border-radius:5px; margin-bottom:20px;">
                 <div style="text-align:center; margin-bottom:12px;">
-                    <b style="color:#ff33ff; font-size:18px;">TIRO SU ${regole.attributo} ${valoreBase}</b>
-                    ${regole.noteAttributo ? `<br><span style="color:#cc99cc; font-size:12px;">${regole.noteAttributo}</span>` : ''}
+                    <b style="color:var(--mn-ordine-testo,#ff33ff); font-size:var(--fs-m);">TIRO SU ${regole.attributo} ${valoreBase}</b>
+                    ${regole.noteAttributo ? `<br><span style="color:var(--mn-ordine-testo,#cc99cc); font-size:var(--fs-xs);">${regole.noteAttributo}</span>` : ''}
                 </div>
-                <div style="border-top:1px solid #553355; padding-top:10px; font-size:14px;">
+                <div style="border-top:1px solid var(--mn-ordine-tenue,#553355); padding-top:10px; font-size:var(--fs-s);">
                     ${dettaglio}
-                    <div style="display:flex; justify-content:space-between; border-top:1px solid #553355; margin-top:8px; padding-top:8px;">
-                        <b style="color:#fff;">MOD totale</b>
-                        <b style="color:${regole.modTotale >= 0 ? '#00ff00' : '#ff6666'}; font-size:18px;">${regole.modTotale > 0 ? '+' + regole.modTotale : regole.modTotale}</b>
+                    <div style="display:flex; justify-content:space-between; border-top:1px solid var(--mn-ordine-tenue,#553355); margin-top:8px; padding-top:8px;">
+                        <b style="color:var(--mn-testo,#ffffff);">MOD totale</b>
+                        <b style="color:${regole.modTotale >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'}; font-size:var(--fs-m);">${regole.modTotale > 0 ? '+' + regole.modTotale : regole.modTotale}</b>
                     </div>
                 </div>
             </div>
 
             <div class="target-card" style="border-left:4px solid ${COL.bordo}; margin-bottom:15px; background:rgba(204,0,255,0.05); padding:15px; border-radius:5px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <b style="color:#fff; font-size:22px;">🎯 ${tgt.name}</b>
-                    <div style="font-size:20px; font-weight:bold; color:${COL.bordo};">1 B</div>
+                    <b style="color:var(--mn-testo,#ffffff); font-size:var(--fs-l);">🎯 ${tgt.name}</b>
+                    <div style="font-size:var(--fs-l); font-weight:bold; color:${COL.bordo};">1 B</div>
                 </div>
-                <div style="text-align:center; color:#aaa; font-size:12px; margin-bottom:5px;">Seleziona la gittata (in linea retta fino al punto d'impatto):</div>
-                <div class="range-bar">${segmenti}</div>
-                <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${etichette}</div>
+                <div style="text-align:center; color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); margin-bottom:5px;">Seleziona la gittata (in linea retta fino al punto d'impatto):</div>
+                ${barra}
                 ${M.domandaAlleatiInMischia ? M.domandaAlleatiInMischia(tgt, 0, 'window.setAlleatiInMischiaSpeculativo') : ''}
             </div>
 
             ${window.htmlSecondariSpeculativo()}
 
-            <div style="padding:12px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:12px; line-height:1.7;">
-                <b style="color:#aaa;">Cosa NON si applica a questo tiro:</b><br>
-                • Mimetismo del bersaglio — ignorato<br>
-                • Copertura — ignorata (né il -6 al tiro, né il +3 alla salvezza del bersaglio)<br>
-                • LoF — non serve: bersaglio e punto d'impatto si scelgono senza vederli<br>
-                <b style="color:#aaa;">Si applica invece:</b> la gittata, che nell'Attacco Intuitivo non conta.
-                ${regole.noteSagoma ? `<br><br><b style="color:#aaa;">Sagoma Circolare:</b> ${regole.noteSagoma}` : ''}
-            </div>
             ${domDB ? `<div style="margin-top:14px;">
-                <div style="color:#cc99cc; font-size:13px; margin-bottom:8px;">Drop Bear: il punto d'impatto rispetta la restrizione di piazzamento. Il calcolatore non ha la mappa.</div>` +
+                <div style="color:var(--mn-ordine-testo,#cc99cc); font-size:var(--fs-s); margin-bottom:8px;">Drop Bear: il punto d'impatto rispetta la restrizione di piazzamento. Il calcolatore non ha la mappa.</div>` +
                 domDB.domande.map(function (d) {
                     const r = (window.dropBearRisposte || {})[d.id];
-                    return `<div style="background:#1a1020; border:1px solid #442255; padding:14px; border-radius:5px; margin-bottom:10px;">
-                        <div style="color:#fff; font-size:16px; margin-bottom:10px;">${d.testo}</div>
+                    return `<div style="background:var(--mn-ordine-riquadro,#1a1020); border:1px solid var(--mn-ordine-tenue,#442255); padding:14px; border-radius:5px; margin-bottom:10px;">
+                        <div style="color:var(--mn-testo,#ffffff); font-size:var(--fs-m); margin-bottom:10px;">${d.testo}</div>
                         <div style="display:flex; gap:8px;">
-                            <button class="huge-btn" style="flex:1; min-height:48px; ${r === true ? 'background:#553300; border-color:#ffaa33;' : 'background:#111;'}"
+                            <button class="huge-btn" style="flex:1; min-height:48px; ${r === true ? 'background:var(--mn-attenzione-fondo,#554400); border-color:var(--mn-acceso,#ffaa33);' : 'background:var(--mn-fondo-tasto,#111111);'}"
                                 onclick="window.rispondiDropBear('${d.id}', true)">SÌ</button>
-                            <button class="huge-btn" style="flex:1; min-height:48px; ${r === false ? 'background:#553300; border-color:#ffaa33;' : 'background:#111;'}"
+                            <button class="huge-btn" style="flex:1; min-height:48px; ${r === false ? 'background:var(--mn-attenzione-fondo,#554400); border-color:var(--mn-acceso,#ffaa33);' : 'background:var(--mn-fondo-tasto,#111111);'}"
                                 onclick="window.rispondiDropBear('${d.id}', false)">NO</button>
                         </div>
                     </div>`;
                 }).join('') +
-                (domDB.esito === 'BLOCCATA' ? `<div style="padding:10px; background:#330000; border:1px solid #ff3333; border-radius:4px; color:#ff9999; font-size:13px;">⛔ ${domDB.motivo} Scegli un altro punto.</div>` : '') +
+                (domDB.esito === 'BLOCCATA' ? `<div style="padding:10px; background:var(--mn-errore-fondo,#330000); border:1px solid var(--mn-errore,#ff3333); border-radius:4px; color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s);">⛔ ${domDB.motivo} Scegli un altro punto.</div>` : '') +
             `</div>` : ''}`;
 
         const btn = (document.getElementById('btn-esegui-calcolo') || document.querySelector('#step-modifiers .huge-btn'));
@@ -480,9 +476,9 @@
         const M = motore(); if (!M) return '';
         const sec = (window.combatTargets || []).slice(1);
         if (!sec.length) return '';
-        return `<div style="background:#1a1020; border:1px solid #553355; padding:10px 12px; border-radius:5px; margin-bottom:15px; color:#cc99cc; font-size:14px;">
+        return `<div style="background:var(--mn-ordine-riquadro,#1a1020); border:1px solid var(--mn-ordine-tenue,#553355); padding:10px 12px; border-radius:5px; margin-bottom:15px; color:var(--mn-ordine-testo,#cc99cc); font-size:var(--fs-s);">
             <b>ANCHE SOTTO LA SAGOMA:</b> ${sec.map(function (t) { return t.name || M.nomeUnita(t); }).join(', ')}
-            <div style="color:#888; font-size:12px; margin-top:4px;">Si cambiano dalla pagina dei bersagli. Fanno solo il proprio Tiro Salvezza.</div></div>`;
+            <div style="color:var(--mn-spento,#888888); font-size:var(--fs-xs); margin-top:4px;">Si cambiano dalla pagina dei bersagli. Fanno solo il proprio Tiro Salvezza.</div></div>`;
     };
 
     window.htmlSceltaSecondariSpeculativo = function () {
@@ -490,8 +486,8 @@
         const cand = candidatiSecondari(M);
         if (cand === null || cand.length === 0) return '';
         const scelti = window.combatTargets.slice(1).map(function (t) { return String(t.id); });
-        return `<div style="background:#1a1020; border:1px solid #553355; padding:12px; border-radius:5px; margin-bottom:15px;">
-            <div style="color:#cc99cc; font-size:13px; margin-bottom:8px;"><b>ANCHE SOTTO LA SAGOMA</b> — bersagli secondari.
+        return `<div style="background:var(--mn-ordine-riquadro,#1a1020); border:1px solid var(--mn-ordine-tenue,#553355); padding:12px; border-radius:5px; margin-bottom:15px;">
+            <div style="color:var(--mn-ordine-testo,#cc99cc); font-size:var(--fs-s); margin-bottom:8px;"><b>ANCHE SOTTO LA SAGOMA</b> — bersagli secondari.
                 Il calcolatore non ha la mappa: tocca chi sta dentro l'area. Un Marker qui è ammesso.</div>` +
             cand.map(function (g) {
                 const si = scelti.indexOf(String(g.unita.id)) >= 0;
@@ -506,8 +502,8 @@
                         fazione: 'NEMICA', scelta: si, dopoNome: si ? ' ☑' : ' ☐' }) + mischia;
                 }
                 return `<button type="button" onclick="window.toggleSecondarioSpeculativo('${g.unita.id}')"
-                    style="width:100%; padding:10px; margin-bottom:6px; font-size:14px; font-weight:bold; border-radius:5px; cursor:pointer; text-align:left;
-                           background:${si ? '#553300' : '#111'}; color:${si ? '#ffaa33' : '#888'}; border:2px solid ${si ? '#ffaa33' : '#444'};">
+                    style="width:100%; padding:10px; margin-bottom:6px; font-size:var(--fs-s); font-weight:bold; border-radius:5px; cursor:pointer; text-align:left;
+                           background:${si ? 'var(--mn-attenzione-fondo,#554400)' : 'var(--mn-fondo-tasto,#111111)'}; color:${si ? 'var(--mn-acceso,#ffaa33)' : 'var(--mn-spento,#888888)'}; border:2px solid ${si ? 'var(--mn-acceso,#ffaa33)' : 'var(--mn-bordo-spento,#555555)'};">
                     ${si ? '☑' : '☐'} ${M.nomeUnita(g.unita)}</button>` + mischia;
             }).join('') + `</div>`;
     };
@@ -623,7 +619,7 @@
             calcDiv.innerHTML = `
                 <div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; background:rgba(204,0,255,0.1); margin-top:20px;">
                     <h2 style="color:${COL.bordo}; margin:0;">ATTACCO INVIATO ALL'HUB</h2>
-                    <p style="font-size:12px; color:#aaa;">Calcolo Speculativo in corso...</p>
+                    <p style="font-size:var(--fs-xs); color:var(--mn-debole,#aaaaaa);">Calcolo Speculativo in corso...</p>
                 </div>` + (window._dropBearInSospeso ? `
                 <div id="dropbear-esito" style="text-align:center; margin-top:12px; padding:14px; border:1px dashed ${COL.bordo};">
                     <p style="margin:0 0 10px;">🎯 Il tiro del ${window._dropBearInSospeso.nomeArma} è <b>riuscito</b>?</p>
@@ -674,7 +670,7 @@
             });
         }
         if (box) box.innerHTML = '<p style="margin:0;">✅ ' + nomi.join(', ') + ' piazzato.</p>' +
-            note.filter((x, i) => note.indexOf(x) === i).map(x => '<p style="margin:6px 0 0; font-size:12px; color:#aaa;">' + x + '</p>').join('');
+            note.filter((x, i) => note.indexOf(x) === i).map(x => '<p style="margin:6px 0 0; font-size:var(--fs-xs); color:var(--mn-debole,#aaaaaa);">' + x + '</p>').join('');
         return { piazzati: nomi.length };
     };
 
@@ -687,7 +683,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-26.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-26.1 | ordine_piazzamento.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.4 | ordine_piazzamento.js | proprieta`: chat MOTORE
 // ==========================================
 // 📦 PIAZZARE EQUIPAGGIAMENTO (N5) - ordine_piazzamento.js
 // ------------------------------------------
@@ -34,7 +34,20 @@
         return window.MotoreN5;
     }
 
-    const COL = { bordo: '#cc88ff', sfondo: '#2a1a33' };
+    // 28 ottobre (Paolo): il colore e` dell'ORDINE, non del modulo (M.COLORI_ORDINE nel
+    // motore: Movimenti blu, Abilita` Brevi verdi, Ordini Interi rossi). COL legge le
+    // tinte dell'Ordine in corso a ogni uso; 'PIAZZARE EQUIPAGGIAMENTO' e` quello di casa. Prima: { bordo: '#cc88ff', sfondo: '#2a1a33' };.
+    const COL = (function () {
+        const ripiego = { bordo: '#cc88ff', sfondo: '#2a1a33', riquadro: '#2a1a33', tenue: '#cc88ff', testo: '#cc88ff' };
+        const o = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) {
+            Object.defineProperty(o, k, { enumerable: true, get: function () {
+                const M = window.MotoreN5;
+                return (M && typeof M.colOrdine === 'function') ? M.colOrdine('PIAZZARE EQUIPAGGIAMENTO')[k] : ripiego[k];
+            } });
+        });
+        return o;
+    })();
 
     // La scelta del giocatore, come l'ha OFFERTA armiPiazzabili — non riletta
     // per nome. Un EQUIPAGGIAMENTO Deployable (il Deployable Repeater di 29
@@ -99,34 +112,28 @@
         window.targetsScartati = e.escluse.map(x => ({ nome: x.nome, motivo: x.motivo }));
 
         const container = document.getElementById('weapon-buttons-container');
+
+        window.MotoreN5.azzeraNote('step-weapon');
         if (!container) return;
 
-        container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:12px; border-radius:5px; margin-bottom:15px; text-align:center;">
-            <b style="color:${COL.bordo}; font-size:19px;">📦 PIAZZA EQUIPAGGIAMENTO</b><br>
-            <span style="color:#aaa; font-size:13px;">Abilità Breve, nessun tiro: è sempre la SECONDA metà dell'Ordine
-            (dopo Movimento, Scoprire o Idle).${window.currentOrder && !window.currentOrder.isSecondHalf ? ' Dichiarata per prima vale <b>IDLE + PIAZZARE</b>: l\'Ordine finisce qui.' : ''}<br>
-            Il nemico può reagire contro di te, mai contro ciò che piazzi.</span>
-        </div>`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `PIAZZA EQUIPAGGIAMENTO`, nota: `Abilità Breve, nessun tiro: è sempre la SECONDA metà dell'Ordine (dopo Movimento, Scoprire o Idle).${window.currentOrder && !window.currentOrder.isSecondHalf ? ' Dichiarata per prima vale <b>IDLE + PIAZZARE</b>: l\'Ordine finisce qui.' : ''}<br> Il nemico può reagire contro di te, mai contro ciò che piazzi.` })}`;
 
         if (e.armi.length === 0) {
-            container.innerHTML += `<p style="color:#ff3333; text-align:center; font-weight:bold;">
+            container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-weight:bold;">
                 Questa unità non ha equipaggiamento da piazzare.</p>`;
         } else {
             e.armi.forEach(function (a) {
                 // Il nome GREZZO, con le notazioni: il modulo lo ririsolve dopo.
                 const nomeEsc = String(a.nomeRichiesto || a.nome).replace(/'/g, "\\'");
                 const usi = a.usi ? `${a.usi.residui}/${a.usi.totali} usi` : 'usi illimitati';
-                container.innerHTML += `<button class="huge-btn" style="width:100%; min-height:62px; font-size:19px; margin-bottom:6px; background:#111; border-color:${COL.bordo};"
+                container.innerHTML += `<button class="huge-btn" style="width:100%; min-height:62px; font-size:var(--fs-l); margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:${COL.bordo};"
                     onclick="window.scegliArmaDaPiazzare('${nomeEsc}')">
-                    📦 ${a.nome}<br><span style="font-size:13px; color:${COL.bordo};">${usi}</span></button>`;
+                    📦 ${a.nome}<br><span style="font-size:var(--fs-s); color:${COL.bordo};">${usi}</span></button>`;
             });
         }
 
-        if (window.targetsScartati.length > 0) {
-            container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
-                <b style="color:#aaa;">Non piazzabili:</b><br>` +
-                window.targetsScartati.map(t => `• <b>${t.nome}</b> — ${t.motivo}`).join('<br>') + `</div>`;
-        }
+        // 28 ottobre (Paolo): perche` non si puo`, nella ⓘ (o sotto il tasto).
+        window.targetsScartati.forEach(t => window.MotoreN5.nota('step-weapon', t.nome + ' non piazzabile', t.motivo, { tipo: 'nonpuo' }));
         window.goToStep('step-weapon');
     };
 
@@ -153,22 +160,21 @@
         const giudizi = M.bersagliDaPiazzamento(arma);
         window.bersagliPiazzamento = giudizi;
         const container = document.getElementById('enemy-target-buttons');
+        window.MotoreN5.azzeraNote('step-wait-aro');
         if (!container) return;
         const ammessi = giudizi.filter(g => g.ammesso), scartati = giudizi.filter(g => !g.ammesso);
-        container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:12px; border-radius:5px; margin-bottom:15px; text-align:center;">
-            <b style="color:${COL.bordo}; font-size:18px;">📦 ${arma.nome}</b><br>
-            <span style="color:#aaa; font-size:13px;">Si piazza a contatto del bersaglio. Scegli su cosa.</span></div>` +
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `${arma.nome}`, nota: `Si piazza a contatto del bersaglio. Scegli su cosa.` })}` +
             // La riga con la foto la disegna la pagina (window.rigaUnitaConFoto);
             // dove non c'e` resta il bottone semplice.
             (ammessi.length ? ammessi.map(function (g) {
                 const clic = `onclick="window.scegliBersaglioPiazzamento('${String(g.unita.id).replace(/'/g, "\\'")}')"`;
                 return (typeof window.rigaUnitaConFoto === 'function')
                     ? window.rigaUnitaConFoto(g.unita, { attributi: clic, fazione: 'NEMICA' })
-                    : `<button class="huge-btn" style="width:100%; min-height:56px; margin-bottom:6px; background:#111; border-color:${COL.bordo};" ${clic}>🎯 ${g.nome}</button>`;
+                    : `<button class="huge-btn" style="width:100%; min-height:56px; margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:${COL.bordo};" ${clic}>🎯 ${g.nome}</button>`;
             }).join('')
-             : `<p style="color:#ff3333; text-align:center; font-weight:bold;">Nessun bersaglio ammesso da quest'arma.</p>`) +
-            (scartati.length ? `<div style="margin-top:12px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
-                <b style="color:#aaa;">Non ammessi:</b><br>` + scartati.map(g => `• <b>${g.nome}</b> — ${g.motivo}`).join('<br>') + `</div>` : '');
+             : `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-weight:bold;">Nessun bersaglio ammesso da quest'arma.</p>`);
+        // 28 ottobre (Paolo): i non ammessi, col motivo, nella ⓘ.
+        scartati.forEach(g => M.nota('step-wait-aro', g.nome + ' non ammesso', g.motivo, { tipo: 'nonpuo' }));
         window.goToStep('step-wait-aro');
     };
 
@@ -202,10 +208,12 @@
         window.deployableDomande = domande;
 
         const container = document.getElementById('targets-allocation-container');
+
+        window.MotoreN5.azzeraNote('step-modifiers');
         if (!container) return;
 
-        container.innerHTML = `<h2 style="color:${COL.bordo}; text-align:center; margin-bottom:12px;">${arma.nome}</h2>
-            <div style="color:#aaa; font-size:13px; text-align:center; margin-bottom:18px;">
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `${arma.nome}` })}
+            <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-s); text-align:center; margin-bottom:18px;">
                 Il calcolatore non ha la mappa: queste cose le sai solo tu.</div>` +
             domande.map(function (d, i) {
                 const r = window.deployableRisposte[d.id];
@@ -217,13 +225,13 @@
                 // Chi blocca lo decide il motore (M.valutaDomanda), domanda
                 // per domanda. (A-07 al tavolo di Paolo, 6 ottobre.)
                 const colore = function (valore) {
-                    if (r !== valore) return 'background:#111;';
+                    if (r !== valore) return 'background:var(--mn-fondo-tasto,#111111);';
                     return M.valutaDomanda(d, valore).esito === 'BLOCCATA'
-                        ? 'background:#554400; border-color:#ffcc00; color:#ffcc00;'
-                        : 'background:#004400; border-color:#00ff00; color:#00ff00;';
+                        ? M.stileColore('attenzione')
+                        : M.stileColore('si');
                 };
-                return `<div style="background:#1a1020; border:1px solid #442255; padding:14px; border-radius:5px; margin-bottom:12px;">
-                    <div style="color:#fff; font-size:16px; margin-bottom:10px;">${d.testo}</div>
+                return `<div style="background:var(--mn-ordine-riquadro,#1a1020); border:1px solid var(--mn-ordine-tenue,#442255); padding:14px; border-radius:5px; margin-bottom:12px;">
+                    <div style="color:var(--mn-testo,#ffffff); font-size:var(--fs-m); margin-bottom:10px;">${d.testo}</div>
                     <div style="display:flex; gap:8px;">
                         <button class="huge-btn" style="flex:1; min-height:48px; ${colore(true)}"
                             onclick="window.rispondiDeployable('${d.id}', true)">SÌ</button>
@@ -245,7 +253,7 @@
         const v = M.valutaDomanda(d, risposta);
         if (v.esito !== 'BLOCCATA' && !v.avviso) return '';
         const testo = v.motivo || v.avviso || 'Piazzamento non consentito.';
-        return `<div style="margin-top:10px; padding:10px; background:#330000; border:1px solid #ff3333; border-radius:4px; color:#ff9999; font-size:13px;">⛔ ${testo}</div>`;
+        return `<div style="margin-top:10px; padding:10px; background:var(--mn-errore-fondo,#330000); border:1px solid var(--mn-errore,#ff3333); border-radius:4px; color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s);">⛔ ${testo}</div>`;
     };
 
     window.rispondiDeployable = function (id, valore) {
@@ -286,7 +294,7 @@
         nuovo.onclick = function () { return idle ? window.idleDaPiazzamento() : window.eseguiPiazzamento(); };
         nuovo.innerText = stato.bloccato ? (stato.incompleto ? 'RISPONDI ALLE DOMANDE' : 'IDLE') : 'PIAZZA';
         const Mc = motore();
-        nuovo.style.background = idle ? ((Mc && Mc.COLORE_TASTO) ? Mc.COLORE_TASTO.idle : '#ffcc00') : ((Mc && Mc.COLORE_TASTO) ? Mc.COLORE_TASTO.valido : '');
+        nuovo.style.background = idle ? ((Mc && Mc.COLORE_TASTO) ? Mc.COLORE_TASTO.idle : 'var(--mn-attenzione,#ffcc00)') : ((Mc && Mc.COLORE_TASTO) ? Mc.COLORE_TASTO.valido : '');
     };
 
     // Una risposta gialla: l'Abilita` e` dichiarata ma il requisito non c'e`.
@@ -462,8 +470,8 @@
         div.innerHTML = `
             <div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; background:rgba(204,136,255,0.1); margin-top:20px;">
                 <h2 style="color:${COL.bordo}; margin:0;">${arma.nome} DETONATA</h2>
-                <p style="font-size:13px; color:#ccc; margin:8px 0;">${(note || []).join('<br>')}</p>
-                ${(avvisi || []).length ? `<div style="margin-top:10px; color:#cc9955; font-size:12px;">` +
+                <p style="font-size:var(--fs-s); color:var(--mn-testo-2,#cccccc); margin:8px 0;">${(note || []).join('<br>')}</p>
+                ${(avvisi || []).length ? `<div style="margin-top:10px; color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-xs);">` +
                     avvisi.map(a => `⚠️ ${a.messaggio}`).join('<br>') + `</div>` : ''}
             </div>`;
         div.style.display = 'block';
@@ -475,14 +483,14 @@
         div.innerHTML = `
             <div style="text-align:center; padding:20px; border:2px solid ${COL.bordo}; background:rgba(204,136,255,0.1); margin-top:20px;">
                 <h2 style="color:${COL.bordo}; margin:0;">${token.nome} PIAZZATO</h2>
-                <p style="font-size:13px; color:#ccc; margin:8px 0;">
+                <p style="font-size:var(--fs-s); color:var(--mn-testo-2,#cccccc); margin:8px 0;">
                     ${token.isCamo ? 'Entra in gioco come Marker: va Scoperto prima di bersagliarlo.'
                                    : 'Visibile sul tavolo, bersagliabile dal prossimo Ordine.'}
                 </p>
-                <p style="font-size:12px; color:#999;">
+                <p style="font-size:var(--fs-xs); color:var(--mn-debole,#aaaaaa);">
                     In questo Ordine il nemico può reagire solo contro chi lo ha piazzato.
                 </p>
-                ${(avvisi || []).length ? `<div style="margin-top:10px; color:#cc9955; font-size:12px;">` +
+                ${(avvisi || []).length ? `<div style="margin-top:10px; color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-xs);">` +
                     avvisi.map(a => `⚠️ ${a.messaggio}`).join('<br>') + `</div>` : ''}
             </div>`;
         div.style.display = 'block';
@@ -494,7 +502,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-26.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

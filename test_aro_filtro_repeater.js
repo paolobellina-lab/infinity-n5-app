@@ -1,4 +1,4 @@
-// @versione 2026-10-06.5 | test_aro_filtro_repeater.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-28.1 | test_aro_filtro_repeater.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 6 ottobre 2026.
 //
@@ -108,7 +108,18 @@ ok(pulsanti(h).includes('CC_ATTACK'), 'il caso misurato: un Ingaggiato ha l\'Att
 
 const fxh = tavolo(/^Alguacil \(Combi/, { foxhole: true }); fxh.aro('ATTACCO BS');
 const notaFx = fxh.MotoreN5.foxholeAllaDichiarazione(fxh.roster[0], 'SCHIVATA', { inAro: true }).nota;
-ok(!!notaFx && fxh.el('aro-action-list').innerHTML.includes(notaFx), 'Trincerato che reagisce: legge la nota del motore sul Foxhole in ARO', notaFx);
+// RISCRITTO il 28 ottobre (Paolo: le spiegazioni nella ⓘ, a scelta sotto i
+// tasti). Prima: la nota stava scritta nell elenco delle reazioni
+// (aro-action-list). Ora e` una nota «Foxhole» della schermata
+// step-aro-action: la mostra la ⓘ, o il riquadro in cima con l opzione
+// "sotto i tasti".
+const pulisci = (t) => String(t || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+const voci = (x) => (typeof x.vociInfo === 'function' ? x.vociInfo('step-aro-action') : null) || [];   // senza la ⓘ: rosso, non caduta
+const vFx = voci(fxh).find(v => v.titolo === 'Foxhole');
+ok(!!notaFx && !!vFx && vFx.testo.indexOf(pulisci(notaFx)) === 0 && vFx.tipo === 'regole', 'Trincerato che reagisce: la nota del motore sul Foxhole in ARO e` nella ⓘ della schermata', vFx);
+ok(!fxh.el('aro-action-list').innerHTML.includes(notaFx), 'e non e` piu` scritta nell elenco delle reazioni');
+const senzaFx = tavolo(/^Alguacil \(Combi/); senzaFx.aro('ATTACCO BS');
+ok(typeof senzaFx.vociInfo === 'function' && !voci(senzaFx).some(v => v.titolo === 'Foxhole'), 'CONTROPROVA: chi non e` Trincerato non ha la nota del Foxhole');
 ok(!/Foxhole/.test(g.el('aro-action-list').innerHTML), 'controprova: chi non e` Trincerato non la legge');
 
 console.log('\n--- 2. Copertura negata dall\'azione dell\'attivo ---');

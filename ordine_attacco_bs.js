@@ -1,4 +1,4 @@
-// @versione 2026-10-27.1 | ordine_attacco_bs.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.5 | ordine_attacco_bs.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎯 ATTACCO BS (TIRO A DISTANZA) - ordine_attacco_bs.js
 // ------------------------------------------
@@ -36,7 +36,20 @@
         return window.MotoreN5;
     }
 
-    const COL = { bordo: '#00ccff', sfondo: '#002244' };
+    // 28 ottobre (Paolo): il colore e` dell'ORDINE, non del modulo (M.COLORI_ORDINE nel
+    // motore: Movimenti blu, Abilita` Brevi verdi, Ordini Interi rossi). COL legge le
+    // tinte dell'Ordine in corso a ogni uso; 'ATTACCO BS' e` quello di casa. Prima: { bordo: '#00ccff', sfondo: '#002244' };.
+    const COL = (function () {
+        const ripiego = { bordo: '#00ccff', sfondo: '#002244', riquadro: '#002244', tenue: '#00ccff', testo: '#00ccff' };
+        const o = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) {
+            Object.defineProperty(o, k, { enumerable: true, get: function () {
+                const M = window.MotoreN5;
+                return (M && typeof M.colOrdine === 'function') ? M.colOrdine('ATTACCO BS')[k] : ripiego[k];
+            } });
+        });
+        return o;
+    })();
 
     // ==============================================================
     // INGRESSO
@@ -113,10 +126,9 @@
         if (window.mostraTitoloUnitaCorrente) window.mostraTitoloUnitaCorrente();
 
         const container = document.getElementById('weapon-buttons-container');
-        container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:10px; margin-bottom:15px; text-align:center; color:#fff; border-radius:5px;">
-            <b style="color:${COL.bordo}; font-size:20px;">🎯 ATTACCO BS</b><br>
-            <span style="font-size:14px; color:#ccc;">Seleziona l'arma a distanza da utilizzare</span>
-        </div>`;
+
+        window.MotoreN5.azzeraNote('step-weapon');
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `ATTACCO BS`, nota: `Seleziona l'arma a distanza da utilizzare` })}`;
 
         // Ogni voce del profilo può espandersi in più modalità (MULTI, Plasma,
         // Missile...). Le varianti le trova il motore leggendo il database,
@@ -187,7 +199,7 @@
         });
 
         if (bottoni.length === 0) {
-            container.innerHTML += `<p style="color:#ff3333; text-align:center; font-size:18px;">❌ Nessuna arma a distanza utilizzabile.</p>`;
+            container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-size:var(--fs-m);">❌ Nessuna arma a distanza utilizzabile.</p>`;
         } else {
             bottoni.forEach(function (b) {
                 if (b.modi && b.modi.length > 1) {
@@ -225,11 +237,9 @@
         }
         window._modiBS = gruppi;
 
-        // Le armi scartate si mostrano col motivo, invece di sparire in silenzio.
-        if (scartate.length > 0) {
-            container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
-                Non utilizzabili qui: ` + scartate.map(x => `<b>${x.nome}</b> (${x.motivo})`).join(', ') + `</div>`;
-        }
+        // Le armi scartate si dicono col motivo, invece di sparire in silenzio.
+        // 28 ottobre (Paolo): nella ⓘ (o sotto il tasto), non a schermo.
+        scartate.forEach(x => M.nota('step-weapon', x.nome + ' non utilizzabile', x.motivo, { tipo: 'nonpuo' }));
 
         window.goToStep('step-weapon');
     };
@@ -350,18 +360,12 @@
 
         if (window.renderTargetButtons) window.renderTargetButtons();
 
-        // Se l'interfaccia non mostra ancora gli esclusi, li aggiungiamo qui sotto.
-        const cont = document.getElementById('enemy-target-buttons');
+        // Chi non si puo` bersagliare, e perche`: 28 ottobre (Paolo), nella ⓘ
+        // (o sotto il tasto), non piu` in un riquadro sotto l'elenco.
+        window.MotoreN5.azzeraNote('step-wait-aro');
         const vecchio = document.getElementById('bs-scartati');
         if (vecchio) vecchio.remove();
-        if (cont && window.targetsScartati.length > 0) {
-            const div = document.createElement('div');
-            div.id = 'bs-scartati';
-            div.style.cssText = 'margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;';
-            div.innerHTML = '<b style="color:#aaa;">Non bersagliabili ora:</b><br>' +
-                window.targetsScartati.map(t => `• <b>${t.nome}</b> — ${t.motivo}`).join('<br>');
-            cont.appendChild(div);
-        }
+        window.targetsScartati.forEach(t => window.MotoreN5.nota('step-wait-aro', t.nome + ' non bersagliabile', t.motivo, { tipo: 'nonpuo' }));
 
         window.goToStep('step-wait-aro');
     };
@@ -486,6 +490,7 @@
     window.renderTargetsAllocationBS = function () {
         const M = motore(); if (!M) return;
         const container = document.getElementById('targets-allocation-container');
+        window.MotoreN5.azzeraNote('step-modifiers');
         const arma = M.profiloArma(window.currentOrder.weapon);
         const bordo = document.title.includes('NOMADS') ? 'var(--nomad-red)' : 'var(--nomad-orange)';
         const sfondo = document.title.includes('NOMADS') ? '#1a0000' : '#001122';
@@ -496,33 +501,57 @@
         const sagome = !!arma.isTemplate;
         let html = '';
         if (sagome) {
-            html += `<div style="text-align:center; color:#fff; margin-bottom:5px; font-size:16px;">` +
+            html += `<div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:5px; font-size:var(--fs-m);">` +
                 (window.totalBurst > 1
                     ? `${window.totalBurst} SAGOME: per ogni bersaglio accendi le lettere delle Sagome che lo prendono.<br>` +
                       window.lettereSagomaBS().map(function (L) {
                           const sotto = window.combatTargets.filter(t => (t.sagome || []).indexOf(L) >= 0).map(t => t.name);
-                          return `<b style="color:${sotto.length ? '#ffcc66' : '#ff6666'};">Sagoma ${L}</b>: ${sotto.length ? sotto.join(', ') : 'nessun bersaglio'}`;
+                          return `<b style="color:${sotto.length ? 'var(--mn-nota-testo,#ffcc66)' : 'var(--mn-errore,#ff3333)'};">Sagoma ${L}</b>: ${sotto.length ? sotto.join(', ') : 'nessun bersaglio'}`;
                       }).join(' &nbsp;·&nbsp; ')
                     : `UNA SAGOMA: ogni bersaglio scelto è sotto l'area e ne subisce il colpo.`) + `</div>`;
         } else {
-            html += `<div style="text-align:center; color:#fff; margin-bottom:5px; font-size:18px;">
-            DADI BS DA ASSEGNARE: <b style="color:var(--nomad-orange); font-size:24px;">${restanti}</b></div>`;
+            html += `<div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:5px; font-size:var(--fs-m);">
+            DADI BS DA ASSEGNARE: <b style="color:var(--nomad-orange); font-size:var(--fs-l);">${restanti}</b></div>`;
         }
 
-        // Da dove viene il Burst: utile in collaudo, e non costa niente.
+        // 28 ottobre (collaudo grafico D07, Paolo): la scheda a Sagome era
+        // alta due schermi perche` ogni bersaglio ripeteva il riquadro
+        // "ATTACCO A SAGOMA" e la domanda sugli alleati. Ora il riquadro sta
+        // qui UNA volta, e con 2+ Sagome a lettere la domanda e` una sola,
+        // per LETTERA (che e` anche la regola: un alleato sotto la Sagoma A
+        // annulla la A, non le altre; M.sagomeConLettera).
+        const multiSagome = sagome && window.lettereSagomaBS().length > 1;
+        if (sagome && sagomaDiretta(M, arma)) {
+            html += `<div class="sagoma-diretta" style="margin:10px 0 0; text-align:center; padding:8px; background:var(--mn-errore-fondo,#330000); border:1px solid var(--mn-errore,#ff3333); color:var(--mn-attenzione,#ffcc00); font-weight:bold; border-radius:5px;">
+                    ATTACCO A SAGOMA · <span style="font-size:var(--fs-s); color:var(--mn-testo,#ffffff);">Colpo Automatico (salta il tiro BS)</span></div>`;
+        }
+        if (multiSagome) {
+            if (!M.sagomaInnocua(arma)) {
+                window.allineaSagomeAlleatoBS();
+                const conAll = window.currentOrder.sagomeConAlleato || [];
+                html += `<div class="domanda-sagome-alleato" style="margin-top:10px; padding:10px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-nota-bordo,#664400); border-radius:5px;">
+                    <div style="color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-s); margin-bottom:8px; text-align:center;">Quali Sagome prendono anche un <b>TUO</b> alleato o un neutrale? <span style="color:var(--mn-debole,#aaaaaa);">(nessuna: lascia spente)</span></div>
+                    <div style="display:flex; gap:8px; justify-content:center;">` +
+                    window.lettereSagomaBS().map(function (L) {
+                        const on = conAll.indexOf(L) >= 0;
+                        return `<button type="button" class="burst-btn tasto-sagoma-alleato" style="min-width:44px; font-weight:bold; ${on ? M.stileTavolozza('attenzione-fondo', 'attenzione', 'attenzione') : 'background:var(--mn-fondo-tasto,#111111); color:var(--mn-spento,#888888); border-color:var(--mn-bordo-spento,#555555);'}" onclick="window.toggleSagomaAlleatoBS('${L}')">${L}</button>`;
+                    }).join('') + `</div></div>`;
+                M.nota('step-modifiers', 'Sagoma su un alleato', 'Accendi la lettera se quella Sagoma prende anche un tuo alleato, un neutrale o un Marker Impersonation nemico (anche in mischia col bersaglio, o passato nell\'area durante l\'Ordine): quella Sagoma è annullata per tutti i bersagli che ci stanno sotto. Le altre Sagome valgono.', { tipo: 'regole' });
+                if (conAll.length) M.nota('step-modifiers', 'Sagome annullate', conAll.map(L => 'Sagoma ' + L).join(', ') + ': colpo annullato per chi ci sta sotto.', { tipo: 'stato' });
+            }
+        }
+
+        // Da dove viene il Burst: 28 ottobre (Paolo), nella ⓘ (o in cima).
+        html += `<div style="margin-bottom:15px;"></div>`;
         if (window.burstDettaglio && window.burstDettaglio.voci.length > 1) {
-            html += `<div style="text-align:center; color:#888; font-size:12px; margin-bottom:15px;">` +
-                window.burstDettaglio.voci.map(v => v.motivo).join(' · ') + `</div>`;
-        } else {
-            html += `<div style="margin-bottom:15px;"></div>`;
+            M.nota('step-modifiers', 'Burst', window.burstDettaglio.voci.map(v => v.motivo).join(' · '), { tipo: 'regole' });
         }
         // 🎲 Il DADO SPECIALE: prima si calcolava e nessuno lo mostrava.
         // Con piu` bersagli va a UNO solo: il primo, o quello marcato
         // `dadoSpeciale` (il motore lo assegna nello scontro). (27 settembre.)
         if (window.burstDettaglio && window.burstDettaglio.sd > 0) {
             const sd = window.burstDettaglio.sd;
-            html += `<div style="text-align:center; color:#ffcc00; font-size:13px; margin:-8px 0 15px;">` +
-                `🎲 +${sd} Dado Speciale: tira ${sd} dado in più su UN bersaglio (il primo), poi scartane ${sd}. Non è un dado di Burst.</div>`;
+            M.nota('step-modifiers', 'Dado Speciale', `+${sd}: tira ${sd} dado in più su UN bersaglio (il primo), poi scartane ${sd}. Non è un dado di Burst.`, { tipo: 'regole' });
         }
 
         // 22 ottobre (Paolo): SAGOMA D'IMPATTO, un colpo, piu` bersagli. Il
@@ -531,45 +560,33 @@
         // il terreno non servono (la Copertura non da` nemmeno il +3 alla
         // salvezza: e` una Sagoma). Restano il nome e gli alleati in mischia.
         const impattoUnico = impattoUnicoBS(M, arma);
-        const STILE_SI = 'background:#004400; border-color:#00ff00; color:#00ff00;';
-        const STILE_NO = 'background:#554400; border-color:#ffcc00; color:#ffcc00;';
+        const STILE_SI = M.stileColore('si');
+        const STILE_NO = M.stileColore('attenzione');
         window.combatTargets.forEach(function (tgt, index) {
             if (impattoUnico && index > 0) {
                 html += `
             <div class="target-card bersaglio-secondario" style="border-left: 4px solid ${bordo}; margin-bottom: 20px; background: rgba(255,255,255,0.03); padding: 15px; overflow: hidden;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <b style="color:var(--nomad-orange); font-size:20px;">${tgt.name}</b>
-                    <span style="font-size:14px; font-weight:bold; color:#ffcc66;">SECONDARIO</span>
+                    <b style="color:var(--nomad-orange); font-size:var(--fs-l);">${tgt.name}</b>
+                    <span style="font-size:var(--fs-s); font-weight:bold; color:var(--mn-nota-testo,#ffcc66);">SECONDARIO</span>
                 </div>
-                <div style="color:#bbb; font-size:13px;">Sotto la Sagoma del Principale. Lo stesso tiro vale anche per lui: gittata, copertura e munizione sono quelle del Principale. Reagisce e fa il suo Tiro Salvezza.</div>
+                <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-s);">Sotto la Sagoma del Principale. Lo stesso tiro vale anche per lui: gittata, copertura e munizione sono quelle del Principale. Reagisce e fa il suo Tiro Salvezza.</div>
                 ${window.htmlAlleatiInMischiaBS(tgt, index)}
             </div>`;
                 return;
             }
             const coverStyle = tgt.cover
-                ? `background:var(--nomad-orange); color:#000;`
-                : `background:${sfondo}; color:#fff;`;
+                ? `background:var(--nomad-orange); color:var(--mn-scuro,#000000);`
+                : `background:${sfondo}; color:var(--mn-testo,#ffffff);`;
 
             let rangeHtml;
             if (sagomaDiretta(M, arma)) {
-                rangeHtml = `<div style="margin-bottom:15px; text-align:center; padding:10px; background:#440000; border:1px solid #ff0000; color:#ff9900; font-weight:bold; border-radius:5px;">
-                    🔥 ATTACCO A SAGOMA<br><span style="font-size:12px; color:#fff;">Colpo Automatico (salta il tiro BS)</span></div>
-                    <button class="huge-btn" style="width:100%; margin:0 0 15px; min-height:48px; font-size:15px; ${tgt.fuoriSagoma ? STILE_NO : STILE_SI}" onclick="window.toggleFuoriGittataBS(${index})">${tgt.fuoriSagoma ? 'BERSAGLIO NON SOTTO LA SAGOMA' : 'BERSAGLIO SOTTO LA SAGOMA'}</button>`;
+                rangeHtml = `<button class="huge-btn" style="width:100%; margin:0 0 15px; min-height:48px; font-size:var(--fs-m); ${tgt.fuoriSagoma ? STILE_NO : STILE_SI}" onclick="window.toggleFuoriGittataBS(${index})">${tgt.fuoriSagoma ? 'BERSAGLIO NON SOTTO LA SAGOMA' : 'BERSAGLIO SOTTO LA SAGOMA'}</button>`;
             } else {
-                let segmenti = '', etichette = '';
-                arma.bands.forEach(function (b, i) {
-                    let cls = 'seg-2';
-                    if (b.mod > 0) cls = 'seg-1'; else if (b.mod === -3) cls = 'seg-3'; else if (b.mod < -3) cls = 'seg-4';
-                    const attivo = (!tgt.fuoriGittata && tgt.rangeIndex === i) ? 'active' : '';
-                    segmenti += `<div class="range-seg ${cls} ${attivo}" onclick="window.setTargetRangeBS(${index}, ${i})">${b.mod > 0 ? '+' + b.mod : b.mod}</div>`;
-                    etichette += `<span>${b.label}</span>`;
-                });
-                // L'ultimo segmento: oltre la gittata massima dell'arma. Non e`
-                // una banda (non ha un MOD): e` un requisito che manca.
-                segmenti += `<div class="range-seg ${tgt.fuoriGittata ? 'active' : ''}" style="background:${tgt.fuoriGittata ? '#ffcc00' : '#332b00'}; color:${tgt.fuoriGittata ? '#000' : '#ffcc00'}; font-size:12px;" onclick="window.toggleFuoriGittataBS(${index})">FUORI</div>`;
-                etichette += `<span>oltre</span>`;
-                rangeHtml = `<div style="margin-bottom:15px;"><div class="range-bar">${segmenti}</div>
-                    <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${etichette}</div></div>`;
+                // 28 ottobre (Paolo): la barra e` del motore (M.barraGittata),
+                // coi numeri sui confini; il FUORI in coda e` un requisito che manca.
+                rangeHtml = M.barraGittata(arma.bands, { indice: tgt.rangeIndex, tocco: (i) => `window.setTargetRangeBS(${index}, ${i})`,
+                    fuori: `window.toggleFuoriGittataBS(${index})`, fuoriAttivo: !!tgt.fuoriGittata });
             }
 
             // 14 ottobre (Paolo): la MODALITA` dell'arma (MULTI: AP / Shock /
@@ -592,24 +609,23 @@
             html += `
             <div class="target-card" style="border-left: 4px solid ${bordo}; margin-bottom: 20px; background: rgba(255,255,255,0.03); padding: 15px; overflow: hidden;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <b style="color:var(--nomad-orange); font-size:20px;">${tgt.name}${tgt.dopoScoprire ? ' <span style="font-size:12px; color:#66ff66;">🔍 dopo lo Scoprire</span>' : ''}${(impattoUnico && index === 0) ? ' <span class="etichetta-principale" style="font-size:13px; color:#ffcc66;">PRINCIPALE</span>' : ''}</b>
-                    ${(sagome && window.totalBurst <= 1) ? `<span style="font-size:18px; font-weight:bold; color:#00ff00;">1 Sagoma</span>` : (sagome && Array.isArray(tgt.sagome)) ? `<div class="sagome-lettere" style="display:flex; gap:6px;">` +
+                    <b style="color:var(--nomad-orange); font-size:var(--fs-l);">${tgt.name}${tgt.dopoScoprire ? ' <span style="font-size:var(--fs-xs); color:var(--mn-si-testo,#88ff88);">🔍 dopo lo Scoprire</span>' : ''}${(impattoUnico && index === 0) ? ' <span class="etichetta-principale" style="font-size:var(--fs-s); color:var(--mn-nota-testo,#ffcc66);">PRINCIPALE</span>' : ''}</b>
+                    ${(sagome && window.totalBurst <= 1) ? `<span style="font-size:var(--fs-m); font-weight:bold; color:var(--mn-si,#00ff00);">1 Sagoma</span>` : (sagome && Array.isArray(tgt.sagome)) ? `<div class="sagome-lettere" style="display:flex; gap:6px;">` +
                         window.lettereSagomaBS().map(function (L) {
                             const on = tgt.sagome.indexOf(L) >= 0;
-                            return `<button class="burst-btn tasto-sagoma" style="min-width:44px; font-weight:bold; ${on ? 'background:#ffcc66; color:#000; border-color:#ffcc66;' : 'background:#111; color:#888; border-color:#555;'}" onclick="window.toggleSagomaBS(${index}, '${L}')">${L}</button>`;
+                            return `<button class="burst-btn tasto-sagoma" style="min-width:44px; font-weight:bold; ${on ? 'background:var(--mn-nota-testo,#ffcc66); color:var(--mn-scuro,#000000); border-color:var(--mn-nota-testo,#ffcc66);' : 'background:var(--mn-fondo-tasto,#111111); color:var(--mn-spento,#888888); border-color:var(--mn-bordo-spento,#555555);'}" onclick="window.toggleSagomaBS(${index}, '${L}')">${L}</button>`;
                         }).join('') + `</div>` : `<div class="burst-ctrl">
                         <button class="burst-btn" style="opacity:${(sagome ? tgt.burst > 1 : tgt.burst > 0) ? 1 : 0.3}" onclick="window.adjustTargetBurstBS(${index}, -1)">-</button>
-                        <span style="margin: 0 10px; font-size:22px; font-weight:bold; color:${tgt.burst > 0 ? '#00ff00' : '#888'}">${tgt.burst} ${sagome ? (tgt.burst === 1 ? 'Sagoma' : 'Sagome') : 'B'}</span>
+                        <span style="margin: 0 10px; font-size:var(--fs-l); font-weight:bold; color:${tgt.burst > 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-spento,#888888)'}">${tgt.burst} ${sagome ? (tgt.burst === 1 ? 'Sagoma' : 'Sagome') : 'B'}</span>
                         <button class="burst-btn" style="opacity:${(sagome ? tgt.burst < window.totalBurst : restanti > 0) ? 1 : 0.3}" onclick="window.adjustTargetBurstBS(${index}, 1)">+</button>
                     </div>`}
                 </div>
                 ${rangeHtml}
-                ${tgt.punto ? `<div class="nota-punto" style="color:#bbb; font-size:13px; margin-top:10px;">Arma Targetless: si tira su un punto del tavolo, non su una truppa. Niente Copertura né Mimetismo; la gittata è quella fino al punto, e serve la Linea di Tiro verso il punto.</div>` : ''}
                 <div style="display:flex; gap:10px; margin-top: 15px;">
-                    ${tgt.punto ? '' : `<button class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; ${coverStyle}" onclick="window.toggleTargetCoverBS(${index})">${tgt.cover ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverSi') : ''}IN COPERTURA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverNo') : ''}NO COPERTURA`}</button>`}
-                    <button class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; ${tgt.lof === false ? STILE_NO : STILE_SI}" onclick="window.toggleLineaDiTiroBS(${index})">${tgt.lof === false ? 'LINEA DI TIRO NO' : 'LINEA DI TIRO SÌ'}</button>
+                    ${tgt.punto ? '' : `<button class="huge-btn" data-nota="copertura-${index}" style="flex:1; margin:0; min-height:55px; font-size:var(--fs-m); ${coverStyle}" onclick="window.toggleTargetCoverBS(${index})">${tgt.cover ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverSi') : ''}IN COPERTURA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverNo') : ''}NO COPERTURA`}</button>`}
+                    <button class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:var(--fs-m); ${tgt.lof === false ? STILE_NO : STILE_SI}" onclick="window.toggleLineaDiTiroBS(${index})">${tgt.lof === false ? 'LINEA DI TIRO NO' : 'LINEA DI TIRO SÌ'}</button>
                 </div>
-                ${window.htmlAlleatiInMischiaBS(tgt, index)}
+                ${multiSagome ? '' : window.htmlAlleatiInMischiaBS(tgt, index)}
                 ${(tgt.cover && typeof window.sceltaCopertura === 'function')
                     // 🔴 `index`, non `i`: `i` e` la variabile del ciclo delle bande,
                     // gia` chiuso. Valutarla qui sollevava, e renderTargetsAllocationBS
@@ -617,14 +633,23 @@
                     // Errore mio del 23 settembre. (Collaudo al tavolo di Paolo.)
                     ? window.sceltaCopertura(tgt.copertura, 'window.setTargetCoperturaBS', index)
                     : ''}
-                <div style="display:flex; gap:10px; margin-top:10px; align-items:flex-end;">
-                    <select class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; background:#002233; color:#fff; border-color:${bordo}; text-align:center; padding:0 10px;" onchange="window.setTargetAmmoBS(${index}, this.value)">
+                <!-- 27 ottobre (collaudo grafico, INTERFACCIA): la tendina delle
+                     munizioni a mezza riga si troncava ("MUNIZIONI: AP · B3 · Sagoma
+                     d'Impatto"). Ora occupa tutta la riga e il terreno va sotto,
+                     come nei modificatori dell'ARO (G06), con la stessa tendina
+                     (classe tendina-munizioni di logica_aro). -->
+                <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+                    <select class="huge-btn tendina-munizioni" style="flex:1 1 100%; width:100%; min-width:0; margin:0; min-height:55px; font-size:var(--fs-m); background:#002233; color:var(--mn-testo,#ffffff); border-color:${bordo}; text-align:center; padding:0 10px;" onchange="window.setTargetAmmoBS(${index}, this.value)">
                         ${ammoHtml}
                     </select>
-                    <div class="bs-terreno" style="flex:1; min-width:0;">${window.tendinaTerrenoBS(tgt, index)}</div>
+                    <div class="bs-terreno" style="min-width:0;">${window.tendinaTerrenoBS(tgt, index)}</div>
                 </div>
-                ${(typeof window.notaZona === 'function' && tgt.zona) ? (window.notaZona(tgt.zona) || '') : ''}
             </div>`;
+            // 28 ottobre (Paolo): le spiegazioni della scheda nella ⓘ (o sotto il tasto).
+            const chi = (window.combatTargets.length > 1) ? tgt.name + ': ' : '';
+            if (tgt.punto) M.nota('step-modifiers', chi + 'Arma Targetless', 'Si tira su un punto del tavolo, non su una truppa. Niente Copertura né Mimetismo; la gittata è quella fino al punto, e serve la Linea di Tiro verso il punto.', { tipo: 'mod' });
+            if (tgt.cover && !tgt.punto) M.nota('step-modifiers', chi + 'Copertura', '-3 al tuo tiro, +3 alla sua ARM.', { tipo: 'mod', tasto: 'copertura-' + index });
+            if (tgt.zona) { const z = (window.ZONE_VISIBILITA || []).find(x => x.id === tgt.zona); if (z) M.nota('step-modifiers', chi + z.nome, z.nota, { tipo: 'mod' }); }
         });
 
         container.innerHTML = html;
@@ -767,7 +792,7 @@
         }
         console.error('\u26d4 window.sceltaTerreno manca (app.html non caricato?): tendina del solo terreno, senza Fumo ne` Eclipse.');
         return `<div style="display:flex; margin-top: 25px; margin-bottom: 5px;">
-                    <select class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; background:#111; color:#fff; border-color:#888; text-align:center; padding:0 10px;" onchange="window.setTargetTerrenoBS(${index}, this.value)">
+                    <select class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:var(--fs-m); background:var(--mn-fondo-tasto,#111111); color:var(--mn-testo,#ffffff); border-color:var(--mn-spento,#888888); text-align:center; padding:0 10px;" onchange="window.setTargetTerrenoBS(${index}, this.value)">
                         ${window.generaOpzioniTerreni ? window.generaOpzioniTerreni(tgt.terrain) : '<option value="NESSUNO">Nessun Terreno</option>'}
                     </select>
                 </div>`;
@@ -819,6 +844,43 @@
         t.burst = t.sagome.length;
         window.renderTargetsAllocationBS();
     };
+    // D07 (28 ottobre): la risposta "un tuo alleato sotto la Sagoma" e` per
+    // LETTERA, in currentOrder.sagomeConAlleato. Sui bersagli diventa:
+    //   sagomeConAlleato = le SUE lettere accese (il motore annulla quelle);
+    //   alleatoNellaSagoma = true solo se TUTTE le sue lettere sono accese
+    //   (il bersaglio non ha piu` Sagome valide), false altrimenti.
+    // Partenza: accese le lettere dei bersagli Ingaggiati (come prima, quando
+    // la domanda per bersaglio partiva da SI` sui bersagli in mischia).
+    window.allineaSagomeAlleatoBS = function () {
+        const M = motore(); const co = window.currentOrder || {};
+        const lettere = window.lettereSagomaBS();
+        const ts = window.combatTargets || [];
+        const nemici = (M && M.rosterNemico && M.rosterNemico()) || [];
+        const ingaggiato = function (t) { const v = nemici.find(u => u && String(u.id) === String(t.id)); return !!(v && M.statoBersaglio(v).engaged); };
+        if (!Array.isArray(co.sagomeConAlleato)) {
+            const acc = [];
+            ts.forEach(function (t) { if (ingaggiato(t)) (t.sagome || []).forEach(L => { if (acc.indexOf(L) < 0) acc.push(L); }); });
+            co.sagomeConAlleato = acc.sort();
+        }
+        co.sagomeConAlleato = co.sagomeConAlleato.filter(L => lettere.indexOf(L) >= 0);
+        // alleatoNellaSagoma resta true solo sul bersaglio Ingaggiato con tutte
+        // le sue lettere accese: e` lui "la mischia col tuo alleato", e il
+        // motore lo nomina nelle note degli altri ("Sagoma A (F1)"). Gli altri
+        // sotto una lettera accesa sono annullati dalla lettera.
+        ts.forEach(function (t) {
+            const sue = Array.isArray(t.sagome) ? t.sagome : [];
+            t.sagomeConAlleato = sue.filter(L => co.sagomeConAlleato.indexOf(L) >= 0);
+            t.alleatoNellaSagoma = sue.length > 0 && t.sagomeConAlleato.length === sue.length && ingaggiato(t);
+        });
+    };
+    window.toggleSagomaAlleatoBS = function (L) {
+        const co = window.currentOrder; if (!co) return;
+        const a = Array.isArray(co.sagomeConAlleato) ? co.sagomeConAlleato.slice() : [];
+        const k = a.indexOf(L);
+        if (k >= 0) a.splice(k, 1); else a.push(L);
+        co.sagomeConAlleato = a.sort();
+        window.renderTargetsAllocationBS();
+    };
     window.adjustTargetBurstBS = function (i, delta) {
         // Sagoma: ogni bersaglio da 1 al Burst, indipendente dagli altri.
         const M = motore(); const arma = M && M.profiloArma(window.currentOrder.weapon);
@@ -856,6 +918,7 @@
         if (arma.isTemplate && window.lettereSagomaBS().length > 1) {
             const senza = window.combatTargets.filter(t => !(t.sagome || []).length).map(t => t.name);
             if (senza.length) return alert('⚠️ ' + senza.join(', ') + ': nessuna Sagoma accesa. Accendi le lettere delle Sagome che lo prendono, o togli il bersaglio.');
+            if (!M.sagomaInnocua(arma)) window.allineaSagomeAlleatoBS();
         }
         const bersagli = M.bersagliConRequisiti(window.combatTargets, req);
 
@@ -880,6 +943,7 @@
         if (window.coordIndex < window.coordUnits.length) {
             window.combatTargets = [];
             window.pendingTargets = [];
+            if (window.currentOrder) window.currentOrder.sagomeConAlleato = undefined;   // D07: la risposta e` di chi spara
             // SCOPRIRE + ATTACCO coordinato: il prossimo partecipante fissa il
             // SUO Scoprire e il SUO Attacco. Il Marker resta lo stesso.
             if (scEs) { scEs.busta = null; scEs.fatto = false; scEs.bersagliAttacco = null; window.currentOrder.attaccoSceltoPer = null; }
@@ -923,9 +987,9 @@
         const calcDiv = document.getElementById('calc-result');
         if (calcDiv) {
             calcDiv.innerHTML = `
-                <div style="text-align:center; padding:20px; border:2px solid #00ff00; background:rgba(0,255,0,0.1); margin-top:20px;">
-                    <h2 style="color:#00ff00; margin:0;">DATI INVIATI ALL'HUB</h2>
-                    <p style="font-size:12px; color:#aaa;">Attacco BS di ${window.coordUnits.length} unità.</p>
+                <div style="text-align:center; padding:20px; border:2px solid var(--mn-si,#00ff00); background:rgba(0,255,0,0.1); margin-top:20px;">
+                    <h2 style="color:var(--mn-si,#00ff00); margin:0;">DATI INVIATI ALL'HUB</h2>
+                    <p style="font-size:var(--fs-xs); color:var(--mn-debole,#aaaaaa);">Attacco BS di ${window.coordUnits.length} unità.</p>
                 </div>`;
             calcDiv.style.display = 'block';
         }
@@ -940,7 +1004,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-27.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-28.5', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

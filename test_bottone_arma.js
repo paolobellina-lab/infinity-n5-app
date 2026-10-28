@@ -1,4 +1,9 @@
-// @versione 2026-10-15.1 | test_bottone_arma.js | proprieta`: chat TEST
+// @versione 2026-10-28.1 | test_bottone_arma.js | proprieta`: chat TEST
+// 2026-10-28.1: motore 2026-10-28.1, barra del bottone su scala comune di 96".
+//    Sezione 10 RISCRITTA: le celle si leggono da data-da / data-fino /
+//    data-mod (prima dal disegno, <span>16"</span><span>+3</span>), e due
+//    prove nuove: celle contigue come M.gittateRaggruppate con la cella-fuori
+//    fino a 96 (cinque armi), e i numeri del Combi Rifle. Da 102 a 108 prove.
 // 2026-10-15.1: sezione 6 girata (motore 2026-10-13.2, Paolo 13 ottobre). Ogni
 //    programma ha la SUA immagine, img/programmi/<nome>.png; se il file manca
 //    ripiega sull'icona dello stato che provoca (onerror), e se non c'e` nemmeno
@@ -415,8 +420,13 @@ sezione('10. Le celle della gittata riespandono nelle bande dell arma', () => {
     // Combi diventano tre celle (16" +3, 32" -3, 48" -6). Riespanderle e
     // confrontarle col profilo prova la FEDELTA` del raggruppamento — non i
     // valori, che vengono dallo stesso database (vedi la nota in sezione 8).
-    const celle = (h) => [...String(h).matchAll(/font-size:11px; padding:1px 0;">(\d+)"<\/span><span style="font-size:17px[^"]*">([+-]?\d+)</g)]
-        .map(x => ({ fino: Number(x[1]), mod: Number(x[2]) }));
+    // RISCRITTO il 28 ottobre (motore 2026-10-28.1, scala comune di 96"):
+    // prima le celle si leggevano dal disegno, <span>16"</span><span>+3</span>;
+    // ora ogni cella dice i suoi numeri, data-da / data-fino / data-mod, e in
+    // coda c e` la cella-fuori fino a 96 (senza data-mod).
+    const celle = (h) => [...String(h).matchAll(/<div class="cella-gittata" data-da="(\d+)" data-fino="(\d+)" data-mod="(-?\d+)"/g)]
+        .map(x => ({ da: Number(x[1]), fino: Number(x[2]), mod: Number(x[3]) }));
+    const fuoriDi = (h) => { const m = String(h).match(/<div class="cella-gittata cella-fuori" data-da="(\d+)" data-fino="(\d+)"/); return m ? { da: Number(m[1]), fino: Number(m[2]) } : null; };
     const riespandi = (cs) => { const b = []; let da = 0; cs.forEach(c => { for (; da < c.fino; da += 8) b.push({ mod: c.mod, label: `${da}-${da + 8}"` }); }); return b; };
     const dire = (x) => `${x.mod > 0 ? '+' : ''}${x.mod} a ${x.label}`;
 
@@ -439,6 +449,21 @@ sezione('10. Le celle della gittata riespandono nelle bande dell arma', () => {
              ? 'NESSUNA CELLA LETTA: questa prova non sta guardando niente. Il motore ha cambiato il disegno?'
              : fuori.join('\n       '));
     });
+    // 28 ottobre: le celle sono contigue da 0, sono quelle di
+    // M.gittateRaggruppate, e la cella-fuori chiude la scala a 96".
+    ['Combi Rifle', 'Heavy Machine Gun', 'Grenades', 'MULTI Sniper Rifle (AP Mode)', 'Pistol'].forEach(nome => {
+        const p = M.profiloArma(nome), h = M.bottoneArma(p, {}), cs = celle(h), fu = fuoriDi(h);
+        const contigue = cs.length > 0 && cs[0].da === 0 && cs.every((c, i) => i === 0 || c.da === cs[i - 1].fino);
+        const gr = M.gittateRaggruppate(p.bands).map(g => g.fino + ':' + g.mod);
+        const fine = cs.length ? cs[cs.length - 1].fino : 0;
+        const fuoriGiusto = fine < 96 ? (!!fu && fu.da === fine && fu.fino === 96) : !fu;
+        ok(contigue && J(cs.map(c => c.fino + ':' + c.mod)) === J(gr) && fuoriGiusto,
+           `${nome}: celle contigue da 0 come M.gittateRaggruppate, e FUORI da ${fine} a 96`,
+           J({ celle: cs, raggruppate: gr, fuori: fu }));
+    });
+    { const h = M.bottoneArma(M.profiloArma('Combi Rifle'), {});
+      ok(J(celle(h).map(c => [c.da, c.fino, c.mod])) === J([[0, 16, 3], [16, 32, -3], [32, 48, -6]]) && J(fuoriDi(h)) === J({ da: 48, fino: 96 }),
+         'Combi Rifle: 0-16 +3, 16-32 -3, 32-48 -6, fuori 48-96 (i numeri di MOTORE)', J({ celle: celle(h), fuori: fuoriDi(h) })); }
     // 🔴 Lo ZERO non si unisce al -3: sono due MOD diversi. L HMG ha
     // -3 / 0 / +3 +3 / -3 -3, cioe` QUATTRO celle, non tre.
     const hmg = celle(M.bottoneArma(M.profiloArma('Heavy Machine Gun'), {}));

@@ -1,4 +1,4 @@
-// @versione 2026-09-14.1 | ordine_scenografia.js | proprieta`: chat MOTORE
+// @versione 2026-10-28.4 | ordine_scenografia.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏗️ SCENOGRAFIA (N5) - ordine_scenografia.js
 // ------------------------------------------
@@ -34,7 +34,20 @@
         return window.MotoreN5;
     }
 
-    const COL = { bordo: '#ffaa33', sfondo: '#332200' };
+    // 28 ottobre (Paolo): il colore e` dell'ORDINE, non del modulo (M.COLORI_ORDINE nel
+    // motore: Movimenti blu, Abilita` Brevi verdi, Ordini Interi rossi). COL legge le
+    // tinte dell'Ordine in corso a ogni uso; 'INTERAGIRE OBIETTIVO' e` quello di casa. Prima: { bordo: '#ffaa33', sfondo: '#332200' };.
+    const COL = (function () {
+        const ripiego = { bordo: '#ffaa33', sfondo: '#332200', riquadro: '#332200', tenue: '#ffaa33', testo: '#ffaa33' };
+        const o = {};
+        ['bordo', 'sfondo', 'riquadro', 'tenue', 'testo'].forEach(function (k) {
+            Object.defineProperty(o, k, { enumerable: true, get: function () {
+                const M = window.MotoreN5;
+                return (M && typeof M.colOrdine === 'function') ? M.colOrdine('INTERAGIRE OBIETTIVO')[k] : ripiego[k];
+            } });
+        });
+        return o;
+    })();
 
     function eDeactivator(azione) {
         return String(azione || '').toUpperCase() === 'DEACTIVATOR';
@@ -76,15 +89,12 @@
             const e = M.bersagliDeactivator(unita, {});
             giudizi = e.bersagli;
             avvisi = e.avvisi;
-            intestazione = `<b style="color:${COL.bordo}; font-size:18px;">🔌 DEACTIVATOR</b><br>
-                <span style="color:#aaa; font-size:13px;">Solo dispositivi NEMICI già schierati.<br>
-                Basta la Zona di Controllo: la Linea di Tiro non serve.<br>
-                I Marker Mimetici vanno Scoperti prima.</span>`;
+            intestazione = { colore: COL, titolo: 'DEACTIVATOR',
+                nota: 'Solo dispositivi NEMICI già schierati.<br>Basta la Zona di Controllo: la Linea di Tiro non serve.<br>I Marker Mimetici vanno Scoperti prima.' };
         } else {
             giudizi = M.bersagliScenografia(azione, {});
-            intestazione = `<b style="color:${COL.bordo}; font-size:18px;">🎯 INTERAGIRE CON OBIETTIVO</b><br>
-                <span style="color:#aaa; font-size:13px;">Solo elementi col Tratto Objective.<br>
-                Richiede il contatto di Silhouette.</span>`;
+            intestazione = { colore: COL, titolo: 'INTERAGIRE CON OBIETTIVO',
+                nota: 'Solo elementi col Tratto Objective.<br>Richiede il contatto di Silhouette.' };
         }
 
         window.validTargets = giudizi.filter(g => g.ammesso).map(g => g.unita);
@@ -92,33 +102,31 @@
             .map(g => ({ nome: g.nome, motivo: g.motivo }));
 
         const container = document.getElementById('enemy-target-buttons');
+
+        window.MotoreN5.azzeraNote('step-wait-aro');
         if (!container) return;
 
-        container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:12px; border-radius:5px; margin-bottom:15px; text-align:center;">
-            ${intestazione}</div>`;
+        container.innerHTML = M.intestazioneOrdine(intestazione);
 
         if (window.validTargets.length === 0) {
-            container.innerHTML += `<p style="color:#ff3333; text-align:center; font-weight:bold;">
+            container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-weight:bold;">
                 ${eDeactivator(azione) ? 'Nessun dispositivo nemico da disattivare.' : 'Nessun obiettivo sul tavolo.'}</p>`;
         } else {
             giudizi.filter(g => g.ammesso).forEach(function (g) {
                 const nome = g.nome;
                 const sotto = (g.tratti && g.tratti.length) ? g.tratti.join(', ')
                             : (g.tipo || 'dispositivo');
-                container.innerHTML += `<button class="huge-btn" style="width:100%; min-height:62px; font-size:19px; margin-bottom:6px; background:#111; border-color:${COL.bordo};"
+                container.innerHTML += `<button class="huge-btn" style="width:100%; min-height:62px; font-size:var(--fs-l); margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:${COL.bordo};"
                     onclick="window.scegliBersaglioScenografia('${String(g.unita.id).replace(/'/g, "\\'")}')">
                     ${eDeactivator(azione) ? '🔌' : '🎯'} ${nome}<br>
-                    <span style="font-size:13px; color:${COL.bordo};">${sotto}</span></button>`;
+                    <span style="font-size:var(--fs-s); color:${COL.bordo};">${sotto}</span></button>`;
             });
         }
 
-        if (window.targetsScartati.length > 0) {
-            container.innerHTML += `<div style="margin-top:15px; padding:10px; background:#111; border:1px solid #444; border-radius:5px; color:#888; font-size:13px;">
-                <b style="color:#aaa;">Non bersagliabili:</b><br>` +
-                window.targetsScartati.map(t => `• <b>${t.nome}</b> — ${t.motivo}`).join('<br>') + `</div>`;
-        }
+        // 28 ottobre (Paolo): perche` non si puo`, nella ⓘ (o sotto il tasto).
+        window.targetsScartati.forEach(t => window.MotoreN5.nota('step-wait-aro', t.nome + ' non bersagliabile', t.motivo, { tipo: 'nonpuo' }));
         avvisi.forEach(function (a) {
-            container.innerHTML += `<div style="margin-top:10px; padding:10px; background:#221100; border:1px solid #664400; border-radius:5px; color:#cc9955; font-size:13px;">⚠️ ${a.messaggio}</div>`;
+            container.innerHTML += `<div style="margin-top:10px; padding:10px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-nota-bordo,#664400); border-radius:5px; color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s);">⚠️ ${a.messaggio}</div>`;
         });
 
         window.goToStep('step-wait-aro');
@@ -152,6 +160,7 @@
 
     window.renderScenografia = function () {
         const M = motore(); if (!M) return;
+        M.azzeraNote('step-modifiers');
         const unita = window.coordUnits[window.coordIndex];
         const azione = window.currentOrder.action;
         const t = window.combatTargets[0];
@@ -170,26 +179,19 @@
             });
 
             // Il Deactivator ha gittate proprie: si mostrano.
-            let seg = '', lab = '';
-            arma.bands.forEach(function (b, i) {
-                let cls = 'seg-2';
-                if (b.mod > 0) cls = 'seg-1'; else if (b.mod === -3) cls = 'seg-3'; else if (b.mod < -3) cls = 'seg-4';
-                seg += `<div class="range-seg ${cls} ${t.rangeIndex === i ? 'active' : ''}" onclick="window.setRangeScenografia(${i})">${b.mod > 0 ? '+' + b.mod : b.mod}</div>`;
-                lab += `<span>${b.label}</span>`;
-            });
-            corpo = `<div style="text-align:center; color:#aaa; font-size:12px; margin:10px 0 5px;">Gittata (il Deactivator ha bande proprie):</div>
-                <div class="range-bar">${seg}</div>
-                <div style="display:flex; justify-content:space-between; font-size:10px; color:#888; margin-top:4px;">${lab}</div>`;
+            // 28 ottobre: la barra e` del motore (M.barraGittata), coi numeri sui confini.
+            corpo = `<div style="text-align:center; color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); margin:10px 0 5px;">Gittata (il Deactivator ha bande proprie):</div>
+                ${M.barraGittata(arma.bands, { indice: t.rangeIndex, tocco: (i) => `window.setRangeScenografia(${i})`, stile: '' })}`;
 
             // Disco Baller: la stessa attrezzatura riaccende una Disco Ball alleata.
             if (/DISCO BALLER/i.test(((unita && unita.skills) || '') + ' ' + ((unita && unita.equip) || ''))) {
                 const st = window.scenografiaDiscoBall
-                    ? 'background:#004400; border-color:#00ff00; color:#00ff00;'
-                    : 'background:#111; border-color:#888; color:#fff;';
+                    ? M.stileColore('si')
+                    : 'background:var(--mn-fondo-tasto,#111111); border-color:var(--mn-spento,#888888); color:var(--mn-testo,#ffffff);';
                 // L'etichetta nomina la Disco Ball in ENTRAMBI gli stati:
                 // da spento diceva solo "disattivo un dispositivo nemico", e
                 // chi non sapeva dell'interruttore non capiva a cosa servisse.
-                corpo += `<button class="huge-btn" style="width:100%; margin-top:12px; min-height:55px; font-size:14px; ${st}"
+                corpo += `<button class="huge-btn" style="width:100%; margin-top:12px; min-height:55px; font-size:var(--fs-s); ${st}"
                     onclick="window.toggleDiscoBall()">
                     ${window.scenografiaDiscoBall
                         ? '💿 DISCO BALL alleata: RIATTIVO (+3 WIP)'
@@ -213,25 +215,25 @@
         window.scenografiaEsito = e;
 
         const dettaglio = e.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                <span style="color:#aaa;">${v.motivo}</span>
-                <b style="color:${v.valore >= 0 ? '#00ff00' : '#ff6666'};">${v.fonte === 'base' ? '' : (v.valore > 0 ? '+' + v.valore : v.valore)}</b></div>`).join('');
+                <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
+                <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.fonte === 'base' ? '' : (v.valore > 0 ? '+' + v.valore : v.valore)}</b></div>`).join('');
 
         document.getElementById('targets-allocation-container').innerHTML = `
-            <h2 style="color:${COL.bordo}; text-align:center; margin-bottom:20px;">${eDeactivator(azione) ? 'DEACTIVATOR' : 'INTERAGIRE CON OBIETTIVO'}</h2>
+            ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `${eDeactivator(azione) ? 'DEACTIVATOR' : 'INTERAGIRE CON OBIETTIVO'}` })}
             <div class="target-card" style="border-left:4px solid ${COL.bordo}; background:rgba(255,170,51,0.05); padding:15px; border-radius:5px;">
-                <b style="color:#fff; font-size:22px; display:block; margin-bottom:12px;">${eDeactivator(azione) ? '🔌' : '🎯'} ${t.name}</b>
-                <div style="background:#1a1000; border:1px solid #554400; padding:12px; border-radius:5px;">
-                    <div style="text-align:center; color:#fff; margin-bottom:8px;">
-                        WIP ${e.base} → <b style="color:${COL.bordo}; font-size:26px;">${e.valore}</b>
-                        ${e.impossibile ? '<br><span style="color:#ff3333; font-size:13px;">Valore sotto 1: il tiro fallisce automaticamente</span>' : ''}
+                <b style="color:var(--mn-testo,#ffffff); font-size:var(--fs-l); display:block; margin-bottom:12px;">${eDeactivator(azione) ? '🔌' : '🎯'} ${t.name}</b>
+                <div style="background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-attenzione-fondo,#554400); padding:12px; border-radius:5px;">
+                    <div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:8px;">
+                        WIP ${e.base} → <b style="color:${COL.bordo}; font-size:var(--fs-l);">${e.valore}</b>
+                        ${e.impossibile ? '<br><span style="color:var(--mn-errore,#ff3333); font-size:var(--fs-s);">Valore sotto 1: il tiro fallisce automaticamente</span>' : ''}
                     </div>
-                    <div style="border-top:1px solid #443300; padding-top:8px; font-size:14px;">${dettaglio}</div>
-                    ${e.critici && !e.critici.nessunTiro ? `<div style="text-align:center; color:#ffcc00; font-size:12px; margin-top:6px;">🎯 ${e.critici.testo}</div>` : ''}
+                    <div style="border-top:1px solid var(--mn-nota-bordo,#664400); padding-top:8px; font-size:var(--fs-s);">${dettaglio}</div>
+                    ${e.critici && !e.critici.nessunTiro ? `<div style="text-align:center; color:var(--mn-attenzione,#ffcc00); font-size:var(--fs-xs); margin-top:6px;">🎯 ${e.critici.testo}</div>` : ''}
                 </div>
                 ${corpo}
-                ${e.note.length ? `<div style="margin-top:12px; color:#888; font-size:12px; line-height:1.6;">` +
-                    e.note.map(n => `• ${n}`).join('<br>') + `</div>` : ''}
             </div>`;
+        // 28 ottobre (Paolo): le note nella ⓘ (o sotto il tasto).
+        e.note.forEach(n => M.nota('step-modifiers', 'Scenografia', n, { tipo: 'regole' }));
 
         const btn = document.getElementById('btn-esegui-calcolo') ||
                     document.querySelector('#step-modifiers .huge-btn');
@@ -307,7 +309,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_scenografia.js', versione: '2026-09-14.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_scenografia.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
