@@ -1,4 +1,4 @@
-// @versione 2026-10-28.7 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-29.6 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-28.7';
+    M.VERSIONE = '2026-10-29.6';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -4134,7 +4134,9 @@
         if (controMarker) {
             voci.push({ id: 'SCOPRIRE', nome: 'Scoprire' });
             voci.push({ id: 'LOOK_OUT', nome: 'Look Out!' });
-            voci.push({ id: 'RITARDA',  nome: 'Ritardo l\'ARO (fino alla seconda Abilita` del Marker)' });
+            // 29 ottobre (Paolo): il tasto si chiama IDLE. L'id resta RITARDA:
+            // lo leggono logica_aro e M.aroDopoRitardo.
+            voci.push({ id: 'RITARDA',  nome: 'Idle' });
         }
 
         return voci.map(function (v) {
@@ -4144,10 +4146,10 @@
             if (controMarker) {
                 if (unita && unita.deployable && unita.reagisce) { nega('Armed Turret: mai contro un Marker (riga 6497).'); return e; }
                 if (['BS_ATTACK', 'CC_ATTACK', 'HACKING'].indexOf(v.id) >= 0) {
-                    nega('Contro un Marker gli ARO dichiarabili sono solo Scoprire, Schivata, Look Out! e Reset (righe 13645-13656). Puoi RITARDARE: se la seconda Abilita` lo rivela, dichiari contro il Modello.');
+                    nega('Contro un Marker gli ARO dichiarabili sono solo Scoprire, Schivata, Look Out! e Reset (righe 13645-13656). Puoi dichiarare IDLE: se la seconda Abilita` lo rivela, dichiari contro il Modello; se no, l\'ARO e` perso.');
                     return e;
                 }
-                if (v.id === 'RITARDA') e.note.push('Ti richiamo dopo la seconda Abilita`: dichiari solo se il Marker si rivela (riga 13656).');
+                if (v.id === 'RITARDA') e.note.push('Nessuna reazione adesso. Dopo la seconda meta` dell\'Ordine dichiari un ARO solo se il Marker si e` rivelato; se resta Marker, l\'ARO e` perso (riga 13656).');
                 if (v.id === 'LOOK_OUT') e.note.push('Look Out! non ha un calcolo nell\'app: si risolve al tavolo.');
             }
 
@@ -8563,8 +8565,32 @@
         if (!unita) return null;
         if (unita.profiloDb) { const p = M.profiloDaId(unita.profiloDb); if (p) return p; }
         const n = unita.nome || unita.name;
-        return profiliDb().find(p => p && p.nome === n) || null;
+        const nomadi = (G.DB_NOMADI || []).filter(p => p && p.nome === n);
+        const pano = (G.DB_PANOCEANIA || []).filter(p => p && p.nome === n);
+        if (!nomadi.length || !pano.length) return nomadi[0] || pano[0] || null;
+        // 29 ottobre (TEST, giro 21, X2): lo stesso nome nei due database
+        // (Anaconda (AP Spitfire), i Mercenari). Si sceglie la fazione della
+        // truppa: il campo `fazione`, poi la lista in cui si trova, poi la
+        // fazione propria della pagina. Senza, il TAG di PanOceania faceva
+        // nascere il pilota dei Nomadi.
+        return fazioneDellUnita(unita) === 'PANOCEANIA' ? pano[0] : nomadi[0];
     };
+    function fazioneDellUnita(unita) {
+        const f = String(unita.fazione || '').toUpperCase();
+        if (f.indexOf('NOMAD') === 0) return 'NOMADI';
+        if (f.indexOf('PANO') === 0) return 'PANOCEANIA';
+        const propria = M.fazionePropria();
+        const altra = propria === 'NOMADI' ? 'PANOCEANIA' : 'NOMADI';
+        const leggi = function (fn) { try { return fn() || []; } catch (e) { return []; } };
+        const mie = leggi(M.rosterProprio), loro = leggi(M.rosterNemico);
+        if (mie.indexOf(unita) >= 0) return propria;
+        if (loro.indexOf(unita) >= 0) return altra;
+        const n = unita.nome || unita.name;
+        const stessa = function (x) { return x && x.id !== undefined && x.id === unita.id && (x.nome || x.name) === n; };
+        const inMie = mie.some(stessa), inLoro = loro.some(stessa);
+        if (inLoro && !inMie) return altra;
+        return propria;
+    }
     // L'unita` con gli attributi, le Abilita` e le armi di `profilo`; tiene
     // id, soprannome, Gruppo, stati, ferite, foto.
     function conProfilo(unita, profilo) {
@@ -8676,6 +8702,9 @@
         if (base.espelle && base.espelle.pilota) {
             const pil = M.profiloDaId(base.espelle.pilota);
             if (pil) out.push({ chiave: 'pilota', nome: pil.nome, profilo: pil.id, perche: 'il pilota uscito con l\'Escape System' });
+        } else if (String(base.tipo || '').toUpperCase() === 'TAG' && typeof M.pilotaDelTag === 'function') {
+            const pil = M.pilotaDelTag(unita);
+            if (pil) out.push({ chiave: 'pilota', nome: pil.nome, profilo: pil.id, perche: 'il pilota quando scende dal TAG' });
         }
         return out;
     };
@@ -8732,6 +8761,31 @@
     };
 
     // --- 3. Escape System: il pilota esce, e (regola della casa) risale --
+    // 29 ottobre (Paolo, LOG-08): IL PILOTA DI OGNI TAG si gestisce come
+    // quello dell'Anaconda: non si schiera, non si vede, nasce quando scende.
+    // Il profilo: quello dell'Escape System (espelle.pilota) se c'e`,
+    // altrimenti il pilota del database che porta il nome del TAG ("Gator
+    // Pilot (...)" per "Gator (TAG)"; Szalamandra, Gecko), nella stessa
+    // fazione. null se il TAG non ha un pilota.
+    //   M.pilotaDelTag(tag) -> profilo del database | null
+    M.pilotaDelTag = function (tag) {
+        const base = M.profiloDiDatabase(tag);
+        if (!base || String(base.tipo || tag.tipo || '').toUpperCase() !== 'TAG') return null;
+        if (base.espelle && base.espelle.pilota) return M.profiloDaId(base.espelle.pilota);
+        const radice = String(base.nome || '').replace(/\s*\(.*$/, '').replace(/\s+-\s+.*$/, '').trim().toUpperCase();
+        if (!radice) return null;
+        const db = (G.DB_NOMADI || []).some(p => p && p.id === base.id) ? (G.DB_NOMADI || [])
+                 : (G.DB_PANOCEANIA || []).some(p => p && p.id === base.id) ? (G.DB_PANOCEANIA || []) : profiliDb();
+        return db.find(p => p && new RegExp('^' + radice.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+PILOT\\b', 'i').test(String(p.nome || ''))) || null;
+    };
+    // Il pilota che nasce scendendo (o uscendo con l'Escape System).
+    function pilotaNato(tag, profilo) {
+        const base = M.profiloDiDatabase(tag) || {};
+        const pilotaId = String(tag.id) + '_pilota';
+        return conProfilo({ id: pilotaId, alias: (tag.alias || base.nome) + ' (pilota)', combatGroup: tag.combatGroup,
+                            states: {}, state: 'ACTIVE', deployState: 'NORMAL', proprietario: tag.id, tagDi: tag.id,
+                            imgVariant: fotoCollegata(tag, 'pilota') }, profilo);
+    }
     M.puoEspellere = function (tag) {
         const base = M.profiloDiDatabase(tag);
         if (!base || !base.espelle || !base.espelle.pilota) return { puo: false, motivo: 'Questo TAG non ha un Escape System collegato a un pilota.' };
@@ -8745,12 +8799,8 @@
         const base = M.profiloDiDatabase(tag);
         const t = JSON.parse(JSON.stringify(tag));
         t.states = Object.assign({}, t.states || {}, { tagVuoto: true });
-        const pilotaId = String(tag.id) + '_pilota';
-        t.pilotaUscito = pilotaId;
-        const pilota = conProfilo({ id: pilotaId, alias: (tag.alias || base.nome) + ' (pilota)', combatGroup: tag.combatGroup,
-                                    states: {}, state: 'ACTIVE', deployState: 'NORMAL', proprietario: tag.id, tagDi: tag.id,
-                                    imgVariant: fotoCollegata(tag, 'pilota') },
-                                  M.profiloDaId(base.espelle.pilota));
+        const pilota = pilotaNato(tag, M.profiloDaId(base.espelle.pilota));
+        t.pilotaUscito = pilota.id;
         return { possibile: true, unitaAggiornata: t, nuova: pilota,
                  note: ['Escape System: il pilota esce, e si piazza una Sagoma Circolare di Eclipse centrata su di lui (righe 10260-10263).',
                         'Il TAG resta sul tavolo vuoto: niente Ordini ne` ARO finche` il pilota non risale.'] };
@@ -8827,7 +8877,21 @@
                      note: ['Il pilota scende e si piazza a contatto di Silhouette col TAG (regola della casa, meta` Ordine di Movimento).',
                             'Il TAG resta sul tavolo vuoto: niente Ordini ne` ARO finche` il pilota non risale (RISALI SUL TAG).'] };
         }
-        const e = M.espelliPilota(tag);
+        // Senza Escape System (Gator, Szalamandra, Gecko): il pilota nasce
+        // dal profilo col nome del TAG, come quello dell'Anaconda.
+        const baseT = M.profiloDiDatabase(tag);
+        let e;
+        if (baseT && baseT.espelle && baseT.espelle.pilota) e = M.espelliPilota(tag);
+        else {
+            const prof = M.pilotaDelTag(tag);
+            if (!tag || !prof) return { possibile: false, motivo: 'Questo TAG non ha un pilota nel database.' };
+            if (tag.states && tag.states.tagVuoto) return { possibile: false, motivo: 'Il pilota e` gia` uscito.' };
+            const t = JSON.parse(JSON.stringify(tag));
+            t.states = Object.assign({}, t.states || {}, { tagVuoto: true });
+            const pil = pilotaNato(tag, prof);
+            t.pilotaUscito = pil.id;
+            e = { possibile: true, unitaAggiornata: t, nuova: pil };
+        }
         if (!e.possibile) return e;
         e.unitaAggiornata.pilotaScesoAPiedi = true;
         e.note = ['Il pilota scende e si piazza a contatto di Silhouette col TAG (regola della casa, meta` Ordine di Movimento).',
@@ -8839,7 +8903,10 @@
         if (a === 'SCENDI DAL TAG') {
             const conPilota = (roster || G.roster || []).some(u => u && unita && u.aBordoDi === unita.id && String(u.deployState || '').toUpperCase() === 'A_BORDO');
             if (conPilota && !(unita.states && unita.states.tagVuoto)) return { puo: true };
-            return M.puoEspellere(unita);
+            const bT = M.profiloDiDatabase(unita);
+            if (bT && bT.espelle && bT.espelle.pilota) return M.puoEspellere(unita);
+            if (unita && unita.states && unita.states.tagVuoto) return { puo: false, motivo: 'Il pilota e` gia` uscito.' };
+            return M.pilotaDelTag(unita) ? { puo: true } : { puo: false, motivo: 'Questo TAG non ha un pilota nel database.' };
         }
         if (a === 'SCENDI DALLA MOTO') return M.puoSmontare(unita);
         if (a === 'RISALI SULLA MOTO') return M.puoRimontare(unita, roster);
@@ -9267,13 +9334,28 @@
         }
         if (unita.numeroReplica && (st.holoecho || st.decoy)) p.numeroReplica = unita.numeroReplica;
 
+        // 29 ottobre (Paolo, ST-24): la FOTO non parte quando dice troppo.
+        //  - HOLOECHO: vera e copie arrivano col SEGNALINO numerato
+        //    (holoecho_<n>.png nella cartella dell'esercito), mai con la foto:
+        //    tre foto uguali sul tavolo non ci sono, e la foto della vera la
+        //    tradirebbe. Il numero e` quello dato a caso (M.creaRepliche).
+        //  - HOLOMASK: parte la foto della truppa IMITATA (imgMaschera, la
+        //    sceglie il giocatore), o nessuna. Prima partiva imgVariant, la
+        //    foto VERA: lo schermo la nascondeva, ma il dato arrivava.
+        const segnaleHolo = (st.holoecho || String(unita.tipo).toUpperCase() === 'HOLOECHO') ? M.fileSegnalinoHoloecho(unita.numeroReplica) : null;
+        const inMaschera = !!(st.holomask || deploy === 'HOLOMASK');
+        if (segnaleHolo || st.holoecho) p.imgVariant = segnaleHolo || '0';
+        else if (inMaschera) p.imgVariant = M.fotoValida(unita.imgMaschera) ? unita.imgMaschera : '0';
+
         // 26 ottobre: HOLOMASK. Prima si scrivevano "Sconosciuta" nelle armi:
         // cosi` l'avversario capiva che era una maschera, e all'Hub l'ARO di
         // quella truppa non trovava la sua arma. Ora i dati restano veri e lo
         // schermo mostra `mostraCome` (il Modello imitato). Con l'Holoecho
         // insieme, anche le repliche portano la stessa maschera.
         const maschera = M.mostraComeHolomask(unita);
-        if (maschera) p.mostraCome = maschera;
+        // La foto da mostrare viaggia anche dentro mostraCome: lo schermo che
+        // disegna la maschera (app e Hub) la legge da li`.
+        if (maschera) p.mostraCome = Object.assign({}, maschera, { imgVariant: p.imgVariant || '0' });
 
         if (deploy === 'SEED') {
             const soloSeed = copia(S.campiMarker || ['id']);
@@ -11095,6 +11177,24 @@
             }
         }
         return { classe: null, aro: null, nomeRegola: null };
+    };
+
+    // LE DUE META` DI UN ORDINE (29 ottobre, Paolo, DIS-07). Un Ordine e`
+    // una Long Skill, oppure due Abilita` Brevi di cui almeno una BASIC
+    // (Move, Discover, Idle: CLASSI_AZIONE). Due Short Skill no: RICARICARE
+    // + ATTACCO BS non si dichiara. Scendere e risalire (moto, TAG) valgono
+    // meta` Ordine di Movimento: Basic. Un'azione che il catalogo non
+    // conosce vale Short: nel dubbio non si apre una combinazione.
+    //   M.secondaMetaAmmessa(prima, seconda) -> { ammessa, motivo }
+    M.secondaMetaAmmessa = function (prima, seconda) {
+        const cl = function (a) {
+            if ((M.AZIONI_TRASPORTO || []).indexOf(String(a || '').toUpperCase()) >= 0) return 'BASIC_SHORT';
+            return M.classeAzione(a).classe || 'SHORT';
+        };
+        const c1 = cl(prima), c2 = cl(seconda);
+        if (c1 === 'LONG' || c2 === 'LONG') return { ammessa: false, motivo: 'Una Long Skill e` l\'Ordine intero: niente seconda meta`.' };
+        if (c1 === 'SHORT' && c2 === 'SHORT') return { ammessa: false, motivo: 'Due Short Skill non stanno nello stesso Ordine: una delle due meta` deve essere Move, Discover o Idle (righe 16619-16624).' };
+        return { ammessa: true, motivo: null };
     };
 
     // FOXHOLE ALLA DICHIARAZIONE (catalogo STATI.foxhole; chat REGOLE, 6
@@ -13974,6 +14074,10 @@
             ['usiSpesi', 'numeroMarker', 'tipoNumeroMarker', 'remDriverSu', 'minelayerUsati'].forEach(c => { r[c] = undefined; });
             r.id = nuovoId();
             r.replica = true; r.replicaDi = unita.id;
+            // La foto della vera NON si copia (29 ottobre, Paolo: tre
+            // miniature identiche sul tavolo non ci sono). Holoecho: il
+            // segnalino col suo numero, sotto; Decoy: nessuna foto.
+            r.imgVariant = '0';
             repliche.push(r);
         }
         // Il numero pubblico (1..n+1) si da` a caso: dal numero non si deve
@@ -13982,6 +14086,7 @@
         const numeri = tutte.map((_, i) => i + 1);
         for (let i = numeri.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const x = numeri[i]; numeri[i] = numeri[j]; numeri[j] = x; }
         tutte.forEach((u, i) => { u.numeroReplica = numeri[i]; });
+        if (t === 'HOLOECHO') repliche.forEach(r => { r.imgVariant = M.fileSegnalinoHoloecho(r.numeroReplica) || '0'; });
         note.push(t === 'DECOY'
             ? 'Decoy: ' + quante + ' replica/e statiche entro Coerenza. Si possono bersagliare: una replica colpita da un Attacco riuscito si toglie senza Tiro Salvezza.'
             : 'Holoecho: ' + quante + ' copie olografiche in Coerenza; eseguono lo stesso Ordine della truppa vera. Una copia colpita da un Attacco riuscito si toglie senza Tiro Salvezza.');
@@ -13989,6 +14094,18 @@
         return { possibile: true, unitaAggiornata: vera, repliche: repliche, note: note };
     };
     M.eReplica = function (u) { return !!(u && u.replica === true); };
+    // 29 ottobre (Paolo, ST-24): il segnalino dell'Holoecho, per numero.
+    // E` il NOME DEL FILE, come imgVariant: sta nella cartella dell'esercito
+    // (img/nomadi/holoecho_2.png). null se il numero manca o supera le
+    // immagini del catalogo (SCHIERAMENTO.segnalinoHoloecho).
+    M.fileSegnalinoHoloecho = function (n) {
+        const C = (catalogo('SCHIERAMENTO') || {}).segnalinoHoloecho || {};
+        const k = parseInt(n, 10);
+        if (!(k > 0) || k > (C.immagini || 3)) return null;
+        return String(C.file || 'holoecho_{n}.png').replace('{n}', k);
+    };
+    // Una foto vera e` un nome di file d'immagine ('0' e '' non lo sono).
+    M.fotoValida = function (v) { return typeof v === 'string' && /\.(png|jpe?g|webp)$/i.test(v); };
     M.replicheDi = function (roster, idVero) {
         return (roster || []).filter(u => u && u.replica && u.replicaDi === idVero);
     };
@@ -14072,8 +14189,9 @@
     M.mostraComeHolomask = function (unita) {
         if (!unita || !(unita.states && unita.states.holomask) && String(unita.deployState || '').toUpperCase() !== 'HOLOMASK') return null;
         const im = unita.holomaskImita ? M.profiloDaId(unita.holomaskImita) : null;
-        if (!im) return { nome: unita.fakeName || 'TRUPPA SCONOSCIUTA', weapon: '', equip: '', skills: '', imitato: null };
-        return { nome: im.nome, weapon: im.weapon || '', equip: im.equip || '', skills: im.skills || '', tipo: im.tipo,
+        const foto = M.fotoValida(unita.imgMaschera) ? unita.imgMaschera : '0';
+        if (!im) return { nome: unita.fakeName || 'TRUPPA SCONOSCIUTA', weapon: '', equip: '', skills: '', imitato: null, imgVariant: foto };
+        return { imgVariant: foto, nome: im.nome, weapon: im.weapon || '', equip: im.equip || '', skills: im.skills || '', tipo: im.tipo,
                  cc: im.cc, bs: im.bs, ph: im.ph, wip: im.wip, arm: im.arm, bts: im.bts, w: im.w, str: im.str, s: im.s, mov: im.mov,
                  imitato: im.id };
     };
@@ -14697,6 +14815,52 @@
             if (canali.includes(key)) db.ref(key).remove();
         };
         return { db: db, attesa: attesa };
+    };
+
+    // ------------------------------------------------------------------
+    // LE SQUADRE SALVATE SU FIREBASE (29 ottobre, Paolo): una squadra salvata
+    // su un dispositivo si richiama dagli altri. roster_manager.js le tiene
+    // in localStorage (infinityRosters_Nomads / _Panoceania, un oggetto
+    // { nome: squadra }) e continua a farlo: qui quella chiave si rispecchia
+    // su Firebase, in archivio_squadre/<esercito>, FUORI dai canali della
+    // partita (il reset dell'Hub non la tocca).
+    //  - La PRIMA volta su ogni dispositivo le squadre locali si UNISCONO a
+    //    quelle del cloud (nessuna si perde; a parita` di nome vince la
+    //    locale). Da li` in poi vale il cloud: una squadra eliminata su un
+    //    telefono non torna dall'altro.
+    //  - Senza rete si salva in locale; Firebase spedisce quando torna.
+    //   M.installaArchivioSquadre(db) -> { chiavi }
+    // ------------------------------------------------------------------
+    M.ARCHIVIO_SQUADRE = { infinityRosters_Nomads: 'archivio_squadre/nomads', infinityRosters_Panoceania: 'archivio_squadre/panoceania' };
+    M.installaArchivioSquadre = function (db) {
+        const ls = G.localStorage;
+        if (!db || !ls) return { chiavi: [] };
+        const chiavi = Object.keys(M.ARCHIVIO_SQUADRE);
+        const setPrima = ls.setItem, orig = (typeof Storage !== 'undefined' && Storage.prototype) ? Storage.prototype.setItem : null;
+        const scriviLocale = function (k, v) { (orig || setPrima).call(ls, k, v); };
+        const leggi = function (t) { try { const o = JSON.parse(t || '{}'); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {}; } catch (e) { return {}; } };
+        const unito = function (k) { try { return ls.getItem('archivio_unito_' + k) === '1'; } catch (e) { return false; } };
+        chiavi.forEach(function (k) {
+            db.ref(M.ARCHIVIO_SQUADRE[k]).on('value', function (snap) {
+                const cloud = snap.val();
+                let dati;
+                if (!unito(k)) {
+                    dati = Object.assign({}, leggi(cloud), leggi(ls.getItem(k)));
+                    scriviLocale('archivio_unito_' + k, '1');
+                    const t = JSON.stringify(dati);
+                    if (t !== (cloud || '{}')) db.ref(M.ARCHIVIO_SQUADRE[k]).set(t);
+                } else dati = leggi(cloud);
+                scriviLocale(k, JSON.stringify(dati));
+                try { if (typeof G.refreshSavedRostersList === 'function' && G.document && G.document.getElementById('savedRostersSelect')) G.refreshSavedRostersList(); }
+                catch (e) { G.ultimaEccezione = e; }
+            });
+        });
+        // Salvare o eliminare una squadra scrive la chiave: parte anche per il cloud.
+        ls.setItem = function (key, value) {
+            setPrima.call(ls, key, value);
+            if (chiavi.indexOf(key) >= 0 && unito(key)) db.ref(M.ARCHIVIO_SQUADRE[key]).set(String(value));
+        };
+        return { chiavi: chiavi };
     };
 
     // NFB: le voci con l'etichetta presenti in un profilo. Due o piu` sono

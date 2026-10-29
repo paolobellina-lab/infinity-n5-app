@@ -1,4 +1,4 @@
-// @versione 2026-10-27.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-10-29.2 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -972,10 +972,15 @@ window.CATALOGO_N5.SCHIERAMENTO = {
     etichette: {
         'CAMO': 'SEGNALINO MIMETICO',
         'IMP':  'PERSONAGGIO SCONOSCIUTO',
-        'HOLOECHO': 'COPIA OLOGRAFICA',
+        'HOLOECHO': 'HOLOECHO',
         'DECOY': 'BERSAGLIO DECOY',
         'SEED': 'SEED-EMBRYO'
     },
+
+    // 29 ottobre (Paolo, ST-24): vera e copie dell'Holoecho arrivano
+    // all'avversario e all'Hub col SEGNALINO numerato, non con la foto. Il
+    // file sta nella cartella dell'esercito (img/nomadi/, img/panoceania/).
+    segnalinoHoloecho: { file: 'holoecho_{n}.png', immagini: 3 },
 
     holomask: 'Con HoloMask l\'avversario vede il nome FINTO e non le armi reali: il resto del profilo resta nascosto.',
     foxhole: 'Foxhole e` pubblico: l\'avversario lo vede.',
@@ -1860,6 +1865,10 @@ window.CATALOGO_N5.CLASSI_AZIONE = {
         'FUOCO SPECULATIVO': { classe: 'LONG', aro: false, nomeRegola: 'Speculative Attack' },
         'SOPPRESSIONE':      { classe: 'LONG', aro: false, nomeRegola: 'Suppressive Fire' },
         'TRIANGULATED FIRE': { classe: 'LONG', aro: false, nomeRegola: 'Triangulated Fire' },
+        // 29 ottobre (TEST, giro 21, X1): Ordini Interi che mancavano. Senza
+        // classe contavano Short e stavano con un MOVIMENTO.
+        'ATTACCO GUIDATO':   { classe: 'LONG', aro: false, nomeRegola: 'BS Attack (Guided)' },
+        'REQUEST SPEEDBALL': { classe: 'LONG', aro: false, nomeRegola: 'Request Speedball' },
         // Non e` nella tabella: e` l'attivazione di uno Stato che costa una
         // Long Skill (riga 13603).
         'RIENTRARE IN CAMO': { classe: 'LONG', aro: false, nomeRegola: 'Camouflaged State, Activation', fuoriTabella: true },
@@ -2877,7 +2886,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-10-27.1', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-10-29.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

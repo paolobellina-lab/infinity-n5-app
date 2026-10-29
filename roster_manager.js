@@ -1,4 +1,4 @@
-// @versione 2026-10-28.2 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-29.1 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -486,11 +486,24 @@ window.importaDaTesto = () => {
     // lega a lui (smonta.pilota, smonta.periferico, espelle.pilota).
     const perId = {};
     dbFazione.forEach(u => { perId[u.id] = u; });
+    const Mtag = window.MotoreN5;
+    if (!Mtag || typeof Mtag.pilotaDelTag !== 'function') console.error('\u26d4 M.pilotaDelTag assente (serve motore_regole_n5.js dalla 2026-10-29.5): il pilota di Gator, Szalamandra e Gecko si importa come unita` a parte.');
+    const pilotaDelTagPer = (u) => {
+        if (!Mtag || typeof Mtag.pilotaDelTag !== 'function' || String(u.tipo || '').toUpperCase() !== 'TAG') return null;
+        try { return Mtag.pilotaDelTag(u) || null; } catch (e) { window.ultimaEccezione = e; return null; }
+    };
     const legatiA = (base) => {
         const out = [];
         dbFazione.filter(u => window.nomeBaseArmy(u) === base).forEach(u => {
             [u.smonta && u.smonta.pilota, u.smonta && u.smonta.periferico, u.espelle && u.espelle.pilota]
                 .filter(Boolean).forEach(id => { if (perId[id]) out.push(window.nomeBaseArmy(perId[id])); });
+            // 29 ottobre (LOG-08, via MOTORE): Gator, Szalamandra e Gecko come
+            // l'Anaconda: il pilota nasce in partita (SCENDI DAL TAG). Il
+            // motore dice chi e` (M.pilotaDelTag); la riga «Gator Pilot» sotto
+            // il Gator e` sua. Le liste gia` salvate col pilota come unita`
+            // non si toccano: questo vale solo per l'importazione.
+            const pil = pilotaDelTagPer(u);
+            if (pil) out.push(window.nomeBaseArmy(pil));
         });
         return out;
     };
@@ -986,6 +999,24 @@ window.assegnaFotoCollegata = (index, chiave, file) => {
     return true;
 };
 
+// 29 ottobre (Paolo, ST-24): la foto della maschera dell'HoloMask, in
+// u.imgMaschera (solo il nome del file, come imgVariant). Si salva con la
+// lista e con la partita (sta nell'unita`). La vista pubblica la manda al
+// posto della vera finche` la maschera e` attiva (motore).
+window.assegnaFotoMaschera = (index, file) => {
+    const u = window.roster[index];
+    if (!u) return false;
+    if (file) {
+        if ((window.elencoFoto() || []).indexOf(file) < 0) { alert('\u26d4 "' + file + '" non e` nell\'elenco delle foto.'); return false; }
+        if (file === window.fotoAssegnata(u)) { alert('\u26d4 E` la foto vera della truppa: l\'avversario la riconoscerebbe.'); return false; }
+        u.imgMaschera = file;
+    } else delete u.imgMaschera;
+    window.chiudiGalleriaFoto();
+    if (window.apriDeployStati && document.getElementById('step-deploy-states') && (document.getElementById('step-deploy-states').style || {}).display === 'flex') window.apriDeployStati(index);
+    if (window.renderDeployUnits) window.renderDeployUnits();
+    return true;
+};
+
 window.chiudiGalleriaFoto = () => {
     const g = document.getElementById('galleria-foto');
     if (g) { g.style.display = 'none'; g.innerHTML = ''; }
@@ -1002,8 +1033,19 @@ window.chiudiGalleriaFoto = () => {
 window.apriGalleriaFoto = (index, chiave) => {
     const u = window.roster[index];
     if (!u) return;
-    const coll = (chiave !== undefined) ? window.fotoCollegateDi(u) : [];
-    const posto = (chiave !== undefined) ? coll.find(c => c.chiave === chiave) : null;
+    // 29 ottobre (Paolo, ST-24): una replica (copia dell'Holoecho, Decoy) non
+    // e` una miniatura con la sua foto: l'Holoecho ha il segnalino col numero
+    // (imgVariant holoecho_<n>.png, dal motore), il Decoy nessuna foto.
+    if (u.replica) {
+        alert('\u2139\ufe0f ' + (u.tipoRepliche === 'DECOY' ? 'Una replica del Decoy non ha foto.' : 'Una copia dell\'Holoecho ha il suo segnalino col numero: la foto non si sceglie.'));
+        return;
+    }
+    // La foto della MASCHERA (HoloMask): quella che vede l'avversario.
+    const maschera = chiave === 'maschera';
+    const coll = (chiave !== undefined && !maschera) ? window.fotoCollegateDi(u) : [];
+    const posto = maschera
+        ? { chiave: 'maschera', nome: 'foto della maschera', perche: 'la truppa imitata con l\'HoloMask: l\'avversario vede questa' }
+        : (chiave !== undefined) ? coll.find(c => c.chiave === chiave) : null;
     if (chiave !== undefined && !posto) { console.error('\u26d4 apriGalleriaFoto: "' + chiave + '" non e` una foto collegata di ' + (u.alias || u.nome)); return; }
     let g = document.getElementById('galleria-foto');
     if (!g || !g.style) {
@@ -1016,10 +1058,12 @@ window.apriGalleriaFoto = (index, chiave) => {
 
     const elenco = window.elencoFoto();
     const chi = (u.alias || u.nome || '') + (posto ? ' \u2014 ' + posto.nome : '');
-    const sottotitolo = posto
+    const sottotitolo = maschera
+        ? `<div class="foto-maschera" style="color:#e6aaff; font-size:14px; margin-bottom:10px;">HoloMask: la foto della truppa imitata (${(window.MotoreN5 && typeof window.MotoreN5.mostraComeHolomask === 'function' && (window.MotoreN5.mostraComeHolomask(u) || {}).nome) || '?'}). L'avversario e l'Hub vedono questa finch&eacute; la maschera &egrave; attiva. Senza foto: nessuna immagine.</div>`
+        : posto
         ? `<div class="foto-collegata" style="color:#ffcc66; font-size:14px; margin-bottom:10px;">Miniatura a parte: ${posto.perche || posto.nome} (${coll.indexOf(posto) + 1} di ${coll.length}). Senza foto: ${posto.chiave === 'moto' ? 'la moto prende la foto dell\'unit&agrave; montata' : 'il pilota resta senza foto'}.</div>`
         : '';
-    const comando = posto ? `window.assegnaFotoCollegata(${index}, '${posto.chiave}', ` : `window.assegnaFoto(${index}, `;
+    const comando = maschera ? `window.assegnaFotoMaschera(${index}, ` : posto ? `window.assegnaFotoCollegata(${index}, '${posto.chiave}', ` : `window.assegnaFoto(${index}, `;
     // 15 ottobre: le foto di questo giocatore stanno nella SUA cartella
     // (img/nomadi/ o img/panoceania/, vedi CARTELLA_FOTO in app.html). Prima
     // la galleria le cercava in img/, dove ora restano solo le icone comuni.
@@ -1032,8 +1076,10 @@ window.apriGalleriaFoto = (index, chiave) => {
             ⚠️ L'elenco delle foto non &egrave; stato caricato (manca <b>${cartella}elenco_foto.js</b>).<br>
             Si genera con la pagina <b>avvia_elenco_foto.html</b> e va messo nella cartella <b>${cartella}</b>, insieme alle foto.</div>`;
     } else {
-        const mia = posto ? ((u.fotoCollegate || {})[posto.chiave] || null) : window.fotoAssegnata(u);
-        const libere = window.fotoLibere(u, posto ? posto.chiave : undefined);
+        const mia = maschera ? (u.imgMaschera || null) : posto ? ((u.fotoCollegate || {})[posto.chiave] || null) : window.fotoAssegnata(u);
+        // La maschera non e` una miniatura: si sceglie fra tutte le foto,
+        // tranne quella vera della truppa (la tradirebbe).
+        const libere = maschera ? elenco.filter(f => f !== window.fotoAssegnata(u)) : window.fotoLibere(u, posto ? posto.chiave : undefined);
         const tessera = (f) => `<button onclick="${comando}'${f.replace(/'/g, "\\'")}')" style="width:104px; padding:4px; background:${f === mia ? '#553300' : '#111'}; border:2px solid ${f === mia ? '#ffaa00' : '#444'}; border-radius:6px; color:#aaa; font-size:11px; overflow:hidden;">
                 <img src="${cartella}${f}" style="width:92px; height:92px; object-fit:contain; display:block;" alt="">
                 ${f.replace(/\.[a-z]+$/i, '')}</button>`;
@@ -1257,7 +1303,7 @@ window.renderDeployUnits = () => {
             note.push(`<span class='etichetta-a-bordo' style='color:#ccccff;'>[ A BORDO ${tag ? 'DEL ' + String(tag.nome || tag.name || 'TAG').split('(')[0].trim().toUpperCase() : 'DEL TAG'}: NON SI SCHIERA ]</span>`);
         }
         const Mr = window.MotoreN5;
-        if (u.replica) note.push(`<span class='etichetta-replica' style='color:#99ffff;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'COPIA OLOGRAFICA'} ${u.numeroReplica || ''} — REPLICA ]</span>`);
+        if (u.replica) note.push(`<span class='etichetta-replica' style='color:#99ffff;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'} ${u.numeroReplica || ''} — REPLICA ]</span>`);
         else if (u.gruppoRepliche) note.push(`<span class='etichetta-replica' style='color:#99ffff;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'} ${u.numeroReplica || ''} — VERA ]</span>`);
         if (u.states && u.states.holomask && Mr && typeof Mr.mostraComeHolomask === 'function') {
             const mc = Mr.mostraComeHolomask(u);
@@ -1276,7 +1322,8 @@ window.renderDeployUnits = () => {
             container.innerHTML += window.rigaUnitaConFoto(u, {
                 fazione: 'PROPRIA', opacita: '1',
                 attributi: gesti, sotto: sotto,
-                toccoFoto: `window.cambiaIconaDeploy(event, ${originalIndex})`
+                // Una replica (Holoecho, Decoy) non ha foto da scegliere.
+                toccoFoto: u.replica ? '' : `window.cambiaIconaDeploy(event, ${originalIndex})`
             });
         } else {
             const nomePuro = (u.nome || u.name || "").split('(')[0].trim();
@@ -1553,7 +1600,8 @@ window.bottoniHolomask = (index) => {
     if (u.states && u.states.holomask) {
         return `<div class="riquadro-holomask" style="margin-top:10px; padding:10px; border:1px solid #cc00ff; border-radius:6px; background:#1a0022;">
             <div style="color:#e6aaff; font-size:15px;">\ud83c\udfad HOLOMASK: l'avversario vede <b>${mc ? mc.nome : '?'}</b>.</div>
-            <button class="huge-btn tasto-opzione" style="margin-top:8px;" onclick="window.apriSceltaHolomask(${index})">CAMBIA MODELLO IMITATO</button>
+            <button class="huge-btn tasto-opzione tasto-foto-maschera" style="margin-top:8px;" onclick="window.apriGalleriaFoto(${index}, 'maschera')">FOTO DELLA MASCHERA: ${u.imgMaschera ? String(u.imgMaschera).replace(/\.[a-z]+$/i, '').replace(/</g, '&lt;') : 'NESSUNA'}</button>
+            <button class="huge-btn tasto-opzione" onclick="window.apriSceltaHolomask(${index})">CAMBIA MODELLO IMITATO</button>
             <button class="huge-btn tasto-opzione" onclick="window.togliHolomask(${index})">TOGLI HOLOMASK</button>
         </div>`;
     }
@@ -1637,11 +1685,13 @@ window.scegliHolomask = (index, idProfilo) => {
     alert('\ud83c\udfad ' + (e.note || []).join('\n\n'));
     window.apriDeployStati(index);
     if (window.renderDeployUnits) window.renderDeployUnits();
+    // 29 ottobre (ST-24): subito dopo, la foto della truppa imitata.
+    window.apriGalleriaFoto(index, 'maschera');
 };
 window.togliHolomask = (index) => {
     const u = (window.roster || [])[index];
     if (!u) return;
-    const agg = Object.assign({}, u, { holomaskImita: null, states: Object.assign({}, u.states || {}, { holomask: false }) });
+    const agg = Object.assign({}, u, { holomaskImita: null, imgMaschera: undefined, states: Object.assign({}, u.states || {}, { holomask: false }) });
     if (String(agg.deployState || '').toUpperCase() === 'HOLOMASK') agg.deployState = 'NORMAL';
     window.sostituisciUnita(u, agg, 'HoloMask tolto allo schieramento', { senzaInvio: true });
     window.apriDeployStati(index);
@@ -2006,7 +2056,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-10-28.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-10-29.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

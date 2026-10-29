@@ -1,4 +1,4 @@
-// @versione 2026-10-28.4 | ordine_movimento.js | proprieta`: chat MOTORE
+// @versione 2026-10-29.1 | ordine_movimento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏃 MOVIMENTO E INSTRADAMENTO (N5) - ordine_movimento.js
 // ------------------------------------------
@@ -108,6 +108,16 @@
         }
         if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(chi, e.unitaAggiornata, actionId);
         else Object.assign(chi, e.unitaAggiornata);
+        // 29 ottobre (Paolo, LOG-05): sceso dal TAG, la seconda meta` la
+        // dichiara il PILOTA, come con la moto. Prima l'Ordine restava al TAG,
+        // ora vuoto: nessuna voce si poteva offrire e la schermata della
+        // seconda meta` restava vuota, senza uscita.
+        if (a === 'SCENDI DAL TAG') {
+            const idPil = e.esistente ? e.esistente.prima.id : (e.nuova && e.nuova.id);
+            const pil = (window.roster || []).find(x => x && idPil != null && x.id === idPil);
+            if (pil) chi = pil;
+            else console.error('\u26d4 SCENDI DAL TAG: pilota non trovato nel roster, la seconda meta` resta al TAG.');
+        }
         window.currentOrder.unit = chi;
         if (window.spearheadUnit === u) window.spearheadUnit = chi;
         if (Array.isArray(window.coordUnits)) window.coordUnits = window.coordUnits.map(x => x === u ? chi : x);
@@ -278,7 +288,11 @@
             // Abilita` Breve, anche quelle che il menu nasconde). L'unita` e`
             // quella dell'Ordine DOPO l'eventuale trasporto: chi e` appena
             // sceso si vede offrire RISALI, non SCENDI.
-            const offribile = (a) => typeof window.puoFareAzione !== 'function' || window.puoFareAzione(unita, a.id);
+            // 29 ottobre (Paolo, DIS-07): solo le seconde meta` che stanno con
+            // la prima (M.secondaMetaAmmessa): dopo RICARICARE, Move, Scoprire
+            // o Idle, non un ATTACCO BS. Prima si offriva ogni Abilita` Breve.
+            const insieme = (a) => typeof M.secondaMetaAmmessa !== 'function' || M.secondaMetaAmmessa(act1, a.id).ammessa;
+            const offribile = (a) => insieme(a) && (typeof window.puoFareAzione !== 'function' || window.puoFareAzione(unita, a.id));
             if (window.dbAzioniN5 && typeof window.creaBottoneAzione === 'function') {
                 (window.dbAzioniN5.movimento || []).filter(offribile).forEach(a => cont2.innerHTML += window.creaBottoneAzione(a, true, '#002244', '#00ffff'));
                 (window.dbAzioniN5.brevi || []).filter(offribile).forEach(a => cont2.innerHTML += window.creaBottoneAzione(a, true, '#003300', '#00ff00'));
@@ -362,7 +376,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_movimento.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_movimento.js', versione: '2026-10-29.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

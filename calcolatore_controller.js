@@ -1,4 +1,4 @@
-// @versione 2026-10-26.1 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-29.1 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -818,14 +818,15 @@ window.gruppoTruppaHub = (u, lista) => {
 
 // La vista di una truppa in HoloMask sullo schermo comune (26 ottobre,
 // MOTORE 26.1): nome, armi, abilita` e tipo del Modello imitato
-// (u.mostraCome), senza foto. I dati veri restano nel gameState: l'ARO
+// (u.mostraCome), con la foto della maschera se c'e` (mostraCome.imgVariant,
+// 29 ottobre), se no senza. I dati veri restano nel gameState: l'ARO
 // all'Hub si calcola su quelli.
 window.vistaMascherataHub = (u) => {
     const mc = u && u.mostraCome;
     if (!mc) return u;
     const vero = String(u.nome || u.name || '').split('(')[0].trim().toUpperCase();
     const v = Object.assign({}, u, { nome: mc.nome, name: mc.nome, weapon: mc.weapon || '', equip: mc.equip || '',
-                                     skills: mc.skills || '', tipo: mc.tipo || u.tipo, imgVariant: '0', mascherata: true });
+                                     skills: mc.skills || '', tipo: mc.tipo || u.tipo, imgVariant: mc.imgVariant || '0', mascherata: true });   // 29 ottobre (ST-24): la foto della maschera, se il proprietario l'ha scelta
     if (vero && String(u.alias || '').toUpperCase().indexOf(vero) >= 0) v.alias = mc.nome;
     return v;
 };
@@ -1360,7 +1361,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-10-26.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-10-29.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

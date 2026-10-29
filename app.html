@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-28.4 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-29.1 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -717,7 +717,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-28.4', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-10-29.1', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -1382,14 +1382,16 @@
 
         // La vista di una truppa in HoloMask per chi NON la possiede:
         // nome, armi, abilita`, tipo e statistiche del Modello imitato
-        // (u.mostraCome, dal motore), e nessuna foto (la foto direbbe chi e`).
+        // (u.mostraCome, dal motore). La foto: quella della maschera, se il
+        // proprietario l'ha scelta (mostraCome.imgVariant, 29 ottobre), se no
+        // nessuna (la foto vera direbbe chi e`).
         // Il soprannome resta, tranne se contiene il nome vero.
         window.vistaMascherata = (u) => {
             const mc = u && u.mostraCome;
             if (!mc) return u;
             const vero = String(u.nome || u.name || '').split('(')[0].trim().toUpperCase();
             const v = Object.assign({}, u, { nome: mc.nome, name: mc.nome, weapon: mc.weapon || '', equip: mc.equip || '',
-                                             skills: mc.skills || '', tipo: mc.tipo || u.tipo, imgVariant: '0', mascherata: true });
+                                             skills: mc.skills || '', tipo: mc.tipo || u.tipo, imgVariant: mc.imgVariant || '0', mascherata: true });   // 29 ottobre (ST-24): la foto della maschera, se il proprietario l'ha scelta
             ['cc', 'bs', 'ph', 'wip', 'arm', 'bts', 'w', 'str', 's', 'mov'].forEach(k => { if (mc[k] !== undefined) v[k] = mc[k]; });
             if (vero && String(u.alias || '').toUpperCase().indexOf(vero) >= 0) v.alias = mc.nome;
             return v;
@@ -2074,8 +2076,19 @@
                         .filter(a => window.puoFareAzione(window.currentOrder.unit, a.id))
                         .forEach(a => container.innerHTML += window.creaBottoneAzione(a, true, '#003300', '#00ff00'));
                 } else {
-                    // Se ha sparato per primo, ora può solo muovere
+                    // Prima meta` una Short Skill (es. ATTACCO BS): i
+                    // Movimenti, e dal 29 ottobre (MOTORE) anche le Abilita`
+                    // Brevi che la regola ammette in seconda meta` (Scoprire,
+                    // Idle): lo dice M.secondaMetaAmmessa, come in
+                    // ordine_movimento. Prima qui c'erano solo i Movimenti.
                     window.dbAzioniN5.movimento.filter(a => window.puoFareAzione(window.currentOrder.unit, a.id)).forEach(a => container.innerHTML += window.creaBottoneAzione(a, true, '#002244', '#00ccff'));
+                    const M = window.MotoreN5;
+                    if (M && typeof M.secondaMetaAmmessa === 'function') {
+                        window.dbAzioniN5.brevi
+                            .filter(a => M.secondaMetaAmmessa(window.currentOrder.action1, a.id).ammessa)
+                            .filter(a => window.puoFareAzione(window.currentOrder.unit, a.id))
+                            .forEach(a => container.innerHTML += window.creaBottoneAzione(a, true, '#003300', '#00ff00'));
+                    } else console.error('\u26d4 M.secondaMetaAmmessa assente (serve motore_regole_n5.js dalla 2026-10-29.5): in seconda meta` solo i Movimenti.');
                 }
             }
             

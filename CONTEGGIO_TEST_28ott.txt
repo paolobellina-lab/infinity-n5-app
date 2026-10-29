@@ -1,12 +1,12 @@
-CONTEGGIO DELLA SUITE — chat TEST, 28 ottobre 2026, giro 19 (motore 2026-10-28.7, i quattro difetti del piano grafico) (cartella allineata al Project, impronte ricalcolate con M.impronta)
+CONTEGGIO DELLA SUITE — chat TEST, 28 ottobre 2026, giro 20 (motore 2026-10-28.7, app.html 2026-10-28.4) (cartella allineata al Project, impronte ricalcolate con M.impronta)
 
 PRODUZIONE
   motore_regole_n5.js         2026-10-28.7    5abf4c1b.861711
   catalogo_n5.js              2026-10-27.1    81432f37.203991
   motore_core.js              2026-10-28.1    aedb8914.48303
   logica_stati.js             2026-10-28.2    77197af8.41139
-  logica_aro.js               2026-10-28.5    9c51b75b.98175
-  app.html                    2026-10-28.3    9960ec70.213143
+  logica_aro.js               2026-10-28.6    8862e435.98361
+  app.html                    2026-10-28.4    28b98846.215005
   calcolatore_math.js         2026-10-26.2    e936f944.20207
   calcolatore_controller.js   2026-10-26.1    5228ab53.81440
   roster_manager.js           2026-10-28.2    49c76deb.108141
@@ -28,6 +28,7 @@ PRODUZIONE
   ordine_scenografia.js       2026-10-28.4    ff776016.16502
   ordine_trincerarsi.js       2026-10-28.4    a9eba354.11117
   scegli_fazione.html         2026-10-28.1    c6b58db2.8216
+  PIANO_COLLAUDO_GRAFICO_N5.md2026-10-28.2    04839fd2.61281
   calcolatore_hub.html        2026-10-27.2    8842db15.14065
   database_comune.js          2026-10-10.1    734da513.70750
   database_nomad.js           2026-10-20.1    c4178b53.174021
@@ -73,7 +74,7 @@ test_dado_speciale.js                 15        2026-10-15.1    5a43dc5e.6172   
 test_dcharges_percorso.js             33        2026-10-28.1    6b9b41bf.13302    TEST
 test_deployable.js                    94        2026-09-23.1    168ab722.17037    TEST
 test_detonazione.js                   12        2026-09-29.1    12fd1900.5768     TEST
-test_elenchi_e_tabellone.js          640        2026-10-28.6    4c4087e1.264923   INTERFACCIA
+test_elenchi_e_tabellone.js          644        2026-10-28.7    ec645627.267781   INTERFACCIA
 test_file_immutabili.js               16     3  2026-10-10.1    969e26ca.11217    TEST
 test_file_intestazioni.js              8        2026-10-05.1    ac73f610.3721     TEST
 test_finiture.js                     213        2026-09-23.1    918b7ab5.35864    TEST
@@ -151,9 +152,9 @@ test_usi_disposable.js                21        2026-09-29.1    77051b4c.7148   
 test_voce_cybermask.js                21        2026-10-19.1    47ba06ce.11379    INTERFACCIA
 test_voce_rientro_camo.js             15        2026-10-06.5    17ca4e43.8491     INTERFACCIA
 --------------------------------------------------------------------------------------------------
-TOTALE CON LE FONTI                 5948   prove su 102 file: NON MISURATO in questo giro, le tre
-                                           fonti non sono allegate. 5948 = 5927 + 1 + le 20 non eseguite
-TOTALE COME IL PROJECT (senza)      5927   passati su 102 file, 1 falliti, 20 non eseguite
+TOTALE CON LE FONTI                 5952   prove su 102 file: NON MISURATO in questo giro, le tre
+                                           fonti non sono allegate. 5952 = 5932 + 0 + le 20 non eseguite
+TOTALE COME IL PROJECT (senza)      5932   passati su 102 file, 0 falliti, 20 non eseguite
 
 NON ESEGUITE PER FONTE ASSENTE
   test_coerenza_dati.js             1   501.json, 101.json
@@ -163,40 +164,30 @@ NON ESEGUITE PER FONTE ASSENTE
 
 SPACCATO PER PROPRIETA (con le fonti)
   TEST + MOTORE                     5084   su 93 file
-  INTERFACCIA                        864   su 9 file
+  INTERFACCIA                        868   su 9 file
 
 banco_confronto.js: uscita 0, "da guardare 0" in tutte e quattro le sezioni
-  (scontro completo: identiche 354 | attese 294 | da guardare 0, come al giro 18).
+  (scontro completo: identiche 354 | attese 294 | da guardare 0, come al giro 19).
 
-FALLITI: 1, in un banco di INTERFACCIA, che non si tocca qui:
-  test_elenchi_e_tabellone.js 2026-10-28.6 (639 / 1), 38i: «la nota del motore
-    e` nella ⓘ, non sotto il tasto». Dal motore 28.7 M.nota passa i testi da
-    M.accenti (nella ⓘ «Finché è fuori…»), M.opzioniSchieramento(...).nota ha
-    ancora «Finche` e`»: il banco confronta le due stringhe. Non e` un difetto
-    del codice: va confrontato con M.accenti(voce.nota). Segnalato (il messaggio
-    a INTERFACCIA lo manda Paolo).
+FALLITI: 0. Nessun banco rosso.
 
-GIRO 19 RISPETTO AL GIRO 18 (i quattro difetti del piano di collaudo grafico:
-undici ordine_*.js 28.3 -> 28.4, motore 2026-10-28.6 -> 28.7 con gli accenti
-nelle note; gli undici moduli caricati sotto claude/ e presi da li`, impronte
-uguali a quelle di MOTORE): +14 prove (5914 + 0 -> 5927 + 1), stessi 102 file.
-  Sui file nuovi, prima di adeguare: 5912 / 2 / 20. I banchi rossi:
-    test_novita_28ott.js (100 / 1): U2 contava 456 var(--mn-...), ora 453 (+49
-      --mn-ordine-*): quelli del Movimento Cauto sono passati al colore
-      dell Ordine.
-    test_elenchi_e_tabellone.js (639 / 1): la 38i qui sopra.
-  test_novita_28ott.js 2026-10-28.6 (TEST, 101 -> 115): U2 adeguata; nuove V1
-    i titoli dei MOD di 12 Ordini da M.intestazioneOrdine (nei moduli; niente
-    «LANCIO MISSILI GUIDATI» ne` «MODIFICATORI», <h2> solo sulle conferme;
-    sulla pagina SCHIVATA e RESET dalla schermata dei MOD del modulo); V2 il
-    Movimento Cauto rosso (intestazione #440000/#ff0000, riquadro
-    #220000/#553333, SI` e NO invariati); V3 le etichette dei bersagli di
-    Guidato e Speculativo in opz.etichette, in dopoNome solo il [tipo]; V4 il
-    Supporto: l alleato Incosciente e` una riga di rigaUnitaConFoto con
-    «🩺 Incosciente» nella fascia bassa.
-  Controprova sui file del giro 18: 12 rossi (U2 1, V1 4, V2 2, V3 2, V4 3).
-    Girate 6 volte sui file nuovi: sempre verdi.
-  test_piano_schieramento.js 2026-10-28.6 (TEST, 29 = 29): REV_MINIMA 54.
-  PIANO_COLLAUDO_N5.md revisione 54: nessun Atteso cambia; riga nuova nel
-    capitolo 30. Le prove restano 315.
+GIRO 20 RISPETTO AL GIRO 19 (da INTERFACCIA: app.html 28.3 -> 28.4 con
+window.liberaSpazioInfo, logica_aro 28.5 -> 28.6, test_elenchi_e_tabellone
+28.6 -> 28.7 con la 38i riscritta; motore 28.7 e moduli invariati): +5 prove
+(5927 + 1 -> 5932 + 0), stessi 102 file. Nessun banco di TEST cambia.
+  test_elenchi_e_tabellone.js 2026-10-28.7 (INTERFACCIA, 640 -> 644): misurato
+    644 / 0, la 38i ora e` verde (confronta con M.accenti(voce.nota)).
+  Piano grafico, il tasto ⓘ sopra i titoli lunghi (GR-E08, E11, E25, E25b,
+    E26, E36): misurato in Chromium a 390 px. Le sei schermate vengono
+    dall harness dei banchi (strumenti/cattura_gr.js: Intruder Hacker col
+    Fuoco Speculativo, Morlock con l Intuitivo, Puppet Masters e Moran in
+    Piazzare, Grenzer su una Console) e si mostrano in app.html con goToStep
+    e le loro voci della ⓘ (strumenti/misura_info.js). Con app.html 28.4:
+    nelle cinque col tasto (E25 non lo ha) il titolo prende sotto-info e il
+    testo non tocca il tasto (finisce a 260-313 px, il tasto comincia a 334).
+    Controprova con app.html 28.3: in E11 e E36 il testo tocca il tasto
+    (arriva a 349 e 337 px), senza sotto-info. Limite: Teko e Share Tech Mono
+    sono di Google Fonts, qui non raggiungibile: le misure sono col carattere
+    di ripiego.
+  PIANO_COLLAUDO_N5.md: invariato (revisione 54).
 File senza riga di riepilogo: nessuno.

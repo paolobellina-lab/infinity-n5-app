@@ -1,4 +1,4 @@
-// @versione 2026-10-28.7 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-29.1 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -160,6 +160,12 @@
 //      lo toccano (window.liberaSpazioInfo); testata ARO senza "--" da solo.
 //      RISCRITTO (dalla 2026-10-28.7): 38i, la nota nella ⓘ ha gli accenti
 //      del motore (M.accenti, motore 28.7).
+//  49. Collaudo del 29 ottobre (motore 29.5): mina una volta sola in ARO;
+//      la finestra dell Idle; Holoecho (etichetta, niente foto per le copie);
+//      HoloMask (foto della maschera, imgMaschera, viste app e Hub); import
+//      del pilota del TAG (M.pilotaDelTag). RISCRITTO (dalla 2026-10-29.1): in
+//      10 la seconda meta` dopo un ATTACCO BS (M.secondaMetaAmmessa: anche
+//      Scoprire e Idle).
 //
 //  SOLO=34a,35a node test_elenchi_e_tabellone.js  gira solo quelle sezioni.
 //
@@ -624,12 +630,19 @@ sezione('10. Dopo lo Scoprire si dichiara l Attacco BS', () => {
     ok(offerte().indexOf('ATTACCO BS') >= 0, 'prima meta` SCOPRIRE: come seconda meta` si offre ATTACCO BS (' + J(offerte()) + ')');
     ok(offerte().indexOf('MOVIMENTO') >= 0, 'e resta il MOVIMENTO');
     ok(offerte().indexOf('HACKING') < 0 && offerte().indexOf('SCOPRIRE') < 0, 'non le Abilita` che i moduli non compongono con lo Scoprire, ne` un secondo Scoprire');
-    // CONTROPROVA: chi ha sparato per primo puo` solo muovere.
+    // CONTROPROVA: chi ha sparato per primo non ha le Short Skill.
+    // RISCRITTO il 29 ottobre (MOTORE 29.5, M.secondaMetaAmmessa): prima si
+    // attendeva solo ['MOVIMENTO']; per la regola dopo una Short Skill vanno
+    // anche Scoprire e Idle (Basic Short). Ora: i Movimenti e le sole brevi che
+    // il motore ammette, e nessuna Short Skill (niente ATTACCO BS, HACKING...).
     N.tornaAlRadar(); T.giro();
     N.roster[0] = Object.assign(N.roster[0], {}); T.pano.g.roster[0].deployState = 'NORMAL'; T.pano.g.roster[0].states = {};
     T.pano.g.inviaSchieramentoAllHub('PANOCEANIA', { roster: T.pano.g.roster, strutture: [], terreni: [], motivo: 'AGGIORNAMENTO' }); T.giro();
     T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Heavy Machine Gun'); N.toggleTargetSelection('p1'); N.confirmMultiAro(false);
-    ok(J(offerte()) === J(['MOVIMENTO']), 'CONTROPROVA: prima meta` ATTACCO BS, come seconda solo il MOVIMENTO (' + J(offerte()) + ')');
+    const ammesse = offerte().filter(id => N.MotoreN5.secondaMetaAmmessa('ATTACCO BS', id).ammessa);
+    ok(J(offerte()) === J(['MOVIMENTO', 'SCOPRIRE', 'IDLE']) && ammesse.length === offerte().length,
+       'CONTROPROVA: prima meta` ATTACCO BS, come seconda il MOVIMENTO, SCOPRIRE e IDLE, tutte ammesse dal motore (' + J(offerte()) + ')');
+    ok(offerte().indexOf('ATTACCO BS') < 0 && offerte().indexOf('HACKING') < 0, 'e nessuna Short Skill: due Short Skill non stanno nello stesso Ordine');
 });
 
 sezione('11. Un Marker che dichiara un ARO si rivela, su tutti e tre i dispositivi', () => {
@@ -2940,6 +2953,91 @@ sezione('48. Il tasto ⓘ non copre i titoli lunghi (collaudo grafico 28 ottobre
     ok(tasto.style.display === 'none' && !sotto.classList.has('sotto-info'), 'senza il tasto (note sotto i tasti) la classe si toglie');
     const aro = fs.readFileSync(DIR + 'logica_aro.js', 'utf8');
     ok(/`--\\u00a0\$\{String\(nome\)\.toUpperCase\(\)\}\\u00a0--`/.test(aro), 'testata dell ARO: i trattini attaccati al nome (spazio che non va a capo)');
+});
+
+sezione('49. Collaudo di Paolo, 29 ottobre (MOTORE 29.5): mina una volta in ARO, IDLE, Holoecho, HoloMask, pilota del TAG, seconda meta`', () => {
+    // --- 1) la mina in ARO compare una volta sola ---
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+        T.schiera([truppa(profilo(T, /^Puppet Masters/), { id: 'n1', alias: 'Posa' })], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        piazza(T).eseguiPiazzamento(); T.giro(); P.annullaAro(); T.giro(); T.hub.g.chiudiRisoluzione(); N.tornaAlRadar(); T.giro();
+        T.hub.g.toggleTurn(); T.giro();
+        T.apriMenu(T.pano, 0); P.selectAction('MOVIMENTO', false); T.giro();
+        const mina = N.roster.find(u => u.deployable);
+        N.apriSelezioneAro();
+        const lista = String(T.nomadi.el('aro-selection-list').innerHTML);
+        ok(!!mina && lista.indexOf('id="aro-btn-' + mina.id + '"') < 0 && (lista.split('aro-dep-' + mina.id).length - 1) >= 1,
+           'la mina non sta fra chi reagisce (aro-btn): solo la sua riga di innesco in fondo (' + (mina && mina.nome) + ')');
+        ok(!N.vociInfo('step-aro-selection').some(v => /non pu/.test(v.titolo) && v.titolo.indexOf(N.MotoreN5.nomeUnita(mina)) >= 0), 'e la ⓘ non la elenca fra chi «non puo` reagire»');
+        ok(lista.indexOf('id="aro-btn-n1"') >= 0, 'CONTROPROVA: il Puppet Masters, truppa vera, resta fra chi reagisce');
+    }
+    // --- 2) Idle: la finestra dice IDLE, non RITARDA ---
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+        T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Muove' })], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Rea' })], 'NOMADI');
+        T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
+        P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro();
+        const n = P.alert_.length;
+        P.selezionaAzioneAro('RITARDA');
+        const msg = P.alert_.slice(n).join(' ');
+        ok(/ IDLE\./.test(msg) && !/RITARDA\./.test(msg), 'scelto Idle (id RITARDA): la finestra dice «… IDLE.» (' + msg.slice(0, 40) + '…)');
+    }
+    // --- 3) Holoecho: etichetta e niente foto da scegliere per le copie ---
+    {
+        const T = creaTavolo(DIR); const P = T.pano.g;
+        const vera = truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Eco' });
+        vera.equip = String(vera.equip || '') + ', Holoprojector';
+        P.roster = [vera]; P.apriDeployStati(0); P.creaRepliche(0, 'HOLOECHO');
+        P.deployGroup = 1; P.renderDeployUnits();
+        const dep = String(T.pano.el('deploy-units-container').innerHTML);
+        ok((dep.match(/\[ HOLOECHO \d+ — REPLICA \]/g) || []).length === 2 && !/COPIA OLOGRAFICA/.test(dep), 'nello schieramento le copie dicono «HOLOECHO n — REPLICA», non piu` «COPIA OLOGRAFICA»');
+        const righe = dep.split(/(?=<button type="button" class="huge-btn riga-unita)/).filter(r => /riga-unita/.test(r));
+        const iR = P.roster.findIndex(u => u.replica);
+        ok(righe.length === 3 && !new RegExp('cambiaIconaDeploy\\(event, ' + iR + '\\)').test(dep) && /cambiaIconaDeploy\(event, 0\)/.test(dep), 'la foto si tocca solo sulla vera: le copie non aprono la galleria');
+        const n = P.alert_.length;
+        P.apriGalleriaFoto(iR);
+        ok(/segnalino col numero/.test(P.alert_.slice(n).join(' ')) && !(T.pano.el('galleria-foto').innerHTML || '').length, 'chiamata comunque, la galleria non si apre e lo dice');
+        ok(P.roster.filter(u => u.replica).every(r => /^holoecho_\d\.png$/.test(r.imgVariant)), 'le copie hanno il segnalino del motore (holoecho_<n>.png)');
+    }
+    // --- 3) HoloMask: la foto della maschera ---
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+        const bashi = truppa(profilo(T, /^Bashi Bazouk/), { id: 'n1', alias: 'Bashi' });
+        N.roster = [bashi];
+        N.elencoFoto = () => ['bashi_vera.png', 'maschera_fusilier.png', 'altra.png'];
+        N.assegnaFoto(0, 'bashi_vera.png');
+        N.apriDeployStati(0); N.apriSceltaHolomask(0);
+        const g0 = (N._gruppiHolomask || [])[0];
+        N.scegliHolomask(0, g0.varianti[0].id);
+        const gal = String(T.nomadi.el('galleria-foto').innerHTML);
+        ok(/class="foto-maschera"/.test(gal) && /assegnaFotoMaschera\(0, 'maschera_fusilier\.png'\)/.test(gal) && !/assegnaFotoMaschera\(0, 'bashi_vera\.png'\)/.test(gal),
+           'scelto il modello imitato, si apre la galleria della maschera, senza la foto vera');
+        if (typeof N.assegnaFotoMaschera !== 'function') N.assegnaFotoMaschera = () => false;   // pagina vecchia: rossi, non caduta
+        N.assegnaFotoMaschera(0, 'maschera_fusilier.png');
+        ok(N.roster[0].imgMaschera === 'maschera_fusilier.png' && N.roster[0].imgVariant === 'bashi_vera.png', 'u.imgMaschera = la foto scelta; la foto vera resta in imgVariant');
+        ok(N.assegnaFotoMaschera(0, 'bashi_vera.png') === false && N.roster[0].imgMaschera === 'maschera_fusilier.png', 'CONTROPROVA: la foto vera come maschera e` rifiutata');
+        N.apriDeployStati(0);
+        ok(/FOTO DELLA MASCHERA: maschera_fusilier</.test(T.nomadi.el('deploy-states-content').innerHTML), 'nel riquadro HoloMask il tasto FOTO DELLA MASCHERA dice quale');
+        const mc = { nome: 'Fusilier', imgVariant: 'maschera_fusilier.png' };
+        ok(N.vistaMascherata({ nome: 'Bashi', mostraCome: mc, imgVariant: 'maschera_fusilier.png' }).imgVariant === 'maschera_fusilier.png'
+           && N.vistaMascherata({ nome: 'Bashi', mostraCome: { nome: 'Fusilier' } }).imgVariant === '0', 'vista mascherata (app): la foto della maschera se c e, se no nessuna');
+        ok(H.vistaMascherataHub({ nome: 'Bashi', mostraCome: mc }).imgVariant === 'maschera_fusilier.png' && H.vistaMascherataHub({ nome: 'Bashi', mostraCome: { nome: 'Fusilier' } }).imgVariant === '0',
+           'lo stesso all Hub (vistaMascherataHub)');
+        N.togliHolomask(0);
+        ok(N.roster[0].imgMaschera === undefined, 'tolto l HoloMask, la foto della maschera se ne va');
+    }
+    // --- 4) Import: il Gator Pilot sotto il Gator e` del Gator ---
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g;
+        N.roster = [];
+        T.nomadi.el('army-import-text').value = 'GROUP 1\nGATOR MULTI Heavy Machine Gun, Chain Rifle(+1B), Mine Dispenser (AP) / ECM (Guided -6), E/M CC Weapon(PS=5). (2 | 73)\n    GATOR PILOT Boarding Shotgun, D-Charges / Kobra Pistol, PARA CC Weapon(-6). (0 | 0)';
+        N.importaDaTesto();
+        ok(N.roster.length === 1 && /^Gator \(TAG\)/.test(N.roster[0].name), 'il Gator Pilot rientrato sotto il Gator non diventa un unita`: nasce in partita (' + N.roster.map(u => u.name) + ')');
+        N.roster = [];
+        T.nomadi.el('army-import-text').value = 'GROUP 1\nGATOR PILOT Boarding Shotgun, D-Charges / Kobra Pistol, PARA CC Weapon(-6). (0 | 11)';
+        N.importaDaTesto();
+        ok(N.roster.length === 1 && /^Gator Pilot/.test(N.roster[0].name), 'CONTROPROVA: un Gator Pilot da solo in lista resta un unita`');
+    }
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

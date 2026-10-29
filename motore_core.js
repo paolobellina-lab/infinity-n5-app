@@ -1,4 +1,4 @@
-// @versione 2026-10-28.1 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-29.2 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -56,6 +56,10 @@ const trasportoCloud = window.MotoreN5.installaTrasportoCloud();
 window.cloudPronto  = trasportoCloud.attesa.pronto;
 window.riprovaCloud = trasportoCloud.attesa.riprova;
 window.statoCloud   = trasportoCloud.attesa.stato;
+// 29 ottobre (Paolo): le squadre salvate anche su Firebase, per richiamarle
+// da piu` dispositivi (M.installaArchivioSquadre).
+try { window.MotoreN5.installaArchivioSquadre(trasportoCloud.db); }
+catch (e) { window.ultimaEccezione = e; console.error('\u26d4 Archivio squadre su Firebase non avviato: si salvano solo sul dispositivo.', e); }
 
 // --- 2. COMUNICAZIONE STANDARD (Spedizionieri) ---
 
@@ -92,6 +96,24 @@ window.inviaSchieramentoAllHub = (fazione, dati) => {
     return { inviato: true, busta: busta };
 };
 
+// Stati e nomi di chi agisce, come li vede l'avversario (vedi sotto).
+function marcaAllarmeConVistaPubblica(payload) {
+    const M = window.MotoreN5;
+    if (!payload || !M || typeof M.filtraPerAvversario !== 'function') return;
+    const unita = window.currentOrder && window.currentOrder.unit;
+    const pubblica = (u) => { try { return u ? M.filtraPerAvversario(u) : null; } catch (e) { window.ultimaEccezione = e; return null; } };
+    const nomePubblico = (u) => { const p = pubblica(u); return (p && p.nome === 'MARKER') ? (p.alias || 'MARKER') : M.nomeUnita(u); };
+    if (unita && payload.statiAttaccante == null) {
+        const p = pubblica(unita);
+        payload.statiAttaccante = (p && p.states) ? Object.assign({}, p.states) : {};
+    }
+    // I nomi: solo quelli di un Marker cambiano.
+    const squadra = [].concat(window.coordUnits || [], unita ? [unita] : []).filter(Boolean);
+    const traduci = (n) => { const u = squadra.find(x => M.nomeUnita(x) === n); return u ? nomePubblico(u) : n; };
+    if (typeof payload.attaccante === 'string') payload.attaccante = traduci(payload.attaccante);
+    if (Array.isArray(payload.attaccanti)) payload.attaccanti = payload.attaccanti.map(n => typeof n === 'string' ? traduci(n) : n);
+}
+
 window.inviaAllarmeAro = (payload) => {
     // L'identificativo dell'Ordine viaggia con ogni allarme: e` lo stesso per
     // le due meta` dello stesso Ordine, diverso per l'Ordine dopo. Serve al
@@ -101,6 +123,15 @@ window.inviaAllarmeAro = (payload) => {
     if (payload && payload.ordineId == null && window.currentOrder && window.currentOrder.id) {
         payload.ordineId = window.currentOrder.id;
     }
+    // 29 ottobre (Paolo al collaudo, DEP-07): l'allarme deve dire COME
+    // l'avversario vede chi agisce. Il campo statiAttaccante lo leggeva
+    // logica_aro (il CrazyKoala che non scatta contro un Marker, gli ARO
+    // contro un Marker: Scoprire, Look Out, Ritarda) ma NESSUNO lo scriveva:
+    // un Marker CAMO che muoveva nella ZdC del koala lo faceva esplodere.
+    // Gli stati sono quelli PUBBLICI (M.filtraPerAvversario), e il nome di un
+    // Marker e` quello del segnalino («SEGNALINO MIMETICO (-3) 1»): prima
+    // partiva il nome vero, e il reattivo leggeva chi c'era sotto.
+    marcaAllarmeConVistaPubblica(payload);
     // 🔴 UN ALLARME PER ORDINE, CHIUNQUE LO CHIEDA. La regola c'era gia` nel
     // router (la seconda meta` non rialza l'allarme), ma chi chiamava da
     // fuori la saltava: l'Idle da requisito fallito, premuto dopo un Attacco
@@ -865,7 +896,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-28.1', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-29.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

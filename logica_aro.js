@@ -1,4 +1,4 @@
-// @versione 2026-10-28.6 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-29.1 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -237,6 +237,12 @@
             console.error('\u26d4 window.rigaUnitaConFoto manca (app.html non caricato?): elenco ARO con la riga semplice, senza foto.');
         }
         inOrdine.forEach(function (u) {
+            // 29 ottobre (collaudo di Paolo, via MOTORE): i deployable (mine,
+            // CrazyKoala) non reagiscono: hanno il loro innesco, nel blocco
+            // qui sotto. Prima una mina compariva due volte (nel suo Gruppo con
+            // DETONAZIONE e come segnalino in fondo) e il koala finiva nella ⓘ
+            // come «non puo` reagire».
+            if (u && u.deployable) return;
             const st = M.statoBersaglio(u);
             // 23 ottobre (Paolo, AR-10): prima qui si saltava chiunque avesse
             // st.hidden, che nel motore vale sia per lo Schieramento Nascosto
@@ -821,7 +827,8 @@
         // aggiungere niente ad aroReactions.
         if (act === 'RITARDA') {
             window.segnaRitardo(window.aroCurrentConfig.id);
-            alert('\u23f3 ' + (u ? M.nomeUnita(u) : 'Unita\u0300') + ' RITARDA.\n\n' +
+            // 29 ottobre: il tasto ora si chiama «Idle» (id sempre RITARDA).
+            alert('\u23f3 ' + (u ? M.nomeUnita(u) : 'Unita\u0300') + ' IDLE.\n\n' +
                   'Nessuna reazione parte adesso. Se la seconda Abilita\u0300 dell\'attiva la rivela, ' +
                   'potr\u00e0 dichiarare allora; se resta un Marker, non dichiara nulla.');
             window.aroCurrentConfig.azione = null;
@@ -1583,7 +1590,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-10-28.6', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-10-29.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
