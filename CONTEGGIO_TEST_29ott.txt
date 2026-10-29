@@ -1,14 +1,14 @@
-CONTEGGIO DELLA SUITE — chat TEST, 29 ottobre 2026, giro 22 (motore 2026-10-29.6, catalogo 2026-10-29.2) (cartella allineata al Project, impronte ricalcolate con M.impronta)
+CONTEGGIO DELLA SUITE — chat TEST, 29 ottobre 2026, giro 23 (motore 2026-10-29.7, il secondo allarme dopo l IDLE) (cartella allineata al Project, impronte ricalcolate con M.impronta)
 
 PRODUZIONE
-  motore_regole_n5.js         2026-10-29.6    7ba19ed5.872966
+  motore_regole_n5.js         2026-10-29.7    f1cc8a7b.876645
   catalogo_n5.js              2026-10-29.2    9db37d18.204602
-  motore_core.js              2026-10-29.2    079a52cb.50527
+  motore_core.js              2026-10-29.3    f28f871f.53308
   logica_stati.js             2026-10-28.2    77197af8.41139
-  logica_aro.js               2026-10-29.1    ca1f5f28.98836
+  logica_aro.js               2026-10-29.2    739514a2.101104
   app.html                    2026-10-29.1    18ce85f8.216190
   calcolatore_math.js         2026-10-26.2    e936f944.20207
-  calcolatore_controller.js   2026-10-29.1    894a6970.81613
+  calcolatore_controller.js   2026-10-29.2    f73ad23e.84031
   roster_manager.js           2026-10-29.1    5b30e702.112152
   ordine_attacco_guidato.js   2026-10-28.4    13e90f98.28770
   ordine_attacco_bs.js        2026-10-28.5    c851392f.64261
@@ -34,7 +34,7 @@ PRODUZIONE
   database_nomad.js           2026-10-20.1    c4178b53.174021
   database_panoceania.js      2026-10-20.1    7d578a3b.169522
   banco_confronto.js          2026-09-14.1    e8fdec78.34151
-  PIANO_COLLAUDO_N5.md        2026-10-29.2    4e8b8332.176147
+  PIANO_COLLAUDO_N5.md        2026-10-29.3    5776bc26.178906
 
 CONVENZIONE: un file = una riga di riepilogo; si somma su TUTTI i file
 test_*.js, test_collaudo_suite.js COMPRESO. banco_confronto.js NON
@@ -74,7 +74,7 @@ test_dado_speciale.js                 15        2026-10-15.1    5a43dc5e.6172   
 test_dcharges_percorso.js             33        2026-10-28.1    6b9b41bf.13302    TEST
 test_deployable.js                    94        2026-09-23.1    168ab722.17037    TEST
 test_detonazione.js                   12        2026-09-29.1    12fd1900.5768     TEST
-test_elenchi_e_tabellone.js          662        2026-10-29.1    2393c436.275970   INTERFACCIA
+test_elenchi_e_tabellone.js          674        2026-10-29.2    5d6e31c5.279964   INTERFACCIA
 test_file_immutabili.js               16     3  2026-10-10.1    969e26ca.11217    TEST
 test_file_intestazioni.js              8        2026-10-05.1    ac73f610.3721     TEST
 test_finiture.js                     213        2026-09-23.1    918b7ab5.35864    TEST
@@ -117,12 +117,12 @@ test_novita_20ott.js                 124        2026-10-26.1    60a96fb2.48248  
 test_novita_23ott.js                 114        2026-10-28.1    0e5bdf42.68002    TEST
 test_novita_26ott.js                 274        2026-10-29.1    573733b3.113890   TEST
 test_novita_28ott.js                 115        2026-10-28.6    8e80be41.67793    TEST
-test_novita_29ott.js                  51        2026-10-29.2    7809360e.34651    TEST
+test_novita_29ott.js                  67        2026-10-29.3    e0c320b2.44541    TEST
 test_novita_7ott.js                  127        2026-10-07.2    4c7a6e70.37687    TEST
 test_orchestratore.js                 35        2026-10-20.1    f8996613.7243     TEST
 test_ordini_senza_tiro.js             83        2026-10-07.1    47f53ab8.21658    MOTORE
 test_otto_decisioni.js                93     8  2026-10-09.1    cf922127.18140    TEST
-test_piano_schieramento.js            29        2026-10-29.2    9e5ef0a1.24231    TEST
+test_piano_schieramento.js            29        2026-10-29.3    f2bfbe96.24352    TEST
 test_produttori_busta.js              21        2026-09-25.3    71d0754b.9486     TEST
 test_prosa_stati.js                   17        2026-09-24.1    7872300c.8821     TEST
 test_pulsante_calcolo.js              26        2026-09-23.1    1f742b1f.4441     TEST
@@ -153,9 +153,9 @@ test_usi_disposable.js                21        2026-09-29.1    77051b4c.7148   
 test_voce_cybermask.js                21        2026-10-19.1    47ba06ce.11379    INTERFACCIA
 test_voce_rientro_camo.js             15        2026-10-06.5    17ca4e43.8491     INTERFACCIA
 --------------------------------------------------------------------------------------------------
-TOTALE CON LE FONTI                 6023   prove su 103 file: NON MISURATO in questo giro, le tre
-                                           fonti non sono allegate. 6023 = 6003 + 0 + le 20 non eseguite
-TOTALE COME IL PROJECT (senza)      6003   passati su 103 file, 0 falliti, 20 non eseguite
+TOTALE CON LE FONTI                 6051   prove su 103 file: NON MISURATO in questo giro, le tre
+                                           fonti non sono allegate. 6051 = 6031 + 0 + le 20 non eseguite
+TOTALE COME IL PROJECT (senza)      6031   passati su 103 file, 0 falliti, 20 non eseguite
 
 NON ESEGUITE PER FONTE ASSENTE
   test_coerenza_dati.js             1   501.json, 101.json
@@ -164,32 +164,41 @@ NON ESEGUITE PER FONTE ASSENTE
   test_otto_decisioni.js            8   REGOLE_N5_v5_1_1.txt
 
 SPACCATO PER PROPRIETA (con le fonti)
-  TEST + MOTORE                     5137   su 94 file
-  INTERFACCIA                        886   su 9 file
+  TEST + MOTORE                     5153   su 94 file
+  INTERFACCIA                        898   su 9 file
 
 banco_confronto.js: uscita 0, "da guardare 0" in tutte e quattro le sezioni
-  (scontro completo: identiche 354 | attese 294 | da guardare 0, come al giro 21).
+  (scontro completo: identiche 354 | attese 294 | da guardare 0, come al giro 22).
 
 FALLITI: 0. Nessun banco rosso.
 
-GIRO 22 RISPETTO AL GIRO 21 (motore 2026-10-29.5 -> 29.6, catalogo 29.1 ->
-29.2: chiusi i due DIFETTI APERTI del giro 21): +8 prove (5993 + 2 -> 6003 +
-0), stessi 103 file.
-  Sui file nuovi, prima di adeguare: 5994 / 1 / 20. X1 verde (CLASSI_AZIONE ha
-    ATTACCO GUIDATO e REQUEST SPEEDBALL come LONG). X2 ancora rossa per colpa
-    della prova: passava i profili di PanOceania nudi alla pagina nomade, dove
-    senza indizi vale la fazione propria (NOMADI), come dice MOTORE.
-  test_novita_29ott.js 2026-10-29.2 (TEST, 43 -> 51): X1 girata; X2 riscritta
-    (ogni TAG nella pagina della sua fazione, come arriva dalla lista); nuova
-    X2b, M.profiloDiDatabase con un nome nei due database: 1) il campo fazione
-    vince sulla pagina; 2) nel roster nemico (stesso oggetto, o copia con stesso
-    id e nome) la fazione avversaria, nel proprio la propria; 3) altrimenti la
-    fazione della pagina; controprova Nomadi (anaconda_ap_spitfire_2 /
-    operator_spitfire) e profiloDb che vince su tutto; allo smonto nasce
-    «Operator».
-  Controprova sui file del giro 21: 7 rossi (X1 1, X2 1, X2b 5). Girate 6 volte
-    sui file nuovi: sempre 51 / 0.
-  test_piano_schieramento.js 2026-10-29.2 (TEST, 29 = 29): REV_MINIMA 56.
-  PIANO_COLLAUDO_N5.md revisione 56: i due difetti tolti dal capitolo 31,
-    riga del capitolo 30 aggiornata. Nessun Atteso cambia; le prove restano 315.
+GIRO 23 RISPETTO AL GIRO 22 (il secondo allarme dopo l IDLE contro un Marker:
+motore 2026-10-29.6 -> 29.7, motore_core 29.2 -> 29.3; da INTERFACCIA
+calcolatore_controller 29.1 -> 29.2, logica_aro 29.1 -> 29.2,
+test_elenchi_e_tabellone 29.1 -> 29.2): +28 prove (6003 -> 6031), stessi 103
+file.
+  Sui file nuovi, prima delle prove nuove: 6015 / 0 / 20, nessun banco caduto.
+  test_elenchi_e_tabellone.js 2026-10-29.2 (INTERFACCIA, 662 -> 674): misurato
+    674 / 0 (sezione 50, il giro intero coi tre dispositivi).
+  test_novita_29ott.js 2026-10-29.3 (TEST, 51 -> 67): nuova Y, i casi A-G di
+    MOTORE sulla pagina intera coi tre dispositivi: A due allarmi per un Marker
+    CAMO (MOVIMENTO, ATTACCO BS), il secondo con secondaMeta, soloIdle, lo
+    stesso ordineId, controMarker false, senza camo, col nome vero; busta con
+    aroAtteso e aroSecondaMeta; il router richiamato a Ordine aperto non lo
+    ripete. B MOVIMENTO poi MOVIMENTO: un allarme, busta senza aroSecondaMeta.
+    C un Modello: un allarme, controMarker false. D inviaAllarmeAro con
+    secondaMeta senza primo contro un Marker: inviato false. E i quattro no di
+    M.secondoAllarmeDopoIdle col loro motivo, e il si`. F l Hub aspetta e
+    unisce (prima la risposta di prima), anche con la busta arrivata PRIMA del
+    secondo allarme (il canale tolto all Hub per un giro). G al reattivo solo
+    la truppa in IDLE con «IL MARKER SI È RIVELATO»; senza IDLE la risposta
+    vuota, senza avviso, e l Hub calcola.
+  Controprova sui file del giro 22: 5 rossi (A 4, poi la sezione cade: manca
+    M.secondoAllarmeDopoIdle). Girate 6 volte sui file nuovi: sempre 67 / 0.
+  test_piano_schieramento.js 2026-10-29.3 (TEST, 29 = 29): REV_MINIMA 57.
+  PIANO_COLLAUDO_N5.md revisione 57: nuova AR-12 (IDLE contro un Marker, il
+    secondo allarme, coi tre dispositivi e le due controprove, misurata sulla
+    pagina intera: FACCIA A FACCIA Zulu 16 / Alguacil 8, la Schivata a se`);
+    l IDLE tolto dalle divergenze; ST-24 con le immagini holoecho. Le prove
+    passano a 316.
 File senza riga di riepilogo: nessuno.

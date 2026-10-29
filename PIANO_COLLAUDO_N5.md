@@ -1,6 +1,6 @@
-<!-- @versione 2026-10-29.2 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
+<!-- @versione 2026-10-29.3 | PIANO_COLLAUDO_N5.md | proprieta`: chat TEST -->
 
-# Piano di collaudo — Calcolatore Infinity N5 (revisione 56)
+# Piano di collaudo — Calcolatore Infinity N5 (revisione 57)
 
 Bozza scritta dalla chat MOTORE il 15 ottobre, su richiesta di Paolo, da far
 adottare a TEST. Segue il motore **2026-10-15.1**, `motore_core.js`,
@@ -259,6 +259,15 @@ nome che sta nei due database (Anaconda (AP Spitfire)) si legge nella fazione
 della truppa (il suo campo, il roster in cui sta, la fazione della pagina).
 Tolti dal capitolo 31. Nessun Atteso cambia. Le prove restano 315.
 
+**Revisione 57** (TEST, 29 ottobre sera): segue il motore **2026-10-29.7** e
+`motore_core.js` **2026-10-29.3**, con `calcolatore_controller.js` e
+`logica_aro.js` **2026-10-29.2** (MOTORE, allineato con INTERFACCIA). Contro un
+Marker chi sceglie **IDLE** non perde più sempre l'ARO: se la seconda Abilità
+rivela il Marker parte un **secondo allarme**, lo vedono solo le truppe in IDLE,
+e l'Hub calcola con le reazioni delle due risposte. Non è più una divergenza:
+nuova **AR-12**, coi tre dispositivi. ST-24: i segnalini `holoecho_1/2/3.png`
+ci sono. Le prove passano a 316.
+
 Ogni prova dice **chi** agisce, **quale Ordine** dichiara, **con che cosa**,
 **contro chi**, **a che distanza** (in pollici) e **cosa si deve leggere**. Dove
 un dato non cambia il risultato è scelto comunque, così la prova si esegue senza
@@ -303,10 +312,10 @@ comune fino a **96"**: la parte grigia in coda è fuori gittata.
 più tutti i MOD. Si tira 1d20 e serve **uguale o meno**. La salvezza si scrive
 **ARM VS 8 ×1**: ARM (o BTS, o PH) più il PS dell'arma, un dado.
 
-**Il conteggio.** Il piano contiene **315 prove, tutte nello stesso formato**:
-tutte e 315, nelle stesse cinque righe; le convenzioni servono a non scrivere
-la stessa riga 315 volte. I codici sono uno per prova: alla revisione 49 sono 315.
-Prove con un campo da completare: 0 prove su 315
+**Il conteggio.** Il piano contiene **316 prove, tutte nello stesso formato**:
+tutte e 316, nelle stesse cinque righe; le convenzioni servono a non scrivere
+la stessa riga 316 volte. I codici sono uno per prova: alla revisione 57 sono 316.
+Prove con un campo da completare: 0 prove su 316
 Il numero lo controlla `test_piano_schieramento.js`: non si cambia a mano.
 
 **Se un numero non torna**, guarda prima la scheda ufficiale della miniatura e
@@ -1501,7 +1510,7 @@ IDLE, CAUTO, SALTO, ARRAMPICARSI, SOPPRESSIONE, REQUEST SPEEDBALL.
 
 **ST-24 — Holoecho e HoloMask: due caselle** *(nuova)*
 - **Attivo:** Bashi Bazouk (BS Attack (AP)) *(Nomadi #42)* · apri l'editor degli stati
-- **Atteso:** **due** caselle, Holoecho e HoloMask, anche se Holoprojector e Holomask stanno fra gli equipaggiamenti e non fra le abilità; le icone dalla cartella del tuo esercito (`img/nomadi/…`, poi la copia comune in `img/`, poi l'emoji). Salvando con la sola Holoecho l'HoloMask **non** si accende. Accesa in partita, l'Holoecho piazza **due** copie (*«👥 Holoecho: piazza 2 copie olografiche a contatto di Silhouette.»*); spenta, le repliche escono dal roster. Le **foto**: l'Holoecho non ne chiede, usa i **tre segnalini numerati** `holoecho_1.png`, `holoecho_2.png`, `holoecho_3.png` della cartella foto dell'esercito (`img/nomadi/`): vera e copie arrivano all'avversario come *HOLOECHO 1…3*, ognuna col suo segnalino, mai con la foto della vera; le copie non hanno il tocco sulla foto. L'HoloMask ne chiede **due**: quella dell'unità simulata (*FOTO DELLA MASCHERA*, che vede l'avversario; senza, il segnalino comune) e la miniatura vera, che si vede svelata. Spenta l'HoloMask, si toglie anche il Modello imitato. Controprova: un Alguacil (Combi Rifle) *(#1)* non ha nessuna delle due caselle.
+- **Atteso:** **due** caselle, Holoecho e HoloMask, anche se Holoprojector e Holomask stanno fra gli equipaggiamenti e non fra le abilità; le icone dalla cartella del tuo esercito (`img/nomadi/…`, poi la copia comune in `img/`, poi l'emoji). Salvando con la sola Holoecho l'HoloMask **non** si accende. Accesa in partita, l'Holoecho piazza **due** copie (*«👥 Holoecho: piazza 2 copie olografiche a contatto di Silhouette.»*); spenta, le repliche escono dal roster. Le **foto**: l'Holoecho non ne chiede, usa i **tre segnalini numerati** `holoecho_1.png`, `holoecho_2.png`, `holoecho_3.png` della cartella foto dell'esercito (`img/nomadi/`, e `img/panoceania/` per PanOceania: le immagini ci sono, le mette Paolo): vera e copie arrivano all'avversario come *HOLOECHO 1…3*, ognuna col suo segnalino, mai con la foto della vera; le copie non hanno il tocco sulla foto. L'HoloMask ne chiede **due**: quella dell'unità simulata (*FOTO DELLA MASCHERA*, che vede l'avversario; senza, il segnalino comune) e la miniatura vera, che si vede svelata. Spenta l'HoloMask, si toglie anche il Modello imitato. Controprova: un Alguacil (Combi Rifle) *(#1)* non ha nessuna delle due caselle.
 
 ---
 
@@ -1547,6 +1556,12 @@ contro l'Orc; oppure, dove la prova dice HACKING, **Interventor (Hacker Plus, Fa
 
 **AR-11 — Soppressione, contro un ATTACCO BS**
 - **Atteso:** tutte le voci di AR-01, col badge **SF MODE** e l'arma col profilo SF.
+
+
+**AR-12 — IDLE contro un Marker: il secondo allarme** *(nuova)*
+- **Attivo:** nel turno PanOceania, Zulu-Cobra (Triangulated Fire, Sensor) *(PanOceania #10)* come **Marker CAMO** · MUOVERE, poi in seconda metà ATTACCO BS col Combi Rifle contro l'Alguacil (Combi Rifle) *(Nomadi #1)*, a 8-16"
+- **ARO:** al primo allarme, Alguacil (Combi Rifle) *(#1)* → **IDLE** e Alguacil (HMG) *(#2)* → SCHIVATA; al secondo, l'Alguacil #1 → ATTACCO BS, Combi Rifle, contro lo Zulu-Cobra, a 8-16"
+- **Atteso:** (1) al primo allarme il reattivo vede *«⚠️ IL NEMICO AGISCE:»* con *SEGNALINO MIMETICO (-3) 1* e, sotto, MOVIMENTO; contro il Marker le reazioni sono SCHIVATA, RESET, SCOPRIRE, LOOK OUT! e **IDLE**. (2) Dichiarata la seconda metà, il Marker è rivelato e il reattivo riceve il **secondo allarme**: *«⚠️ IL MARKER SI È RIVELATO:»* col nome vero, *Zulu*, sotto ATTACCO BS e la nota *«Seconda meta` dell'Ordine: il Marker si e` rivelato. Dichiara solo chi aveva scelto IDLE, contro il Modello (righe 13639-13641).»*; nell'elenco c'è **solo l'Alguacil #1**, che ora ha ATTACCO BS, ATTACCO CC, SCHIVATA e RESET. Finché non risponde l'Hub non calcola. (3) L'Hub calcola con **tutte e due** le reazioni: **FACCIA A FACCIA** fra lo Zulu-Cobra (**16**, 3 dadi) e l'Alguacil #1 (**8**, 1 dado), e la SCHIVATA dell'Alguacil (HMG) in un TIRO NORMALE a sé. Controprova: seconda metà **MUOVERE** (resta Marker): **nessun** secondo allarme, l'ARO dell'Alguacil #1 è perso, l'Hub calcola con la sola Schivata. Controprova: nessuna truppa in IDLE (reagisce solo l'Alguacil (HMG)): il secondo allarme arriva, ma il reattivo **non vede niente** (risponde da solo, senza avviso) e l'Hub calcola lo stesso.
 
 ---
 
@@ -2261,6 +2276,7 @@ quello indicato.
 | I colori raggruppati (28 ottobre, giro 17): `M.TAVOLOZZA` coi 23 nomi, `M.colore` (*var(--mn-<nome>,<colore>)*, il nome sconosciuto #ff00ff con l'errore), `M.applicaTavolozza` (un solo `<style id="tavolozza-motore">` su `:root`, niente senza head), i 459 `var(--mn-…)` dei moduli col ripiego uguale alla tavolozza, `app.html` senza `--mn-*`; `M.CATEGORIE_ORDINE` (blu, verde, rosso, cinque tinte), `M.COLORI_ORDINE` per ogni valore di `M.AZIONI` più BS_ATTACK e DODGE, `M.coloreOrdine` (casa, maiuscole, ricolorare una voce), `M.colOrdine` (getter, `--mn-ordine-*`); sulla pagina le intestazioni nel colore della categoria e la Soppressione rossa; il riquadro del tiro dell'Osservazione dalla classe `riquadro-tiro`; dal motore 28.6 `M.stileTavolozza` e lo stesso giallo «attenzione» sul SÌ della Sagoma singola e sulla lettera accesa | `test_novita_28ott.js` U1-U6, S1; `test_scheda_osservazione.js` |
 | I quattro difetti del piano grafico (28 ottobre, giro 19): i titoli dei MOD di dodici Ordini da `M.intestazioneOrdine`, niente *LANCIO MISSILI GUIDATI* né *MODIFICATORI …*, `<h2>` solo sulle conferme, sulla pagina *SCHIVATA* e *RESET*; il Movimento Cauto rosso (intestazione e riquadro nelle tinte dell'Ordine Intero, SÌ e NO invariati); le etichette dei bersagli di Guidato e Speculativo in `opz.etichette` (nel nome solo il [tipo]); il Supporto con `rigaUnitaConFoto` e *🩺 Incosciente* nella fascia bassa | `test_novita_28ott.js` V1-V4 |
 | Le novità del 29 ottobre (motore 29.5; ST-24, AR-10, SCH-01, LOG-05, LOG-08, DEP-07, SG-08, DIS-07): `M.secondaMetaAmmessa` (Long = Ordine intero, due Brevi solo con una BASIC, i trasporti BASIC, l'ignota Breve) e la seconda metà dopo RICARICARE sulla pagina; `M.pilotaDelTag` (Gator, Szalamandra, Gecko, Anaconda; Tikbalang e Triphammer null) e il pilota che nasce allo smonto, con la seconda metà a lui; l'import di Army col pilota rientrato; `M.fileSegnalinoHoloecho`, `M.fotoValida`, i segnalini di Holoecho e Decoy; HoloMask con `imgMaschera` o «0»; l'allarme col nome del segnalino e gli stati pubblici, il CrazyKoala che non scatta contro un Marker; il tasto IDLE contro un Marker; `M.installaArchivioSquadre`. Dal motore 29.6 (giro 22) chiusi i due difetti del giro 21: ogni Ordine Intero è Long per la seconda metà; `M.profiloDiDatabase` con un nome nei due database sceglie la fazione della truppa (campo `fazione`, roster nemico o proprio, fazione della pagina), e l'Anaconda (AP Spitfire) di PanOceania ha il suo Operator | `test_novita_29ott.js` X1-X8, X2b; `test_schieramento.js` sez. 5; `test_novita_26ott.js` J1 |
+| Il secondo allarme dopo l'IDLE contro un Marker (29 ottobre sera, motore 29.7; AR-12): due allarmi per MOVIMENTO poi ATTACCO BS di un Marker CAMO, il secondo con `secondaMeta`, `soloIdle`, lo stesso `ordineId`, `controMarker` false, senza camo, col nome vero; la busta con `aroAtteso` e `aroSecondaMeta`; il router richiamato non lo ripete; MOVIMENTO poi MOVIMENTO e un Modello: un allarme solo; `inviaAllarmeAro` con `secondaMeta` senza primo contro un Marker scartato; i quattro no di `M.secondoAllarmeDopoIdle`; l'Hub che aspetta e unisce, anche con la busta arrivata prima del secondo allarme; al reattivo solo le truppe in IDLE, senza IDLE la risposta vuota | `test_novita_29ott.js` Y |
 | Le note nella ⓘ dei moduli d'Ordine (28 ottobre): le armi escluse (CC Weapon, CC Mode, GizmoKit, Deactivator, Deployable Cover, Tratto mancante per Soppressione, Speculativo, Guidato), i bersagli non ammessi delle D-Charges, i Supportware dell'EVO, il Dado Speciale, le regole dell'Intuitivo, la nota di `armiARO` e il vincolo del bersaglio solo in Soppressione; le celle del bottone (`data-da`, `data-fino`, `data-mod`) | `test_modulo_bs.js`, `test_modulo_cc.js`, `test_modulo_difesa.js`, `test_modulo_speculativo.js`, `test_modulo_guidato.js`, `test_dcharges_percorso.js`, `test_modulo_hacking.js`, `test_modulo_intuitivo.js`, `test_modulo_aro.js`, `test_correzioni_regole.js`, `test_bottone_arma.js` sez. 10, `test_integrazione.js`, `test_novita_23ott.js` sez. 10 e 12 |
 
 Una trappola da sapere scrivendo una prova nuova: la chiave di un requisito non
@@ -2288,11 +2304,7 @@ motore risponde *non lo so* e l'app chiede di toglierle a mano: → DATABASE);
 *un pilota, un segnalino* è una lettura e non una regola (→ REGOLE); il
 recupero parziale di una partita senza copia locale non esiste, e potrebbe
 recuperare solo le unità visibili (→ INTERFACCIA); due identificativi ignoti,
-`?219` sul Monstrucker e `?227` su Shona Carano (→ DATABASE); chi sceglie IDLE
-contro un Marker non ha un secondo allarme dopo la seconda metà (oggi un
-allarme per Ordine), quindi perde l'ARO anche se il Marker si è scoperto: è un
-problema noto, da sistemare fra MOTORE e INTERFACCIA, e non si prova come
-difetto (29 ottobre).
+`?219` sul Monstrucker e `?227` su Shona Carano (→ DATABASE).
 
 ---
 

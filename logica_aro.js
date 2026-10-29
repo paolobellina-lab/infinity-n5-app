@@ -1,4 +1,4 @@
-// @versione 2026-10-29.1 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-29.2 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -84,16 +84,37 @@
     // ==============================================================
     // ALLARME
     // ==============================================================
+    // 29 ottobre (Paolo, MOTORE 29.7): il SECONDO allarme dello stesso
+    // Ordine (secondaMeta, soloIdle). Parte solo se il primo era contro un
+    // Marker e la seconda Abilita` l'ha rivelato: ora dichiara chi aveva
+    // scelto IDLE, e nessun altro (gli altri hanno gia` risposto).
+    window.eSecondoAllarme = (d) => !!(d && d.secondaMeta);
+    // Chi aveva scelto IDLE in quest'Ordine ed e` ancora sul tavolo.
+    window.idleDellOrdine = (ordineId) => {
+        const r = window.ritardatari || {};
+        if (ordineId == null || r.ordineId !== ordineId) return [];
+        return (window.roster || []).filter(u => u && r.ids.indexOf(u.id) >= 0 && u.state !== 'DEAD');
+    };
     window.mostraBannerAllarme = function () {
+        const d = window.currentAttackData || {};
+        // Secondo allarme senza nessuna truppa in IDLE: risposta vuota
+        // subito, senza chiedere niente, o l'Hub resterebbe ad aspettare.
+        if (window.eSecondoAllarme(d) && !window.idleDellOrdine(d.ordineId).length) {
+            console.log('\ud83d\udee1\ufe0f Secondo allarme: nessuna truppa in IDLE, risposta vuota.');
+            spedisci([]);
+            return;
+        }
         const banner = document.getElementById('aro-alert-banner');
         if (!banner) return;
         banner.style.display = 'block';
-        const d = window.currentAttackData || {};
-        const chi = d.attaccanti ? d.attaccanti.join(' e ') : 'Nemico';
+        const chi = d.attaccanti ? d.attaccanti.join(' e ') : (d.attaccante || 'Nemico');
         const txt = document.getElementById('aro-alert-text');
         if (txt) {
-            txt.innerHTML = `⚠️ IL NEMICO AGISCE: <br><span style="color:#ffcc00; font-size:24px;">${chi}</span>` +
-                (d.azione ? `<br><span style="color:#aaa; font-size:15px;">${d.azione}</span>` : '');
+            const az = window.eSecondoAllarme(d) ? (d.azioneSecondaMeta || d.azione) : d.azione;
+            txt.innerHTML = (window.eSecondoAllarme(d) ? `⚠️ IL MARKER SI È RIVELATO: <br>` : `⚠️ IL NEMICO AGISCE: <br>`) +
+                `<span style="color:#ffcc00; font-size:24px;">${chi}</span>` +
+                (az ? `<br><span style="color:#aaa; font-size:15px;">${az}</span>` : '') +
+                (window.eSecondoAllarme(d) && d.nota ? `<br><span class="nota-secondo-allarme" style="color:#ffcc66; font-size:15px;">${String(d.nota).replace(/</g, '&lt;')}</span>` : '');
         }
         window.scrollTo(0, 0);
     };
@@ -224,6 +245,11 @@
         const bordo = isNomads() ? '#550000' : '#003366';
 
         const escluse = [];
+        const secondo = window.eSecondoAllarme(window.currentAttackData);
+        const idle = secondo ? window.idleDellOrdine((window.currentAttackData || {}).ordineId) : [];
+        if (secondo && window.currentAttackData.nota) {
+            container.innerHTML += `<div class="nota-secondo-allarme" style="color:#ffcc66; text-align:center; margin-bottom:10px;">${String(window.currentAttackData.nota).replace(/</g, '&lt;')}</div>`;
+        }
         // 7 ottobre (Paolo): l'elenco segue i Gruppi di Combattimento, e ogni
         // riga e` QUELLA degli altri elenchi, con la foto dell'unita` e lo
         // stesso carattere (window.rigaUnitaConFoto, app.html). Prima qui
@@ -243,6 +269,9 @@
             // DETONAZIONE e come segnalino in fondo) e il koala finiva nella ⓘ
             // come «non puo` reagire».
             if (u && u.deployable) return;
+            // 29 ottobre: al secondo allarme dichiara solo chi aveva scelto
+            // IDLE in quest'Ordine; gli altri hanno gia` risposto.
+            if (secondo && idle.indexOf(u) < 0) return;
             const st = M.statoBersaglio(u);
             // 23 ottobre (Paolo, AR-10): prima qui si saltava chiunque avesse
             // st.hidden, che nel motore vale sia per lo Schieramento Nascosto
@@ -335,6 +364,9 @@
 
         (window.roster || []).forEach(function (u) {
             if (!u || !u.deployable) return;
+            // Al secondo allarme (solo IDLE) i deployable hanno gia` avuto
+            // il loro innesco nella prima risposta.
+            if (secondo) return;
             // 7 ottobre: un segnalino esce dal tavolo passando a Morto, come
             // ogni altra unita` (prima si toglieva dal roster con un tasto).
             // Morto resta nel roster: qui va saltato, o un koala gia`
@@ -1590,7 +1622,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-10-29.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-10-29.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

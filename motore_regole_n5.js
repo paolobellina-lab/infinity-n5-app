@@ -1,4 +1,4 @@
-// @versione 2026-10-29.6 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-29.7 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-29.6';
+    M.VERSIONE = '2026-10-29.7';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -715,6 +715,12 @@
         return String(G._ordineAllarmato) === String(o.id);
     }
 
+    function secondoAllarmePartito() {
+        const o = G.currentOrder;
+        if (!o || o.id == null || G._secondoAllarme == null) return false;
+        return String(G._secondoAllarme) === String(o.id);
+    }
+
     M.creaPayload = function (attacchi, opzioni) {
         opzioni = opzioni || {};
         const errori = [];
@@ -804,6 +810,10 @@
             // Il fatto e` l'allarme spedito, non la meta`: un Movimento Cauto
             // fuori da LoF e ZdC non allarma, e non aspetta niente.
             aroAtteso: !!opzioni.aroAtteso || allarmeGiaPartito(),
+            // 29 ottobre: per quest'Ordine e` partito anche il SECONDO allarme
+            // (M.secondoAllarmeDopoIdle). Le reazioni del primo l'Hub le ha
+            // gia`: deve aspettare anche la seconda risposta, e unirle.
+            aroSecondaMeta: secondoAllarmePartito() || undefined,
             // Le Abilita` dichiarate nell'Ordine: servono, fra l'altro, a sapere
             // se l'attiva ha dichiarato una Schivata (mine). (28 settembre.)
             azioniDichiarate: Array.isArray(opzioni.azioniDichiarate) ? opzioni.azioniDichiarate.slice() : undefined,
@@ -14919,6 +14929,49 @@
             bersagli: [],
             timestamp: Date.now()
         } };
+    };
+
+    // IL SECONDO ALLARME DOPO L'IDLE (29 ottobre, Paolo). Contro un Marker il
+    // reattivo puo` scegliere IDLE (id RITARDA): non dichiara niente adesso e
+    // aspetta la seconda Abilita` dell'attiva. Se quella RIVELA il Marker,
+    // dichiara allora, contro il Modello; se resta Marker, l'ARO e` perso
+    // (righe 13639-13641, 13656). Fino a oggi l'Ordine mandava UN allarme e
+    // chi aveva scelto IDLE perdeva sempre l'ARO. Il secondo allarme parte
+    // alla dichiarazione della seconda meta`, SOLO se:
+    //   - il primo allarme di quest'Ordine e` partito con l'attiva Marker
+    //     (motore_core lo scrive in window._allarmeControMarker);
+    //   - la seconda Abilita` l'ha rivelata (il router ha gia` applicato
+    //     M.statoDopoAbilita: si guarda l'unita` com'e` ora);
+    //   - per quest'Ordine non e` gia` partito.
+    // Lo leggono solo le truppe che hanno scelto IDLE: le altre hanno gia`
+    // risposto al primo (campo soloIdle).
+    //   ctx: { ordineId, allarmeControMarker, secondoGiaInviato, isSecondHalf,
+    //          unita, azionePrima, azioneSeconda, coordUnits, coordMode }
+    //   -> { invia, motivo, payload }
+    M.secondoAllarmeDopoIdle = function (ctx) {
+        ctx = ctx || {};
+        const no = function (m) { return { invia: false, motivo: m, payload: null }; };
+        if (!ctx.isSecondHalf) return no('Non e` la seconda meta` dell\'Ordine.');
+        if (ctx.ordineId == null) return no('Ordine senza identificativo.');
+        if (String(ctx.allarmeControMarker) !== String(ctx.ordineId)) return no('Il primo allarme di quest\'Ordine non era contro un Marker: nessuno ha potuto scegliere IDLE.');
+        if (ctx.secondoGiaInviato != null && String(ctx.secondoGiaInviato) === String(ctx.ordineId)) return no('Il secondo allarme di quest\'Ordine e` gia` partito.');
+        if (!ctx.unita) return no('Attiva non nota.');
+        if (M.eMarkerAttivo(ctx.unita)) return no('La seconda Abilita` non ha rivelato il Marker: chi ha scelto IDLE non dichiara nulla (riga 13656).');
+        const e = M.allarmeOrdine(ctx.azionePrima, { unita: ctx.unita, coordUnits: ctx.coordUnits, coordMode: ctx.coordMode,
+                                                     azioneSeconda: ctx.azioneSeconda });
+        const payload = e.payload || {
+            isCoordinated: !!ctx.coordMode,
+            attaccante: M.nomeUnita(ctx.unita),
+            attaccanti: (ctx.coordUnits || [ctx.unita]).map(function (u) { return M.nomeUnita(u); }),
+            azione: M.azioneDaRisolvere(ctx.azionePrima, ctx.azioneSeconda) || ctx.azioneSeconda,
+            azionePrimaMeta: ctx.azionePrima, coperturaNegata: null, bersagli: [], timestamp: Date.now()
+        };
+        payload.ordineId = ctx.ordineId;
+        payload.secondaMeta = true;
+        payload.soloIdle = true;
+        payload.azioneSecondaMeta = ctx.azioneSeconda;
+        payload.nota = 'Seconda meta` dell\'Ordine: il Marker si e` rivelato. Dichiara solo chi aveva scelto IDLE, contro il Modello (righe 13639-13641).';
+        return { invia: true, motivo: 'Il Marker si e` rivelato con la seconda Abilita`: chi ha scelto IDLE dichiara ora.', payload: payload };
     };
 
     // Ha questo programma? Una domanda sola, per chi non deve leggere da se`

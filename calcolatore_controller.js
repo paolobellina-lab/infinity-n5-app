@@ -1,4 +1,4 @@
-// @versione 2026-10-29.1 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-29.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -212,6 +212,28 @@ window.attesaAroDetta = false;
 // L'Ordine a cui appartengono le reazioni in memoria: vedi il ramo
 // dell'allarme nel ciclo di ascolto.
 window.ordineDelleReazioni = null;
+// 29 ottobre (Paolo, MOTORE 29.7): il SECONDO allarme dopo l'Idle. Se il
+// primo allarme era contro un Marker e la seconda Abilita` l'ha rivelato,
+// chi aveva scelto IDLE dichiara adesso: le reazioni della prima risposta
+// restano (reazioniPrimaMeta), quelle nuove si aggiungono.
+//   attesaSecondaMeta: l'ordineId che aspetta la seconda risposta, o null
+//   secondoAllarmeVisto: l'ordineId del secondo allarme gia` arrivato
+window.reazioniPrimaMeta = null;
+window.attesaSecondaMeta = null;
+window.secondoAllarmeVisto = null;
+// Una risposta ARO arrivata (ARO_NOMADI o ARO_PANOCEANIA): con la seconda
+// meta` in attesa si unisce alla prima, se no la sostituisce.
+window.riceviReazioniAro = (reazioni) => {
+    const nuove = Array.isArray(reazioni) ? reazioni : [];
+    if (window.attesaSecondaMeta != null) {
+        window.latestAroData = (window.reazioniPrimaMeta || []).concat(nuove);
+        window.updateLog('\ud83d\udee1\ufe0f Seconda risposta dopo l\'Idle: ' + nuove.length + ' reazioni in piu`.');
+        window.attesaSecondaMeta = null;
+        window.reazioniPrimaMeta = null;
+        return;
+    }
+    window.latestAroData = reazioni;
+};
 
 // Un setup che arriva mentre quella fazione ha gia` unita` in gioco NON si
 // applica in silenzio: sarebbe un tocco sul pulsante "invia all'Hub" a
@@ -298,7 +320,17 @@ setInterval(() => {
         // Ordine nuovo, e le reazioni di prima non sono sue. Senza
         // identificativo non si puo` sapere, e non si tocca niente.
         const ordineAllarme = (datiAttacco && datiAttacco.ordineId != null) ? String(datiAttacco.ordineId) : null;
-        if (ordineAllarme !== null && ordineAllarme !== window.ordineDelleReazioni) {
+        if (datiAttacco && datiAttacco.secondaMeta && ordineAllarme !== null && ordineAllarme === window.ordineDelleReazioni) {
+            // Secondo allarme dello STESSO Ordine: le reazioni gia` arrivate
+            // non si azzerano, si mettono da parte e si aspetta la seconda
+            // risposta (la busta con aroSecondaMeta aspetta lei).
+            window.reazioniPrimaMeta = Array.isArray(window.latestAroData) ? window.latestAroData : [];
+            window.latestAroData = null;
+            window.attesaSecondaMeta = ordineAllarme;
+            window.secondoAllarmeVisto = ordineAllarme;
+            window.attesaAroDetta = false;
+            window.updateLog('\u26a0\ufe0f Seconda meta`: il Marker si e` rivelato, chi aveva scelto IDLE puo` dichiarare.');
+        } else if (ordineAllarme !== null && ordineAllarme !== window.ordineDelleReazioni) {
             if (window.latestAroData !== null && window.latestAroData !== undefined) {
                 window.updateLog('\ud83e\uddf9 Ordine nuovo: le reazioni dell\'Ordine precedente non valgono piu`.');
             }
@@ -316,7 +348,7 @@ setInterval(() => {
     if(aroNomadi) {
         window.updateLog("🛡️ ARO Nomadi completato! PanOceania può procedere.");
         localStorage.setItem(window.MotoreN5.CANALI.HUB_SBLOCCO, Date.now().toString()); 
-        window.latestAroData = JSON.parse(aroNomadi).reazioni; 
+        window.riceviReazioniAro(JSON.parse(aroNomadi).reazioni);
         localStorage.removeItem(window.MotoreN5.CANALI.ARO_NOMADI);
     }
 
@@ -325,7 +357,7 @@ setInterval(() => {
     if(aroPano) {
         window.updateLog("🛡️ ARO PanOceania completato! I Nomadi possono procedere.");
         localStorage.setItem(window.MotoreN5.CANALI.HUB_SBLOCCO, Date.now().toString()); 
-        window.latestAroData = JSON.parse(aroPano).reazioni; 
+        window.riceviReazioniAro(JSON.parse(aroPano).reazioni);
         localStorage.removeItem(window.MotoreN5.CANALI.ARO_PANOCEANIA);
     }
     
@@ -363,7 +395,12 @@ setInterval(() => {
         // senza opposizione, e l'ARO arriverebbe quando il risultato e` gia`
         // a schermo. Si aspetta: la busta resta sul canale e si rilegge al
         // giro dopo, insieme alle reazioni.
-        if (datiReali.aroAtteso && !window.reazioniPronte()) {
+        // 29 ottobre: con aroSecondaMeta la prima risposta c'e` gia`, quindi
+        // reazioniPronte non basta: si aspetta che il secondo allarme sia
+        // arrivato E che la sua risposta sia stata unita.
+        const secondaInAttesa = !!datiReali.aroSecondaMeta &&
+            (window.attesaSecondaMeta != null || window.secondoAllarmeVisto !== window.ordineDelleReazioni);
+        if ((datiReali.aroAtteso && !window.reazioniPronte()) || secondaInAttesa) {
             if (!window.attesaAroDetta) {
                 window.updateLog('\u23f3 Ordine ricevuto: si aspettano le reazioni dichiarate.');
                 window.attesaAroDetta = true;
@@ -1343,6 +1380,8 @@ window.chiudiRisoluzione = () => {
     // 3. Chiude l'ordine: senza questo azzeramento le reazioni ARO di questo
     //    ordine restano in memoria e vengono riusate nel calcolo successivo.
     window.latestAroData = null;
+    window.reazioniPrimaMeta = null;
+    window.attesaSecondaMeta = null;
 
     // 4. Ripulisce i canali dell'ordine appena chiuso.
     //    hub_sblocco_attivo in particolare: se resta sul server, un'app che si
@@ -1361,7 +1400,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-10-29.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-10-29.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

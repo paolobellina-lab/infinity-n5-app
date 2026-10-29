@@ -1,4 +1,4 @@
-// @versione 2026-10-29.2 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-29.3 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -106,6 +106,13 @@ function marcaAllarmeConVistaPubblica(payload) {
     if (unita && payload.statiAttaccante == null) {
         const p = pubblica(unita);
         payload.statiAttaccante = (p && p.states) ? Object.assign({}, p.states) : {};
+        // 29 ottobre: l'attiva e` un Marker per l'avversario? Serve a sapere,
+        // alla seconda meta`, se qualcuno ha potuto scegliere IDLE.
+        if (payload.controMarker == null) {
+            let marker = !!(p && p.nome === 'MARKER');
+            try { if (!marker && p && M.eMarkerAttivo) marker = M.eMarkerAttivo(p); } catch (e) { /* vista incompleta */ }
+            payload.controMarker = marker;
+        }
     }
     // I nomi: solo quelli di un Marker cambiano.
     const squadra = [].concat(window.coordUnits || [], unita ? [unita] : []).filter(Boolean);
@@ -139,12 +146,30 @@ window.inviaAllarmeAro = (payload) => {
     // chiedere un nuovo ARO (Paolo al tavolo, 6 ottobre). Ora sta qui, dove
     // passano tutti. Senza identificativo d'Ordine non si puo` sapere, e
     // l'allarme parte.
+    // 29 ottobre: il SECONDO allarme (M.secondoAllarmeDopoIdle) e` l'unica
+    // eccezione alla regola qui sotto: uno per Ordine, solo dopo un primo
+    // allarme contro un Marker.
+    if (payload && payload.secondaMeta) {
+        if (payload.ordineId == null || String(window._allarmeControMarker) !== String(payload.ordineId)) {
+            console.warn('🚨 Secondo allarme scartato: il primo di quest\'Ordine non era contro un Marker.');
+            return { inviato: false, ripetuto: false };
+        }
+        if (window._secondoAllarme === payload.ordineId) {
+            console.log('🚨 Secondo allarme non ripetuto: gia` partito per quest\'Ordine.');
+            return { inviato: false, ripetuto: true };
+        }
+        window._secondoAllarme = payload.ordineId;
+        window._codaAllarmi.push(payload);
+        spedisciAllarmiInCoda();
+        return { inviato: true, secondaMeta: true };
+    }
     if (payload && payload.ordineId != null) {
         if (window._ordineAllarmato === payload.ordineId) {
             console.log('🚨 Allarme ARO non ripetuto: questo Ordine ha gia` avvisato l\'avversario.');
             return { inviato: false, ripetuto: true };
         }
         window._ordineAllarmato = payload.ordineId;
+        if (payload.controMarker) window._allarmeControMarker = payload.ordineId;
     }
     window._codaAllarmi.push(payload);
     spedisciAllarmiInCoda();
@@ -513,6 +538,11 @@ window.selectAction = (actionId, isSecondHalf = false) => {
     // ordine dichiarato; se lo stato cambia, l'Hub lo sa subito (AGGIORNAMENTO).
     // Se la regola e` ancora da verificare, lo si dice e non si cambia niente.
     window.applicaStatoDaAbilita(window.currentOrder.unit, azione);
+    // 29 ottobre: alla seconda meta`, se il primo allarme era contro un
+    // Marker e questa Abilita` l'ha rivelato, chi ha scelto IDLE dichiara ora.
+    // Una volta per Ordine: se il router viene richiamato sulla stessa
+    // seconda meta`, il secondo allarme non riparte (window._secondoAllarme).
+    if (isSecondHalf) window.inviaSecondoAllarmeDopoIdle(azione);
 
     // FOXHOLE: chi dichiara una Skill con etichetta Movimento puo` cancellare
     // lo stato, e lo deve ANNUNCIARE alla dichiarazione (righe 13871-13874).
@@ -709,6 +739,24 @@ window.pulisciTokenDisattivati = function (ordineNuovo) {
     return tolti;
 };
 
+// IL SECONDO ALLARME DOPO L'IDLE (29 ottobre, Paolo): lo decide e lo
+// costruisce M.secondoAllarmeDopoIdle; lo chiama il router alla seconda
+// meta`, dopo aver applicato il cambio di stato della seconda Abilita`.
+window.inviaSecondoAllarmeDopoIdle = function (azioneSeconda) {
+    const M = window.MotoreN5, o = window.currentOrder || {};
+    if (!M || typeof M.secondoAllarmeDopoIdle !== 'function') return { invia: false, motivo: 'motore non caricato' };
+    const e = M.secondoAllarmeDopoIdle({
+        ordineId: o.id, allarmeControMarker: window._allarmeControMarker, secondoGiaInviato: window._secondoAllarme,
+        isSecondHalf: true, unita: o.unit, azionePrima: o.action1, azioneSeconda: azioneSeconda,
+        coordUnits: window.coordUnits, coordMode: window.coordMode
+    });
+    if (e.invia && e.payload && typeof window.inviaAllarmeAro === 'function') {
+        window.inviaAllarmeAro(e.payload);
+        console.log('🚨 Secondo allarme: ' + e.motivo);
+    }
+    return e;
+};
+
 // ALLARME DI UN ORDINE: costruito da M.allarmeOrdine (motore), spedito qui.
 // Per chi sta nella pagina e non in un modulo (l'Idle da requisito fallito).
 window.inviaAllarmeOrdine = function (actionId, opzioni) {
@@ -896,7 +944,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-29.2', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-29.3', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

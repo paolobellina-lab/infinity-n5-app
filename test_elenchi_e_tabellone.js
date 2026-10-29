@@ -1,4 +1,4 @@
-// @versione 2026-10-29.1 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-29.2 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -166,6 +166,9 @@
 //      del pilota del TAG (M.pilotaDelTag). RISCRITTO (dalla 2026-10-29.1): in
 //      10 la seconda meta` dopo un ATTACCO BS (M.secondaMetaAmmessa: anche
 //      Scoprire e Idle).
+//  50. Il secondo allarme dopo l IDLE (motore 29.7): l Hub tiene la prima
+//      risposta e aspetta la seconda (aroSecondaMeta), poi le unisce; il
+//      reattivo mostra solo chi era in IDLE, o risponde vuoto da solo.
 //
 //  SOLO=34a,35a node test_elenchi_e_tabellone.js  gira solo quelle sezioni.
 //
@@ -3038,6 +3041,46 @@ sezione('49. Collaudo di Paolo, 29 ottobre (MOTORE 29.5): mina una volta in ARO,
         N.importaDaTesto();
         ok(N.roster.length === 1 && /^Gator Pilot/.test(N.roster[0].name), 'CONTROPROVA: un Gator Pilot da solo in lista resta un unita`');
     }
+});
+
+sezione('50. Il secondo allarme dopo l IDLE (Paolo, 29 ottobre; MOTORE 29.7)', () => {
+    const giro = (svuotaIdle) => {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+        T.schiera([truppa(profilo(T, /^Intruder \(HMG/), { id: 'n1', alias: 'Ombra', deployState: 'CAMO', states: { camo: true } })],
+                  [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Rea' }), truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p2', alias: 'Altro' })], 'NOMADI');
+        T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
+        const primo = Object.assign({}, P.currentAttackData || {});
+        P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.toggleAroUnit('p2'); P.confermaSelezioneAro();
+        P.selezionaAzioneAro('RITARDA');                 // Rea: Idle
+        P.selezionaAzioneAro('DODGE'); P.salvaAroCorrente(); T.giro();   // Altro: Schivata, e si spedisce
+        const prima = J(H.latestAroData);
+        if (svuotaIdle) P.ritardatari = { ordineId: null, ids: [] };
+        N.selectAction('ATTACCO BS', true); N.declareAttackBS('Heavy Machine Gun'); N.toggleTargetSelection('p1'); N.confirmMultiAro(false);
+        N.eseguiCalcoloBS(); T.giro();
+        return { T, N, P, H, primo, prima };
+    };
+    const a = giro(false);
+    ok(a.primo.controMarker === true && !a.primo.secondaMeta, 'premessa: il primo allarme e` contro un Marker');
+    ok(/"id":"p2"/.test(a.prima) && !/"id":"p1"/.test(a.prima), 'premessa: alla prima risposta l Hub ha la Schivata di Altro, Rea era in IDLE (' + a.prima.slice(0, 60) + ')');
+    const d = a.P.currentAttackData || {};
+    ok(d.secondaMeta === true && d.soloIdle === true && d.ordineId === a.primo.ordineId, 'la seconda Abilita` rivela il Marker: al reattivo arriva il secondo allarme, stesso Ordine');
+    ok(!risoluzione(a.T) && a.H.attesaSecondaMeta === String(d.ordineId) && /"id":"p2"/.test(J(a.H.reazioniPrimaMeta)),
+       'l Hub non calcola: tiene da parte la prima risposta e aspetta la seconda');
+    ok(/IL MARKER SI È RIVELATO/.test(a.T.pano.el('aro-alert-text').innerHTML) && (!d.nota || a.T.pano.el('aro-alert-text').innerHTML.indexOf(String(d.nota).replace(/</g, '&lt;')) >= 0),
+       'l avviso dice che il Marker si e` rivelato, con la nota del motore');
+    a.P.apriSelezioneAro();
+    const lista = String(a.T.pano.el('aro-selection-list').innerHTML);
+    ok(lista.indexOf('id="aro-btn-p1"') >= 0 && lista.indexOf('id="aro-btn-p2"') < 0, 'nell elenco solo Rea (era in IDLE); Altro ha gia` risposto e non c e');
+    a.P.toggleAroUnit('p1'); a.P.confermaSelezioneAro(); a.P.selezionaAzioneAro('DODGE'); a.P.salvaAroCorrente(); a.T.giro();
+    ok(risoluzione(a.T) && a.H.attesaSecondaMeta === null, 'arrivata la seconda risposta, l Hub calcola');
+    const unite = (a.H.latestAroData || []).map(r => r.id + ':' + r.azione);
+    ok(J(unite) === J(['p2:DODGE', 'p1:DODGE']), 'il calcolo ha tutte e due le reazioni: quella di prima e quella dopo l IDLE (' + J(unite) + ')');
+    ok(/Altro Azione: SCHIVATA|Altro Azione: DODGE/.test(tabellone(a.T)) && /Rea Azione: SCHIVATA|Rea Azione: DODGE/.test(tabellone(a.T)), 'e sul tabellone ci sono le due Schivate');
+    // nessuna truppa in IDLE: risposta vuota subito, senza chiedere
+    const b = giro(true);
+    ok((b.P.currentAttackData || {}).secondaMeta === true || risoluzione(b.T), 'premessa: il secondo allarme e` partito');
+    ok(risoluzione(b.T) && b.T.pano.el('aro-alert-banner').style.display !== 'block', 'senza nessuna truppa in IDLE il reattivo risponde vuoto da solo, senza avviso, e l Hub calcola');
+    ok(J((b.H.latestAroData || []).map(r => r.id)) === J(['p2']), 'e la reazione della prima risposta resta, da sola (' + J((b.H.latestAroData || []).map(r => r.id)) + ')');
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);
