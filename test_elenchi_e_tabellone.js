@@ -1,4 +1,4 @@
-// @versione 2026-10-29.2 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-30.1 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -169,6 +169,8 @@
 //  50. Il secondo allarme dopo l IDLE (motore 29.7): l Hub tiene la prima
 //      risposta e aspetta la seconda (aroSecondaMeta), poi le unisce; il
 //      reattivo mostra solo chi era in IDLE, o risponde vuoto da solo.
+//      Dalla 2026-10-30.1 (GR-G20): intestazioni dei Gruppi col numero di chi
+//      compare; etichetta «⏳ era in IDLE».
 //
 //  SOLO=34a,35a node test_elenchi_e_tabellone.js  gira solo quelle sezioni.
 //
@@ -3076,6 +3078,26 @@ sezione('50. Il secondo allarme dopo l IDLE (Paolo, 29 ottobre; MOTORE 29.7)', (
     const unite = (a.H.latestAroData || []).map(r => r.id + ':' + r.azione);
     ok(J(unite) === J(['p2:DODGE', 'p1:DODGE']), 'il calcolo ha tutte e due le reazioni: quella di prima e quella dopo l IDLE (' + J(unite) + ')');
     ok(/Altro Azione: SCHIVATA|Altro Azione: DODGE/.test(tabellone(a.T)) && /Rea Azione: SCHIVATA|Rea Azione: DODGE/.test(tabellone(a.T)), 'e sul tabellone ci sono le due Schivate');
+    // 30 ottobre (GR-G20): le intestazioni dei Gruppi contano chi compare,
+    // e l etichetta dice «era in IDLE».
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+        const f = profilo(T, /^Fusilier \(Combi/);
+        T.schiera([truppa(profilo(T, /^Intruder \(HMG/), { id: 'n1', alias: 'Ombra', deployState: 'CAMO', states: { camo: true } })],
+                  [truppa(f, { id: 'p1', alias: 'Rea', combatGroup: 1 }), truppa(f, { id: 'p2', alias: 'Altro', combatGroup: 1 }), truppa(f, { id: 'p4', alias: 'Quarto', combatGroup: 1 }),
+                   truppa(f, { id: 'p3', alias: 'Terzo', combatGroup: 2 })], 'NOMADI');
+        T.apriMenu(T.nomadi, 0); N.selectAction('MOVIMENTO', false); T.giro();
+        P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.toggleAroUnit('p3'); P.toggleAroUnit('p2'); P.confermaSelezioneAro();
+        P.selezionaAzioneAro('RITARDA'); P.selezionaAzioneAro('RITARDA');
+        P.selezionaAzioneAro('DODGE'); P.salvaAroCorrente(); T.giro();
+        N.selectAction('ATTACCO BS', true); N.declareAttackBS('Heavy Machine Gun'); N.toggleTargetSelection('p1'); N.confirmMultiAro(false); N.eseguiCalcoloBS(); T.giro();
+        P.apriSelezioneAro();
+        const l = String(T.pano.el('aro-selection-list').innerHTML);
+        const intest = [...l.matchAll(/<div class="intestazione-gruppo"[^>]*>GRUPPO (\d+) <span[^>]*>\((\d+)\)<\/span>/g)].map(x => 'GRUPPO ' + x[1] + ' (' + x[2] + ')');
+        ok(J(intest) === J(['GRUPPO 1 (1)', 'GRUPPO 2 (1)']) && l.indexOf('aro-btn-p1') >= 0 && l.indexOf('aro-btn-p3') >= 0 && l.indexOf('aro-btn-p2') < 0 && l.indexOf('aro-btn-p4') < 0,
+           'secondo allarme: ogni Gruppo conta chi compare (Rea nel 1, Terzo nel 2), non tutte le sue truppe (' + J(intest) + ')');
+        ok((l.match(/⏳ era in IDLE/g) || []).length === 2 && !/aveva ritardato/.test(l), 'e l etichetta dice «⏳ era in IDLE», non piu` «aveva ritardato»');
+    }
     // nessuna truppa in IDLE: risposta vuota subito, senza chiedere
     const b = giro(true);
     ok((b.P.currentAttackData || {}).secondaMeta === true || risoluzione(b.T), 'premessa: il secondo allarme e` partito');

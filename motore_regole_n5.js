@@ -1,4 +1,4 @@
-// @versione 2026-10-29.7 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-29.8 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-29.7';
+    M.VERSIONE = '2026-10-29.8';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -14970,7 +14970,9 @@
         payload.secondaMeta = true;
         payload.soloIdle = true;
         payload.azioneSecondaMeta = ctx.azioneSeconda;
-        payload.nota = 'Seconda meta` dell\'Ordine: il Marker si e` rivelato. Dichiara solo chi aveva scelto IDLE, contro il Modello (righe 13639-13641).';
+        // La nota va a schermo cosi` com'e` (l'avviso di chi reagisce): con le
+        // lettere accentate vere (collaudo grafico 29 ottobre, GR-G19).
+        payload.nota = M.accenti('Seconda meta` dell\'Ordine: il Marker si e` rivelato. Dichiara solo chi aveva scelto IDLE, contro il Modello (righe 13639-13641).');
         return { invia: true, motivo: 'Il Marker si e` rivelato con la seconda Abilita`: chi ha scelto IDLE dichiara ora.', payload: payload };
     };
 

@@ -1,4 +1,4 @@
-// @versione 2026-10-29.1 | ordine_movimento.js | proprieta`: chat MOTORE
+// @versione 2026-10-30.1 | ordine_movimento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏃 MOVIMENTO E INSTRADAMENTO (N5) - ordine_movimento.js
 // ------------------------------------------
@@ -91,7 +91,7 @@
                 : a === 'RISALI SULLA MOTO' ? M.rimontaMoto(u, window.roster)
                 : a === 'SCENDI DAL TAG' ? M.scendiDalTag(u, window.roster)
                 : M.risaliSulTag(u, window.roster);
-        if (!e.possibile) { alert('⛔ ' + e.motivo); return false; }
+        if (!e.possibile) { alert(M.accenti('⛔ ' + e.motivo)); return false; }
         const togli = (id) => { const i = (window.roster || []).findIndex(x => x && x.id === id); if (i >= 0) window.roster.splice(i, 1); };
         let chi = u;
         if (a === 'RISALI SUL TAG') {
@@ -121,7 +121,9 @@
         window.currentOrder.unit = chi;
         if (window.spearheadUnit === u) window.spearheadUnit = chi;
         if (Array.isArray(window.coordUnits)) window.coordUnits = window.coordUnits.map(x => x === u ? chi : x);
-        alert('✅ ' + M.nomeUnita(chi) + ': ' + (e.note || []).join('\n'));
+        // 29 ottobre (collaudo grafico, GR-C09): le note del motore con le
+        // lettere accentate vere, non "meta`".
+        alert(M.accenti('✅ ' + M.nomeUnita(chi) + ': ' + (e.note || []).join('\n')));
         return true;
     };
 
@@ -132,10 +134,10 @@
         const M = motore(); if (!M) return false;
         const u = window.currentOrder.unit || window.spearheadUnit;
         const p = M.puoRicaricare(u, window.roster);
-        if (!p.puo) { alert('⛔ ' + p.motivo); return false; }
-        const si = confirm('🔄 RELOAD — ' + M.nomeUnita(u) + '\n\nÈ nella Zona di Controllo di un alleato con Baggage, non in Stato Nullo?\n' +
+        if (!p.puo) { alert(M.accenti('⛔ ' + p.motivo)); return false; }
+        const si = confirm(M.accenti('🔄 RELOAD — ' + M.nomeUnita(u) + '\n\nÈ nella Zona di Controllo di un alleato con Baggage, non in Stato Nullo?\n' +
                            p.baggage.map(n => '• ' + n).join('\n') +
-                           '\n\nOK = sì, si ricarica (' + p.armi.join(', ') + ')\nAnnulla = no: Requisito fallito, IDLE');
+                           '\n\nOK = sì, si ricarica (' + p.armi.join(', ') + ')\nAnnulla = no: Requisito fallito, IDLE'));
         if (!si) {
             window.currentOrder.ricaricaFallita = true;
             alert('⚠️ Requisito fallito: ' + M.nomeUnita(u) + ' fa IDLE. L\'Ordine è speso e l\'avversario ha il suo ARO.');
@@ -144,8 +146,8 @@
         const r = M.ricaricaUsi(u);
         if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(u, r.unitaAggiornata, 'RICARICARE');
         else Object.assign(u, r.unitaAggiornata);
-        alert('✅ ' + M.nomeUnita(u) + ' ricarica: ' + r.recuperati.map(x => x.arma + ' (+' + x.usi + ')').join(', ') +
-              (r.esclusi.length ? '\nNon ricaricabili: ' + r.esclusi.join(', ') : '') + '\n' + r.note.join('\n'));
+        alert(M.accenti('✅ ' + M.nomeUnita(u) + ' ricarica: ' + r.recuperati.map(x => x.arma + ' (+' + x.usi + ')').join(', ') +
+              (r.esclusi.length ? '\nNon ricaricabili: ' + r.esclusi.join(', ') : '') + '\n' + r.note.join('\n')));
         return true;
     };
 
@@ -376,7 +378,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_movimento.js', versione: '2026-10-29.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_movimento.js', versione: '2026-10-30.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

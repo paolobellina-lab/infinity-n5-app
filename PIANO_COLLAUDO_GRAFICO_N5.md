@@ -1,10 +1,12 @@
-<!-- @versione 2026-10-28.2 | PIANO_COLLAUDO_GRAFICO_N5.md | proprieta`: chat MOTORE (bozza da far adottare a TEST) -->
+<!-- @versione 2026-10-29.1 | PIANO_COLLAUDO_GRAFICO_N5.md | proprieta`: chat MOTORE (bozza da far adottare a TEST) -->
 
 # Piano di collaudo grafico — Calcolatore Infinity N5
 
 Bozza scritta dalla chat MOTORE il 28 ottobre, su richiesta di Paolo: *«una serie di test, strutturati come quelli dell’altro piano di collaudo, pensati per mostrarmi tutte le pagine e tutte le note che escono, sia sulle app giocatore che sull’app calcolatore»*. Il **Piano di collaudo** dice se i **numeri** sono giusti; questo dice se le **schermate** sono giuste: cosa c’è a schermo, dove, e cosa c’è nella ⓘ.
 
-Misurato coi file del Progetto del 28 ottobre: `motore_regole_n5.js` **2026-10-28.7**, `motore_core.js` **2026-10-28.1**, `ordine_attacco_bs.js` **2026-10-28.5**, `altri ordine_*.js` **2026-10-28.3 e .4**, `ordine_coordinato.js` **2026-10-28.2**, `logica_stati.js` **2026-10-28.2**, `app.html` **2026-10-28.3**, `logica_aro.js` **2026-10-28.5**, `roster_manager.js` **2026-10-28.2**, `scegli_fazione.html` **2026-10-28.1**, `calcolatore_hub.html` **2026-10-27.2**, `calcolatore_controller.js` **2026-10-26.1**, `catalogo_n5.js` **2026-10-27.1**, `database_nomad.js e database_panoceania.js` **2026-10-20.1**.
+Rifatto il 29 ottobre sui file nuovi: le 103 prove di prima ripassate (cambiata solo GR-G14) e 10 prove nuove (GR-B14…B17, GR-C08, GR-C09, GR-G17…G20) per Holoecho, HoloMask, seconda metà, pilota del TAG e secondo allarme dopo l’IDLE.
+
+Misurato coi file del Progetto del 29 ottobre: `motore_regole_n5.js` **2026-10-29.8**, `motore_core.js` **2026-10-29.3**, `ordine_movimento.js` **2026-10-29.2**, `ordine_attacco_bs.js` **2026-10-28.5**, `altri ordine_*.js` **2026-10-28.3 e .4**, `ordine_coordinato.js` **2026-10-28.2**, `logica_stati.js` **2026-10-28.2**, `app.html` **2026-10-29.1**, `logica_aro.js` **2026-10-29.2**, `roster_manager.js` **2026-10-29.1**, `scegli_fazione.html` **2026-10-28.1**, `calcolatore_hub.html` **2026-10-27.2**, `calcolatore_controller.js` **2026-10-29.2**, `catalogo_n5.js` **2026-10-29.2**, `database_nomad.js e database_panoceania.js` **2026-10-20.1**.
 
 Ogni prova ha la **foto** della schermata (e della ⓘ aperta, quando ha voci) nell’artifact **«Collaudo grafico»**, sotto lo stesso codice. Le voci della ⓘ scritte qui **non** sono ricopiate a mano: le ha registrate il giro fotografico, prova per prova, dalla pagina vera.
 
@@ -171,6 +173,41 @@ GR-D05 — titolo
   - *SCHIERAMENTO AEREO* (regole e promemoria): «Resta fuori dal tavolo: entra nel tuo Turno Attivo con INGRESSO IN CAMPO, usando il suo Ordine. Finché è fuori non aggiunge il suo Ordine al Pool.»
   - *Drop Bears (Deployable Mode)* (regole e promemoria): «Intuitive Attack, Disposable (3), Direct Template (Small Teardrop), Deployable»
 
+**GR-B14 — Holoecho: le copie create**
+- **App:** Nomadi (telefono, 390 px)
+- **Passi:** Bashi Bazouk *(#42)* → HOLOECHO: 2 COPIE OLOGRAFICHE
+- **Schermata:** Stati di schieramento
+- **Guarda:** il riquadro azzurro «HOLOECHO: 2 replica/e schierate. Questa è la VERA (numero n)» e TOGLI LE REPLICHE
+- **ⓘ:** il tasto c’è, 1 voce:
+  - *SCHIERAMENTO AEREO* (regole e promemoria): «Resta fuori dal tavolo: entra nel tuo Turno Attivo con INGRESSO IN CAMPO, usando il suo Ordine. Finché è fuori non aggiunge il suo Ordine al Pool.»
+- **Finestre:** «🪞 Holoecho: 2 copie olografiche in Coerenza; eseguono lo stesso Ordine della truppa vera.…»
+
+**GR-B15 — Holoecho: i tre segnalini nel Gruppo**
+- **App:** Nomadi (telefono, 390 px)
+- **Passi:** come GR-B14, poi torna al GRUPPO 1
+- **Schermata:** Unità da schierare
+- **Guarda:** tre righe HOLOECHO 1, 2 e 3, ognuna col suo segnalino numerato (holoecho_n.png), nessuna foto della miniatura; le copie non hanno la foto da toccare
+- **ⓘ:** nessuna voce, il tasto **non c’è**.
+- **Finestre:** «🪞 Holoecho: 2 copie olografiche in Coerenza; eseguono lo stesso Ordine della truppa vera.…»
+
+**GR-B16 — HoloMask: la foto della maschera**
+- **App:** Nomadi (telefono, 390 px)
+- **Passi:** Bashi Bazouk → HOLOMASK: SCEGLI IL MODELLO → scegli la truppa
+- **Schermata:** Stati di schieramento
+- **Guarda:** si apre da sola la galleria per la FOTO DELLA MASCHERA (la truppa imitata), con NESSUNA FOTO
+- **ⓘ:** il tasto c’è, 1 voce:
+  - *SCHIERAMENTO AEREO* (regole e promemoria): «Resta fuori dal tavolo: entra nel tuo Turno Attivo con INGRESSO IN CAMPO, usando il suo Ordine. Finché è fuori non aggiunge il suo Ordine al Pool.»
+- **Finestre:** «🎭 HoloMask: l’avversario vede Grenzer (Missile Launcher). Si gioca col profilo VERO; scop…»
+
+**GR-B17 — HoloMask: le due foto**
+- **App:** Nomadi (telefono, 390 px)
+- **Passi:** come GR-B16, scegli la foto dell’Alguacil
+- **Schermata:** Stati di schieramento
+- **Guarda:** riquadro viola: «l’avversario vede …», FOTO DELLA MASCHERA: ALGUACIL_1, CAMBIA MODELLO IMITATO, TOGLI HOLOMASK
+- **ⓘ:** il tasto c’è, 1 voce:
+  - *SCHIERAMENTO AEREO* (regole e promemoria): «Resta fuori dal tavolo: entra nel tuo Turno Attivo con INGRESSO IN CAMPO, usando il suo Ordine. Finché è fuori non aggiunge il suo Ordine al Pool.»
+- **Finestre:** «🎭 HoloMask: l’avversario vede Grenzer (Missile Launcher). Si gioca col profilo VERO; scop…»
+
 ---
 
 # 3. C. Turno attivo
@@ -223,6 +260,22 @@ GR-D05 — titolo
 - **Schermata:** Attesa dell’ARO / 2ª metà
 - **Guarda:** «Reazione Dichiarata! Completa l’ordine:», i tasti della seconda metà coi colori del menu
 - **ⓘ:** nessuna voce, il tasto **non c’è**.
+
+**GR-C08 — Seconda metà dopo RICARICARE**
+- **App:** Nomadi (telefono, 390 px)
+- **Passi:** come GR-E40, conferma la RELOAD; l’avversario risponde
+- **Schermata:** Attesa dell’ARO / 2ª metà
+- **Guarda:** nella seconda metà MUOVERE, SCOPRIRE, IDLE; NON c’è ATTACCO BS (due Abilità Brevi non stanno nello stesso Ordine)
+- **ⓘ:** nessuna voce, il tasto **non c’è**.
+- **Finestre:** «✅ Kulak ricarica: Cybermine (+1) Gli equipaggiamenti già piazzati sul tavolo restano dove…»
+
+**GR-C09 — Gator: SCENDI DAL TAG**
+- **App:** Nomadi (telefono, 390 px)
+- **Passi:** Gator *(#44)* · SCENDI DAL TAG; l’avversario risponde
+- **Schermata:** Attesa dell’ARO / 2ª metà
+- **Guarda:** la seconda metà ha le voci del pilota (MUOVERE, RISALI SUL TAG, ATTACCO BS…); nessuna finestra vuota; l’avviso del pilota sceso con le lettere accentate
+- **ⓘ:** nessuna voce, il tasto **non c’è**.
+- **Finestre:** «✅ Gator (pilota): Il pilota scende e si piazza a contatto di Silhouette col TAG (regola d…»
 
 ---
 
@@ -710,7 +763,7 @@ GR-D05 — titolo
 - **Schermata:** Attesa dell’ARO / 2ª metà
 - **Guarda:** la finestra RELOAD (Baggage); confermata, IN ATTESA DI ARO
 - **ⓘ:** nessuna voce, il tasto **non c’è**.
-- **Finestre:** «✅ Kulak ricarica: Cybermine (+1) Gli equipaggiamenti gia` piazzati sul tavolo restano dov…»
+- **Finestre:** «✅ Kulak ricarica: Cybermine (+1) Gli equipaggiamenti già piazzati sul tavolo restano dove…»
 
 ---
 
@@ -862,8 +915,7 @@ GR-D05 — titolo
 - **Passi:** il Moran *(#19)* ha un CrazyKoala sul tavolo; GESTISCI ARO
 - **Schermata:** ARO: chi reagisce
 - **Guarda:** il koala come riga con la sua foto, separato dalle truppe
-- **ⓘ:** il tasto c’è, 1 voce:
-  - *CrazyKoala #1 non può reagire* (perché non si può): «È un Deployable: reagisce solo col proprio innesco, non dichiara ARO.»
+- **ⓘ:** nessuna voce, il tasto **non c’è**.
 
 **GR-G15 — DETONAZIONE di una mina**
 - **App:** Nomadi (telefono, 390 px)
@@ -880,6 +932,41 @@ GR-D05 — titolo
 - **Guarda:** una sola azione, DETONAZIONE, con la domanda della Zona di Controllo; nella ⓘ «Si attiva per Zona di Controllo…»
 - **ⓘ:** il tasto c’è, 1 voce:
   - *DETONAZIONE* (regole e promemoria · sotto il tasto `detonazione`): «Si attiva per Zona di Controllo: la Linea di Tiro non serve.»
+
+**GR-G17 — Le reazioni contro un Marker**
+- **App:** Nomadi (telefono, 390 px)
+- **Passi:** un Marker CAMO muove; GESTISCI ARO, Alguacil, AVANTI
+- **Schermata:** ARO: la reazione
+- **Guarda:** SCHIVATA, RESET, SCOPRIRE, LOOK OUT!, IDLE (non RITARDA); niente ATTACCO BS; nella ⓘ la nota dell’IDLE
+- **ⓘ:** il tasto c’è, 6 voci:
+  - *Reset* (regole e promemoria · sotto il tasto `reazione-RESET`): «Contro questo attacco il Reset non si oppone: due Tiri Normali. Serve solo a cancellare gli stati che il Reset cancella.»
+  - *Look Out!* (regole e promemoria · sotto il tasto `reazione-LOOK_OUT`): «Look Out! non ha un calcolo nell'app: si risolve al tavolo.»
+  - *Idle* (regole e promemoria · sotto il tasto `reazione-RITARDA`): «Nessuna reazione adesso. Dopo la seconda metà dell'Ordine dichiari un ARO solo se il Marker si è rivelato; se resta Marker, l'ARO è perso (riga 13656…»
+  - *Attacco BS non disponibile* (perché non si può): «Contro un Marker gli ARO dichiarabili sono solo Scoprire, Schivata, Look Out! e Reset (righe 13645-13656). Puoi dichiarare IDLE: se la seconda Abilit…»
+  - *Attacco in Corpo a Corpo non disponibile* (perché non si può): «Contro un Marker gli ARO dichiarabili sono solo Scoprire, Schivata, Look Out! e Reset (righe 13645-13656). Puoi dichiarare IDLE: se la seconda Abilit…»
+  - *Hacking non disponibile* (perché non si può): «Contro un Marker gli ARO dichiarabili sono solo Scoprire, Schivata, Look Out! e Reset (righe 13645-13656). Puoi dichiarare IDLE: se la seconda Abilit…»
+
+**GR-G18 — IDLE contro un Marker**
+- **App:** Nomadi (telefono, 390 px)
+- **Passi:** come GR-G17, tocca IDLE
+- **Schermata:** Turno avversario
+- **Guarda:** l’avviso «… IDLE. Nessuna reazione parte adesso…»; si torna al turno avversario
+- **ⓘ:** nessuna voce, il tasto **non c’è**.
+- **Finestre:** «⏳ Alguacil IDLE. Nessuna reazione parte adesso. Se la seconda Abilità dell'attiva la riv…»
+
+**GR-G19 — Secondo allarme: il Marker si è rivelato**
+- **App:** Nomadi (telefono, 390 px)
+- **Passi:** dopo GR-G18, l’attiva dichiara ATTACCO BS come seconda metà
+- **Schermata:** Turno avversario
+- **Guarda:** avviso «⚠️ IL MARKER SI È RIVELATO:», il nome vero, ATTACCO BS e la nota in giallo
+- **ⓘ:** nessuna voce, il tasto **non c’è**.
+
+**GR-G20 — Secondo allarme: solo chi era in IDLE**
+- **App:** Nomadi (telefono, 390 px)
+- **Passi:** come GR-G19, GESTISCI ARO
+- **Schermata:** ARO: chi reagisce
+- **Guarda:** in cima la nota; in elenco SOLO l’Alguacil con «⏳ aveva ritardato»; niente mine né koala
+- **ⓘ:** nessuna voce, il tasto **non c’è**.
 
 ---
 
@@ -970,22 +1057,22 @@ Ogni riga è un punto del codice che deposita una nota nella ⓘ (tramite `M.not
 | `ordine_scoprire.js:251` | Scoprire | Scheda e modificatori dell’Ordine | GR-E17 |
 | `ordine_supporto.js:152` | Alguacil non soccorribile | Bersagli dell’Ordine | GR-E19, GR-E20, GR-E21 |
 | `ordine_supporto.js:241` | Doctor | Scheda e modificatori dell’Ordine | GR-E20, GR-E21 |
-| `logica_aro.js:422` | Daktari non puo` reagire | ARO: chi reagisce | GR-G02, GR-G14, GR-G16 |
-| `logica_aro.js:442` | DETONAZIONE | ARO: la reazione | GR-G15, GR-G16 |
-| `logica_aro.js:760` | Attacco in Corpo a Corpo | ARO: la reazione | GR-G03, GR-G04, GR-G05, GR-G06, GR-G07, GR-G08, GR-G09, GR-G10, GR-G11, GR-G12, GR-G13 |
-| `logica_aro.js:772` | Foxhole | ARO: la reazione | GR-G04 |
-| `logica_aro.js:778` | Hacking non disponibile | ARO: la reazione | GR-G03, GR-G04, GR-G05, GR-G06, GR-G07, GR-G08, GR-G09, GR-G10, GR-G11, GR-G12, GR-G13 |
-| `logica_aro.js:856` | Fuoco di Soppressione | ARO: l’arma | GR-G06 |
-| `logica_aro.js:857` | Soppressione | ARO: l’arma | GR-G06 |
-| `logica_aro.js:949` | CC Weapon non utilizzabile | ARO: l’arma | GR-G05, GR-G06, GR-G07, GR-G08, GR-G09, GR-G10, GR-G13 |
-| `logica_aro.js:1114` | Reset | ARO: modificatori | GR-G12 |
-| `logica_aro.js:1309` | Burst | ARO: modificatori | GR-G13 |
-| `logica_aro.js:1310` | — | — | non costruita al tavolo grafico: il Burst limitato agli usi residui in ARO lo tiene il banco (`test_novita_26ott.js` O2) |
-| `logica_aro.js:1311` | Copertura | ARO: modificatori | GR-G09 |
-| `logica_aro.js:1312` | Arma Targetless | ARO: modificatori | GR-G10 |
-| `logica_aro.js:1313` | Fumo | ARO: modificatori | GR-G09 |
-| `roster_manager.js:1499` | HIDDEN DEPLOYMENT | Stati di schieramento | GR-B06, GR-B07, GR-B08, GR-B09, GR-B13 |
-| `roster_manager.js:1803` | Shock Mine | Stati di schieramento | GR-B06, GR-B07, GR-B13 |
+| `logica_aro.js:460` | Daktari non puo` reagire | ARO: chi reagisce | GR-G02 |
+| `logica_aro.js:480` | DETONAZIONE | ARO: la reazione | GR-G15, GR-G16 |
+| `logica_aro.js:801` | Attacco in Corpo a Corpo | ARO: la reazione | GR-G03, GR-G04, GR-G05, GR-G06, GR-G07, GR-G08, GR-G09, GR-G10, GR-G11, GR-G12, GR-G13, GR-G17, GR-G18 |
+| `logica_aro.js:813` | Foxhole | ARO: la reazione | GR-G04 |
+| `logica_aro.js:819` | Hacking non disponibile | ARO: la reazione | GR-G03, GR-G04, GR-G05, GR-G06, GR-G07, GR-G08, GR-G09, GR-G10, GR-G11, GR-G12, GR-G13, GR-G17, GR-G18 |
+| `logica_aro.js:898` | Fuoco di Soppressione | ARO: l’arma | GR-G06 |
+| `logica_aro.js:899` | Soppressione | ARO: l’arma | GR-G06 |
+| `logica_aro.js:991` | CC Weapon non utilizzabile | ARO: l’arma | GR-G05, GR-G06, GR-G07, GR-G08, GR-G09, GR-G10, GR-G13 |
+| `logica_aro.js:1156` | Reset | ARO: modificatori | GR-G12 |
+| `logica_aro.js:1351` | Burst | ARO: modificatori | GR-G13 |
+| `logica_aro.js:1352` | — | — | non costruita al tavolo grafico: il Burst limitato agli usi residui in ARO lo tiene il banco (`test_novita_26ott.js` O2) |
+| `logica_aro.js:1353` | Copertura | ARO: modificatori | GR-G09 |
+| `logica_aro.js:1354` | Arma Targetless | ARO: modificatori | GR-G10 |
+| `logica_aro.js:1355` | Fumo | ARO: modificatori | GR-G09 |
+| `roster_manager.js:1546` | HIDDEN DEPLOYMENT | Stati di schieramento | GR-B06, GR-B07, GR-B08, GR-B09, GR-B13, GR-B14, GR-B15, GR-B16, GR-B17 |
+| `roster_manager.js:1853` | Shock Mine | Stati di schieramento | GR-B06, GR-B07, GR-B13 |
 
 Coperte: **55 su 58**.
 
@@ -996,8 +1083,8 @@ Coperte: **55 su 58**.
 | Menu iniziale | GR-A01 |
 | Composizione lista | GR-A02, GR-A03, GR-A04, GR-A05 |
 | Dispiegamento (Gruppi) | GR-B01 |
-| Unità da schierare | GR-B02, GR-B03, GR-B11 |
-| Stati di schieramento | GR-B04, GR-B05, GR-B06, GR-B07, GR-B08, GR-B09, GR-B10, GR-B13 |
+| Unità da schierare | GR-B02, GR-B03, GR-B11, GR-B15 |
+| Stati di schieramento | GR-B04, GR-B05, GR-B06, GR-B07, GR-B08, GR-B09, GR-B10, GR-B13, GR-B14, GR-B16, GR-B17 |
 | Azioni di dispiegamento | **nessuna** |
 | Connessione stabilita | GR-B12 |
 | Radar (Gruppi) | GR-C01, GR-E34 |
@@ -1005,12 +1092,12 @@ Coperte: **55 su 58**.
 | Menu degli Ordini (1ª metà) | GR-C04, GR-C05 |
 | Armi / strumenti dell’Ordine | GR-D01, GR-E01, GR-E04, GR-E06, GR-E07, GR-E10, GR-E13, GR-E18, GR-E24, GR-E25, GR-E25b |
 | Bersagli dell’Ordine | GR-D02, GR-E08, GR-E11, GR-E14, GR-E16, GR-E19, GR-E27, GR-E28, GR-E37 |
-| Attesa dell’ARO / 2ª metà | GR-C07, GR-D03, GR-D11, GR-E32, GR-E35, GR-E40 |
+| Attesa dell’ARO / 2ª metà | GR-C07, GR-D03, GR-D11, GR-E32, GR-E35, GR-E40, GR-C08, GR-C09 |
 | Scheda e modificatori dell’Ordine | GR-D04, GR-D05, GR-D06, GR-D07, GR-D08, GR-D09, GR-D10, GR-D12, GR-E02, GR-E03, GR-E05, GR-E09, GR-E12, GR-E15, GR-E17, GR-E20, GR-E21, GR-E22, GR-E23, GR-E26, GR-E29, GR-E30, GR-E31, GR-E33, GR-E36, GR-E38, GR-E39 |
 | Stati della truppa | GR-F01, GR-F02, GR-F03, GR-F04 |
-| Turno avversario | GR-G01 |
-| ARO: chi reagisce | GR-G02, GR-G14 |
-| ARO: la reazione | GR-G03, GR-G04, GR-G15, GR-G16 |
+| Turno avversario | GR-G01, GR-G18, GR-G19 |
+| ARO: chi reagisce | GR-G02, GR-G14, GR-G20 |
+| ARO: la reazione | GR-G03, GR-G04, GR-G15, GR-G16, GR-G17 |
 | ARO: l’arma | GR-G05, GR-G06 |
 | ARO: il bersaglio | GR-G07 |
 | ARO: modificatori | GR-G08, GR-G09, GR-G10, GR-G11, GR-G12, GR-G13 |
@@ -1020,7 +1107,15 @@ Coperte: **55 su 58**.
 
 | Difetto | Prove | A chi |
 |---|---|---|
-| Il tasto ⓘ copre l’angolo destro dell’intestazione o del titolo quando il testo è lungo («BERSAGLI DEL FUOCO SPECULATI…», «INTERAGIRE CON OBIETTIVO»). | GR-E08, GR-E11, GR-E25, GR-E25b, GR-E26, GR-E36 | INTERFACCIA |
+| Al secondo allarme l’intestazione del Gruppo conta tutte le truppe («GRUPPO 1 (6)») mentre in elenco c’è solo chi era in IDLE (1). | GR-G20 | INTERFACCIA |
+| Parola: l’etichetta «⏳ aveva ritardato» è quella di prima; il tasto ora si chiama IDLE («⏳ era in IDLE»?). | GR-G20 | INTERFACCIA |
+
+Chiusi:
+
+| Difetto | Prove | Di chi | Chiuso con |
+|---|---|---|---|
+| Il tasto ⓘ copriva l’angolo destro dei titoli lunghi. | GR-E08, GR-E11, GR-E25, GR-E25b, GR-E26, GR-E36 | INTERFACCIA | app.html 2026-10-28.4 (window.liberaSpazioInfo, classe sotto-info); confermato da TEST al giro 20 e dalle foto di questa revisione |
+| Accenti scritti con l’apice («meta`», «e`», «gia`») nella nota del secondo allarme e negli avvisi di SCENDI DAL TAG e RICARICARE. | GR-G19, GR-C08, GR-C09, GR-E40 | MOTORE | motore_regole_n5.js 2026-10-29.8 e ordine_movimento.js 2026-10-29.2 (M.accenti), misurato in questa revisione |
 
 # 12. Ordine di esecuzione
 

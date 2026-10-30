@@ -1,4 +1,4 @@
-// @versione 2026-10-29.2 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-30.1 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -257,7 +257,7 @@
         // L'ordine: prima per Gruppo, poi come nel roster.
         const gruppoDi = (u) => (typeof window.gruppoDi === 'function') ? window.gruppoDi(u) : (parseInt(u && u.combatGroup, 10) || 1);
         const inOrdine = (window.roster || []).slice().sort((a, b) => gruppoDi(a) - gruppoDi(b));
-        const piuGruppi = new Set(inOrdine.filter(u => u && !u.deployable).map(gruppoDi)).size > 1;
+        const righeElenco = [];   // { g: Gruppo, html }: si scrivono dopo, coi conteggi
         let gruppoScritto = null;
         if (typeof window.rigaUnitaConFoto !== 'function') {
             console.error('\u26d4 window.rigaUnitaConFoto manca (app.html non caricato?): elenco ARO con la riga semplice, senza foto.');
@@ -296,7 +296,7 @@
             if (haRitardato && typeof M.aroDopoRitardo === 'function') {
                 const dopo = M.aroDopoRitardo(u, attivaOra, inArrivo) || {};
                 if (!dopo.puoDichiarare) {
-                    escluse.push({ nome: M.nomeUnita(u) + ' (aveva ritardato)', motivo: dopo.motivo || 'non puo` dichiarare' });
+                    escluse.push({ nome: M.nomeUnita(u) + ' (era in IDLE)', motivo: dopo.motivo || 'non puo` dichiarare' });
                     return;
                 }
                 possibili = dopo.azioni || [];
@@ -312,37 +312,43 @@
             }
 
             const sopp = st.suppressive ? ` <span style="color:#ff6600; font-size:14px;">🔥 SF MODE</span>` : '';
-            const rit = haRitardato ? ` <span style="color:#ffcc66; font-size:13px;">⏳ aveva ritardato</span>` : '';
+            const rit = haRitardato ? ` <span style="color:#ffcc66; font-size:13px;">⏳ era in IDLE</span>` : '';
             // Il rivelarsi lo fa spedisci(), come per un CAMO che reagisce:
             // M.statoDopoAbilita (inAro) lo riporta NORMAL e parte l'AGGIORNAMENTO.
             // 27 ottobre: con l'icona dell'Hidden Deployment (window.iconaSegnalinoSenzaNumero, app.html).
             const icoH = (nascosto && typeof window.iconaSegnalinoSenzaNumero === 'function') ? window.iconaSegnalinoSenzaNumero(u, null, 18) : '';
             const nasc = nascosto ? ` <span class="etichetta-nascosto" style="color:#66ccff; font-size:13px;">${icoH}👁️ NASCOSTO: reagendo si rivela</span>` : '';
-            if (piuGruppi && gruppoScritto !== gruppoDi(u) && typeof window.intestazioneGruppo === 'function') {
-                gruppoScritto = gruppoDi(u);
-                container.innerHTML += window.intestazioneGruppo(gruppoScritto,
-                    inOrdine.filter(x => x && !x.deployable && gruppoDi(x) === gruppoScritto).length);
-            }
             const tocco = `onclick="window.toggleAroUnit('${String(u.id).replace(/'/g, "\\'")}')"`;
             if (typeof window.rigaUnitaConFoto === 'function') {
                 // 9 ottobre: la riga nuova dice "scelta" da sola, nei colori
                 // della fazione. Prima qui si passava un fondo e un bordo
                 // scritti a mano, e il tocco li ricambiava a mano.
-                container.innerHTML += window.rigaUnitaConFoto(u, {
+                righeElenco.push({ g: gruppoDi(u), html: window.rigaUnitaConFoto(u, {
                     id: 'aro-btn-' + u.id, fazione: 'PROPRIA', opacita: '1',
                     scelta: (window.selectedAroUnits || []).indexOf(u.id) >= 0,
                     // 27 ottobre sera (collaudo, G02): le etichette nella fascia bassa.
                     etichette: sopp + rit + nasc, attributi: tocco
-                });
+                }) });
             } else {
-                container.innerHTML += `
+                righeElenco.push({ g: gruppoDi(u), html: `
                 <button id="aro-btn-${u.id}" class="huge-btn" style="background:${bg}; border-color:${bordo}; min-height:70px; margin-bottom:10px; display:flex; flex-direction:row; align-items:center; text-align:left; width:100%;"
                     ${tocco}>
                     <div style="font-size:22px; line-height:1; color:#fff; font-weight:bold; margin-left:10px;">
                         🛡️ ${M.nomeUnita(u)}${sopp}${rit}${nasc}
                     </div>
-                </button>`;
+                </button>` });
             }
+        });
+        // 30 ottobre (collaudo grafico, GR-G20): le intestazioni dei Gruppi
+        // contano chi COMPARE nell'elenco. Prima contavano tutte le truppe
+        // del Gruppo: al secondo allarme «GRUPPO 1 (6)» sopra una sola riga.
+        const gruppiVisti = new Set(righeElenco.map(r => r.g));
+        righeElenco.forEach(r => {
+            if (gruppiVisti.size > 1 && gruppoScritto !== r.g && typeof window.intestazioneGruppo === 'function') {
+                gruppoScritto = r.g;
+                container.innerHTML += window.intestazioneGruppo(r.g, righeElenco.filter(x => x.g === r.g).length);
+            }
+            container.innerHTML += r.html;
         });
 
         // ==============================================================
@@ -1622,7 +1628,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-10-29.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-10-30.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

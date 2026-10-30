@@ -1,4 +1,4 @@
-// @versione 2026-10-29.3 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-30.1 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -49,6 +49,25 @@ window.portaInCima = function (el) {
     else avvia();
 })();
 
+
+// 30 ottobre (TEST, giro 24): LE LETTERE ACCENTATE NEGLI AVVISI. Il motore
+// scrive gli accenti con l'apice («e`», «meta`»): nelle note della ⓘ li
+// converte M.nota, ma gli avvisi (alert, confirm) dei moduli li mostravano
+// cosi`, «Il pilota e` gia` uscito.». Qui una volta per tutti: ogni avviso
+// della pagina passa da M.accenti. Chi lo chiama non deve ricordarselo.
+(function () {
+    ['alert', 'confirm'].forEach(function (k) {
+        const orig = window[k];
+        if (typeof orig !== 'function' || orig.__conAccenti) return;
+        const conAccenti = function (testo) {
+            const M = window.MotoreN5;
+            const t = (M && typeof M.accenti === 'function' && typeof testo === 'string') ? M.accenti(testo) : testo;
+            return orig.call(window, t);
+        };
+        conAccenti.__conAccenti = true;
+        window[k] = conAccenti;
+    });
+})();
 
 // --- 1. TRASPORTO CLOUD — uno solo per app e Hub: M.installaTrasportoCloud
 // nel motore. (Prima: una copia qui e una in calcolatore_cloud.js.) ---
@@ -944,7 +963,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-29.3', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-30.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
