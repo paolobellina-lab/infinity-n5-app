@@ -1,4 +1,4 @@
-// @versione 2026-10-26.2 | calcolatore_math.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | calcolatore_math.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧮 CALCOLATORE N5 — adattatore sopra MotoreN5
 // ------------------------------------------
@@ -101,7 +101,8 @@
         if (esito.lofBloccata) html += `<span style="color:#ff0000">⚠️ Nessuna Linea di Tiro</span><br>`;
         // Due motivi diversi per "non si tira": un Requisito fallito e` un
         // Idle, non un valore sotto 1.
-        if (esito.impossibile) html += `<span style="color:#ff0000">⚠️ ${esito.requisitoFallito ? 'Requisito non soddisfatto: Idle, nessun tiro' : 'Valore di Successo sotto 1: il tiro fallisce automaticamente'}</span><br>`;
+        // 31 ottobre (TEST, giro 26): il colpo automatico non e` un valore sotto 1.
+        if (esito.impossibile && !(esito.automatico && !esito.requisitoFallito)) html += `<span style="color:#ff0000">⚠️ ${esito.requisitoFallito ? 'Requisito non soddisfatto: Idle, nessun tiro' : 'Valore di Successo sotto 1: il tiro fallisce automaticamente'}</span><br>`;
         // Critici: il dado pari al Valore di Successo. Sopra il 20 se ne
         // aggiungono di più, ed è un'informazione che il giocatore vuole.
         if (esito.critici && !esito.critici.nessunTiro) {
@@ -162,6 +163,76 @@
             ? `<span style="font-size:11px; color:#888;">Nota: ${s.senzaCritico}</span>`
             : `<span style="font-size:11px; color:#888;">Nota: un Critico aggiunge ${s.critExtra || 1} Tiro Salvezza extra.</span>`;
         return html;
+    }
+
+    // ------------------------------------------------------------------
+    // 30 ottobre (Paolo, collaudo grafico P24 e P25): I DATI, NON L'HTML.
+    // Il tabellone disegna il Tiro Salvezza come la cella dell'Ordine
+    // (Munizioni, Successo al, Dadi da lanciare) e, con MOSTRA DETTAGLI, scrive
+    // sotto ogni numero da dove viene: la base, i MOD (verdi / rossi) e quelli
+    // che NON contano (grigi, col perche` in giallo). Qui si consegnano i dati
+    // separati; il disegno e` della pagina (calcolatore_controller.js).
+    // I campi di prima (salvezza, dettagliMod: HTML) restano finche` la
+    // pagina non passa a questi.
+    //
+    //   lato.dettaglio = {
+    //     successo: { attributo, base, voci: [{ motivo, valore }], nonApplicati: [{ motivo, valore, perche }] },
+    //     dadi:     { base, baseMotivo, voci: [...], nonApplicati: [...] }    (null se non si tira)
+    //   }
+    //   lato.tiroSalvezza = {
+    //     nessuno: true, testo                                   (nessun Tiro Salvezza)
+    //   | { munizione, combinato,
+    //       righe: [{ attributo, successo, dadi, impossibile, critico,
+    //                 dettaglioSuccesso: { attributo, base, voci, nonApplicati },
+    //                 dettaglioDadi: { base, baseMotivo, voci, nonApplicati } }],
+    //       esito:  [testi]   (sotto i dadi, sempre visibili: «Fallimento = Isolato», «2 Ferite per ogni fallimento»)
+    //       marker: [testi]   (sotto i dadi, sempre visibili: il Marker va rivelato)
+    //       note:   [testi]   (nei dettagli)
+    //       notaCritico: testo (nei dettagli) }
+    //   }
+    // ------------------------------------------------------------------
+    function vociPulite(voci, conBase) {
+        return (voci || []).filter(v => v && (conBase || v.fonte !== 'base') && v.valore)
+            .map(v => ({ fonte: v.fonte, motivo: v.motivo, valore: v.valore }));
+    }
+    function nonApplicatiPuliti(lista) {
+        return (lista || []).map(x => ({ fonte: x.fonte, motivo: x.perche ? String(x.perche).split(':')[0] : x.fonte, valore: x.valore,
+                                         perche: x.perche && String(x.perche).indexOf(':') >= 0 ? String(x.perche).slice(String(x.perche).indexOf(':') + 1).trim() : (x.perche || '') }));
+    }
+    function dettaglioLato(lato) {
+        if (!lato) return null;
+        const succ = (lato.attributo && lato.base != null) ? {
+            attributo: lato.attributo, base: lato.base,
+            voci: vociPulite(lato.voci), nonApplicati: nonApplicatiPuliti(lato.nonApplicati)
+        } : null;
+        const db = lato.dettaglioBurst;
+        const dadi = db ? { base: db.base, baseMotivo: db.baseMotivo, voci: vociPulite(db.voci), nonApplicati: nonApplicatiPuliti(db.nonApplicati) } : null;
+        return { successo: succ, dadi: dadi };
+    }
+    const NOMI_STATO = { 'IMM-A': 'Immobilizzato-A', 'IMM-B': 'Immobilizzato-B', 'ISOLATO': 'Isolato', 'STORDITO': 'Stordito' };
+    function strutturaSalvezza(s) {
+        if (!s || !s.offensivo) return { nessuno: true, testo: (s && s.note && s.note[0]) || 'Nessun danno' };
+        const rami = (s.combinato || (Array.isArray(s.rami) && s.rami.length)) ? s.rami : [{ attributo: s.attributo, base: s.base, valoreAttributo: s.valoreAttributo,
+                                               ps: s.ps, valoreSuccesso: s.valoreSuccesso, voci: s.voci, critici: s.critici,
+                                               nonApplicati: (s.rami && s.rami[0] && s.rami[0].nonApplicati) || [], impossibile: s.impossibile }];
+        const perColpo = s.combinato ? 1 : (s.tiri || 1);
+        const righe = rami.map(function (r) {
+            const baseVoce = (r.voci || []).find(v => v && v.fonte === 'base');
+            return {
+                attributo: r.attributo, successo: r.valoreSuccesso, dadi: perColpo, impossibile: !!r.impossibile,
+                critico: (r.critici && !r.critici.nessunTiro) ? r.critici.testo : null,
+                dettaglioSuccesso: { attributo: r.attributo, base: baseVoce ? baseVoce.valore : r.base,
+                                     voci: vociPulite(r.voci), nonApplicati: nonApplicatiPuliti(r.nonApplicati) },
+                dettaglioDadi: { base: perColpo, baseMotivo: `${perColpo} per colpo (munizione ${s.munizione})`, voci: [], nonApplicati: [] }
+            };
+        });
+        const esito = [];
+        (s.statiFallimento || []).forEach(x => esito.push(`Fallimento = ${NOMI_STATO[x] || x}`));
+        if (s.dannoPerFallimento > 1) esito.push(`${s.dannoPerFallimento} Ferite per ogni fallimento`);
+        const marker = (s.cancellaMarker && Array.isArray(s.noteMarker)) ? s.noteMarker.slice() : [];
+        const note = (s.note || []).filter(n => marker.indexOf(n) < 0);
+        return { munizione: s.munizione, combinato: !!s.combinato, righe: righe, esito: esito, marker: marker, note: note,
+                 notaCritico: s.senzaCritico ? s.senzaCritico : `Un Critico aggiunge ${s.critExtra || 1} Tiro Salvezza extra.` };
     }
 
     // ------------------------------------------------------------------
@@ -268,6 +339,8 @@
                     azione: 'Nessun tiro',
                     mod: '-', burst: 0, dettagliMod: '',
                     salvezza: rendiSalvezza((sx && sx.salvezzaSubita) || (dx && dx.salvezzaInflitta)),
+                    tiroSalvezza: strutturaSalvezza((sx && sx.salvezzaSubita) || (dx && dx.salvezzaInflitta)),
+                    dettaglio: { successo: null, dadi: null },
                     dati: sx
                 } : {
                     nome: sx.nome,
@@ -283,6 +356,8 @@
                     // superare se perde il confronto, non quella che infligge.
                     salvezza: rendiSalvezza(sx.salvezzaSubita || sx.salvezzaInflitta),
                     salvezzaInflitta: rendiSalvezza(sx.salvezzaInflitta),
+                    tiroSalvezza: strutturaSalvezza(sx.salvezzaSubita || sx.salvezzaInflitta),
+                    dettaglio: dettaglioLato(sx),
                     dati: sx
                 }),
                 reattivo: dx ? {
@@ -301,10 +376,13 @@
                     salvezza: orfano ? '<span style="color:#555;">Nessun danno</span>'
                                      : rendiSalvezza(dx.salvezzaSubita || dx.salvezzaInflitta),
                     salvezzaInflitta: rendiSalvezza(dx.salvezzaInflitta),
+                    tiroSalvezza: orfano ? { nessuno: true, testo: 'Nessun danno' } : strutturaSalvezza(dx.salvezzaSubita || dx.salvezzaInflitta),
+                    dettaglio: dettaglioLato(dx),
                     dati: dx
                 } : {
                     nome: '-', fazione: fazReattiva, azione: 'Nessuna Reazione',
-                    mod: '-', burst: 0, dettagliMod: '', salvezza: '<span style="color:#555;">Nessun danno</span>'
+                    mod: '-', burst: 0, dettagliMod: '', salvezza: '<span style="color:#555;">Nessun danno</span>',
+                    tiroSalvezza: { nessuno: true, testo: 'Nessun danno' }, dettaglio: { successo: null, dadi: null }
                 }
             };
             // Gli avvisi del motore non si perdono: l'interfaccia può mostrarli.
@@ -344,7 +422,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_math.js', versione: '2026-10-26.2', proprieta: 'MOTORE' };
+    var v = { file: 'calcolatore_math.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

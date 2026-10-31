@@ -1,4 +1,4 @@
-// @versione 2026-10-30.1 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-31.2 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -171,6 +171,20 @@
 //      reattivo mostra solo chi era in IDLE, o risponde vuoto da solo.
 //      Dalla 2026-10-30.1 (GR-G20): intestazioni dei Gruppi col numero di chi
 //      compare; etichetta «⏳ era in IDLE».
+//  51. Collaudo grafico di Paolo del 30 ottobre (P1-P25, motore 30.1): tiri di
+//      schieramento nella ⓘ, Marker numerati allo schieramento, Minelayer, le
+//      domande nel riquadro dell app (niente confirm/prompt del browser), usi
+//      residui e arma finita, Schieramento Aereo, segnalini interi, note di
+//      stato nella ⓘ, descrizioni nei tasti, terreno, Hub (Marker, TAVOLO,
+//      D20, TIRO SALVEZZA dai dati, dettagli).
+//      RISCRITTI (dalla 2026-10-31.1), col prima/dopo nel commento: 6, 9,
+//      17, 20, 21, 23, 26, 27, 29, 30, 32, 33, 34b, 35a, 38e, 38f, 38h, 38i,
+//      42, 43 (tabellone senza fazione davanti al nome, TIRO SALVEZZA, icone
+//      a 80 px, soprannome a capo all Hub, segnalino numerato, note nella ⓘ,
+//      FUORI senza scritta del motore 30.1, descrizioniTasti nelle opzioni).
+//      RISCRITTI (dalla 2026-10-31.2, scala dei caratteri del MOTORE): 42
+//      (LoF a var(--fs-l)) e 51-P20 (terreno e tendina ARO a var(--fs-titolo-2),
+//      Copertura a var(--fs-l)); prima 22 / 26 px scritti a numero.
 //
 //  SOLO=34a,35a node test_elenchi_e_tabellone.js  gira solo quelle sezioni.
 //
@@ -524,16 +538,23 @@ sezione('6. Hub: i lati sono dove siedono i giocatori', () => {
     P.goToModifiersBS('IDLE'); P.eseguiCalcoloBS(); T.giro();
     ok(risoluzione(T), 'premessa: lo scontro e` a schermo');
     let t = tabellone(T);
-    ok(t.indexOf('NOMADI Spara') >= 0 && t.indexOf('NOMADI Spara') < t.indexOf('PANOCEANIA Uno'),
+    // RISCRITTO il 31 ottobre (Paolo, P21 e P23): sul tabellone niente piu`
+    // «NOMADI»/«PANOCEANIA» davanti al nome (c e l icona della fazione) e la
+    // riga delle salvezze si chiama «TIRO SALVEZZA» (prima «SE COLPITO ...»).
+    // Prima: «NOMADI Spara» prima di «PANOCEANIA Uno». Ora i nomi soli.
+    ok(t.indexOf('REATTIVO Spara') >= 0 && t.indexOf('REATTIVO Spara') < t.indexOf('ATTIVO Uno'),
        'attiva PanOceania, Nomads seduti a sinistra: i Nomads restano a SINISTRA (' + t.slice(0, 110) + ')');
-    ok(/REATTIVO NOMADI Spara/.test(t) && /ATTIVO PANOCEANIA Uno/.test(t), 'e chi e` attivo lo dice una scritta in ogni cella');
+    ok(/REATTIVO Spara/.test(t) && /▶ ATTIVO Uno/.test(t), 'e chi e` attivo lo dice una scritta in ogni cella');
     const html = T.hub.el('clash-container').innerHTML;
-    ok(/color:#ff3333; font-size:22px;">NOMADI/.test(html) && /color:#00ccff; font-size:22px;">PANOCEANIA/.test(html), 'Nomads rossi, PanOceania blu');
+    // Prima: il colore sulla scritta «NOMADI ...». Ora sul nome, e l icona.
+    ok(/color:#ff3333; font-size:22px;">Spara</.test(html) && /color:#00ccff; font-size:22px;">Uno</.test(html), 'Nomads rossi, PanOceania blu');
+    ok(/<img class="icona-fazione-cella" src="img\/icona_nomadi\.png"/.test(html) && /<img class="icona-fazione-cella" src="img\/icona_panoceania\.png"/.test(html) && !/>NOMADI Spara|>PANOCEANIA Uno/.test(html),
+       'P21: davanti ai nomi niente «NOMADI»/«PANOCEANIA», c e l icona della fazione nella cella');
     H.invertiLati();
     t = tabellone(T);
-    ok(H.latoDi('NOMADI') === 'DX' && t.indexOf('PANOCEANIA Uno') < t.indexOf('NOMADI Spara'), 'INVERTI LATI: lo scontro a schermo si ridisegna con PanOceania a sinistra');
+    ok(H.latoDi('NOMADI') === 'DX' && t.indexOf('ATTIVO Uno') < t.indexOf('REATTIVO Spara'), 'INVERTI LATI: lo scontro a schermo si ridisegna con PanOceania a sinistra');
     ok(T.hub.el('pannello-nomads').style.order === '2' && T.hub.el('pannello-pano').style.order === '1', 'e i due pannelli delle fazioni si scambiano di posto');
-    ok(/color:#ff3333; font-size:22px;">NOMADI/.test(T.hub.el('clash-container').innerHTML), 'i colori NON si scambiano');
+    ok(/color:#ff3333; font-size:22px;">Spara</.test(T.hub.el('clash-container').innerHTML), 'i colori NON si scambiano');
     ok(H.localStorage.getItem('hub_lati_invertiti') === '1' && !('hub_lati_invertiti' in T.server), 'la scelta resta su questo dispositivo e non viaggia');
     H.chiudiRisoluzione();
     ok(T.hub.el('q:.turn-controller').style.display === '', 'chiusa la risoluzione la riga in alto torna com era (non "block")');
@@ -620,7 +641,10 @@ sezione('9. Hub: dadi persi e colpo annullato', () => {
     P2.apriSelezioneAro(); P2.toggleAroUnit('p1'); P2.confermaSelezioneAro(); P2.selezionaAzioneAro('DODGE'); P2.salvaAroCorrente(); T2.giro();
     N2.goToModifiersBS('IDLE'); N2.eseguiCalcoloBS(); T2.giro();
     const t2 = tabellone(T2);
-    const cella = (t2.match(/ATTIVO NOMADI Fiamma.*?REATTIVO/) || [''])[0];
+    // RISCRITTO il 31 ottobre (Paolo, P21 e P23): sul tabellone niente piu`
+    // «NOMADI»/«PANOCEANIA» davanti al nome (c e l icona della fazione) e la
+    // riga delle salvezze si chiama «TIRO SALVEZZA» (prima «SE COLPITO ...»).
+    const cella = (t2.match(/ATTIVO Fiamma.*?REATTIVO/) || [''])[0];
     ok(risoluzione(T2) && /COLPO ANNULLATO/.test(cella), 'una Sagoma su una mischia: nella cella di chi tira si legge COLPO ANNULLATO (' + cella.slice(0, 90) + ')');
     ok(/SAGOMA SU UNA MISCHIA/.test(cella), 'col motivo del motore sotto, senza aprire i dettagli');
 });
@@ -852,7 +876,10 @@ sezione('17. La riga dell unita` nuova, dentro app.html (Paolo, 9 ottobre)', () 
       ok(/box-sizing:border-box/.test(bassaStile) && /min-height:30px;/.test(bassaStile), 'la banda del soprannome conta lo spazio interno nell altezza minima (30, non 44)');
       ok((bassaStile.match(/box-sizing/g) || []).length === 1, 'il box-sizing lo dichiara solo il motore, una volta (' + (bassaStile.match(/box-sizing/g) || []).length + ')');
       ok(pieghe(riga) === 3 && pieghe(arma) === 3, 'tre pieghe negli angoli, come l arma (' + pieghe(riga) + ')'); }
-    ok(/\.riga-unita-foto \.rup-icone img \{ width:64px !important; height:64px !important/.test(vera) && /\.riga-unita-foto \.rup-icone \{ position:absolute;/.test(vera), 'le icone degli stati: 64px, sopra le due righe (non piu` 30px dentro la bassa)');
+    // RISCRITTO il 31 ottobre (Paolo, P17): le icone degli stati circa il
+    // doppio, 80 px, senza accavallarsi; con due o piu` vanno sotto il nome,
+    // due per riga. Prima: 64 px (una) o 46 px accavallate (molte).
+    ok(/\.riga-unita-foto \.rup-icone img \{ width:80px !important; height:80px !important; margin:0 !important;/.test(vera) && /\.riga-unita-foto \.rup-icone \{ position:absolute;[^}]*flex-wrap:wrap;/.test(vera), 'le icone degli stati: 80 px, in fila senza accavallarsi (a capo se servono)');
     const T = creaTavolo(DIR); const N = T.nomadi.g;
     ok(T.problemi.length === 0, 'la pagina si carica senza errori (' + J(T.problemi) + ')');
     ok(N.rigaUnitaConFoto && N.rigaUnitaConFoto.originale === undefined, 'una sola riga: nessuna funzione sostituita sopra un altra');
@@ -879,7 +906,10 @@ sezione('17. La riga dell unita` nuova, dentro app.html (Paolo, 9 ottobre)', () 
     ok(/data-fazione="PANOCEANIA"/.test(bers), 'i bersagli nei colori di PanOceania');
     ok(riga('p1')[1] === 'si' && riga('p2')[1] === 'no', 'il bersaglio scelto e` acceso, l altro no (' + riga('p1')[1] + '/' + riga('p2')[1] + ')');
     ok(/<div class="rup-icone">[\s\S]*icon_engaged/.test(riga('p1')[0] || ''), 'le icone degli stati stanno a destra, nel loro riquadro sopra le righe');
-    ok(/padding:10px 72px 34px 92px/.test(riga('p1')[0] || '') && /padding:10px 16px 34px 92px/.test(riga('p2')[0] || ''), 'con un icona il nome lascia 72px a destra; senza icone nessuno spazio');
+    // RISCRITTO il 31 ottobre (Paolo, P17): le icone degli stati circa il
+    // doppio, 80 px, senza accavallarsi; con due o piu` vanno sotto il nome,
+    // due per riga. Prima: 64 px (una) o 46 px accavallate (molte).
+    ok(/padding:10px 100px 34px 92px/.test(riga('p1')[0] || '') && /padding:10px 16px 34px 92px/.test(riga('p2')[0] || ''), 'con un icona il nome lascia 100 px a destra (80 + margini); senza icone nessuno spazio');
     // L'elenco degli ARO: la scelta si accende con data-scelta, non col fondo.
     const P = T.pano.g; P.selectedAroUnits = ['p2'];
     const btn = { className: 'huge-btn riga-unita riga-unita-foto', style: {}, attr: {}, setAttribute(k, v) { this.attr[k] = v; } };
@@ -994,15 +1024,20 @@ sezione('20. Hub: le truppe come la lista d esercito, per Gruppo', () => {
                truppa(prof(/^Hellcat \(Paramedic/), { id: 'n3', alias: 'Cura', combatGroup: 2 })],
               [truppa(prof(/^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
     const nom = T.hub.el('status-nomads').innerHTML, pan = T.hub.el('status-pano').innerHTML;
-    const scheda = (h, alias) => (h.match(new RegExp('<div class="scheda-truppa"[\\s\\S]*?\\(' + alias + '\\)[\\s\\S]*?</div>\\s*</div>\\s*</div>')) || [''])[0];
+    // RISCRITTO il 31 ottobre (Paolo, P11): il soprannome non e` piu` fra
+    // parentesi accanto al nome ma a capo (<span class="st-alias">Ombra</span>).
+    const scheda = (h, alias) => (h.match(new RegExp('<div class="scheda-truppa"[\\s\\S]*?<span class="st-alias">' + alias + '</span>[\\s\\S]*?</div>\\s*</div>\\s*</div>')) || [''])[0];
+    const pos = (h, alias) => h.indexOf('<span class="st-alias">' + alias + '</span>');
     // Gruppi
     const g1 = nom.indexOf('>GROUP 1<'), g2 = nom.indexOf('>GROUP 2<');
     ok(g1 >= 0 && g2 > g1, 'le truppe sono divise per Gruppo: GROUP 1 poi GROUP 2');
-    ok(nom.indexOf('(Ombra)') > g1 && nom.indexOf('(Ombra)') < g2 && nom.indexOf('(Mary)') > g2 && nom.indexOf('(Cura)') > g2, 'ogni truppa sta sotto il suo Gruppo');
-    ok(/>GROUP 1</.test(pan) && /\(Uno\)/.test(pan), 'anche PanOceania ha i suoi Gruppi');
+    ok(pos(nom, 'Ombra') > g1 && pos(nom, 'Ombra') < g2 && pos(nom, 'Mary') > g2 && pos(nom, 'Cura') > g2, 'ogni truppa sta sotto il suo Gruppo');
+    ok(/>GROUP 1</.test(pan) && pos(pan, 'Uno') >= 0, 'anche PanOceania ha i suoi Gruppi');
     // La scheda
     const ombra = scheda(nom, 'Ombra');
-    ok(/<div class="st-nome">Intruder <span class="st-alias">\(Ombra\)<\/span><\/div>/.test(ombra), 'il nome dell unita` col soprannome fra parentesi');
+    ok(/<div class="st-nome">Intruder<span class="st-alias">Ombra<\/span><\/div>/.test(ombra) && /\.st-alias \{ display:block;/.test(fs.readFileSync(DIR + 'calcolatore_hub.html', 'utf8')), 'il nome dell unita` e sotto, a capo, il soprannome (P11)');
+    { const stesso = H.schedaTruppa(JSON.parse(J(Object.assign(prof(/^Fusilier \(Combi/), { id: 'x', alias: 'FUSILIER' }))), 'PANOCEANIA');
+      ok(!/st-alias/.test(stesso), 'CONTROPROVA: un soprannome uguale al nome del profilo non si ripete'); }
     ok(/--st-colore:#ff0000/.test(ombra) && /--st-colore:#00ccff/.test(scheda(pan, 'Uno')), 'il nome nel colore della fazione');
     ok(/<img class="st-foto" src="img\/nomadi\/intruder_2\.png"/.test(ombra), 'a sinistra la miniatura (la foto assegnata, dalla cartella Nomadi)');
     ok(/icon_targeted\.png/.test(ombra), 'sotto il nome le icone degli stati');
@@ -1080,7 +1115,9 @@ sezione('21. Dal tavolo di Paolo, 13-14 ottobre (sette punti di MOTORE)', () => 
         N.FOTO_MINIATURE = ['panda_dipinto.png', 'alguaciles.png'];
         ok(N.assegnaFoto(1, 'panda_dipinto.png') === true, 'premessa: al FastPanda si assegna una foto');
         const riga = N.rigaUnitaConFoto(N.roster[1], {});
-        ok(/<img class="rup-foto" src="img\/nomadi\/panda_dipinto\.png"/.test(riga) && !/<span class="rup-sigla">/.test(riga), 'la riga del FastPanda mostra la foto assegnata, non "DEP" (' + ((riga.match(/rup-foto" src="[^"]*"/) || ['nessuna'])[0]) + ')');
+        // RISCRITTO il 31 ottobre (P13): un segnalino ha anche la classe
+        // rup-segnalino (tondo, intero nella riga). Prima: class="rup-foto".
+        ok(/<img class="rup-foto rup-segnalino" src="img\/nomadi\/panda_dipinto\.png"/.test(riga) && !/<span class="rup-sigla">/.test(riga), 'la riga del FastPanda mostra la foto assegnata, non "DEP" (' + ((riga.match(/rup-foto" src="[^"]*"/) || ['nessuna'])[0]) + ')');
         ok(/img\/nomadi\/panda_dipinto\.png/.test(T.nomadi.el('deploy-units-container').innerHTML || ''), 'e la schermata di schieramento la mostra');
 
         // --- 3. La galleria mostra le foto della cartella del giocatore ---
@@ -1135,7 +1172,9 @@ sezione('21. Dal tavolo di Paolo, 13-14 ottobre (sette punti di MOTORE)', () => 
         // si prende il testo che chiude il tasto.
         const lof = () => (html().match(/<button[^>]*tasto-lof-aro[^>]*onclick="([^"]*)"[^>]*>[\s\S]*?([^<>]*)<\/button>/) || []);
         ok(lof()[2] && lof()[2].trim() === RQ.lof.si, 'c e il tasto LINEA DI TIRO, col testo del motore (' + (lof()[2] || 'assente').trim() + ')');
-        ok(/class="range-seg seg-fuori[^"]*"[^>]*onclick="window\.toggleAroRequisito\('gittata'\)">FUORI</.test(html()), 'e il segmento FUORI in coda alla barra delle bande');
+        // RISCRITTO il 31 ottobre (motore 30.1, P19: il segmento FUORI non ha
+        // piu` la scritta, solo title="Fuori gittata"). Prima: >FUORI<.
+        ok(/class="range-seg seg-fuori[^"]*"[^>]*onclick="window\.toggleAroRequisito\('gittata'\)" title="Fuori gittata"><\/div>/.test(html()), 'e il segmento FUORI in coda alla barra delle bande');
         ok(/toggleAroCover\(\)[\s\S]*?<\/button>\s*<button[^>]*tasto-lof-aro/.test(html()), 'copertura e Linea di Tiro sulla stessa riga, come nell attivo');
         vmTocco(T.pano, lof()[1]);
         ok(P.aroCurrentConfig.lof === false && lof()[2].trim() === RQ.lof.no, 'toccato: LINEA DI TIRO NO, e la reazione porta lof = false');
@@ -1296,7 +1335,12 @@ sezione('23. I quattro lavori del 18 ottobre (motore 2026-10-18.1)', () => {
         N.currentGroup = 1; N.aggiornaGraficaRoster();
         const h = T.nomadi.el('unit-buttons-container').innerHTML;
         const nota = N.MotoreN5.puoRicevereOrdine(N.roster[0]).notaIrregolare;
-        ok(/ORDINE IRREGOLARE PROPRIO/.test(h) && h.indexOf(nota) >= 0, 'la riga dell Isolato dice ORDINE IRREGOLARE PROPRIO, con la nota del motore');
+        // RISCRITTO il 31 ottobre (Paolo, P14-16): niente piu` «ORDINE
+        // IRREGOLARE PROPRIO» ne` la nota sotto la riga: la nota del motore e`
+        // nella ⓘ della schermata (tipo stato, tasto della riga).
+        const vIrr = N.vociInfo('step-unit').find(v => v.tasto === 'truppa-' + N.roster[0].id) || {};
+        ok(!/ORDINE IRREGOLARE PROPRIO/.test(h) && h.indexOf(nota) < 0 && vIrr.tipo === 'stato' && vIrr.testo === N.MotoreN5.accenti(nota) && /data-nota="truppa-/.test(h),
+           'l Isolato: la nota del motore (Ordine Irregolare proprio) e` nella ⓘ, sotto la sua riga con «sotto i tasti»');
         ok(/finePressioneUnita\(0, true\)/.test(h) && !/NON ATTIVABILE/.test(h), 'e si attiva: il tocco breve apre i suoi Ordini');
         N.roster[0].states = {}; N.aggiornaGraficaRoster();
         ok(!/ORDINE IRREGOLARE PROPRIO/.test(T.nomadi.el('unit-buttons-container').innerHTML), 'CONTROPROVA: non Isolato, la nota non c e');
@@ -1640,7 +1684,9 @@ sezione('26. I lavori del 20 ottobre (MOTORE): moto e TAG, TAG vuoto, Marker num
         const righe = String(T.nomadi.el('unit-buttons-container').innerHTML);
         const rigaTag = righe.split(/(?=<button)/).find(r => /Ana/.test(testo(r)) && !/Operator/.test(testo(r))) || righe;
         ok(/icon_tag_vuoto\.png/.test(rigaTag) && /TAG VUOTO/.test(rigaTag), 'la riga del TAG ha l icona TAG VUOTO, con la scritta di ripiego');
-        ok(/NON ATTIVABILE/.test(rigaTag), 'e resta NON ATTIVABILE (lo decide il motore)');
+        // RISCRITTO il 31 ottobre (P14-16): niente scritta «NON ATTIVABILE»
+        // sulla riga: resta tratteggiata, e la nota e` nella ⓘ.
+        ok(!/NON ATTIVABILE/.test(rigaTag) && /opacity:0\.45/.test(rigaTag) && N.vociInfo('step-unit').some(v => v.tasto === 'truppa-n1' && v.tipo === 'stato'), 'e resta non attivabile (lo decide il motore): riga sbiadita, nota nella ⓘ');
         const hTag = (H.gameState.nomads || []).find(u => u.id === 'n1');
         const scheda = hTag ? testo(H.schedaTruppa(hTag, 'NOMADI')) : '';
         ok(/TAG VUOTO/.test(scheda), 'all Hub la scheda del TAG dice TAG VUOTO');
@@ -1659,8 +1705,11 @@ sezione('26. I lavori del 20 ottobre (MOTORE): moto e TAG, TAG vuoto, Marker num
         N.currentGroup = 1; N.isCoordinated = false; N.selectedCoordinatedUnits = [];
         N.aggiornaGraficaRoster();
         const righe = String(T.nomadi.el('unit-buttons-container').innerHTML).split(/(?=<button)/).filter(r => /riga-unita/.test(r));
-        const et = righe.map(r => (r.match(/class="etichetta-marker"[^>]*>([^<]*)</) || [])[1] || null);
-        ok(J(et) === J(['CAMO 1', 'CAMO 2', null]), 'nella propria app, PRIMA dell invio: CAMO 1, CAMO 2 accanto al nome, niente sulla truppa scoperta (' + J(et) + ')');
+        // RISCRITTO il 31 ottobre (Paolo, P2): non piu` la scritta «CAMO 1»
+        // accanto al nome ma il SEGNALINO numerato a destra, con le icone (alt
+        // «CAMO 1»; senza il file la stessa scritta).
+        const et = righe.map(r => (r.match(/class="icona-segnalino-numerato"[\s\S]*?alt="([^"]*)"/) || [])[1] || null);
+        ok(J(et) === J(['CAMO 1', 'CAMO 2', null]) && !/etichetta-marker/.test(righe.join('')), 'nella propria app, PRIMA dell invio: CAMO 1, CAMO 2 accanto al nome, niente sulla truppa scoperta (' + J(et) + ')');
         T.schiera(N.roster, [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
         const nemici = P.MotoreN5.rosterNemico();
         ok(J(nemici.map(u => u.alias)) === J(['SEGNALINO MIMETICO 1', 'SEGNALINO MIMETICO 2', 'Terzo']),
@@ -1689,7 +1738,8 @@ sezione('26. I lavori del 20 ottobre (MOTORE): moto e TAG, TAG vuoto, Marker num
         N.currentGroup = 1; N.isCoordinated = false; N.selectedCoordinatedUnits = [];
         N.aggiornaGraficaRoster();
         const righe = String(T.nomadi.el('unit-buttons-container').innerHTML).split(/(?=<button)/).filter(r => /riga-unita/.test(r));
-        const et = righe.map(r => (r.match(/class="etichetta-marker"[^>]*>([^<]*)</) || [])[1] || null);
+        // RISCRITTO il 31 ottobre (P2): il segnalino numerato a destra (alt).
+        const et = righe.map(r => (r.match(/class="icona-segnalino-numerato"[\s\S]*?alt="([^"]*)"/) || [])[1] || null);
         ok(J(et) === J(['CAMO 1', 'CAMO-3 1', 'CAMO 2', 'CAMO-3 2']), 'CAMO e CAMO-3 hanno serie separate, sulla riga del giocatore (' + J(et) + ')');
         T.schiera(N.roster, [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
         const fP = P.MotoreN5.rosterNemico().map(u => P.fotoUnita(u, 'NOMADI'));
@@ -1723,7 +1773,10 @@ sezione('27. Tabellone: nome delle azioni e Sagoma Diretta senza tiro (MOTORE 20
         N.selectAction('MOVIMENTO', true); T.giro();
         return T;
     };
-    const reattivo = (t) => (t.match(/REATTIVO PANOCEANIA Rea.*?SE COLPITO/) || [''])[0];
+    // RISCRITTO il 31 ottobre (Paolo, P21 e P23): sul tabellone niente piu`
+    // «NOMADI»/«PANOCEANIA» davanti al nome (c e l icona della fazione) e la
+    // riga delle salvezze si chiama «TIRO SALVEZZA» (prima «SE COLPITO ...»).
+    const reattivo = (t) => (t.match(/REATTIVO Rea.*?TIRO SALVEZZA/) || [''])[0];
     {
         const T = aro('CC Weapon', 'CC_ATTACK', /^Fusilier \(Combi/);
         const c = reattivo(tabellone(T));
@@ -1744,7 +1797,7 @@ sezione('27. Tabellone: nome delle azioni e Sagoma Diretta senza tiro (MOTORE 20
         T.schiera([truppa(profilo(T, /^Morlock \(Assault/), { id: 'n1', alias: 'Morl' })], [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
         T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Chain Rifle'); N.toggleTargetSelection('p1'); N.confirmMultiAro(false); T.giro();
         P.annullaAro(); T.giro(); N.goToModifiersBS('IDLE'); N.eseguiCalcoloBS(); T.giro();
-        const c = (tabellone(T).match(/ATTIVO NOMADI Morl.*?REATTIVO/) || [''])[0];
+        const c = (tabellone(T).match(/ATTIVO Morl.*?REATTIVO/) || [''])[0];   // RISCRITTO il 31 ottobre (P21): senza «NOMADI»
         ok(risoluzione(T) && /COLPO AUTOMATICO/.test(c) && !/Auto \(o meno\)/.test(c) && !/Dadi da lanciare/.test(c), 'attivo con Chain Rifle: COLPO AUTOMATICO, nessun dado (' + c.slice(0, 120) + ')');
     }
     {
@@ -1824,7 +1877,12 @@ sezione('29. Tabellone: Sagoma d Impatto, UN tiro e piu` bersagli (MOTORE 2026-1
        'dentro, una riga per truppa colpita: il Principale e due secondari');
     const t = testo(h);
     ok((t.match(/Successo al: 8 \(o meno\)/g) || []).length === 1 && /UN SOLO TIRO contro 3/.test(t), 'il tiro dell attaccante compare UNA volta (' + (t.match(/Successo al: 8/g) || []).length + ')');
-    ok((t.match(/SE COLPITO DALL'ATTACCANTE/g) || []).length === 3, 'e ogni truppa ha la sua salvezza');
+    // RISCRITTO il 31 ottobre (Paolo, P21 e P23): sul tabellone niente piu`
+    // «NOMADI»/«PANOCEANIA» davanti al nome (c e l icona della fazione) e la
+    // riga delle salvezze si chiama «TIRO SALVEZZA» (prima «SE COLPITO ...»).
+    // Prima: tre «SE COLPITO DALL'ATTACCANTE». Ora un «TIRO SALVEZZA» per lato
+    // in ogni riga (attaccante e bersaglio): sei.
+    ok((t.match(/🛡️ TIRO SALVEZZA/g) || []).length === 6, 'e ogni truppa ha la sua salvezza (' + (t.match(/🛡️ TIRO SALVEZZA/g) || []).length + ')');
 });
 
 sezione('30. Tabellone: il bersaglio del Supporto e` BERSAGLIO, non REATTIVO (SUP-02a)', () => {
@@ -1836,14 +1894,18 @@ sezione('30. Tabellone: il bersaglio del Supporto e` BERSAGLIO, non REATTIVO (SU
     N.scegliStrumentoSupporto(st); N.scegliBersaglioSupporto('n2'); N.eseguiCalcoloSupporto(); T.giro();
     P.annullaAro(); T.giro();
     const t = tabellone(T);
-    ok(risoluzione(T) && /BERSAGLIO NOMADI Ferito/.test(t), 'il Ferito e` "BERSAGLIO", della sua fazione (' + (t.match(/(REATTIVO|BERSAGLIO) \S+ Ferito/) || ['?'])[0] + ')');
+    // RISCRITTO il 31 ottobre (Paolo, P21 e P23): sul tabellone niente piu`
+    // «NOMADI»/«PANOCEANIA» davanti al nome (c e l icona della fazione) e la
+    // riga delle salvezze si chiama «TIRO SALVEZZA» (prima «SE COLPITO ...»).
+    ok(risoluzione(T) && /BERSAGLIO Ferito/.test(t) && /<img class="icona-fazione-cella" src="img\/icona_nomadi\.png"[^>]*>🩺 BERSAGLIO/.test(T.hub.el('clash-container').innerHTML.replace(/<span[^>]*>/g, '')),
+       'il Ferito e` "BERSAGLIO", della sua fazione (icona Nomadi) (' + (t.match(/(REATTIVO|BERSAGLIO) Ferito/) || ['?'])[0] + ')');
     ok(!/REATTIVO/.test(t), 'e nessuno e` "REATTIVO" in un Supporto senza ARO');
     // CONTROPROVA: in uno scontro vero il reattivo resta REATTIVO.
     const T2 = creaTavolo(DIR); const N2 = T2.nomadi.g;
     T2.schiera([truppa(profilo(T2, /^Alguacil \(HMG/), { id: 'n1', alias: 'Spara' })], [truppa(profilo(T2, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
     T2.apriMenu(T2.nomadi, 0); N2.selectAction('ATTACCO BS', false); N2.declareAttackBS('Heavy Machine Gun'); N2.toggleTargetSelection('p1'); N2.confirmMultiAro(false); T2.giro();
     T2.pano.g.annullaAro(); T2.giro(); N2.goToModifiersBS('IDLE'); N2.eseguiCalcoloBS(); T2.giro();
-    ok(/REATTIVO PANOCEANIA Uno/.test(tabellone(T2)) && !/BERSAGLIO PANOCEANIA/.test(tabellone(T2)), 'CONTROPROVA: contro un nemico resta REATTIVO');
+    ok(/REATTIVO Uno/.test(tabellone(T2)) && !/BERSAGLIO Uno/.test(tabellone(T2)), 'CONTROPROVA: contro un nemico resta REATTIVO');
 });
 
 sezione('31. ARO con arma Targetless: niente tasto Copertura (DIF-14)', () => {
@@ -1890,13 +1952,16 @@ sezione('32. Tabellone: il PUNTO del tavolo e` una cella neutra (MOTORE 2026-10-
     const T = giro(false);
     const t = tabellone(T);
     ok(risoluzione(T) && /class="cella-punto"/.test(T.hub.el('clash-container').innerHTML) && /📍 PUNTO SUL TAVOLO/.test(t), 'Smoke Grenades sul punto: la cella del punto, neutra (📍 PUNTO SUL TAVOLO)');
-    ok(!/REATTIVO PANOCEANIA PUNTO/.test(t) && !/SE COLPITO DAL NEMICO/.test(t) && !/SE COLPITO DALL'ATTACCANTE/.test(t),
+    // RISCRITTO il 31 ottobre (Paolo, P21 e P23): sul tabellone niente piu`
+    // «NOMADI»/«PANOCEANIA» davanti al nome (c e l icona della fazione) e la
+    // riga delle salvezze si chiama «TIRO SALVEZZA» (prima «SE COLPITO ...»).
+    ok(!/REATTIVO PUNTO/.test(t) && !/TIRO SALVEZZA/.test(t),
        'niente "REATTIVO PANOCEANIA", niente righe delle salvezze (prima: la cella di una truppa nemica)');
-    ok(/ATTIVO NOMADI Morl Azione: ATTACCO BS Successo al: \d+/.test(t), 'il tiro dell attivo resta com era');
+    ok(/ATTIVO Morl Azione: ATTACCO BS Successo al: \d+/.test(t), 'il tiro dell attivo resta com era');
     // CONTROPROVA: se il Fusilier reagisce, il SUO scontro e` uno scontro vero.
     const T2 = giro(true);
     const t2 = tabellone(T2);
-    ok(/REATTIVO PANOCEANIA Uno Azione: ATTACCO BS/.test(t2) && /SE COLPITO DAL NEMICO/.test(t2) && (T2.hub.el('clash-container').innerHTML.match(/class="cella-punto"/g) || []).length === 1,
+    ok(/REATTIVO Uno Azione: ATTACCO BS/.test(t2) && /TIRO SALVEZZA/.test(t2) && (T2.hub.el('clash-container').innerHTML.match(/class="cella-punto"/g) || []).length === 1,
        'CONTROPROVA: il Fusilier che reagisce ha cella e salvezze sue; il punto resta uno solo');
 });
 
@@ -1927,7 +1992,8 @@ sezione('33. Dal collaudo di Paolo, 23 ottobre (MOTORE): Hidden in ARO, bersagli
     ok((T.hub.g.gameState.panoceania.find(u => u.id === 'p6') || {}).deployState === 'NORMAL', 'e l Hub lo vede (AGGIORNAMENTO), come per un CAMO che reagisce');
     const m = String(T.nomadi.el('second-half-buttons-container').innerHTML).match(/window\.selectAction\('([^']+)', true\)/);
     if (m) N.selectAction(m[1], true); T.giro();
-    ok(risoluzione(T) && /REATTIVO PANOCEANIA Ombra Azione: ATTACCO BS Successo al: \d+/.test(tabellone(T)), 'sul tabellone il suo ARO: REATTIVO PANOCEANIA Ombra, ATTACCO BS', tabellone(T).slice(0, 140));
+    // RISCRITTO il 31 ottobre (P21): senza «PANOCEANIA» davanti al nome.
+    ok(risoluzione(T) && /REATTIVO Ombra Azione: ATTACCO BS Successo al: \d+/.test(tabellone(T)), 'sul tabellone il suo ARO: REATTIVO Ombra, ATTACCO BS', tabellone(T).slice(0, 140));
     // --- 33b (Coordinato, CO-12): restano tutti i partecipanti, se ne sceglie uno ---
     const T2 = creaTavolo(DIR); const N2 = T2.nomadi.g, P2 = T2.pano.g;
     T2.schiera([truppa(profilo(T2, /^Alguacil \(Combi/), { id: 'n1', alias: 'Primo' }), truppa(profilo(T2, /^Alguacil \(HMG/), { id: 'n2', alias: 'Secondo' })],
@@ -1951,7 +2017,8 @@ sezione('33. Dal collaudo di Paolo, 23 ottobre (MOTORE): Hidden in ARO, bersagli
     const css = fs.readFileSync(DIR + 'app.html', 'utf8');
     const regola = (sel) => ((css.match(new RegExp(sel.replace(/[.]/g, '\\.') + '\\s*\\{([^}]*)\\}')) || [])[1] || '');
     ok(/overflow-x:\s*hidden/.test(regola('.grid-buttons')), '.grid-buttons ha overflow-x:hidden (con overflow-y:auto l asse x diventava auto)', regola('.grid-buttons'));
-    ok(/right:0;/.test(regola('.riga-unita-foto .rup-icone')) && !/right:-/.test(regola('.riga-unita-foto .rup-icone')), 'le icone di stato non sporgono a destra (right:0, prima -2px)', regola('.riga-unita-foto .rup-icone'));
+    // RISCRITTO il 31 ottobre (P17): right:4px (prima right:0); conta che non sia negativo.
+    ok(/right:\d+px;/.test(regola('.riga-unita-foto .rup-icone')) && !/right:-/.test(regola('.riga-unita-foto .rup-icone')), 'le icone di stato non sporgono a destra (right non negativo, prima -2px)', regola('.riga-unita-foto .rup-icone'));
 });
 
 // 34: i lavori del 26 ottobre (MOTORE 2026-10-26.1 e .2), una sezione per lavoro.
@@ -1984,7 +2051,9 @@ sezione('34b. Piloti di lista: a bordo, invisibili, poi SCENDI DAL TAG', () => {
         ok(N.roster.filter(u => u.deployState === 'A_BORDO').length === 1, 'una seconda chiamata non cambia niente (il pilota gia` a bordo resta com e`)');
         N.deployGroup = 1; N.renderDeployUnits();
         const lista = testo(T.nomadi.el('deploy-units-container').innerHTML);
-        ok(/A BORDO DEL GATOR: NON SI SCHIERA/.test(lista), 'nella lista dello schieramento: «[ A BORDO DEL GATOR: NON SI SCHIERA ]»');
+        // RISCRITTO il 31 ottobre (P14-16): la nota «a bordo del Gator» non
+        // sta piu` scritta nella lista: e` nella ⓘ (sotto la riga del pilota).
+        ok(!/A BORDO DEL GATOR/.test(lista) && N.vociInfo('step-deploy-units').some(v => /a bordo del Gator/.test(v.titolo) && /Non si schiera/.test(v.testo)), 'il pilota a bordo: la nota «a bordo del Gator: non si schiera» e` nella ⓘ');
         N.roster = N.roster.filter(u => u.id !== 'n3');
         T.schiera(N.roster, [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
         ok(!P.MotoreN5.rosterNemico().some(u => u.id === 'n2'), 'l avversario non vede il pilota a bordo');
@@ -2145,7 +2214,12 @@ sezione('35a. Minelayer allo schieramento: il limite e la domanda sull area (DEP
         ok(op && op.ha && op.pezzi === 1, 'premessa: il motore da` il Minelayer, un pezzo (' + J(op && { pezzi: op.pezzi, armi: (op.armi || []).map(a => a.nome) }) + ')');
         N.apriDeployStati(0);
         const pag = String(T.nomadi.el('deploy-states-content').innerHTML);
-        ok(/MINELAYER: piazzati 0 su 1/.test(testo(pag)), 'pagina degli stati: «MINELAYER: piazzati 0 su 1»');
+        // RISCRITTI il 31 ottobre (Paolo, P3): la riga «MINELAYER: piazzati…»
+        // non sta piu` in pagina: e` una nota della ⓘ (sotto il primo tasto
+        // con «sotto i tasti», data-nota="minelayer"). Prima: scritta in pagina.
+        const notaML = () => (N.vociInfo('step-deploy-states').find(v => v.titolo === 'MINELAYER') || {});
+        ok(!/MINELAYER: piazzati/.test(testo(pag)) && notaML().testo === 'Piazzati 0 su 1 \u2014 ne resta 1.' && notaML().tasto === 'minelayer' && /data-nota="minelayer"/.test(pag),
+           'pagina degli stati: «MINELAYER: piazzati 0 su 1» nella ⓘ, col tasto dell equipaggiamento');
         const bott = (pag.match(/class="huge-btn bottone-minelayer"[^>]*onclick="window\.piazzaConMinelayer\(0, \d+\)"/g) || []).length;
         ok(bott === (op.armi || []).filter(a => a.disponibile).length && bott > 0, 'un bottone per arma da piazzare (' + bott + ')');
         const domande = [];
@@ -2158,7 +2232,7 @@ sezione('35a. Minelayer allo schieramento: il limite e la domanda sull area (DEP
         ok(N.roster.length === 2 && N.roster[1].deployable, 'piazzata: il gettone entra nel roster');
         N.apriDeployStati(0);
         const pag2 = String(T.nomadi.el('deploy-states-content').innerHTML);
-        ok(/MINELAYER: piazzati 1 su 1 — nessuno da piazzare/.test(testo(pag2)) && !/onclick="window\.piazzaConMinelayer/.test(pag2), 'al limite: «piazzati 1 su 1», i bottoni spenti (prima: ne piazzava 3)');
+        ok(notaML().testo === 'Piazzati 1 su 1 \u2014 nessuno da piazzare.' && !/onclick="window\.piazzaConMinelayer/.test(pag2), 'al limite: «piazzati 1 su 1» (nella ⓘ), i bottoni spenti (prima: ne piazzava 3)');
         N.piazzaConMinelayer(0, k);
         ok(N.roster.length === 2 || !N.roster[0].minelayerUsati || N.roster[0].minelayerUsati <= 1, 'CONTROPROVA: un altro tentativo non piazza niente (' + N.roster.length + ')');
     }
@@ -2392,7 +2466,9 @@ sezione('38e. Schieramento: la riga con la foto, niente immagine rotta, scelte u
     ok(/<span class="rup-sigla rup-tocco-foto" onpointerdown="event\.stopPropagation\(\)" onclick="event\.stopPropagation\(\); window\.cambiaIconaDeploy\(event, 0\)"/.test(righe[0]), 'senza foto: la sigla del tipo, e toccarla apre la galleria');
     ok(/<img class="rup-foto rup-tocco-foto" src="img\/nomadi\/alguaciles\.png"[\s\S]*?onclick="event\.stopPropagation\(\); window\.cambiaIconaDeploy\(event, 1\)"/.test(righe[1]), 'con la foto: la foto, e toccarla apre la galleria');
     ok(/startDeployPress\(0, event\)/.test(righe[0]) && /endDeployPress\(0\)/.test(righe[0]), 'il tocco sulla riga resta quello di prima (breve: schieramento; lungo: stati)');
-    ok(/class="note-schieramento"[^>]*>[\s\S]*SEGNALINO CAMO/.test(righe[1]), 'la nota di schieramento sta nella fascia bassa della riga');
+    // RISCRITTO il 31 ottobre (P2): niente «[ SEGNALINO CAMO ]» nella fascia
+    // bassa: c e il segnalino numerato a destra. Prima: la nota nella fascia.
+    ok(!/SEGNALINO CAMO/.test(righe[1]) && /class="icona-segnalino-numerato"/.test(righe[1]), 'la truppa in CAMO: nessuna scritta, il segnalino numerato a destra');
     vmTocco(T.nomadi, (righe[0].match(/onclick="event\.stopPropagation\(\); (window\.cambiaIconaDeploy\(event, 0\))"/) || [])[1].replace('event', 'null'));
     ok(T.nomadi.el('galleria-foto').style.display === 'block' && /assegnaFoto\(0, 'alguaciles\.png'\)/.test(T.nomadi.el('galleria-foto').innerHTML) === false, 'toccata la sigla si apre la galleria (la foto libera e` gia` presa da Due: non compare)');
     N.chiudiGalleriaFoto();
@@ -2452,9 +2528,13 @@ sezione('38f. Testi tagliati (collaudo, punto 6)', () => {
     // G02: con piu` icone il nome ha piu` spazio.
     const una = String(N.rigaUnitaConFoto(truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'A', states: { targeted: true } }), {}));
     const tre = String(N.rigaUnitaConFoto(truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n3', alias: 'B', states: { targeted: true, stunned: true, isolated: true } }), {}));
-    ok(/padding:10px 72px 34px 92px/.test(una) && !/rup-icone-molte/.test(una), 'un icona: come prima (72 px a destra)');
-    ok(/<div class="rup-icone rup-icone-molte">/.test(tre) && /padding:10px 126px 34px 92px/.test(tre), 'tre icone: piu` piccole e accavallate, il nome perde 126 px invece di 184 (G02, \"SPEKTR\")');
-    ok(/\.riga-unita-foto \.rup-icone-molte img \{ width:46px !important; height:46px !important; margin:0 0 0 -14px !important; \}/.test(stileApp()), 'la regola delle icone strette: 46 px, accavallate di 14');
+    // RISCRITTO il 31 ottobre (Paolo, P17): le icone degli stati circa il
+    // doppio, 80 px, senza accavallarsi; con due o piu` vanno sotto il nome,
+    // due per riga. Prima: 64 px (una) o 46 px accavallate (molte).
+    ok(/padding:10px 100px 34px 92px/.test(una) && !/rup-icone-molte/.test(una), 'un icona: a destra, il nome lascia 100 px');
+    ok(/<div class="rup-icone rup-icone-molte rup-icone-sotto">/.test(tre) && /padding:10px 16px 34px 92px/.test(tre) && /class="rup-spazio-icone" style="flex:0 0 0; width:0; height:162px;"/.test(tre),
+       'tre icone: sotto il nome, due per riga; il nome ha tutta la larghezza (G02, \"SPEKTR\") e la riga si allunga per due righe di icone');
+    ok(/\.riga-unita-foto \.rup-icone\.rup-icone-sotto \{ top:42px; transform:none; \}/.test(stileApp()) && !/rup-icone-molte img \{ width:46px/.test(stileApp()), 'la regola: sotto il nome; niente piu` icone strette a 46 px');
     // G03 e G06: le reazioni e le munizioni in ARO.
     T.schiera([truppa(profilo(T, /^Alguacil \(HMG/), { id: 'n1', alias: 'Spara' })], [truppa(T.profilo(T.pano, /^Orc \(MULTI Rifle\)/), { id: 'p1', alias: 'Orco' })], 'NOMADI');
     T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Heavy Machine Gun');
@@ -2509,7 +2589,9 @@ sezione('38h. Hub: a schermo largo i caratteri crescono (collaudo, punto 8)', ()
     const a = (n, w) => { const x = v(n); return Math.min(+x[5], Math.max(+x[1], +x[2] * w / 100 + (x[3] === '-' ? -1 : 1) * +x[4])); };
     ok(v('hub-riga').length && Math.round(a('hub-riga', 820)) === 12 && a('hub-riga', 1280) >= 14, 'le righe delle schede: 12 px a 820 (come prima), ' + a('hub-riga', 1280).toFixed(1) + ' px a 1280');
     ok(v('hub-testo').length && a('hub-testo', 820) >= 13 && a('hub-testo', 820) < 13.5 && a('hub-testo', 1280) >= 15, 'il testo: 13 px a 820, ' + a('hub-testo', 1280).toFixed(1) + ' a 1280');
-    ok(v('hub-foto').length && a('hub-foto', 820) <= 70 && a('hub-foto', 1280) >= 85, 'la miniatura: 70 px a 820, ' + a('hub-foto', 1280).toFixed(0) + ' a 1280: la pagina si riempie');
+    // RISCRITTO il 31 ottobre (Paolo, P11): le foto circa un terzo piu`
+    // piccole. Prima: 70 px a 820, almeno 85 a 1280. Ora 47 e 73 (2/3).
+    ok(v('hub-foto').length && Math.round(a('hub-foto', 820)) === 47 && Math.round(a('hub-foto', 1280)) === 73, 'la miniatura: 47 px a 820, ' + a('hub-foto', 1280).toFixed(0) + ' a 1280 (un terzo meno di prima)');
     ok(/\.st-riga \{ color:#ccc; font-size:var\(--hub-riga\);/.test(h) && /\.st-nome \{ font-family:'Teko', sans-serif; font-size:var\(--hub-nome\);/.test(h) && /body \{[^}]*font-size: var\(--hub-testo\);/.test(h), 'le schede e la pagina usano quelle misure');
     ok(!/@media/.test(h), 'CONTROPROVA: nessuna regola per schermi diversi, quattro colonne sempre (sezione 20)');
 });
@@ -2538,7 +2620,10 @@ sezione('38i. BS-29: lo Schieramento Aereo lo decide il motore (M.opzioniSchiera
     ok(!/RISERVA/.test(pag) && !/'RESERVE'/.test(pag), 'niente piu` \"RISERVA / AD\" ne` lo stato RESERVE');
     vmTocco(T.nomadi, tasto[1] || 'void 0');
     ok(N.roster[0].deployState === 'AD', 'toccato: deployState AD (' + N.roster[0].deployState + ')');
-    ok(/class='etichetta-ad'[^>]*>\[ SCHIERAMENTO AEREO \]/.test(T.nomadi.el('deploy-units-container').innerHTML), 'nella lista dello schieramento: «[ SCHIERAMENTO AEREO ]»');
+    // RISCRITTO il 31 ottobre (Paolo, P8): via la scritta «[ SCHIERAMENTO
+    // AEREO ]»; l icona come l Hidden (icon_airborne.png, ripiego 🪂).
+    { const dep = T.nomadi.el('deploy-units-container').innerHTML;
+      ok(!/SCHIERAMENTO AEREO \]/.test(dep) && /<img class="icona-segnalino-ad"[^>]*src="img\/nomadi\/icon_airborne\.png"[^>]*data-rip="img\/icon_airborne\.png"[\s\S]*?🪂/.test(dep), 'nella lista dello schieramento: niente scritta, il segnalino dello Schieramento Aereo (🪂 di ripiego)'); }
     N.apriDeployStati(0);
     ok(/tasto-opzione opzione-schieramento attivo" data-stato="AD" onclick="window\.setDeployState\(0, 'AD'\)/.test(T.nomadi.el('deploy-states-content').innerHTML), 'riaprendo, la scelta e` accesa');
     N.apriDeployStati(1);
@@ -2720,8 +2805,11 @@ sezione('42. Pulizia dell interfaccia (Paolo, 27 ottobre sera): la ⓘ per scher
     const numeri = [...mod.matchAll(/<span class="confine-gittata"[^>]*>([^<]*)<\/span>/g)].map(x => x[1]);
     const bande = (mod.match(/class="range-seg seg-[1-4]/g) || []).length;
     ok(numeri.length === bande + 1 && numeri[0] === '0' && numeri.every(x => /^\d+$/.test(x)), 'barra della gittata: un numero solo per confine (0, 8, 16...), non «0-8»; uno in piu` delle bande (' + J(numeri) + ', ' + bande + ' bande)');
-    ok(/<span class="confine-gittata" style="position:absolute; left:calc\(\(100% - 48px\) \* 1 \/ \d+\)/.test(mod) && /class="range-seg seg-fuori[^"]*"[^>]*>FUORI</.test(mod), 'i numeri stanno sul cambio di colore (posizione calcolata), e in coda resta FUORI largo 48 px');
-    ok(/<button type="button" class="huge-btn tasto-lof-aro"[^>]*min-height:90px; font-size:20px; flex-direction:column;[^>]*><img class="icona-interruttore"[^>]*height:44px/.test(mod), 'Linea di Tiro: l icona (44 px) sopra la scritta, tasto da 90 px');
+    // RISCRITTO il 31 ottobre (motore 30.1, P19): il FUORI senza scritta; prima >FUORI<.
+    ok(/<span class="confine-gittata" style="position:absolute; left:calc\(\(100% - 48px\) \* 1 \/ \d+\)/.test(mod) && /class="range-seg seg-fuori[^"]*"[^>]*title="Fuori gittata">/.test(mod), 'i numeri stanno sul cambio di colore (posizione calcolata), e in coda resta FUORI largo 48 px');
+    // RISCRITTO il 31 ottobre (Paolo, P20): scritta 22 px e centrata (prima 20).
+    // RISCRITTO il 31 ottobre .2 (MOTORE, scala dei caratteri): prima font-size:22px, ora var(--fs-l) (22 px).
+    ok(/<button type="button" class="huge-btn tasto-lof-aro"[^>]*min-height:90px; font-size:var\(--fs-l\); flex-direction:column; justify-content:center; align-items:center; text-align:center;[^>]*><img class="icona-interruttore"[^>]*height:44px/.test(mod), 'Linea di Tiro: l icona (44 px) sopra la scritta centrata a var(--fs-l) (22 px), tasto da 90 px');
     ok(/<button type="button" class="huge-btn tasto-cover-aro"[^>]*><img class="icona-interruttore"[^>]*height:44px/.test(mod), 'Copertura: l icona alla stessa misura');
     P.toggleAroCover();
     ok(!/-3 al tuo tiro/.test(String(T.pano.el('aro-modifiers-content').innerHTML)) && P.vociInfo('step-aro-modifiers').some(v => /-3 al tuo tiro/.test(v.testo)), 'la spiegazione della Copertura e` nella ⓘ, non a schermo');
@@ -2759,9 +2847,10 @@ sezione('43. Le opzioni delle note (Paolo, 28 ottobre): dove (ⓘ o sotto i tast
 
     // --- l'app legge le stesse opzioni ---
     const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
-    ok(J(P.opzioniNote()) === J({ dove: 'info', tipi: { stato: true, nonpuo: true, mod: true, regole: true } }), 'app senza scelte: nella ⓘ, tutti i tipi (' + J(P.opzioniNote()) + ')');
+    // RISCRITTI il 31 ottobre (P18): le opzioni portano anche descrizioniTasti (SÌ di partenza).
+    ok(J(P.opzioniNote()) === J({ dove: 'info', tipi: { stato: true, nonpuo: true, mod: true, regole: true }, descrizioniTasti: true }), 'app senza scelte: nella ⓘ, tutti i tipi, descrizioni nei tasti (' + J(P.opzioniNote()) + ')');
     P.localStorage.setItem('opzioni_note', JSON.stringify({ dove: 'tasti', tipi: { stato: false, mod: false } }));
-    ok(J(P.opzioniNote()) === J({ dove: 'tasti', tipi: { stato: true, nonpuo: true, mod: false, regole: true } }), 'le legge da opzioni_note; i cambi di stato restano accesi anche se il salvataggio dice no');
+    ok(J(P.opzioniNote()) === J({ dove: 'tasti', tipi: { stato: true, nonpuo: true, mod: false, regole: true }, descrizioniTasti: true }), 'le legge da opzioni_note; i cambi di stato restano accesi anche se il salvataggio dice no');
     P.localStorage.setItem('opzioni_note', '{rotto');
     ok(P.opzioniNote().dove === 'info', 'un salvataggio rotto vale come nessuna scelta');
 
@@ -3103,6 +3192,119 @@ sezione('50. Il secondo allarme dopo l IDLE (Paolo, 29 ottobre; MOTORE 29.7)', (
     ok((b.P.currentAttackData || {}).secondaMeta === true || risoluzione(b.T), 'premessa: il secondo allarme e` partito');
     ok(risoluzione(b.T) && b.T.pano.el('aro-alert-banner').style.display !== 'block', 'senza nessuna truppa in IDLE il reattivo risponde vuoto da solo, senza avviso, e l Hub calcola');
     ok(J((b.H.latestAroData || []).map(r => r.id)) === J(['p2']), 'e la reazione della prima risposta resta, da sola (' + J((b.H.latestAroData || []).map(r => r.id)) + ')');
+});
+
+sezione('51. Collaudo grafico di Paolo, 30 ottobre (P1-P25): schieramento, riquadri, liste, opzioni, Hub', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+    const app = paginaApp(), ros = fs.readFileSync(DIR + 'roster_manager.js', 'utf8'), aro = fs.readFileSync(DIR + 'logica_aro.js', 'utf8');
+    const ctr = fs.readFileSync(DIR + 'calcolatore_controller.js', 'utf8'), hub = fs.readFileSync(DIR + 'calcolatore_hub.html', 'utf8');
+    const senzaCommenti = (t) => t.replace(/\/\/.*$/gm, '');
+    // --- P1: i TIRI DA FARE nella ⓘ, sotto la riga della truppa ---
+    const intr = truppa(profilo(T, /^Intruder \(Hacker, Killer/), { id: 'n1', alias: 'Ombra' });
+    N.roster = [intr]; N.deployGroup = 1; N.renderDeployUnits();
+    const dep = String(T.nomadi.el('deploy-units-container').innerHTML);
+    const tiro = N.vociInfo('step-deploy-units').find(v => /INFILTRATION/.test(v.titolo)) || {};
+    ok(!/TIRI DA FARE/.test(dep) && tiro.tipo === 'regole' && tiro.tasto === 'truppa-n1' && /Tiro a 9/.test(tiro.testo) && /data-nota="truppa-n1"/.test(dep),
+       'P1: il tiro d Infiltrazione non e` piu` nel riquadro in pagina: e` nella ⓘ, legato alla riga della truppa (' + tiro.titolo + ')');
+    // --- P2: numerati gia` allo schieramento ---
+    const c1 = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Primo', deployState: 'CAMO', states: { camo: true } });
+    N.roster = [c1]; N.renderDeployUnits();
+    ok(N.roster[0].numeroMarker === 1 && /class="icona-segnalino-numerato"[\s\S]*?alt="CAMO 1"/.test(T.nomadi.el('deploy-units-container').innerHTML), 'P2: allo schieramento il Marker ha gia` il suo numero (CAMO 1), lo stesso di tutta la partita');
+    // --- P4: Minelayer, il NO scritto in pagina, niente finestra ---
+    const task = truppa(profilo(T, /^Taskmaster \(Red Fury/), { id: 'n3', alias: 'Task' });
+    N.roster = [task]; N.apriDeployStati(0);
+    const kML = ((N.opzioniMinelayerDi(task) || {}).armi || []).findIndex(a => a.disponibile);
+    const nAlert = N.alert_.length;
+    N.confirm = () => false;                       // «dentro la Zona?» NO
+    if (kML >= 0) N.piazzaConMinelayer(0, kML);
+    ok(kML >= 0 && N.alert_.length === nAlert && /class="esito-minelayer"[^>]*>⛔ [\s\S]*non si piazza/.test(T.nomadi.el('deploy-states-content').innerHTML) && N.roster.length === 1,
+       'P4: risposta NO alla domanda del Minelayer: niente piazzato, il motivo scritto in cima alla pagina, nessuna finestra');
+    // --- P5: niente finestre del browser nei miei file ---
+    const nativi = (t) => (senzaCommenti(t).match(/(^|[^.\w])(confirm|prompt)\(/g) || []).length;
+    ok(nativi(ros) === 0 && nativi(aro) === 0 && (senzaCommenti(app).match(/window\.(confirm|prompt)\(/g) || []).length === 2 && (senzaCommenti(ctr).match(/window\.confirm\(/g) || []).length === 1,
+       'P5: confirm e prompt solo nei ripieghi (motore assente / banco): app.html 2, controller 1, roster e logica_aro nessuno');
+    N.prompt = () => 'Nuovo nome';
+    N.roster = [truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n4', alias: 'Vecchio' })];
+    N.renderRoster && N.rinominaUnita(0);
+    ok(N.roster[0].alias === 'Nuovo nome', 'P5: il soprannome passa da window.chiediTesto (nel banco risponde il prompt di prova)');
+    N.confirm = () => false;
+    let tornato = false; const loc = N.location; N.location = { set href(v) { tornato = true; }, get href() { return ''; } };
+    N.spearheadUnit = N.roster[0]; N.currentOrder = { action1: 'MOVIMENTO' };
+    N.tornaAlMenu();
+    ok(!tornato, 'P5: «Torni al menu?» con NO resta nella pagina (riquadro, non confirm del browser)');
+    N.location = loc; N.currentOrder = {}; N.spearheadUnit = null;
+    // --- P6 e P7: usi residui, arma finita spenta con la spiegazione nella ⓘ ---
+    const hc = truppa(profilo(T, /^Hellcat \(Boarding/), { id: 'n5', alias: 'Cat' });
+    N.roster = [hc]; N.apriDeployStati(0);
+    let pag = String(T.nomadi.el('deploy-states-content').innerHTML);
+    ok(/schieraPiazzabile\(0, 0\)" data-nota="piazzabile-0">[\s\S]*?USI RESIDUI: 3 \/ 3/.test(pag), 'P6: sotto il nome dell equipaggiamento «USI RESIDUI: 3 / 3»');
+    hc.usiSpesi = { 'D-CHARGES': 3 }; N.apriDeployStati(0);
+    pag = String(T.nomadi.el('deploy-states-content').innerHTML);
+    const fin = N.vociInfo('step-deploy-states').find(v => v.tasto === 'finita-0') || {};
+    ok(/<button class="huge-btn tasto-opzione arma-finita" disabled data-nota="finita-0">D-Charges \(Demolition Mode\)[\s\S]*?USI RESIDUI: 0 \/ 3/.test(pag) && /^usi esauriti/.test(fin.testo || '') && !/D-Charges/.test(fin.testo || ''),
+       'P7: l arma finita e` un tasto spento con «USI RESIDUI: 0»; la spiegazione nella ⓘ, senza ripetere il nome');
+    // --- P8: Schieramento Aereo con l icona; ripiego 🪂 ---
+    const sp = truppa(profilo(T, /^Spector \(Parachutist/), { id: 'n6', alias: 'Cielo', deployState: 'AD' });
+    ok(/class="icona-segnalino-ad"[\s\S]*?🪂/.test(N.generaIconeStati(sp)) && !/🫥/.test(N.iconaSegnalinoSenzaNumero(sp)), 'P8: lo Schieramento Aereo ha il suo segnalino fra le icone, col ripiego 🪂 (non 🫥)');
+    // --- P9-10: via «HOLOMASK: SEMBRA» ---
+    ok(!/HOLOMASK: SEMBRA/.test(senzaCommenti(ros)) && !/etichetta-holomask/.test(senzaCommenti(ros)), 'P9-10: la scritta viola «[ HOLOMASK: SEMBRA … ]» non c e piu`');
+    // --- P13: segnalini tondi interi ---
+    ok(/\.riga-unita-foto \.rup-foto\.rup-segnalino \{ left:4px; top:50%; transform:translateY\(-50%\); width:80px; height:80px;/.test(stileApp()), 'P13: i segnalini tondi stanno interi dentro la riga (80 px, al centro)');
+    // --- P14-16: la pedina, nota nella ⓘ ---
+    N.roster = [{ id: 'dep_x', deployable: true, nome: 'Mina Shock #1', chiaveArma: 'Shock Mine', combatGroup: 1, state: 'ACTIVE', states: {} }];
+    N.currentGroup = 1; N.aggiornaGraficaRoster();
+    const lista = String(T.nomadi.el('unit-buttons-container').innerHTML);
+    ok(!/Tieni premuto|Non riceve Ordini/.test(lista) && N.vociInfo('step-unit').some(v => v.tasto === 'truppa-dep_x' && /esce dal tavolo passando a Morto/.test(v.testo)), 'P14-16: la pedina: «non riceve Ordini… esce dal tavolo passando a Morto» nella ⓘ, non sotto la riga');
+    // --- P18: descrizioni nei tasti ---
+    const bott = N.creaBottoneAzione({ id: 'MOVIMENTO', nome: 'MUOVERE', desc: 'Due Movimenti' }, false, '#000', '#fff');
+    ok(/<span class="desc-tasto"[^>]*>Due Movimenti<\/span>/.test(bott) && /\.senza-descrizioni \.desc-tasto \{ display: none !important; \}/.test(stileApp()), 'P18: la descrizione nel tasto ha la classe desc-tasto, che «Descrizioni nei tasti: NO» nasconde');
+    N.localStorage.setItem('opzioni_note', JSON.stringify({ dove: 'info', descrizioniTasti: false }));
+    ok(N.opzioniNote().descrizioniTasti === false, 'P18: l app legge descrizioniTasti da opzioni_note');
+    N.localStorage.removeItem('opzioni_note');
+    const pf = fs.readFileSync(DIR + 'scegli_fazione.html', 'utf8');
+    ok(/DESCRIZIONI NEI TASTI/.test(pf) && /function sceltaDescrizioni\(si\)/.test(pf) && /o\.descrizioniTasti = l\.descrizioniTasti/.test(pf), 'P18: nella pagina della fazione la scelta «Descrizioni nei tasti: SÌ/NO»');
+    // --- P20: terreno centrato e piu` grande ---
+    const ter = N.sceltaTerreno('NESSUNO', null, 'window.setAroTerreno');
+    // RISCRITTO il 31 ottobre .2 (MOTORE, scala dei caratteri): prima font-size:26px, ora var(--fs-titolo-2) (28 px).
+    ok(/min-height:60px; font-size:var\(--fs-titolo-2\);[^"]*justify-content:center;/.test(ter) && /font-size:var\(--fs-titolo-2\); font-weight:bold; margin:0;">Terreno/.test(ter) && /class="tendina-munizioni" style="[^"]*font-size:var\(--fs-titolo-2\);/.test(aro) && /tasto-cover-aro" data-nota="copertura" style="[^"]*font-size:var\(--fs-l\);/.test(aro) && /<span class="freccia-terreno" style="position:absolute;/.test(ter), 'P20: la scelta del Terreno alta 60, centrata (la freccia di lato), testo e scritta a var(--fs-titolo-2) come la tendina delle munizioni; in ARO tendina var(--fs-titolo-2), Copertura var(--fs-l)');
+    // --- P11-P12: Hub ---
+    const mk = { id: 'p9', nome: 'MARKER', alias: 'SEGNALINO MIMETICO', states: { camo: true }, deployState: 'CAMO' };
+    ok(!/CAMO/.test(H.generateStateTags(mk, 'PANOCEANIA')) && /icon_camo|CAMO/.test(H.generateStateTags(Object.assign({}, mk, { nome: 'Fusilier' }), 'PANOCEANIA')),
+       'P12: di un MARKER all Hub niente etichetta CAMO (solo il segnalino); CONTROPROVA: una truppa vera in CAMO la mantiene');
+    // --- P21: il TAVOLO nascosto durante la risoluzione ---
+    H.mostraSchermataRisoluzione([]);
+    const tavNascosto = T.hub.el('pannello-tavolo').style.display;
+    H.chiudiRisoluzione();
+    ok(/<div class="faction-panel" id="pannello-tavolo"/.test(hub) && tavNascosto === 'none' && T.hub.el('pannello-tavolo').style.display === '', 'P21: il riquadro TAVOLO si nasconde durante la risoluzione e torna dopo');
+    // --- P22: il D20 del colore della fazione ---
+    ok(/fill="#cc1111"/.test(H.d20Svg('NOMADI')) && /fill="#0099dd"/.test(H.d20Svg('PANOCEANIA')) && />20<\/text>/.test(H.d20Svg('NOMADI')) && /fill="#fff">20/.test(H.d20Svg('NOMADI')), 'P22: il D20 disegnato: rosso per i Nomadi, azzurro per PanOceania, numeri bianchi');
+    // --- P23: TIRO SALVEZZA ovunque ---
+    ok(!/SE COLPITO/.test(senzaCommenti(ctr)), 'P23: «SE COLPITO DA…» non c e piu` (ora «TIRO SALVEZZA»)');
+    // --- P24: il Tiro Salvezza dai dati ---
+    const ts = { munizione: 'DA', combinato: true, righe: [
+        { attributo: 'ARM', successo: 9, dadi: 1, dettaglioSuccesso: { attributo: 'ARM', base: 3, voci: [{ motivo: 'Copertura', valore: 3 }], nonApplicati: [{ motivo: 'Visore', valore: 3, perche: 'non serve qui' }] }, dettaglioDadi: { base: 1, baseMotivo: 'DA', voci: [], nonApplicati: [] } },
+        { attributo: 'BTS', successo: 6, dadi: 1, dettaglioSuccesso: { attributo: 'BTS', base: 3, voci: [{ motivo: 'Danno', valore: -2 }], nonApplicati: [] }, dettaglioDadi: { base: 1, voci: [], nonApplicati: [] } }],
+        esito: ['Fallimento = Isolato'], marker: ['Il Marker va rivelato.'], note: ['Nota'], notaCritico: 'Un Critico aggiunge 1 Tiro Salvezza extra.' };
+    const tsH = H.salvezzaHub({ fazione: 'PANOCEANIA', tiroSalvezza: ts });
+    const tsT = testo(tsH);
+    ok(/^Munizioni: DA Successo al \(ARM\): 9 \(o meno\) Dadi da lanciare: 1 20 Successo al \(BTS\): 6 \(o meno\) Dadi da lanciare: 1 20 Fallimento = Isolato Il Marker va rivelato\.$/.test(tsT) && /class="ts-marker"/.test(tsH) && !/Nota/.test(tsT),
+       'P24: Tiro Salvezza combinato: Munizioni, poi Successo e Dadi di ARM e di BTS una sotto l altra, l esito in rosso e il Marker nel riquadro arancio; le note no (' + tsT + ')');
+    ok(testo(H.salvezzaHub({ tiroSalvezza: { nessuno: true, testo: 'Nessun danno' } })) === 'Nessun danno' && H.salvezzaHub({ salvezza: '<b>vecchia</b>' }) === '<b>vecchia</b>', 'P24: senza danno la sua frase; senza i dati nuovi l HTML di prima');
+    // --- P25: i dettagli sotto ogni numero ---
+    const det = H.dettagliLatoHub({ fazione: 'NOMADI', dati: { note: ['Una nota e` del motore'] }, dettaglio: { successo: { attributo: 'BS', base: 12, voci: [{ motivo: 'Gittata', valore: 3 }, { motivo: 'Copertura', valore: -3 }], nonApplicati: [{ motivo: 'Mimetismo', valore: -3, perche: 'perche` no' }] }, dadi: { base: 4, baseMotivo: 'Burst', voci: [], nonApplicati: [] } }, tiroSalvezza: ts });
+    ok(/<div class="det-base"[^>]*>BS 12<\/div><div class="det-voce" style="color:#00dd00;">\+3 Gittata<\/div><div class="det-voce" style="color:#ff5555;">-3 Copertura<\/div><div class="det-no" style="color:#888;">-3 Mimetismo <span style="color:#ffcc00;">— perché no<\/span><\/div>/.test(det),
+       'P25: sotto il Successo la base, le voci (verdi e rosse), poi quelle che non contano in grigio col perche` in giallo (accenti veri)');
+    ok(/TIRO SALVEZZA — SUCCESSO \(ARM\)/.test(det) && /TIRO SALVEZZA — DADI \(BTS\)/.test(det) && /Nota/.test(det) && /Un Critico aggiunge/.test(det) && /Una nota è del motore/.test(det), 'P25: anche Successo e Dadi del Tiro Salvezza, le note e la nota del Critico');
+    // --- Hub: la domanda sulla lista rimandata non blocca il ciclo ---
+    let aperta = null; const vera = H.MotoreN5.chiediSiNo;
+    H.MotoreN5.chiediSiNo = (t, o, cb) => { aperta = cb; return undefined; };   // come nel browser: risposta dopo
+    H.gameState.nomads = [{ id: 'a' }, { id: 'b' }];
+    const r1 = H.setupAccettabile('NOMADI', 3, 'SCHIERAMENTO');
+    const r2 = H.setupAccettabile('NOMADI', 3, 'SCHIERAMENTO');
+    if (aperta) aperta(true);
+    const r3 = H.setupAccettabile('NOMADI', 3, 'SCHIERAMENTO');
+    H.MotoreN5.chiediSiNo = vera;
+    ok(r1 === null && r2 === null && r3 === true, 'Hub: «sostituisco la lista?» nel riquadro: finche` non si risponde la busta aspetta (null), poi vale la risposta (' + J([r1, r2, r3]) + ')');
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

@@ -1,4 +1,4 @@
-// @versione 2026-10-30.1 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-31.2 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -1253,7 +1253,9 @@
             // il terreno sotto (vedi righeBS).
             // 27 ottobre sera (Paolo): la scritta centrata anche in altezza:
             // la classe huge-btn sulla tendina la teneva in alto, tolta.
-            sceltaMunizioni = `<select class="tendina-munizioni" style="display:block; flex:1 1 100%; width:100%; min-width:0; margin:0; height:55px; font-family:'Teko', sans-serif; font-size:22px; font-weight:bold; text-transform:uppercase; background:#002233; color:#fff; border:2px solid ${accento()}; border-radius:5px; text-align:center; text-align-last:center; padding:0 10px;"
+            // 31 ottobre .2 (MOTORE, scala dei caratteri): 26 px -> var(--fs-titolo-2),
+            // come la tendina dell attivo in ordine_attacco_bs 31.1.
+            sceltaMunizioni = `<select class="tendina-munizioni" style="display:block; flex:1 1 100%; width:100%; min-width:0; margin:0; height:60px; font-family:'Teko', sans-serif; font-size:var(--fs-titolo-2); font-weight:bold; text-transform:uppercase; background:#002233; color:#fff; border:2px solid ${accento()}; border-radius:5px; text-align:center; text-align-last:center; padding:0 10px;"
                 onchange="window.setAroAmmo(this.value)">${ammoOpts}</select>`;
             // Un programma di Hacking non ha munizioni da scegliere.
             if (arma.isHacking) sceltaMunizioni = '';
@@ -1312,9 +1314,13 @@
             // 27 ottobre sera (Paolo): l'icona della Linea di Tiro non c'era, e
             // quella della Copertura era a 22 px accanto alla scritta. Ora tutti
             // e due i tasti hanno l'icona grande (44 px) SOPRA la scritta.
-            const tastoLoF = `<button type="button" class="huge-btn tasto-lof-aro" style="flex:1; margin:0; min-height:90px; font-size:20px; flex-direction:column; ${noLoF ? STILE_REQ_NO : STILE_REQ_SI}"
+            // 31 ottobre (Paolo, P20): come la scheda dell'attivo (ordine_attacco_bs
+            // 30.1, GR-D04): scritte centrate e piu` grandi (22 px), tendina
+            // delle munizioni alta 60 a 26 px.
+            // 31 ottobre .2 (MOTORE): LoF e Copertura 22 px -> var(--fs-l), come nella scheda dell attivo.
+            const tastoLoF = `<button type="button" class="huge-btn tasto-lof-aro" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); flex-direction:column; justify-content:center; align-items:center; text-align:center; ${noLoF ? STILE_REQ_NO : STILE_REQ_SI}"
                 onclick="window.toggleAroRequisito('lof')">${window.iconaInterruttore(noLoF ? 'lofNo' : 'lofSi', 44, true)}${noLoF ? ((RQ.lof || {}).no || 'LINEA DI TIRO NO') : ((RQ.lof || {}).si || 'LINEA DI TIRO SÌ')}</button>`;
-            const tastoCover = (copNeg || senzaCopertura) ? '' : `<button type="button" class="huge-btn tasto-cover-aro" data-nota="copertura" style="flex:1; margin:0; min-height:90px; font-size:20px; flex-direction:column; ${cfg.cover ? 'background:#003300; color:#00ff00; border-color:#00ff00;' : 'background:#111; color:#aaa; border-color:#555;'}"
+            const tastoCover = (copNeg || senzaCopertura) ? '' : `<button type="button" class="huge-btn tasto-cover-aro" data-nota="copertura" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); flex-direction:column; justify-content:center; align-items:center; text-align:center; ${cfg.cover ? 'background:#003300; color:#00ff00; border-color:#00ff00;' : 'background:#111; color:#aaa; border-color:#555;'}"
                 onclick="window.toggleAroCover()">${cfg.cover
                     ? window.iconaInterruttore('coverSi', 44, true) + 'IN COPERTURA'
                     : window.iconaInterruttore('coverNo', 44, true) + 'NO COPERTURA'}</button>`;
@@ -1628,7 +1634,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-10-30.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-10-31.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

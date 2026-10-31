@@ -1,4 +1,4 @@
-// @versione 2026-10-28.2 | logica_stati.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | logica_stati.js | proprieta`: chat MOTORE
 // ==========================================
 // NOTA: le regole di questo file passano da MotoreN5.
 //  - la cancellazione degli stati Marker (Ritirata!, Ingaggiato, Stati Nulli)
@@ -268,16 +268,16 @@ window.apriPaginaStati = (index) => {
     let profiloHtml = '';
     if (trasf && !trasf.gia) {
         profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:var(--mn-nota-fondo,#1a1000); border-color:var(--mn-acceso,#ffaa33); color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-m);" onclick="window.cambiaProfiloDaStati()">
-            🔄 ${trasf.tipo === 'WIP' ? 'TIRO RIUSCITO: ' : ''}PASSA AL PROFILO: ${trasf.nome}<br><span style="font-size:var(--fs-xs); color:var(--mn-nota-tenue,#cc9955);">${trasf.quando} ${trasf.nota}</span></button>`;
+            🔄 ${trasf.tipo === 'WIP' ? 'TIRO RIUSCITO: ' : ''}PASSA AL PROFILO: ${trasf.nome}<br><span class="desc-tasto" style="font-size:var(--fs-xs); color:var(--mn-nota-tenue,#cc9955);">${trasf.quando} ${trasf.nota}</span></button>`;
     } else if (trasf && trasf.gia && trasf.reversibile) {
         profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:var(--mn-fondo-tasto,#111111); border-color:var(--mn-acceso,#ffaa33); color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-m);" onclick="window.tornaPrimoProfiloDaStati()">
-            ↩️ TORNA AL PRIMO PROFILO<br><span style="font-size:var(--fs-xs); color:var(--mn-nota-tenue,#cc9955);">In uso: ${trasf.nome}. ${trasf.nota}</span></button>`;
+            ↩️ TORNA AL PRIMO PROFILO<br><span class="desc-tasto" style="font-size:var(--fs-xs); color:var(--mn-nota-tenue,#cc9955);">In uso: ${trasf.nome}. ${trasf.nota}</span></button>`;
     } else if (trasf && trasf.gia) {
         profiloHtml += `<div style="color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s); margin-bottom:8px;">🔄 Secondo profilo in uso: ${trasf.nome}. ${trasf.nota}</div>`;
     }
     if (esp && esp.puo) {
         profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:#1a1a33; border-color:#8888ff; color:#ccccff; font-size:var(--fs-m);" onclick="window.espelliPilotaDaStati()">
-            🪂 ESCAPE SYSTEM: FAI USCIRE IL PILOTA<br><span style="font-size:var(--fs-xs); color:#9999cc;">A fine Ordine, quando il TAG ha ricevuto le ferite indicate. Il TAG resta vuoto sul tavolo; il pilota può risalire.</span></button>`;
+            🪂 ESCAPE SYSTEM: FAI USCIRE IL PILOTA<br><span class="desc-tasto" style="font-size:var(--fs-xs); color:#9999cc;">A fine Ordine, quando il TAG ha ricevuto le ferite indicate. Il TAG resta vuoto sul tavolo; il pilota può risalire.</span></button>`;
     }
     if (profiloHtml) html += `</div></div><div style="margin-top:15px;">${profiloHtml}</div><div><div>`;
 
@@ -384,31 +384,42 @@ window.cambiaProfiloDaStati = () => {
     const e = M.trasforma(u);
     if (!e.possibile) return alert('⛔ ' + e.motivo);
     const definitivo = e.unitaAggiornata.tipoTrasformazione !== 'WIP';
-    if (!confirm(`${M.nomeUnita(u)} passa al profilo "${e.unitaAggiornata.nome}".\n\nFerite e Stati restano. ${definitivo ? 'Il cambio NON torna indietro.' : 'Torna da solo al primo profilo a fine turno (Fase Stati).'}\n(Le altre modifiche non salvate di questa pagina si perdono.)\n\nConfermi?`)) return;
-    if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(u, e.unitaAggiornata, 'Transmutation');
-    else Object.assign(u, e.unitaAggiornata);
-    window.annullaStati();
+    // 30 ottobre (P5): la conferma nel riquadro dell'app (M.chiediSiNo).
+    chiediConferma(`${M.nomeUnita(u)} passa al profilo "${e.unitaAggiornata.nome}".\n\nFerite e Stati restano. ${definitivo ? 'Il cambio NON torna indietro.' : 'Torna da solo al primo profilo a fine turno (Fase Stati).'}\n(Le altre modifiche non salvate di questa pagina si perdono.)\n\nConfermi?`, 'CAMBIO DI PROFILO', function () {
+        if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(u, e.unitaAggiornata, 'Transmutation');
+        else Object.assign(u, e.unitaAggiornata);
+        window.annullaStati();
+    });
 };
+// La domanda SÌ/NO: col riquadro dell'app se c'e` il motore, se no il
+// confirm di prima. `poi` parte solo col SÌ.
+function chiediConferma(testo, titolo, poi) {
+    const M = window.MotoreN5;
+    if (M && typeof M.chiediSiNo === 'function') return M.chiediSiNo(testo, { titolo: titolo }, function (si) { if (si) poi(); });
+    if (confirm(testo)) poi();
+}
 window.tornaPrimoProfiloDaStati = () => {
     const M = window.MotoreN5; const u = window.unitToEdit;
     if (!M || !u) return;
     const e = M.tornaAlPrimoProfilo(u);
     if (!e.possibile) return alert('⛔ ' + e.motivo);
-    if (!confirm(`${M.nomeUnita(u)} torna al profilo "${e.unitaAggiornata.nome}".\n(Le altre modifiche non salvate di questa pagina si perdono.)\n\nConfermi?`)) return;
-    if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(u, e.unitaAggiornata, 'Transmutation (WIP): primo profilo');
-    else Object.assign(u, e.unitaAggiornata);
-    window.annullaStati();
+    chiediConferma(`${M.nomeUnita(u)} torna al profilo "${e.unitaAggiornata.nome}".\n(Le altre modifiche non salvate di questa pagina si perdono.)\n\nConfermi?`, 'PRIMO PROFILO', function () {
+        if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(u, e.unitaAggiornata, 'Transmutation (WIP): primo profilo');
+        else Object.assign(u, e.unitaAggiornata);
+        window.annullaStati();
+    });
 };
 window.espelliPilotaDaStati = () => {
     const M = window.MotoreN5; const u = window.unitToEdit;
     if (!M || !u) return;
     const e = M.espelliPilota(u);
     if (!e.possibile) return alert('⛔ ' + e.motivo);
-    if (!confirm(`ESCAPE SYSTEM: il pilota esce da ${M.nomeUnita(u)}.\n\n${e.note.join('\n')}\n(Le altre modifiche non salvate di questa pagina si perdono.)\n\nConfermi?`)) return;
-    window.roster.push(e.nuova);
-    if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(u, e.unitaAggiornata, 'Escape System');
-    else Object.assign(u, e.unitaAggiornata);
-    window.annullaStati();
+    chiediConferma(`Il pilota esce da ${M.nomeUnita(u)}.\n\n${e.note.join('\n')}\n(Le altre modifiche non salvate di questa pagina si perdono.)\n\nConfermi?`, 'ESCAPE SYSTEM', function () {
+        window.roster.push(e.nuova);
+        if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(u, e.unitaAggiornata, 'Escape System');
+        else Object.assign(u, e.unitaAggiornata);
+        window.annullaStati();
+    });
 };
 
 window.annullaStati = () => {
@@ -669,7 +680,7 @@ window.salvaStatiUnita = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_stati.js', versione: '2026-10-28.2', proprieta: 'MOTORE' };
+    var v = { file: 'logica_stati.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

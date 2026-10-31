@@ -1,4 +1,4 @@
-<!-- @versione 2026-10-28.1 | scegli_fazione.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-31.1 | scegli_fazione.html | proprieta`: chat INTERFACCIA -->
 <!doctype html>
 <html lang="it">
 <head>
@@ -86,10 +86,11 @@ var TIPI_NOTE = [
     { id: 'regole', nome: 'REGOLE E PROMEMORIA', desc: 'Mina, Foxhole, Burst, schieramento' }
 ];
 function leggiOpzioniNote() {
-    var o = { dove: 'info', tipi: { stato: true, nonpuo: true, mod: true, regole: true } }, l = null;
+    var o = { dove: 'info', tipi: { stato: true, nonpuo: true, mod: true, regole: true }, descrizioniTasti: true }, l = null;
     try { l = JSON.parse(localStorage.getItem('opzioni_note') || 'null'); } catch (e) { l = null; }
     if (l && (l.dove === 'info' || l.dove === 'tasti')) o.dove = l.dove;
     if (l && l.tipi) TIPI_NOTE.forEach(function (t) { if (typeof l.tipi[t.id] === 'boolean') o.tipi[t.id] = l.tipi[t.id]; });
+    if (l && typeof l.descrizioniTasti === 'boolean') o.descrizioniTasti = l.descrizioniTasti;
     o.tipi.stato = true;
     return o;
 }
@@ -99,6 +100,10 @@ function salvaOpzioniNote(o) {
     disegnaOpzioniNote();
 }
 function sceltaDove(dove) { var o = leggiOpzioniNote(); o.dove = dove; salvaOpzioniNote(o); }
+// 31 ottobre (Paolo, P18): le descrizioni scritte dentro i tasti (menu degli
+// Ordini, seconda meta`...). Con NO i tasti hanno solo il nome; usi residui,
+// munizioni e gittate restano. Le legge app.html (opzioni_note.descrizioniTasti).
+function sceltaDescrizioni(si) { var o = leggiOpzioniNote(); o.descrizioniTasti = !!si; salvaOpzioniNote(o); }
 function sceltaTipo(id) {
     var o = leggiOpzioniNote();
     if (id === 'stato') return;
@@ -111,6 +116,11 @@ function disegnaOpzioniNote() {
         '<h2>OPZIONI DELLE NOTE</h2>' +
         '<div class="gruppo">DOVE</div>' +
         '<div class="dove">' + dove('tasti', 'SOTTO I TASTI') + dove('info', 'NELLA \u24d8') + '</div>' +
+        '<div class="gruppo">DESCRIZIONI NEI TASTI</div>' +
+        '<div class="dove">' +
+            '<button type="button" class="' + (o.descrizioniTasti ? 'attivo' : '') + '" data-descrizioni="si" onclick="sceltaDescrizioni(true)">S\u00cc</button>' +
+            '<button type="button" class="' + (o.descrizioniTasti ? '' : 'attivo') + '" data-descrizioni="no" onclick="sceltaDescrizioni(false)">NO</button>' +
+        '</div>' +
         '<div class="gruppo">QUALI</div>' +
         TIPI_NOTE.map(function (t) {
             return '<div class="tipo' + (o.tipi[t.id] ? ' acceso' : '') + (t.fisso ? ' fisso' : '') + '" data-tipo="' + t.id + '" onclick="sceltaTipo(\'' + t.id + '\')">' +

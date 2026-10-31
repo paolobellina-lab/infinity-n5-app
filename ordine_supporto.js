@@ -1,4 +1,4 @@
-// @versione 2026-10-28.4 | ordine_supporto.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_supporto.js | proprieta`: chat MOTORE
 // ==========================================
 // 🩺 SUPPORTO: MEDICO E INGEGNERE (N5) - ordine_supporto.js
 // ------------------------------------------
@@ -99,7 +99,7 @@
                     ? '<span style="color:var(--mn-errore,#ff3333);">fallire = MORTE</span>'
                     : '<span style="color:var(--mn-attenzione,#ffcc00);">fallire = 1 Ferita</span>';
                 container.innerHTML += `<button class="huge-btn" style="border-color:${COL.bordo};" onclick="window.scegliStrumentoSupporto('${st.id}')">
-                    ${st.nome}<br><span style="color:${COL.bordo}; font-size:var(--fs-s);">${chi} su ${st.attributo} · ${rischio}</span></button>`;
+                    ${st.nome}<br><span class="desc-tasto" style="color:${COL.bordo}; font-size:var(--fs-s);">${chi} su ${st.attributo} · ${rischio}</span></button>`;
             });
         }
 
@@ -371,7 +371,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_supporto.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_supporto.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-30.1 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-10-30.2 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -55,16 +55,27 @@ window.portaInCima = function (el) {
 // converte M.nota, ma gli avvisi (alert, confirm) dei moduli li mostravano
 // cosi`, «Il pilota e` gia` uscito.». Qui una volta per tutti: ogni avviso
 // della pagina passa da M.accenti. Chi lo chiama non deve ricordarselo.
+// 30 ottobre (Paolo, collaudo grafico P5): e gli AVVISI non usano piu` la
+// finestra del browser: con la pagina vera (alert nativo) l'avviso va nel
+// riquadro dell'app, M.mostraAvviso. Una prova che ha sostituito alert lo
+// riceve come prima. Le DOMANDE (confirm) restano sincrone finche` ogni
+// punto che le fa non passa a M.chiediSiNo: chi aspetta la risposta per
+// proseguire non puo` riceverla dopo.
 (function () {
+    const nativa = (fn) => { try { return /\[native code\]/.test(Function.prototype.toString.call(fn)); } catch (e) { return false; } };
     ['alert', 'confirm'].forEach(function (k) {
         const orig = window[k];
         if (typeof orig !== 'function' || orig.__conAccenti) return;
+        const eNativo = nativa(orig);
+        if (k === 'alert' && eNativo) window.__alertNativo = orig.bind(window);
         const conAccenti = function (testo) {
             const M = window.MotoreN5;
             const t = (M && typeof M.accenti === 'function' && typeof testo === 'string') ? M.accenti(testo) : testo;
+            if (k === 'alert' && eNativo && M && typeof M.mostraAvviso === 'function' && document && document.body) return M.mostraAvviso(t);
             return orig.call(window, t);
         };
         conAccenti.__conAccenti = true;
+        conAccenti.__nativo = eNativo;
         window[k] = conAccenti;
     });
 })();
@@ -567,24 +578,39 @@ window.selectAction = (actionId, isSecondHalf = false) => {
     // lo stato, e lo deve ANNUNCIARE alla dichiarazione (righe 13871-13874).
     // Passa di qui ogni Ordine dichiarato, quindi la domanda sta qui una
     // volta sola. La regola e i testi sono del motore e del catalogo.
-    (function () {
-        const M = window.MotoreN5, u = window.currentOrder.unit;
-        if (!M || !M.foxholeAllaDichiarazione || !u) return;
-        const fx = M.foxholeAllaDichiarazione(u, azione, {});
-        if (!fx.puoCancellare) return;
-        if (window.confirm(fx.domanda)) {
-            const r = M.cancellaFoxhole(u);
-            window.ultimoCambioStato = { cambiato: true, prima: 'FOXHOLE', dopo: 'NORMAL', note: r.note,
-                                         azione: azione, unita: M.nomeUnita(u),
-                                         ordine: (window.currentOrder && window.currentOrder.id) || null };
-            window.sostituisciUnita(u, r.unitaAggiornata, azione);
-            window.currentOrder.foxholeCancellato = true;
-        } else {
-            window.currentOrder.foxholeCancellato = false;
-            if (fx.seNonCancella) alert('⚠️ ' + fx.seNonCancella);
-        }
-    })();
+    // 30 ottobre (Paolo, collaudo grafico P5): la domanda nel riquadro
+    // dell'app (M.chiediSiNo), non nella finestra del browser. L'Ordine
+    // prosegue (window.instradaAzione) quando si risponde; con una prova al
+    // posto del confirm la risposta arriva subito, come prima.
+    const Mfx = window.MotoreN5, ufx = window.currentOrder.unit;
+    const fx = (Mfx && Mfx.foxholeAllaDichiarazione && ufx) ? Mfx.foxholeAllaDichiarazione(ufx, azione, {}) : null;
+    if (fx && fx.puoCancellare) {
+        let risultato;
+        const rispondi = function (si) {
+            if (si) {
+                const r = Mfx.cancellaFoxhole(ufx);
+                window.ultimoCambioStato = { cambiato: true, prima: 'FOXHOLE', dopo: 'NORMAL', note: r.note,
+                                             azione: azione, unita: Mfx.nomeUnita(ufx),
+                                             ordine: (window.currentOrder && window.currentOrder.id) || null };
+                window.sostituisciUnita(ufx, r.unitaAggiornata, azione);
+                window.currentOrder.foxholeCancellato = true;
+            } else {
+                window.currentOrder.foxholeCancellato = false;
+                if (fx.seNonCancella) alert('⚠️ ' + fx.seNonCancella);
+            }
+            risultato = window.instradaAzione(azione, isSecondHalf);
+        };
+        if (typeof Mfx.chiediSiNo === 'function') Mfx.chiediSiNo(fx.domanda, {}, rispondi);
+        else rispondi(window.confirm(fx.domanda));
+        return risultato;
+    }
+    return window.instradaAzione(azione, isSecondHalf);
+};
 
+// Il resto del router: dall'azione al modulo che la esegue. Separato da
+// selectAction il 30 ottobre, perche` la domanda del Foxhole ora puo`
+// aspettare il tocco del giocatore.
+window.instradaAzione = (azione, isSecondHalf) => {
     const voce = window.ROUTER_AZIONI.find(v => v.test(azione));
 
     if (voce) {
@@ -640,6 +666,8 @@ window.selectAction = (actionId, isSecondHalf = false) => {
     console.error(`⛔ Azione "${azione}" non riconosciuta: né nel router né fra le azioni senza tiro.`);
     alert(`⛔ Azione "${azione}" non riconosciuta.\n\nNon è un attacco noto né un'abilità di movimento: l'ordine non è stato eseguito.`);
 };
+
+
 
 // Controllo di coerenza fra router e vocabolario del motore.
 // Da chiamare in console durante il collaudo.
@@ -963,7 +991,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-30.1', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-10-30.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

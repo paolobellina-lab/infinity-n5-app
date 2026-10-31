@@ -1,7 +1,13 @@
-IMMAGINI E ICONE DELL'APP — elenco completo, aggiornato al 27 ottobre 2026
+IMMAGINI E ICONE DELL'APP — elenco completo, aggiornato al 31 ottobre 2026
 Chat INTERFACCIA. Ricavato dai file del progetto e dal motore 2026-10-27.5 (catalogo_n5.js: segnaliniNumerati,
 segnaliniSenzaNumero, cartelleSegnalini, ICONE_EFFETTO; motore_regole_n5.js: M.immagineMarker,
 M.iconaDellaFazione, M.segnalinoSenzaNumero). Sostituisce l'elenco del 26 ottobre.
+
+NOVITA` DEL 31 OTTOBRE: un file nuovo PER ESERCITO, icon_airborne.png (Schieramento Aereo, AD). Compare
+accanto al nome della truppa in AD, come icon_hidden.png per l HIDDEN, al posto della vecchia scritta
+[ SCHIERAMENTO AEREO ]. Se manca, compare l'emoji 🪂. Gli stati diventano 28 file per esercito.
+Le icone dei Nomadi e di PanOceania (sezione 1) ora si vedono anche all'Hub, nell'angolo di ogni casella
+della risoluzione dal lato del giocatore: nessun file nuovo.
 
 NOVITA` DEL 27 OTTOBRE: icon_hidden.png (Schieramento Nascosto) ora si vede anche nella TUA app, accanto al
 nome della truppa con la scritta HIDDEN, nella lista dello schieramento e sul tasto HIDDEN DEPLOYMENT.
@@ -22,11 +28,11 @@ COSA CAMBIA DAL 26 OTTOBRE: ogni esercito ha i SUOI stati e i SUOI segnalini.
 
 1. ICONE DELL'APP (cartella img/, una copia sola)
 img/icona_infinity.png       <- app installata, pagina di scelta della fazione, manifest
-img/icona_nomadi.png         <- app Nomadi (scheda del browser)
-img/icona_panoceania.png     <- app PanOceania (scheda del browser)
+img/icona_nomadi.png         <- app Nomadi (scheda del browser) + Hub (angolo delle caselle dei Nomadi)
+img/icona_panoceania.png     <- app PanOceania (scheda del browser) + Hub (angolo delle caselle di PanOceania)
 img/icona_hub.png            <- Hub (scheda del browser)
 
-2. STATI — 27 file PER ESERCITO (img/nomadi/ e img/panoceania/)
+2. STATI — 28 file PER ESERCITO (img/nomadi/ e img/panoceania/)
 icon_dead.png              <- Morto                              app + Hub
 icon_unc.png               <- Incosciente                        app + Hub
 icon_retreat.png           <- Ritirata!                          app + Hub
@@ -48,6 +54,7 @@ icon_imp1.png              <- Impersonation IMP-1                app + editor de
 icon_imp2.png              <- Impersonation IMP-2                app + editor degli stati
 icon_imp.png               <- Impersonation (senza livello)      Hub
 icon_hidden.png            <- Schieramento Nascosto (HIDDEN)     app (accanto al nome, schieramento) + Hub
+icon_airborne.png          <- Schieramento Aereo (AD)            app (accanto al nome, schieramento)
 icon_decoy.png             <- Decoy                              Hub + editor degli stati
 icon_holo.png              <- Olo-Eco (casella dell'editor)      editor degli stati
 icon_holoecho.png          <- Holoecho                           Hub
@@ -210,5 +217,5 @@ HoloMask: nessun file nuovo. L'avversario e l'Hub vedono nome e armi del Modello
 
 RIEPILOGO
   una copia sola in img/ ............ 4 + 4 + 8 = 16 file, piu` 79 armi e 12 programmi
-  per OGNI esercito ................. 27 stati + 51 Marker + 17 segnalini = 95 file (x2 = 190)
+  per OGNI esercito ................. 28 stati + 51 Marker + 17 segnalini = 96 file (x2 = 192)
   foto delle miniature .............. libere, per esercito

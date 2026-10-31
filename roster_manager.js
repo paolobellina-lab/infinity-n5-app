@@ -1,4 +1,4 @@
-// @versione 2026-10-29.1 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-31.1 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -597,11 +597,13 @@ window.rinominaUnita = (index) => {
     const u = window.roster[index];
     if (!u) return;
     const nomeProfilo = u.name || u.nome || '';
-    const nuovo = prompt(`Soprannome per ${nomeProfilo}:\n(vuoto = usa il nome del profilo)`, u.alias || '');
-    if (nuovo === null) return;                       // annullato: non si tocca niente
-    u.alias = nuovo.trim() || nomeProfilo;
-    window.renderRoster();
-    if (window.aggiornaMenuGruppi) window.aggiornaMenuGruppi();
+    // 31 ottobre (P5): il riquadro dell'app (window.chiediTesto, app.html).
+    window.chiediTesto('Soprannome per ' + nomeProfilo + ':\n(vuoto = usa il nome del profilo)', { titolo: 'Soprannome', valore: u.alias || '' }, (nuovo) => {
+        if (nuovo === null) return;                   // annullato: non si tocca niente
+        u.alias = nuovo.trim() || nomeProfilo;
+        window.renderRoster();
+        if (window.aggiornaMenuGruppi) window.aggiornaMenuGruppi();
+    });
 };
 
 // Un elemento salvato il cui modello non esiste piu` nel database porta
@@ -632,10 +634,11 @@ window.rinominaStruttura = (index) => {
     const u = window.activeStructures[index];
     if (!u) return;
     const nomeProfilo = u.name || u.nome || '';
-    const nuovo = prompt(`Soprannome per ${nomeProfilo}:\n(vuoto = usa il nome del profilo)`, u.alias || '');
-    if (nuovo === null) return;
-    u.alias = nuovo.trim() || nomeProfilo;
-    window.renderStructures();
+    window.chiediTesto('Soprannome per ' + nomeProfilo + ':\n(vuoto = usa il nome del profilo)', { titolo: 'Soprannome', valore: u.alias || '' }, (nuovo) => {
+        if (nuovo === null) return;
+        u.alias = nuovo.trim() || nomeProfilo;
+        window.renderStructures();
+    });
 };
 
 window.renderRoster = () => {
@@ -706,13 +709,14 @@ window.loadRoster = () => {
 window.deleteRoster = () => {
     const name = document.getElementById('savedRostersSelect').value;
     if(!name) return alert("Seleziona una squadra dalla tendina prima di eliminarla.");
-    if(confirm(`Sei sicuro di voler eliminare la squadra salvata "${name}"?`)) {
+    window.chiedi('La squadra salvata «' + name + '» si cancella da questo telefono.', { titolo: 'Eliminare la squadra?', si: 'ELIMINA', no: 'TIENI' }, (ok) => {
+        if (!ok) return;
         const key = window.getStorageKey();
         const savedData = JSON.parse(localStorage.getItem(key) || '{}');
         delete savedData[name]; 
         localStorage.setItem(key, JSON.stringify(savedData)); 
         window.refreshSavedRostersList();
-    }
+    });
 };
 
 window.refreshSavedRostersList = () => {
@@ -795,8 +799,14 @@ window.sendDataToServer = () => {
     // Sta PRIMA dell'invio perche` e` una domanda al giocatore, non al motore.
     const inCorso = window.leggiPartitaLocale && window.leggiPartitaLocale();
     if (inCorso && inCorso.schieramentoCompletato) {
-        if (!confirm('C\'e` gia` una partita in corso per la tua fazione.\n\nInviando questa lista, all\'Hub sostituisci ferite e stati di quelle unita`.\n\nSe volevi solo riprendere la partita, annulla e usa RIPRENDI PARTITA.\n\nProcedo?')) return;
+        return window.chiedi('C\'e` gia` una partita in corso per la tua fazione.\n\nInviando questa lista, all\'Hub sostituisci ferite e stati di quelle unita`.\n\nSe volevi solo riprendere la partita, annulla e usa RIPRENDI PARTITA.',
+            { titolo: 'Procedo?', si: 'INVIA LA LISTA', no: 'ANNULLA' }, (ok) => { if (ok) window.inviaListaAllHub(); });
     }
+    window.inviaListaAllHub();
+};
+// L'invio vero, dopo l'eventuale domanda (31 ottobre: il seguito della
+// domanda nel riquadro dell'app).
+window.inviaListaAllHub = () => {
 
     // UN SOLO MITTENTE. Qui si passava il roster al canale a mano, ed era
     // l'ultimo punto dell'app che lo faceva: bastava dimenticare il filtro
@@ -1253,7 +1263,24 @@ window.renderDeployUnits = () => {
     // che sul telefono si annulla appena la lista scorre di un pixel, e che
     // nessuno indovina. Ora ogni unita` ha il suo pulsante, e il tocco lungo
     // resta come scorciatoia per chi lo conosce.
-    container.innerHTML = window.pannelloTiriSchieramento() +
+    // 31 ottobre (Paolo, P1): il riquadro «TIRI DA FARE» non sta piu` in
+    // pagina: ogni tiro e` una nota della ⓘ (regole), e con «sotto i tasti»
+    // sotto la riga della sua truppa. P2: i Marker si numerano GIA` qui
+    // (M.numeraMarker), cosi` il numero e` quello di tutta la partita.
+    const Mn = window.MotoreN5;
+    if (Mn && typeof Mn.numeraMarker === 'function') Mn.numeraMarker(window.roster);
+    else console.error('\u26d4 M.numeraMarker assente (serve motore_regole_n5.js dalla 2026-10-20.1): segnalini senza numero allo schieramento.');
+    const notaRiga = (u, titolo, testo, tipo) => {
+        if (Mn && typeof Mn.nota === 'function') Mn.nota('step-deploy-units', titolo, testo, { tipo: tipo || 'stato', tasto: 'truppa-' + u.id });
+        else console.error('\u26d4 M.nota assente (serve motore_regole_n5.js dalla 2026-10-28.1): nota di ' + titolo + ' persa.');
+    };
+    if (Mn && typeof Mn.azzeraNote === 'function') Mn.azzeraNote('step-deploy-units');
+    window.tiriDiSchieramento().forEach(t => {
+        const u = (window.roster || []).find(x => x && Mn && Mn.nomeUnita(x) === t.unita) || null;
+        if (u) notaRiga(u, t.unita + ' \u2014 ' + t.skill, t.testo + ' Si tira al tavolo, prima di cominciare: l\'app non conosce l\'esito.', 'regole');
+        else if (Mn && typeof Mn.nota === 'function') Mn.nota('step-deploy-units', t.unita + ' \u2014 ' + t.skill, t.testo, { tipo: 'regole' });
+    });
+    container.innerHTML =
         `<p class="sottotitolo-step">Tocco rapido = Schieramento e piazzamento<br>Tocco prolungato = Stati e Fireteam<br>Tocco sulla foto = Cambia foto</p>`;
 
     let isNomads = window.isNomadsApp();
@@ -1281,9 +1308,9 @@ window.renderDeployUnits = () => {
         // v5.1.1 riga 13607): il segnalino porta il MOD del Mimetismo della
         // truppa, se ce l'ha, e nient'altro. Si riconosce QUALUNQUE
         // deployState che cominci per CAMO (liste salvate con CAMO_0..6).
-        if (dep.indexOf('CAMO') === 0) note.push(`<span style='color:${markerColor};'>[ SEGNALINO CAMO${window.testoMimetismo(u)} ]</span>`);
-        if (dep === "IMP_1") note.push(`<span style='color:${markerColor};'>[ IMP-1 ]</span>`);
-        if (dep === "IMP_2") note.push(`<span style='color:${markerColor};'>[ IMP-2 ]</span>`);
+        // 31 ottobre (Paolo, P2): niente piu` «[ SEGNALINO CAMO (-3) ]» o
+        // «[ IMP-1 ]»: a destra c'e` il segnalino numerato (generaIconeStati).
+        void markerColor;
         // 27 ottobre (MOTORE 27.5): con l'icona dell'Hidden Deployment (window.iconaSegnalinoSenzaNumero, app.html).
         // 27 ottobre sera (Paolo): niente scritta [ HIDDEN DEPLOYMENT ]: il
         // segnalino grande sta con le icone degli stati (vedi destra, sotto).
@@ -1291,26 +1318,28 @@ window.renderDeployUnits = () => {
         // (M.opzioniSchieramento). La "Riserva" del regolamento non e` uno
         // stato: una lista salvata prima di oggi con 'RESERVE' lo dice, e la
         // truppa si rimette con la pagina degli stati.
-        if (dep === "AD") note.push(`<span class='etichetta-ad' style='color:${reserveColor};'>[ SCHIERAMENTO AEREO ]</span>`);
-        if (dep === "RESERVE") note.push(`<span class='etichetta-riserva-vecchia' style='color:#ffaa66;'>[ RISERVA: non e\` uno stato, sceglilo di nuovo ]</span>`);
-        if (dep === "FOXHOLE") note.push(`<span style='color:#ff8800;'>[ FOXHOLE ]</span>`);
-        if (dep === "SEED") note.push(`<span style='color:#00ff66;'>[ SEED-EMBRYO ]</span>`);
+        // 31 ottobre (P8): lo Schieramento Aereo ha il suo segnalino a destra
+        // (generaIconeStati), senza scritta. P14-16: le altre note di stato
+        // nella ⓘ, sotto la riga della truppa.
+        void reserveColor;
+        const nomeU = Mn && typeof Mn.nomeUnita === 'function' ? Mn.nomeUnita(u) : (u.alias || u.nome);
+        if (dep === "RESERVE") notaRiga(u, nomeU + ': Riserva', 'Non e` uno stato: scegli di nuovo lo stato di schieramento (tocco prolungato).');
+        if (dep === "FOXHOLE") notaRiga(u, nomeU + ': Foxhole', 'Si schiera in Foxhole.');
+        if (dep === "SEED") notaRiga(u, nomeU + ': Seed-Embryo', 'Si schiera come Seed-Embryo.');
         if (dep === "HOLOMASK") note.push(`<span style='color:#cc00ff;'>[ HOLOMASK ]</span>`);
         if (u.tipo === "HOLOECHO") note.push(`<span style='color:#00ffff;'>[ OLO-ECO ]</span>`);
         // 26 ottobre: piloti a bordo, repliche (Decoy, Holoecho) e HoloMask.
         if (dep === 'A_BORDO') {
             const tag = (window.roster || []).find(t => t && t.id === u.aBordoDi);
-            note.push(`<span class='etichetta-a-bordo' style='color:#ccccff;'>[ A BORDO ${tag ? 'DEL ' + String(tag.nome || tag.name || 'TAG').split('(')[0].trim().toUpperCase() : 'DEL TAG'}: NON SI SCHIERA ]</span>`);
+            notaRiga(u, nomeU + ': a bordo ' + (tag ? 'del ' + String(tag.nome || tag.name || 'TAG').split('(')[0].trim() : 'del TAG'), 'Non si schiera: sta nel TAG finche` non scende.');
         }
         const Mr = window.MotoreN5;
         if (u.replica) note.push(`<span class='etichetta-replica' style='color:#99ffff;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'} ${u.numeroReplica || ''} — REPLICA ]</span>`);
         else if (u.gruppoRepliche) note.push(`<span class='etichetta-replica' style='color:#99ffff;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'} ${u.numeroReplica || ''} — VERA ]</span>`);
-        if (u.states && u.states.holomask && Mr && typeof Mr.mostraComeHolomask === 'function') {
-            const mc = Mr.mostraComeHolomask(u);
-            note.push(`<span class='etichetta-holomask' style='color:#cc00ff;'>[ HOLOMASK: SEMBRA ${mc ? String(mc.nome).toUpperCase() : '?'} ]</span>`);
-        }
+        // 31 ottobre (Paolo, P9-10): via la scritta viola «[ HOLOMASK: SEMBRA … ]».
+        void Mr;
 
-        const gesti = `onpointerdown="window.startDeployPress(${originalIndex}, event)"
+        const gesti = `data-nota="truppa-${String(u.id).replace(/"/g, '')}" onpointerdown="window.startDeployPress(${originalIndex}, event)"
                 onpointerup="window.endDeployPress(${originalIndex})"
                 onpointermove="window.moveDeployPress(event)"
                 onpointercancel="window.cancelDeployPress()"`;
@@ -1377,13 +1406,14 @@ window.infiltrazioneFallita = (index) => {
         console.error('\u26d4 M.consumaCamo assente: serve motore_regole_n5.js dalla 2026-09-21.25 in su.');
         return;
     }
-    const ok = confirm(
-        (u.alias || u.nome) + ': Tiro di Infiltrazione FALLITO.\n\n' +
-        'Con Camouflage (1 Use) l\'uso del CAMO e` consumato (FAQ F07): ' +
-        'per il resto della partita la truppa non potra` rientrare nello stato CAMO.\n\n' +
-        'Confermi?'
-    );
-    if (!ok) return;
+    window.chiedi('Con Camouflage (1 Use) l\'uso del CAMO e` consumato (FAQ F07): per il resto della partita la truppa non potra` rientrare nello stato CAMO.',
+        { titolo: (u.alias || u.nome) + ': Tiro di Infiltrazione FALLITO', si: 'CONFERMO', no: 'ANNULLA' },
+        (ok) => { if (ok) window.infiltrazioneFallitaConfermata(index); });
+};
+window.infiltrazioneFallitaConfermata = (index) => {
+    const M = window.MotoreN5;
+    const u = window.roster[index];
+    if (!u || !M) return;
 
     // L'unita` aggiornata la calcola il motore; qui si sostituisce e basta,
     // come per applicaIdle. Non si toccano altri campi di nostra iniziativa.
@@ -1763,9 +1793,13 @@ window.generaOloEco = (index) => {
     return window.generaOloEcoVecchio(index);
 };
 window.generaOloEcoVecchio = (index) => {
+    // 31 ottobre (P5): niente finestre del browser. Questo ripiego vecchio
+    // (senza M.creaRepliche) resta, ma la domanda e` nel riquadro dell'app.
+    window.chiediTesto("Quanti Olo-Eco vuoi generare?\n(Inserisci 1 o 2)", { titolo: 'Olo-Eco', valore: '2' }, (risposta) => window.generaOloEcoVecchioN(index, risposta));
+};
+window.generaOloEcoVecchioN = (index, risposta) => {
     let genitore = window.roster[index];
-    let num = prompt("Quanti Olo-Eco vuoi generare?\n(Inserisci 1 o 2)", "2");
-    num = parseInt(num);
+    let num = parseInt(risposta);
     if(isNaN(num) || num < 1 || num > 3) return;
     
     for(let i=1; i<=num; i++) {
@@ -1850,20 +1884,35 @@ window.bottoniDeployables = (index) => {
     // 27 ottobre sera (Paolo): sotto il nome dell'equipaggiamento niente
     // tratti (Intuitive Attack, Disposable...): solo il nome.
     // I tratti, tolti dal tasto, stanno nella ⓘ della pagina.
-    armi.forEach(a => { if (a.traits) window.infoSchieramento(a.nome, Array.isArray(a.traits) ? a.traits.join(', ') : a.traits); });   // va al tasto col nome
+    // 31 ottobre (Paolo, P6): sotto il nome «USI RESIDUI: n» (usi del
+    // motore, arma.usi), come nel Minelayer. La nota va al tasto per il suo
+    // data-nota: la scritta del tasto ora ha anche gli usi.
+    armi.forEach((a, k) => { if (a.traits) window.infoSchieramento(a.nome, Array.isArray(a.traits) ? a.traits.join(', ') : a.traits, 'piazzabile-' + k); });
     let html = armi.map((arma, k) => `
-        <button class="huge-btn tasto-opzione" onclick="window.schieraPiazzabile(${index}, ${k})">
-            ${arma.nome}
+        <button class="huge-btn tasto-opzione" onclick="window.schieraPiazzabile(${index}, ${k})" data-nota="piazzabile-${k}">
+            ${arma.nome}${window.rigaUsiResidui(arma.usi)}
         </button>`).join('');
 
-    // Le escluse col motivo: "Usi esauriti (Disposable 1)" spiega perche` un
-    // pulsante non c'e` piu` invece di farlo sparire in silenzio.
-    (esito.escluse || []).forEach(x => {
+    // Le escluse col motivo. 31 ottobre (P7): un'arma FINITA (scarica: gli
+    // usi sono a zero) resta un tasto spento con «USI RESIDUI: 0», e la
+    // spiegazione va nella ⓘ, senza ripetere il nome. Le altre escluse
+    // (non piazzabili per altri motivi) restano scritte come prima.
+    (esito.escluse || []).forEach((x, k) => {
+        if (x.scarica) {
+            html += `<button class="huge-btn tasto-opzione arma-finita" disabled data-nota="finita-${k}">${x.nome}${window.rigaUsiResidui(x.usi || { residui: 0 })}</button>`;
+            window.infoSchieramento(x.nome, x.spiegazione || x.motivo, 'finita-' + k);
+            return;
+        }
         html += `<div style="color:#888; font-size:14px; margin:4px 0 8px 0;">${x.nome}: ${x.motivo}</div>`;
     });
 
     return html;
 };
+// La riga degli usi sotto il nome di un equipaggiamento (31 ottobre, P6):
+// «USI RESIDUI: n», o niente se l'arma non ha usi limitati.
+window.rigaUsiResidui = (usi) => (usi && usi.residui != null)
+    ? `<span class="usi-residui" style="display:block; font-family:'Share Tech Mono', monospace; font-size:var(--fs-s); font-weight:normal; color:#ccc;">USI RESIDUI: ${usi.residui}${usi.totali != null ? ' / ' + usi.totali : ''}</span>`
+    : '';
 
 // --- Minelayer ----------------------------------------------------------
 window.opzioniMinelayerDi = (u) => {
@@ -1875,11 +1924,15 @@ window.bottoniMinelayer = (index, ml) => {
     const u = window.roster[index];
     window._minelayerMostrati = window._minelayerMostrati || {};
     window._minelayerMostrati[index] = ml.armi || [];
-    let html = `<div class="riquadro-minelayer" style="color:#ffcc66; font-size:15px; text-align:center; margin-bottom:8px;">\ud83d\udca3 MINELAYER: piazzati ${ml.usati} su ${ml.pezzi}${ml.restanti > 0 ? ` \u2014 ne resta${ml.restanti > 1 ? 'no' : ''} ${ml.restanti}` : ' \u2014 nessuno da piazzare'}</div>`;
+    // 31 ottobre (Paolo, P3): la riga «MINELAYER: piazzati…» non sta piu`
+    // in pagina: va nella ⓘ, e con «sotto i tasti» sotto il tasto
+    // dell'equipaggiamento (il primo: tutti portano data-nota="minelayer").
+    window.infoSchieramento('MINELAYER', `Piazzati ${ml.usati} su ${ml.pezzi}${ml.restanti > 0 ? ` \u2014 ne resta${ml.restanti > 1 ? 'no' : ''} ${ml.restanti}` : ' \u2014 nessuno da piazzare'}.`, 'minelayer');
+    let html = '';
     (ml.armi || []).forEach((a, k) => {
         const attivo = ml.restanti > 0 && a.disponibile;
-        const usi = (a.usiResidui != null) ? `<br><span style="font-size:12px; color:#aaa;">Usi residui: ${a.usiResidui}</span>` : '';
-        html += `<button class="huge-btn bottone-minelayer" ${attivo ? `onclick="window.piazzaConMinelayer(${index}, ${k})"` : 'disabled'}>${a.nome}${usi}</button>`;
+        const usi = (a.usiResidui != null) ? window.rigaUsiResidui({ residui: a.usiResidui }) : '';
+        html += `<button class="huge-btn bottone-minelayer" ${attivo ? `onclick="window.piazzaConMinelayer(${index}, ${k})"` : 'disabled'} data-nota="minelayer">${a.nome}${usi}</button>`;
     });
     if (!(ml.armi || []).length) html += `<p style="color:#888; text-align:center;">Nessuna arma da piazzare col Minelayer.</p>`;
     return html;
@@ -1893,13 +1946,35 @@ window.piazzaConMinelayer = (index, k) => {
     const dom = op.domande || [];
     // Le due domande dei requisiti (il tavolo lo vede il giocatore). Quella
     // sull'area solo se l'arma ne ha una (E54: armi[i].chiedeArea).
+    // 31 ottobre (Paolo, P4): le domande nel riquadro dell'app, una dopo
+    // l'altra (window.chiedi); il NO si scrive nella pagina, non in una
+    // finestra (window.esitoMinelayerInPagina).
     const risposte = {};
+    const dentro = () => window.chiedi(dom[1] || 'Il punto scelto \u00e8 dentro la tua Zona di Schieramento?', { titolo: a.nome, si: 'S\u00cc', no: 'NO' }, (si) => {
+        risposte.dentroZona = !!si;
+        if (!si) return window.esitoMinelayerInPagina(index, a.nome + ' non si piazza: il punto deve stare dove il Minelayer pu\u00f2 schierarsi.');
+        window.piazzaConMinelayerRisposte(index, k, risposte);
+    });
     if (a.chiedeArea) {
-        risposte.nemiciNellArea = window.confirm((dom[0] || 'Ci sono truppe nemiche o Marker Mimetici nell\'Area d\'Innesco?') + '\n\nOK = S\u00cc, ci sono   \u00b7   Annulla = NO');
-        if (risposte.nemiciNellArea) return alert('\u26d4 ' + a.nome + ' non si piazza: nell\'Area d\'Innesco non devono esserci nemici n\u00e9 Marker Mimetici.');
+        return window.chiedi(dom[0] || 'Ci sono truppe nemiche o Marker Mimetici nell\'Area d\'Innesco?', { titolo: a.nome, si: 'S\u00cc, CI SONO', no: 'NO' }, (si) => {
+            risposte.nemiciNellArea = !!si;
+            if (si) return window.esitoMinelayerInPagina(index, a.nome + ' non si piazza: nell\'Area d\'Innesco non devono esserci nemici n\u00e9 Marker Mimetici.');
+            dentro();
+        });
     }
-    risposte.dentroZona = window.confirm((dom[1] || 'Il punto scelto \u00e8 dentro la tua Zona di Schieramento?') + '\n\nOK = S\u00cc   \u00b7   Annulla = NO');
-    if (!risposte.dentroZona) return alert('\u26d4 ' + a.nome + ' non si piazza: il punto deve stare dove il Minelayer pu\u00f2 schierarsi.');
+    dentro();
+};
+// Il NO di una delle due domande: scritto in cima alla pagina degli stati.
+window.esitoMinelayerInPagina = (index, testo) => {
+    window.apriDeployStati(index);
+    const box = document.getElementById('deploy-states-content');
+    if (box) box.innerHTML = `<div class="esito-minelayer" style="margin:0 0 12px; padding:10px 12px; border:2px solid #ff3333; border-radius:6px; background:#2a0000; color:#ff9999; font-size:var(--fs-m); text-align:center;">\u26d4 ${String(testo).replace(/</g, '&lt;')}</div>` + box.innerHTML;
+};
+window.piazzaConMinelayerRisposte = (index, k, risposte) => {
+    const u = window.roster[index];
+    const a = ((window._minelayerMostrati || {})[index] || [])[k];
+    const F = window.faseSchieramento && window.faseSchieramento.minelayer;
+    if (!u || !a || !F) return;
     const r = F.piazza(u.id, a.nome, risposte);
     if (!r || !r.token) {
         return alert('\u26d4 ' + (((r && r.errori) || []).map(x => x.messaggio).join('\n') || 'Piazzamento non riuscito.'));
@@ -2056,7 +2131,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-10-29.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-10-31.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

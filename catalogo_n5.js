@@ -1,4 +1,4 @@
-// @versione 2026-10-29.2 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-10-30.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -949,7 +949,10 @@ window.CATALOGO_N5.SCHIERAMENTO = {
     // 27 ottobre (Paolo): l'Hidden Deployment nella propria app, accanto al
     // nome: etichetta e icona, senza numero (non c'e` un segnalino sul tavolo).
     segnaliniSenzaNumero: {
-        'HIDDEN': { etichetta: 'HIDDEN', file: 'img/icon_hidden.png' }
+        'HIDDEN': { etichetta: 'HIDDEN', file: 'img/icon_hidden.png', emoji: '\ud83e\udee5' },
+        // 30 ottobre (Paolo, P8): lo Schieramento Aereo. Il file lo carica Paolo;
+        // finche` manca, l'emoji del paracadute.
+        'AD':     { etichetta: 'SCHIERAMENTO AEREO', file: 'img/icon_airborne.png', emoji: '\ud83e\ude82' }
     },
     // 26 ottobre (Paolo): le immagini dei segnalini per esercito. Il nome del
     // file resta quello di `file` qui sopra, senza 'img/'.
@@ -2886,7 +2889,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-10-29.2', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-10-30.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

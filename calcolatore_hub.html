@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-27.2 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-31.1 | calcolatore_hub.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -24,7 +24,7 @@
            820 e 1280 px le misure salgono di piu`: testo 13 -> 16, righe
            12 -> 15, nome 24 -> 28, miniatura 70 -> 110, icone 44 -> 56. */
         :root { --hub-testo: clamp(13px, calc(0.652vw + 7.65px), 18px); --hub-riga: clamp(12px, calc(0.652vw + 6.65px), 17px);
-                --hub-nome: clamp(24px, calc(0.87vw + 16.87px), 32px); --hub-foto: clamp(70px, calc(8.696vw - 1.31px), 140px);
+                --hub-nome: clamp(24px, calc(0.87vw + 16.87px), 32px); --hub-foto: clamp(47px, calc(5.797vw - 0.87px), 93px);
                 --hub-icona: clamp(44px, calc(2.609vw + 22.61px), 64px); --hub-gruppo: clamp(24px, calc(1.304vw + 13.3px), 34px); }
         body { background: #111; color: #00ff00; font-family: 'Share Tech Mono', monospace; padding: 20px; font-size: var(--hub-testo); }
         .turn-controller { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-bottom:10px; margin-bottom:20px; border-bottom:2px dashed #00ff00; }
@@ -60,7 +60,10 @@
         .scheda-truppa .st-testo { flex:1; min-width:0; }
         .scheda-truppa .st-nome { font-family:'Teko', sans-serif; font-size:var(--hub-nome); line-height:1; font-weight:700;
             text-transform:uppercase; color:var(--st-colore); overflow-wrap:break-word; hyphens:auto; }
-        .scheda-truppa .st-alias { text-transform:none; color:#bbb; font-weight:500; }
+        /* 31 ottobre (Paolo, P11): le foto (e i segnalini dei Marker) circa un
+           terzo piu` piccole: --hub-foto da 70-140 a 47-93 px. Il soprannome
+           va a capo, sotto il nome, e c'e` solo se e` diverso dal profilo. */
+        .scheda-truppa .st-alias { display:block; text-transform:none; color:#bbb; font-weight:500; font-size:calc(var(--hub-nome) * .7); line-height:1.05; }
         .scheda-truppa .st-stati .state-icona { border-radius:50%; overflow:hidden; }
         .scheda-truppa .st-stati { gap:6px; margin:4px 0 2px; }
         .scheda-truppa .st-stati .state-icona img { width:var(--hub-icona) !important; height:var(--hub-icona) !important; border-radius:50%;
@@ -101,8 +104,9 @@
          border-radius:6px; color:#ffdd88; font-weight:bold; text-align:center;"></div>
     <script>
     window.tornaAlMenu = function () {
-        if (!confirm('Chiudendo l\'Hub nessuno arbitra piu`.\n\nLe due app continueranno a mandare ordini e ARO, ma finche` l\'Hub non viene riaperto quei dati non vengono elaborati: il tabellone e i calcoli si fermano qui.\n\nTorni al menu?')) return;
-        location.href = 'scegli_fazione.html';
+        // 31 ottobre (P5): la domanda nel riquadro del motore (window.chiediHub).
+        window.chiediHub('Chiudendo l\'Hub nessuno arbitra piu`.\n\nLe due app continueranno a mandare ordini e ARO, ma finche` l\'Hub non viene riaperto quei dati non vengono elaborati: il tabellone e i calcoli si fermano qui.',
+            { titolo: 'Torni al menu?', si: 'TORNA AL MENU', no: 'RESTA' }, function (ok) { if (ok) location.href = 'scegli_fazione.html'; });
     };
     </script>
 
@@ -138,7 +142,7 @@
         </div>
     </div>
 
-    <div class="faction-panel" style="margin-top:20px;">
+    <div class="faction-panel" id="pannello-tavolo" style="margin-top:20px;">
         <h2 style="color: #aaaaaa;">TAVOLO: SCENOGRAFIA E TERRENO</h2>
         <div id="status-scenario">Nessun elemento dichiarato.</div>
     </div>
@@ -180,7 +184,7 @@
         // quello dove una copia vecchia (cache del telefono) e` piu` probabile.
         (function () {
             var g = (typeof window !== 'undefined') ? window : globalThis;
-            var v = { file: 'calcolatore_hub.html', versione: '2026-10-27.2', proprieta: 'INTERFACCIA' };
+            var v = { file: 'calcolatore_hub.html', versione: '2026-10-31.1', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();

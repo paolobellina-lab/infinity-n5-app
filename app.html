@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-29.1 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-10-31.2 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -90,6 +90,59 @@
         if (col) col.setAttribute('content', F.coloreTema);
     })();
 
+    // ==========================================
+    // 31 ottobre (Paolo, collaudo grafico P5): NIENTE FINESTRE DEL BROWSER.
+    // Le domande SÌ/NO passano da M.chiediSiNo (riquadro dell'app, motore):
+    // nel browser la risposta arriva DOPO, a `poi`; dove il confirm e` stato
+    // sostituito (i banchi) arriva subito. Per questo chi chiede mette il
+    // seguito in `poi`, non dopo la chiamata.
+    //   window.chiedi(testo, { titolo, si, no }, poi(ok))
+    //   window.chiediTesto(testo, { titolo, valore }, poi(testo | null))
+    // ==========================================
+    window.chiedi = function (testo, opz, poi) {
+        var M = window.MotoreN5;
+        if (!M || typeof M.chiediSiNo !== 'function') {
+            console.error('\u26d4 M.chiediSiNo assente (serve motore_regole_n5.js dalla 2026-10-30.1): domanda con la finestra del browser.');
+            var r = !!window.confirm(testo);
+            if (poi) poi(r);
+            return r;
+        }
+        return M.chiediSiNo(testo, opz || {}, poi);
+    };
+    // La domanda con una risposta scritta (il soprannome, il motivo dell'Idle).
+    // Il motore ha solo SÌ/NO: questo e` lo stesso riquadro, con un campo.
+    window.chiediTesto = function (testo, opz, poi) {
+        opz = opz || {};
+        var M = window.MotoreN5;
+        var nativo = M && typeof M.eNativa === 'function' ? M.eNativa(window.prompt) : true;
+        var D = document;
+        var disegna = !!(D && D.body && typeof D.createElement === 'function' && typeof D.body.appendChild === 'function');
+        if (!nativo || !disegna) {   // banco: risponde la prova, subito
+            var r = (typeof window.prompt === 'function') ? window.prompt(testo, opz.valore || '') : null;
+            if (poi) poi(r);
+            return r;
+        }
+        var acc = function (t) { return (M && typeof M.accenti === 'function') ? M.accenti(t) : String(t); };
+        var esc = function (t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+        var sfondo = D.createElement('div');
+        sfondo.className = 'dialogo-app-sfondo';
+        sfondo.setAttribute('style', 'position:fixed; inset:0; z-index:100000; background:rgba(0,0,0,.78); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;');
+        sfondo.innerHTML = '<div class="dialogo-app dialogo-testo" role="dialog" aria-modal="true" style="width:100%; max-width:520px; background:var(--panel-bg,#1f1f1f); border:2px solid var(--nomad-red,#cc0000); border-radius:8px; padding:18px; box-sizing:border-box;">' +
+            (opz.titolo ? '<div class="dialogo-app-titolo" style="font-family:\'Teko\',sans-serif; font-size:30px; font-weight:bold; text-transform:uppercase; color:var(--nomad-orange,#ff6600); text-align:center; line-height:1.05; margin-bottom:10px;">' + esc(acc(opz.titolo)) + '</div>' : '') +
+            '<div class="dialogo-app-testo" style="font-family:\'Share Tech Mono\',monospace; font-size:17px; line-height:1.4; color:#eee; white-space:pre-line; margin-bottom:12px;">' + esc(acc(testo)) + '</div>' +
+            '<input type="text" class="dialogo-app-campo" value="' + esc(opz.valore || '') + '" style="width:100%; box-sizing:border-box; height:52px; font-family:\'Share Tech Mono\',monospace; font-size:20px; background:#000; color:#fff; border:2px solid var(--nomad-orange,#ff6600); border-radius:5px; padding:0 10px; margin-bottom:14px;">' +
+            '<div style="display:flex; gap:10px;"><button type="button" class="huge-btn dialogo-app-si" style="flex:1 1 0; min-height:64px; margin:0; font-size:28px; background:#004400; border-color:#00ff00; color:#00ff00;">OK</button>' +
+            '<button type="button" class="huge-btn dialogo-app-no" style="flex:1 1 0; min-height:64px; margin:0; font-size:28px; background:#440000; border-color:#ff3333; color:#ff6666;">ANNULLA</button></div></div>';
+        D.body.appendChild(sfondo);
+        var campo = sfondo.querySelector('.dialogo-app-campo');
+        var chiudi = function (v) { if (sfondo.parentNode) sfondo.parentNode.removeChild(sfondo); if (poi) poi(v); };
+        sfondo.querySelector('.dialogo-app-si').onclick = function () { chiudi(campo.value); };
+        sfondo.querySelector('.dialogo-app-no').onclick = function () { chiudi(null); };
+        campo.addEventListener('keydown', function (e) { if (e.key === 'Enter') chiudi(campo.value); });
+        setTimeout(function () { try { campo.focus(); } catch (e) {} }, 0);
+        return undefined;
+    };
+
     // Torna al menu iniziale. Se c'e` un ordine a meta` lo dice, perche`
     // uscire lo perde: la dichiarazione non e` ancora arrivata all'Hub.
     window.tornaAlMenu = function () {
@@ -100,7 +153,10 @@
                          (window.combatTargets && window.combatTargets.length));
         } catch (e) { inCorso = true; }   // nel dubbio si chiede
 
-        if (inCorso && !confirm('Hai un ordine a meta`: uscendo si perde e non viene spedito all\'Hub.\n\nTorni al menu?')) return;
+        if (inCorso) {
+            return window.chiedi('Hai un ordine a meta`: uscendo si perde e non viene spedito all\'Hub.', { titolo: 'Torni al menu?', si: 'TORNA AL MENU', no: 'RESTA' },
+                function (ok) { if (ok) location.href = 'scegli_fazione.html'; });
+        }
         location.href = 'scegli_fazione.html';
     };
 
@@ -320,6 +376,8 @@
             border-top: 3px solid var(--nomad-orange); border-radius: 12px 12px 0 0; padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
         #pannello-info .info-voce { margin: 0 0 12px; font-size: var(--fs-m); line-height: 1.35; color: var(--text-main); }
         #pannello-info .info-voce b { color: var(--nomad-orange); }
+        /* P18: «Descrizioni nei tasti: NO» (window.applicaDescrizioniTasti). */
+        .senza-descrizioni .desc-tasto { display: none !important; }
         /* Titolo che finirebbe sotto il tasto ⓘ (window.liberaSpazioInfo). */
         .sotto-info { padding-left: 56px !important; padding-right: 56px !important; box-sizing: border-box; }
         /* 28 ottobre (Paolo): titoli della ⓘ col nome del tasto, a gruppi. */
@@ -327,10 +385,14 @@
         #pannello-info .info-gruppo { font-family: 'Teko', sans-serif; font-size: 16px; color: #888; letter-spacing: 1px; margin: 4px 0 6px; border-bottom: 1px solid #333; }
         /* Le note SOTTO I TASTI (window.disegnaNote): tasto e fascia sono un
            tasto solo, stesso sfondo e stesso bordo, niente riga fra i due. */
-        .nota-gruppo.con-nota > button { border-bottom: 0 !important; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; padding-bottom: 4px; }
+        .nota-gruppo.con-nota > button:not(.riga-unita) { border-bottom: 0 !important; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; padding-bottom: 4px; }
         .nota-tasto { padding: 0 12px 10px; border: 2px solid; border-top: 0; border-radius: 0 0 5px 5px; font-family: 'Share Tech Mono', monospace;
                       font-size: var(--fs-s); line-height: 1.35; text-align: center; text-transform: none; font-weight: normal; cursor: pointer; opacity: .92; }
         .nota-tasto.spenta { cursor: default; }
+        /* La nota sotto la riga di una truppa: rientrata come la fascia del
+           soprannome, attaccata sotto la riga (che ha margine 18px). */
+        .nota-gruppo.con-nota > button.riga-unita { margin-bottom: 0 !important; }
+        .nota-tasto.nota-riga { margin: -4px 20px 0 72px; border: 1px solid; border-radius: 0 0 8px 8px; padding: 6px 10px; text-align: left; opacity: 1; }
         .nota-tasto b, .nota-schermata b { color: var(--nomad-orange); font-weight: normal; }
         .nota-schermata { margin: 0 0 12px; padding: 8px 12px; border: 2px solid #666; border-radius: 5px; background: rgba(0,0,0,.55);
                           color: #e6e6e6; font-family: 'Share Tech Mono', monospace; font-size: var(--fs-s); line-height: 1.35; text-align: left; }
@@ -414,16 +476,27 @@
         /* Le icone le disegna window.generaIconeStati con stili in linea da
            45px: qui si fanno grandi quanto le due bande insieme, a destra,
            sopra le bande. Se il file manca c'e` l'emoji (uno <span>). */
-        .riga-unita-foto .rup-icone { position:absolute; right:0; top:50%; transform:translateY(-50%); z-index:6; display:flex;
-            flex-direction:row-reverse; align-items:center; pointer-events:none; }
-        .riga-unita-foto .rup-icone img { width:64px !important; height:64px !important; margin:0 0 0 -8px !important;
+        /* 31 ottobre (Paolo, P17): le icone circa il doppio (80 px), in fila
+           SENZA accavallarsi, due per riga; dalla terza vanno a capo e la riga
+           si allunga (lo spazio lo mette rigaUnitaConFoto). */
+        .riga-unita-foto .rup-icone { position:absolute; right:4px; top:50%; transform:translateY(-50%); z-index:6; display:flex;
+            flex-direction:row; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:4px; max-width:164px; pointer-events:none; }
+        .riga-unita-foto .rup-icone img { width:80px !important; height:80px !important; margin:0 !important;
             filter:drop-shadow(0 3px 6px rgba(0,0,0,.9)) !important; }
-        .riga-unita-foto .rup-icone span { font-size:44px !important; margin:0 !important; line-height:1; filter:drop-shadow(0 3px 6px rgba(0,0,0,.9)); }
+        .riga-unita-foto .rup-icone span { font-size:56px !important; margin:0 !important; line-height:1; filter:drop-shadow(0 3px 6px rgba(0,0,0,.9)); }
+        /* 31 ottobre (P13): i SEGNALINI (mine, koala, Marker, copie
+           dell'Holoecho) sono tondi: interi, dentro la riga, al centro. */
+        .riga-unita-foto .rup-foto.rup-segnalino { left:4px; top:50%; transform:translateY(-50%); width:80px; height:80px; object-position:center center; }
         /* 27 ottobre (collaudo, G02): con due o piu` icone il nome restava con
            pochi pixel ("SPEKTR" troncato). Le icone si fanno piu` piccole e si
            accavallano di piu`: 32 px l'una invece di 56. */
-        .riga-unita-foto .rup-icone-molte img { width:46px !important; height:46px !important; margin:0 0 0 -14px !important; }
-        .riga-unita-foto .rup-icone-molte span { font-size:32px !important; }
+        /* (Fino al 30 ottobre con due o piu` icone si stringevano a 46 px
+           accavallate: Paolo le vuole grandi e separate, P17.) Con due o piu`
+           icone stanno SOTTO il nome, a destra, due per riga: il nome tiene
+           tutta la larghezza e la riga si allunga quanto serve. */
+        .riga-unita-foto .rup-icone.rup-icone-sotto { top:42px; transform:none; }
+        /* Il segnalino numerato senza il suo file: la scritta, non gigante. */
+        .riga-unita-foto .rup-icone .segnalino-numerato { font-size:16px !important; line-height:1.2; }
         /* Senza soprannome la fascia bassa porta l'opzione del profilo (D02, E11:
            prima restava vuota). Non e` un soprannome: niente corsivo. */
         .riga-unita-foto .rup-profilo { font-style:normal; color:#c8c8c8; }
@@ -533,7 +606,7 @@
         <h1>DISPIEGAMENTO</h1>
         <p class="sottotitolo-step">Scegli il gruppo da schierare</p>
         <div class="grid-buttons" id="deploy-groups-container"></div>
-        <button class="huge-btn tasto-conferma" onclick="window.confermaSchieramento()">CONCLUDI SCHIERAMENTO <span>(Inizia Partita)</span></button>
+        <button class="huge-btn tasto-conferma" onclick="window.confermaSchieramento()">CONCLUDI SCHIERAMENTO <span class="desc-tasto">(Inizia Partita)</span></button>
         <button class="tasto-uscita" onclick="window.tornaAlSetup()">INDIETRO</button>
     </div>
 
@@ -655,7 +728,7 @@
 
     <div id="step-wait-aro" class="step-container">
         <div class="grid-buttons" id="enemy-target-buttons" style="flex-grow:1; overflow-y:auto; padding:5px;"></div>
-        <button class="huge-btn tasto-conferma" onclick="window.confirmMultiAro(false)">CONFERMA BERSAGLI <span>(Vai al Calcolo)</span></button>
+        <button class="huge-btn tasto-conferma" onclick="window.confirmMultiAro(false)">CONFERMA BERSAGLI <span class="desc-tasto">(Vai al Calcolo)</span></button>
         <button class="tasto-uscita" onclick="window.tornaAlRadar()">ANNULLA ORDINE</button>
     </div>
 
@@ -717,7 +790,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-29.1', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-10-31.2', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -1220,7 +1293,8 @@
             const sg = M.segnalinoSenzaNumero(u, f);
             if (!sg) return '';
             const dim = px || 22;
-            return `<img class="icona-segnalino-${String(sg.tipo).toLowerCase()}" ${window.attributiImmagine(sg.immagine, [sg.immagineComune], `<span style=&quot;font-size:${dim - 4}px;&quot;>🫥</span>`)} alt="${sg.etichetta}" style="width:${dim}px; height:${dim}px; object-fit:contain; vertical-align:middle; margin-right:4px;">`;
+            // 31 ottobre (P8): il ripiego e` l'emoji del motore (🫥 Hidden, 🪂 Aereo).
+            return `<img class="icona-segnalino-${String(sg.tipo).toLowerCase()}" ${window.attributiImmagine(sg.immagine, [sg.immagineComune], `<span style=&quot;font-size:${dim - 4}px;&quot;>${sg.emoji || '🫥'}</span>`)} alt="${sg.etichetta}" style="width:${dim}px; height:${dim}px; object-fit:contain; vertical-align:middle; margin-right:4px;">`;
         };
 
         window.generaIconeStati = (u, fazione) => {
@@ -1248,7 +1322,20 @@
             if(s.targeted) icone += ic('icon_targeted', emoji('🎯'));
             if(s.stunned) icone += ic('icon_stunned', emoji('😵'));
             if(s.suppressive) icone += ic('icon_suppressive', emoji('🔥'));
-            if(s.camo) icone += ic('icon_camo', emoji('👻'));
+            // 31 ottobre (Paolo, P2): una PROPRIA truppa in CAMO o IMP mostra a
+            // destra il SUO segnalino numerato, lo stesso che vede l'avversario
+            // (M.immagineMarker del motore; il numero lo da` M.numeraMarker).
+            // Al posto dell'icona dello stato e della scritta «[ SEGNALINO CAMO ]».
+            const Mk = window.MotoreN5;
+            const tipoMk = (Mk && typeof Mk.segnalinoMarker === 'function' && f === window.fazionePropria()) ? Mk.segnalinoMarker(u) : null;
+            const nMk = tipoMk && u.tipoNumeroMarker === tipoMk ? parseInt(u.numeroMarker, 10) : 0;
+            const imgMk = (nMk > 0 && typeof Mk.immagineMarker === 'function') ? Mk.immagineMarker(tipoMk, nMk, f) : null;
+            if (imgMk) {
+                const comuneMk = String(imgMk).replace(/^img\/(nomadi|panoceania)\//, 'img/');
+                const scrittaMk = `<span class=&quot;segnalino-numerato&quot; style=&quot;font-size:14px; font-weight:bold; color:#ffdd66; border:1px solid #ffdd66; border-radius:4px; padding:3px 5px;&quot;>${tipoMk} ${nMk}</span>`;
+                icone += `<img class="icona-segnalino-numerato" ${window.attributiImmagine(imgMk, comuneMk !== imgMk ? [comuneMk] : [], scrittaMk)} alt="${tipoMk} ${nMk}" ${iconStyle}>`;
+            }
+            if(s.camo && !imgMk) icone += ic('icon_camo', emoji('👻'));
             // Impersonation (6 ottobre): lo stato non sta in u.states ma in
             // deployState ('IMP_1'/'IMP_2'), quindi questa funzione non lo
             // vedeva e un Hacker in Cybermask appariva identico a prima. Il
@@ -1260,7 +1347,7 @@
             {
                 const Mi = window.MotoreN5;
                 const liv = (Mi && typeof Mi.livelloImpersonation === 'function') ? Mi.livelloImpersonation(u) : null;
-                if (liv) {
+                if (liv && !imgMk) {
                     const scritta = `<span style=&quot;font-size:14px; font-weight:bold; color:#cc99ff; border:1px solid #cc99ff; border-radius:4px; padding:3px 5px; margin-left:5px;&quot;>IMP-${liv}</span>`;
                     icone += ic('icon_imp' + liv, scritta, `alt="IMP-${liv}"`);
                 }
@@ -1285,7 +1372,9 @@
             // 27 ottobre sera (Paolo): l'Hidden Deployment si vede come gli
             // altri stati, col segnalino grande a destra (M.segnalinoSenzaNumero).
             // Solo nella propria app: all'avversario la truppa non arriva.
-            if (String(u.deployState || '').toUpperCase() === 'HIDDEN') icone += window.iconaSegnalinoSenzaNumero(u, f, 45);
+            // 31 ottobre (P8): anche lo Schieramento Aereo, col suo segnalino
+            // senza numero (M.segnalinoSenzaNumero riconosce HIDDEN e AD).
+            if (window.iconaSegnalinoSenzaNumero(u, f, 45)) icone += window.iconaSegnalinoSenzaNumero(u, f, 45);
 
             if(isDead) icone = ic('icon_dead', emoji('☠️'));
             
@@ -1580,9 +1669,14 @@
             // fermarsi prima, o finisce sotto. Lo spazio dipende da quante
             // sono (64px l'una, accavallate di 8).
             const quante = (String(destra).match(/<img/g) || []).length || (String(destra).trim() ? 1 : 0);
-            // Con due o piu` icone si stringono (32 px l'una, vedi .rup-icone-molte).
+            // 31 ottobre (P17): 80 px l'una, due per riga, senza accavallarsi.
+            // Una: a destra, al centro della riga. Due o piu`: sotto il nome,
+            // due per riga, e la riga si allunga (spazio in fondo alla banda alta).
             const molte = quante >= 2;
-            const spazioIcone = quante ? (molte ? 14 + 32 * quante : 56 * quante) : 0;
+            const spazioIcone = quante ? (molte ? 0 : 84) : 0;
+            const spazioBassa = quante ? (molte ? 168 : 84) : 0;
+            const righeIcone = Math.ceil(quante / 2);
+            const altezzaIcone = molte ? 42 + righeIcone * 84 - 4 : 0;
 
             // La foto e` un png senza sfondo: sta libera, intera, senza
             // cornice. Senza foto, la sigla del tipo, libera allo stesso posto.
@@ -1597,8 +1691,11 @@
             // 20 ottobre: se manca l'immagine numerata del segnalino si
             // ripiega sul segnalino comune, non sulla sigla "MAR". 26 ottobre:
             // i ripieghi li elenca fotoUnitaConRipieghi (esercito, poi comune).
+            // 31 ottobre (P13): un segnalino tondo (deployable, Marker, copia
+            // dell'Holoecho) sta intero dentro la riga, non come una miniatura.
+            const tondo = !!u && (u.deployable || eMarker || u.replica || /^holoecho_\d+\.png$/i.test(String(u.imgVariant || '')));
             const immagine = foto
-                ? `<img class="rup-foto${classeTocco}" ${window.attributiImmagine(foto, fr.ripieghi, `<span class=&quot;rup-sigla${classeTocco}&quot;${tocco.replace(/"/g, '&quot;')}>${sigla}</span>`)} alt=""${tocco}>`
+                ? `<img class="rup-foto${tondo ? ' rup-segnalino' : ''}${classeTocco}" ${window.attributiImmagine(foto, fr.ripieghi, `<span class=&quot;rup-sigla${classeTocco}&quot;${tocco.replace(/"/g, '&quot;')}>${sigla}</span>`)} alt=""${tocco}>`
                 : `<span class="rup-sigla${classeTocco}"${tocco}>${sigla}</span>`;
 
             const ombra = 'drop-shadow(0 6px 12px rgba(0,0,0,0.6))';
@@ -1617,9 +1714,10 @@
                 // (motore 2026-10-09.6). Fino alla 2026-10-09.5 lo ripetevo
                 // qui, perche` il motore non lo dichiarava e la banda veniva
                 // alta 44 invece di 30.
-                stileBassa: (quante ? `padding-right:${10 + spazioIcone}px; ` : '') + 'min-height:30px;',
-                sopra: immagine + `<div class="rup-icone${molte ? ' rup-icone-molte' : ''}">${destra}</div>`,
-                alta: `<div class="rup-nome">${nome}</div>`,
+                stileBassa: (quante ? `padding-right:${10 + spazioBassa}px; ` : '') + 'min-height:30px;',
+                sopra: immagine + `<div class="rup-icone${molte ? ' rup-icone-molte rup-icone-sotto' : ''}">${destra}</div>`,
+                // Con piu` di due icone la riga si allunga quanto le loro righe.
+                alta: `<div class="rup-nome">${nome}</div>` + (altezzaIcone ? `<div class="rup-spazio-icone" style="flex:0 0 0; width:0; height:${altezzaIcone - 44}px;"></div>` : ''),
                 // Le etichette PRIMA del soprannome: si leggono fra il nome e il
                 // soprannome, come quando stavano in coda al nome (lo guardano
                 // anche i banchi di TEST, test_novita_23ott e _26ott).
@@ -1713,7 +1811,12 @@
             if (!M || typeof M.togliReplica !== 'function') return alert('\u26d4 M.togliReplica assente: serve motore_regole_n5.js dalla 2026-10-26.1.');
             const r = (window.roster || []).find(x => x && String(x.id) === String(id));
             if (!r || !M.eReplica(r)) return;
-            if (!window.confirm('Togliere dal tavolo ' + M.nomeUnita(r) + (r.numeroReplica ? ' (' + r.numeroReplica + ')' : '') + '?\n\nUna replica esce se viene Scoperta, se un Attacco riuscito la colpisce (senza Tiro Salvezza) o se un nemico la tocca.')) return;
+            window.chiedi('Una replica esce se viene Scoperta, se un Attacco riuscito la colpisce (senza Tiro Salvezza) o se un nemico la tocca.',
+                { titolo: 'Togliere dal tavolo ' + M.nomeUnita(r) + (r.numeroReplica ? ' (' + r.numeroReplica + ')' : '') + '?', si: 'TOGLI', no: 'LASCIA' },
+                function (ok) { if (ok) window.togliReplicaConfermata(r); });
+        };
+        window.togliReplicaConfermata = (r) => {
+            const M = window.MotoreN5;
             const e = M.togliReplica(window.roster, r.id);
             let avvisato = false;
             if (e.veraAggiornata) {
@@ -1744,6 +1847,15 @@
             } else {
                 MM.numeraMarker(window.roster);
             }
+            // 31 ottobre (Paolo, P14-16): le note di stato delle truppe non
+            // stanno piu` nella lista: vanno nella ⓘ della schermata (tipo
+            // 'stato'), e con «sotto i tasti» sotto la riga della truppa
+            // (data-nota="truppa-<id>").
+            const notaRiga = (u, titolo, testo) => {
+                if (MM && typeof MM.nota === 'function') MM.nota('step-unit', titolo, testo, { tipo: 'stato', tasto: 'truppa-' + u.id });
+                else console.error('\u26d4 M.nota assente (serve motore_regole_n5.js dalla 2026-10-28.1): nota di ' + titolo + ' persa.');
+            };
+            if (MM && typeof MM.azzeraNote === 'function') MM.azzeraNote('step-unit');
 
             truppeDelGruppo.forEach(u => {
                 let originalIndex = window.roster.indexOf(u); 
@@ -1764,13 +1876,15 @@
                 // rossa NON ATTIVABILE, come un Incosciente. Non e` una
                 // truppa menomata: e` un pezzo che funziona cosi`.
                 const pedina = !!u.deployable;
+                const eReplicaR = !!(MM && typeof MM.eReplica === 'function' && MM.eReplica(u));
+                const M_nome = (x) => (MM && typeof MM.nomeUnita === 'function') ? MM.nomeUnita(x) : (x.alias || x.nome || '');
 
                 let opzioni = {
                     // Scelta per il Coordinato: prima si diceva con un fondo
                     // rosso scuro fisso, rosso anche per PanOceania.
                     scelta: !!isSelected,
                     bordo: isSpearhead ? '2px solid #00ffff' : (isSelected ? '2px solid #ff9900' : '2px solid var(--nomad-red)'),
-                    attributi: `onpointerdown="window.avvioPressioneUnita(${originalIndex}, event)"
+                    attributi: `data-nota="truppa-${String(u.id).replace(/"/g, '')}" onpointerdown="window.avvioPressioneUnita(${originalIndex}, event)"
                         onpointerup="window.finePressioneUnita(${originalIndex}, ${ordinabile.ok})"
                         onpointermove="window.movimentoPressioneUnita(event)"
                         onpointercancel="if(window.cancelUnitPress) window.cancelUnitPress()"`
@@ -1784,7 +1898,9 @@
                 // 27 ottobre sera (Paolo): l'Hidden Deployment non ha piu` la
                 // scritta HIDDEN: il suo segnalino grande sta con le icone degli
                 // stati (window.generaIconeStati).
-                if (etichettaM && String(u.deployState || '').toUpperCase() !== 'HIDDEN') etichette += ` <span class="etichetta-marker" style="color:#ffdd66; font-size:14px; font-weight:bold; border:1px solid #ffdd66; border-radius:4px; padding:1px 5px;">${window.iconaSegnalinoSenzaNumero(u, null, 18)}${etichettaM}</span>`;
+                // 31 ottobre (P2): niente piu` scritta «CAMO 2» nella fascia
+                // bassa: il segnalino numerato sta a destra, con le icone.
+                void etichettaM;
                 // 26 ottobre (MOTORE 26.1): Decoy e Holoecho. Solo il
                 // proprietario sa chi e` la truppa vera: la riga lo dice, col
                 // numero che l'avversario vede sul segnalino.
@@ -1797,21 +1913,24 @@
                 if (window.isCoordinated && isSpearhead) {
                     dopoNome += ` <img class="icona-spearhead" src="img/icon_spearhead.png" alt="PUNTA DI LANCIA" title="Punta di Lancia" style="height:28px; vertical-align:middle;" onerror="this.outerHTML='<span class=&quot;icona-spearhead&quot; style=&quot;color:#00ffff; font-size:13px; font-weight:bold;&quot;>\u2b50 PUNTA DI LANCIA</span>';">`;
                 }
+                // 31 ottobre (P14-16): via «[stato — NON ATTIVABILE]», «Tieni
+                // premuto…» e la riga della pedina: le note vanno nella ⓘ. La
+                // riga resta tratteggiata e sbiadita: quello si vede da solo.
                 if (!ordinabile.ok && !pedina) {
                     if (!isDead) opzioni.opacita = '0.45';
                     opzioni.bordo = '2px dashed #777';
-                    etichette += ` <span style="color:#ff6666; font-weight:bold;" title="${ordinabile.motivo || ''}">[${ordinabile.nome || ordinabile.stato} \u2014 NON ATTIVABILE]</span>`;
+                    if (!eReplicaR) notaRiga(u, M_nome(u) + ': ' + (ordinabile.nome || ordinabile.stato || 'non attivabile'),
+                        (ordinabile.motivo ? ordinabile.motivo + ' ' : '') + 'Non riceve Ordini. Tieni premuto per modificarne gli stati.');
                 }
                 if (pedina && !isDead) {
-                    opzioni.sotto = `<div style="color:#999; font-size:13px; margin-top:3px;">${ordinabile.motivo || 'Non riceve Ordini.'}</div>`;
+                    notaRiga(u, M_nome(u), (ordinabile.motivo || 'Non riceve Ordini.') + ' Tieni premuto per modificarne gli stati: esce dal tavolo passando a Morto.');
                 }
                 // 18 ottobre (motore, ST-04): l'Isolato si attiva col PROPRIO
                 // Ordine Irregolare, e per lui non si scala un Ordine del
                 // Pool. Prima l'app lo trattava come non attivabile; ora e`
                 // attivabile, e la riga lo dice, con la nota del motore.
                 if (ordinabile.ok && ordinabile.soloIrregolare) {
-                    etichette += ` <span style="color:#ff99ff; font-weight:bold;" title="${ordinabile.notaIrregolare || ''}">\ud83d\udcf5 ORDINE IRREGOLARE PROPRIO</span>`;
-                    opzioni.sotto = `<div class="nota-irregolare" style="color:#ffccff; font-size:13px; margin-top:3px;">${ordinabile.notaIrregolare || ''}</div>`;
+                    notaRiga(u, M_nome(u) + ': Ordine Irregolare proprio', ordinabile.notaIrregolare || 'Si attiva col proprio Ordine Irregolare.');
                 }
                 // Attivare una truppa in Fuoco di Soppressione annulla lo stato:
                 // va detto PRIMA che spenda l'Ordine, non dopo.
@@ -1830,9 +1949,7 @@
                 // anche il lungo; al suo posto c'era un pulsante. Ora il
                 // gesto e` uno solo e vale sempre: il breve lo blocca
                 // finePressioneUnita, il lungo apre gli stati.
-                if (!ordinabile.ok && !eReplica) {
-                    container.innerHTML += `<div style="color:#888; font-size:13px; margin:-6px 0 12px 4px;">Tieni premuto per modificarne gli stati${pedina ? ': esce dal tavolo passando a Morto' : ''}.</div>`;
-                }
+                // (31 ottobre: «Tieni premuto…» e` nella nota della ⓘ, sopra.)
                 // Una replica non riceve Ordini e non fa Tiri Salvezza: esce
                 // dal tavolo se la Scoprono, se un Attacco la colpisce o se un
                 // nemico la tocca. Lo decide chi la possiede, guardando il tavolo.
@@ -1846,7 +1963,7 @@
                 // al prossimo Ordine, ma non fa piu` niente: se non si vede,
                 // chi arbitra continua a trattarla come viva.
                 if (u.disattivata) {
-                    container.innerHTML += `<div style="color:#8888aa; font-size:13px; margin:-6px 0 6px 4px;">\u{1F6AB} Disattivata: resta sul tavolo fino al prossimo Ordine.</div>`;
+                    notaRiga(u, M_nome(u) + ': disattivata', 'Resta sul tavolo fino al prossimo Ordine, ma non fa piu` niente.');
                 }
 
                 // 🔴 7 ottobre (Paolo): qui c'era il tasto "TOGLI DAL TAVOLO",
@@ -1929,7 +2046,7 @@
             bg = c.sfondo; border = c.bordo;
             return `<button class="huge-btn" style="min-height:60px; font-size:20px; background:${bg}; border-color:${border}; margin-bottom:5px; width:100%;" 
                     onclick="window.selectAction('${act.id}', ${isSecondHalf})">
-                    ${act.nome} <br><span style="color:#aaa; font-size:12px;">${act.desc}</span></button>`;
+                    ${act.nome}<span class="desc-tasto" style="display:block; color:#aaa; font-size:12px;">${act.desc}</span></button>`;
         };
  
         // ==========================================
@@ -2053,7 +2170,7 @@
             if (container) {
                 container.innerHTML = ""; 
                 if (window.currentOrder.isLongSkill) {
-                    container.innerHTML = `<button class="huge-btn" style="background:#440000; border-color:#ff0000; margin-top:20px;" onclick="window.selectAction('${window.currentOrder.action}', true)">ABILITÀ LUNGA DICHIARATA <span>(Procedi al Calcolo)</span></button>`;
+                    container.innerHTML = `<button class="huge-btn" style="background:#440000; border-color:#ff0000; margin-top:20px;" onclick="window.selectAction('${window.currentOrder.action}', true)">ABILITÀ LUNGA DICHIARATA <span class="desc-tasto">(Procedi al Calcolo)</span></button>`;
                 }
                 else if (window.dbAzioniN5.movimento.find(a => a.id === window.currentOrder.action1)) {
                     // Se ha mosso per primo, ora può sparare, hackerare, ecc.
@@ -2479,10 +2596,15 @@
             // COLONNA, e la freccia finiva sotto la scritta invece che accanto.
             // 27 ottobre sera (Paolo): scritta piu` grande e centrata, e niente
             // suggerimento del browser (title) che compariva sotto la casella.
+            // 31 ottobre (P20): ancora piu` grande (26 px, alta 60 come la
+            // tendina delle munizioni) e centrata su tutta la larghezza: la
+            // freccia sta di lato, fuori dal conto del centro.
+            // 31 ottobre .2 (MOTORE, scala dei caratteri): 26 px -> var(--fs-titolo-2)
+            // (28 px), la misura della tendina delle munizioni di ordine_attacco_bs.
             return `<button type="button" class="huge-btn scelta-terreno" data-valore="${valore}" aria-label="${window.ETICHETTA_TERRENO}"
-                        style="width:100%; margin:0; min-height:55px; font-size:20px; background:#111; color:#fff; border-color:#888; padding:0 12px; display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:8px; text-transform:none;"
+                        style="position:relative; width:100%; margin:0; min-height:60px; font-size:var(--fs-titolo-2); background:#111; color:#fff; border-color:#888; padding:0 34px; display:flex; flex-direction:row; align-items:center; justify-content:center; text-transform:none;"
                         onclick="window.apriSceltaTerreno('${comando}', ${arg}, '${valore}')">
-                        <span style="flex:1; min-width:0; color:#fff; text-align:center; line-height:1.15; font-family:'Teko', sans-serif; font-size:20px; margin:0;">${voci.length ? 'Terreno: ' + voci.join(' + ') : 'Terreno: nessuno'}</span><span style="color:#888;">&#9660;</span></button>`;
+                        <span style="flex:1; min-width:0; color:#fff; text-align:center; line-height:1.1; font-family:'Teko', sans-serif; font-size:var(--fs-titolo-2); font-weight:bold; margin:0;">${voci.length ? 'Terreno: ' + voci.join(' + ') : 'Terreno: nessuno'}</span><span class="freccia-terreno" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#888; font-size:16px;">&#9660;</span></button>`;
         };
 
         // IL RIQUADRO DELLE CASELLE. Uno solo per pagina (id pannello-terreno),
@@ -2686,6 +2808,15 @@
                 return;
             }
             const creaOriginale = M.creaPayload.bind(M);
+            // Un invio fermo in attesa della risposta (UI02) non e` un errore
+            // da mostrare: il riquadro della domanda e` gia` a schermo.
+            if (typeof M.onBloccato === 'function') {
+                const bloccatoOriginale = M.onBloccato.bind(M);
+                M.onBloccato = function (errori, avvisi) {
+                    if ((errori || []).length && errori.every(e => e && e.codice === 'UI02')) return;
+                    return bloccatoOriginale(errori, avvisi);
+                };
+            }
 
             M.creaPayload = function (attacchi, opzioni) {
                 const risultato = creaOriginale(attacchi, opzioni);
@@ -2704,11 +2835,30 @@
                     return '  \u2022 ' + (a.messaggio || a.codice) + dettaglio;
                 }).join('\n');
 
-                const procedi = confirm(
-                    'Prima di calcolare:\n\n' + testo +
-                    '\n\nQuesti avvisi si possono ancora correggere tornando indietro.\n' +
-                    'Calcolare lo stesso?'
-                );
+                // 31 ottobre (P5): la domanda passa dal riquadro dell'app
+                // (window.chiedi). Nel browser la risposta arriva dopo: intanto
+                // l'invio si ferma in silenzio (UI02) e il modulo resta sulla
+                // schermata; con SÌ si ripreme ESEGUI CALCOLO e questa volta
+                // gli stessi avvisi passano. Nei banchi la risposta e` subito.
+                const firma = JSON.stringify(daAgire.map(a => (a.codice || '') + '|' + (a.messaggio || '')));
+                if (window._avvisiAccettati === firma) { window._avvisiAccettati = null; return risultato; }
+                let risposta, dopo = false;
+                window.chiedi('Prima di calcolare:\n\n' + testo + '\n\nQuesti avvisi si possono ancora correggere tornando indietro.',
+                    { titolo: 'Calcolare lo stesso?', si: 'CALCOLA', no: 'TORNO INDIETRO' },
+                    function (ok) {
+                        if (!dopo) { risposta = ok; return; }
+                        if (!ok) return;
+                        window._avvisiAccettati = firma;
+                        const b = document.getElementById('btn-esegui-calcolo');
+                        if (b && typeof b.click === 'function') b.click();
+                        else if (M.mostraAvviso) M.mostraAvviso('Premi di nuovo il tasto del calcolo: gli avvisi sono accettati.');
+                    });
+                dopo = true;
+                if (risposta === undefined) {
+                    return Object.assign({}, risultato, { ok: false, errori: (risultato.errori || []).concat([{
+                        codice: 'UI02', messaggio: 'In attesa della risposta agli avvisi del motore.', gravita: 'azione', silenzioso: true }]) });
+                }
+                const procedi = risposta === true;
 
                 if (procedi) return risultato;
 
@@ -2771,13 +2921,10 @@
             const azione = (window.currentOrder && (window.currentOrder.action || window.currentOrder.action1)) || null;
             if (!unita || !azione) return;
 
-            let motivo;
-            if (typeof motivoDato === 'string' && motivoDato.trim()) motivo = motivoDato;
-            else {
-                motivo = prompt('Quale requisito non e` soddisfatto?\n(resta scritto nel calcolo)', '');
-                if (motivo === null) return;
-            }
-
+            // 31 ottobre (P5): domanda e conferma nel riquadro dell'app; il
+            // seguito sta nelle due funzioni qui sotto (la risposta, nel
+            // browser, arriva dopo).
+            const continua = (motivo) => {
             let convertito;
             try {
                 const arma = (window.currentOrder && window.currentOrder.weapon) || null;
@@ -2794,16 +2941,7 @@
             // rumore e fanno sembrare che sia cambiato qualcosa.
             const cambi = (regole.mutazioni || []).filter(m => JSON.stringify(m.da) !== JSON.stringify(m.a));
 
-            const conferma = confirm(
-                'IDLE da requisito non soddisfatto\n\n' +
-                'Ordine dichiarato: ' + (regole.convertitoDa || azione) + '\n' +
-                'Motivo: ' + (regole.motivo || '') + '\n\n' +
-                'L\'Ordine resta speso e l\'ARO avversario resta valido.\n' +
-                (cambi.length ? 'Cambia sulla truppa:\n' + cambi.map(m => '  ' + m.campo + ': ' + JSON.stringify(m.da) + ' -> ' + JSON.stringify(m.a)).join('\n') + '\n' : '') +
-                (regole.note || []).map(n => '  - ' + n).join('\n') +
-                '\n\nConfermi?'
-            );
-            if (!conferma) return;
+            const applica = () => {
 
             // L'unita` aggiornata la calcola il motore: qui si sostituisce e basta.
             if (regole.daApplicare !== false && regole.unitaAggiornata) {
@@ -2855,6 +2993,20 @@
             convertito.aroAtteso = !!aro.genera;
 
             if (window.inviaCalcoloAllHub) window.inviaCalcoloAllHub(convertito);
+            };
+            window.chiedi(
+                'Ordine dichiarato: ' + (regole.convertitoDa || azione) + '\n' +
+                'Motivo: ' + (regole.motivo || '') + '\n\n' +
+                'L\'Ordine resta speso e l\'ARO avversario resta valido.\n' +
+                (cambi.length ? 'Cambia sulla truppa:\n' + cambi.map(m => '  ' + m.campo + ': ' + JSON.stringify(m.da) + ' -> ' + JSON.stringify(m.a)).join('\n') + '\n' : '') +
+                (regole.note || []).map(n => '  - ' + n).join('\n') +
+                '',
+                { titolo: 'IDLE da requisito non soddisfatto', si: 'CONFERMO', no: 'ANNULLA' },
+                (ok) => { if (ok) applica(); });
+            };
+            if (typeof motivoDato === 'string' && motivoDato.trim()) return continua(motivoDato);
+            window.chiediTesto('Quale requisito non e` soddisfatto?\n(resta scritto nel calcolo)', { titolo: 'IDLE', valore: '' },
+                (m) => { if (m !== null) continua(m); });
         };
 
         // (Il ponte che riportava allo schieramento chiudendo la pagina stati
@@ -3098,11 +3250,12 @@
             { id: 'regole', nome: 'REGOLE E PROMEMORIA' }
         ];
         window.opzioniNote = () => {
-            const o = { dove: 'info', tipi: { stato: true, nonpuo: true, mod: true, regole: true } };
+            const o = { dove: 'info', tipi: { stato: true, nonpuo: true, mod: true, regole: true }, descrizioniTasti: true };
             let letto = null;
             try { letto = JSON.parse(localStorage.getItem('opzioni_note') || 'null'); } catch (e) { letto = null; }
             if (letto && (letto.dove === 'info' || letto.dove === 'tasti')) o.dove = letto.dove;
             if (letto && letto.tipi) window.TIPI_NOTE.forEach(t => { if (typeof letto.tipi[t.id] === 'boolean') o.tipi[t.id] = letto.tipi[t.id]; });
+            if (letto && typeof letto.descrizioniTasti === 'boolean') o.descrizioniTasti = letto.descrizioniTasti;
             o.tipi.stato = true;
             return o;
         };
@@ -3157,7 +3310,16 @@
             if (!box || typeof box.querySelectorAll !== 'function') return [];
             return [].slice.call(box.querySelectorAll('button') || []).filter(b => !b.closest || !b.closest('.nota-tasto'));
         };
+        // 31 ottobre (Paolo, P18): «Descrizioni nei tasti: NO» toglie le
+        // spiegazioni scritte dentro i tasti (classe desc-tasto: menu degli
+        // Ordini, seconda meta`...). Usi residui, munizioni e gittate restano:
+        // non sono descrizioni. Non vanno nella ⓘ.
+        window.applicaDescrizioniTasti = () => {
+            const r = document.documentElement;
+            if (r && r.classList) r.classList.toggle('senza-descrizioni', window.opzioniNote().descrizioniTasti === false);
+        };
         window.aggiornaTastoInfo = () => {
+            window.applicaDescrizioniTasti();
             const b = document.getElementById('tasto-info');
             // Con le note sotto i tasti la ⓘ non serve: sono gia` a schermo.
             if (b && b.style) b.style.display = (window.opzioniNote().dove === 'info' && window.vociInfo().length) ? 'flex' : 'none';
@@ -3238,10 +3400,21 @@
                 g.appendChild(t);
                 t.style.margin = '0';
                 const n = document.createElement('div');
-                n.className = 'nota-tasto' + (t.disabled ? ' spenta' : '');
-                n.style.background = cs.backgroundColor;
-                n.style.borderColor = cs.borderTopColor;
-                n.style.color = cs.color;
+                // 31 ottobre (P14-16): sotto la RIGA di una truppa (bottone
+                // con la forma, fondo trasparente) la fascia prende i colori
+                // della riga (le sue variabili --rup-*), rientrata come la
+                // fascia del soprannome.
+                const riga = t.classList && t.classList.contains('riga-unita');
+                n.className = 'nota-tasto' + (riga ? ' nota-riga' : '') + (t.disabled ? ' spenta' : '');
+                if (riga) {
+                    n.style.background = cs.getPropertyValue('--rup-a-n').trim() || 'rgba(0,0,0,.6)';
+                    n.style.borderColor = cs.getPropertyValue('--rup-c-n').trim() || '#888';
+                    n.style.color = '#f0f0f0';
+                } else {
+                    n.style.background = cs.backgroundColor;
+                    n.style.borderColor = cs.borderTopColor;
+                    n.style.color = cs.color;
+                }
                 n.innerHTML = vv.map(v => testoInfo(v.testo || v.titolo)).join('<br>');   // il titolo e` gia` il tasto
                 n.onclick = () => { if (!t.disabled) t.click(); };
                 g.appendChild(n);

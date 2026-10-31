@@ -1,4 +1,4 @@
-// @versione 2026-10-28.4 | ordine_piazzamento.js | proprieta`: chat MOTORE
+// @versione 2026-10-30.1 | ordine_piazzamento.js | proprieta`: chat MOTORE
 // ==========================================
 // 📦 PIAZZARE EQUIPAGGIAMENTO (N5) - ordine_piazzamento.js
 // ------------------------------------------
@@ -109,7 +109,10 @@
         if (window.mostraTitoloUnitaCorrente) window.mostraTitoloUnitaCorrente();
 
         const e = M.armiPiazzabili(unita);
-        window.targetsScartati = e.escluse.map(x => ({ nome: x.nome, motivo: x.motivo }));
+        // 30 ottobre (Paolo, collaudo grafico P7): l'equipaggiamento FINITO
+        // resta un tasto, spento, con gli usi a 0; il perche` va nella ⓘ.
+        const scariche = e.escluse.filter(x => x.scarica);
+        window.targetsScartati = e.escluse.filter(x => !x.scarica).map(x => ({ nome: x.nome, motivo: x.motivo }));
 
         const container = document.getElementById('weapon-buttons-container');
 
@@ -118,7 +121,7 @@
 
         container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `PIAZZA EQUIPAGGIAMENTO`, nota: `Abilità Breve, nessun tiro: è sempre la SECONDA metà dell'Ordine (dopo Movimento, Scoprire o Idle).${window.currentOrder && !window.currentOrder.isSecondHalf ? ' Dichiarata per prima vale <b>IDLE + PIAZZARE</b>: l\'Ordine finisce qui.' : ''}<br> Il nemico può reagire contro di te, mai contro ciò che piazzi.` })}`;
 
-        if (e.armi.length === 0) {
+        if (e.armi.length === 0 && !scariche.length) {
             container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-weight:bold;">
                 Questa unità non ha equipaggiamento da piazzare.</p>`;
         } else {
@@ -131,6 +134,12 @@
                     📦 ${a.nome}<br><span style="font-size:var(--fs-s); color:${COL.bordo};">${usi}</span></button>`;
             });
         }
+
+        scariche.forEach(function (x, k) {
+            container.innerHTML += `<button class="huge-btn tasto-scarico" data-nota="scarico-${k}" style="width:100%; min-height:62px; font-size:var(--fs-l); margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:#666; color:#888; opacity:.6; cursor:default;">
+                    📦 ${x.nome}<br><span style="font-size:var(--fs-s); color:#888;">0/${(x.usi && x.usi.totali) || 0} usi</span></button>`;
+            window.MotoreN5.nota('step-weapon', x.nome, x.spiegazione || x.motivo, { tipo: 'nonpuo', tasto: 'scarico-' + k });
+        });
 
         // 28 ottobre (Paolo): perche` non si puo`, nella ⓘ (o sotto il tasto).
         window.targetsScartati.forEach(t => window.MotoreN5.nota('step-weapon', t.nome + ' non piazzabile', t.motivo, { tipo: 'nonpuo' }));
@@ -502,7 +511,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-30.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

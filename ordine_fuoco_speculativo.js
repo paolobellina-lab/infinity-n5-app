@@ -1,4 +1,4 @@
-// @versione 2026-10-28.4 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
 // ==========================================
 // ☄️ FUOCO SPECULATIVO (N5) - ordine_fuoco_speculativo.js
 // ------------------------------------------
@@ -205,7 +205,7 @@
             const preso = scelti.indexOf('punto') === 0;
             html += `<button type="button" class="huge-btn bersaglio-punto" style="width:100%; min-height:70px; margin-bottom:10px; background:${preso ? 'var(--mn-attenzione-fondo,#554400)' : 'var(--mn-fondo-tasto,#111111)'}; border-color:${COL.bordo}; color:var(--mn-testo,#ffffff);" onclick="window.toccaBersaglioSpeculativo('punto')">
                 📍 PUNTO SUL TAVOLO${preso ? ' <span style="color:var(--mn-ordine-testo,#ff66ff); font-size:var(--fs-m);">[ SCELTO ]</span>' : ''}
-                <span>${G.soloPunto ? 'Arma Targetless: si lancia su un punto, non su un nemico. Se il tiro riesce, il segnalino si piazza lì.' : 'Arma Targetless: puoi lanciarla su un punto invece che su un nemico.'}</span></button>`;
+                <span class="desc-tasto">${G.soloPunto ? 'Arma Targetless: si lancia su un punto, non su un nemico. Se il tiro riesce, il segnalino si piazza lì.' : 'Arma Targetless: puoi lanciarla su un punto invece che su un nemico.'}</span></button>`;
         }
         G.voci.forEach(function (v) {
             const k = scelti.indexOf(String(v.unita.id));
@@ -636,12 +636,18 @@
         // tavolo. Il riquadro resta per chi carica il modulo da solo.
         if (window._dropBearInSospeso && typeof window.confirm === 'function') {
             const sosp = window._dropBearInSospeso;
-            const si = window.confirm('🎯 ' + sosp.nomeArma + ': tira al tavolo.\n\nIl tiro è RIUSCITO?\n\nOK = sì, piazza il segnalino dove è caduto.\nAnnulla = no, fallito (l\'uso è comunque speso).');
-            const esito = window.esitoDropBearBS(!!si);
-            if (typeof window.alert === 'function') {
-                window.alert(si ? ('✅ ' + sosp.nomeArma + ': segnalino piazzato' + (esito && esito.piazzati ? '' : ' (nessun segnalino creato: controlla il roster)') + '.')
-                                : ('❌ ' + sosp.nomeArma + ': tiro fallito, nessun segnalino. L\'uso è comunque speso.'));
-            }
+            // 30 ottobre (P5): la domanda nel riquadro dell'app (M.chiediSiNo), non nella
+            // finestra del browser. Con una prova al posto del confirm risponde lei, subito.
+            const dopoDropBear = function (si) {
+                const esito = window.esitoDropBearBS(!!si);
+                if (typeof window.alert === 'function') {
+                    window.alert(si ? ('✅ ' + sosp.nomeArma + ': segnalino piazzato' + (esito && esito.piazzati ? '' : ' (nessun segnalino creato: controlla il roster)') + '.')
+                                    : ('❌ ' + sosp.nomeArma + ': tiro fallito, nessun segnalino. L\'uso è comunque speso.'));
+                }
+            };
+            const domandaDB = 'Tira al tavolo.\n\nIl tiro è RIUSCITO?\n\nSÌ = piazza il segnalino dove è caduto.\nNO = fallito (l\'uso è comunque speso).';
+            if (typeof M.chiediSiNo === 'function') M.chiediSiNo(domandaDB, { titolo: '🎯 ' + sosp.nomeArma }, dopoDropBear);
+            else dopoDropBear(window.confirm('🎯 ' + sosp.nomeArma + ': ' + domandaDB));
         }
     };
 
@@ -683,7 +689,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-29.8 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-29.8';
+    M.VERSIONE = '2026-10-31.1';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -5154,6 +5154,8 @@
 
         const rami = attributi.map(function (attr) {
             const vociR = [];
+            // 30 ottobre (P25): i MOD che non contano, col perche`.
+            const nonApplicatiR = [];
             const base = valoreDi(attr);
             let valore = base;
             vociR.push({ fonte: 'base', valore: base, motivo: `${attr} del bersaglio: ${base}` });
@@ -5184,6 +5186,7 @@
                 const cs = M.coperturaSkill(bersaglio);
                 if (cop.vale && cs && cs.cadeMODSalvezza) {
                     note.push(`${cs.skill}: nessun +3 ARM di Copertura al Tiro Salvezza.`);
+                    nonApplicatiR.push({ fonte: 'copertura', valore: cop.mod, perche: `Copertura Parziale: il bersaglio ha ${cs.skill}` });
                 } else if (cop.vale) {
                     valore += cop.mod;
                     vociR.push({ fonte: 'copertura', valore: cop.mod, motivo: cop.motivo });
@@ -5198,7 +5201,7 @@
                         valore = 12;
                     }
                 }
-                else if (colpo.cover) note.push(cop.motivo);
+                else if (colpo.cover) { note.push(cop.motivo); nonApplicatiR.push({ fonte: 'copertura', valore: 3, perche: cop.motivo.replace(/\.$/, '') }); }
             }
 
             // Firewall: equivalente della Copertura per gli Attacchi Comms.
@@ -5214,7 +5217,7 @@
                 // 🔴 Niente clamp: sotto 1 il Tiro Salvezza e` FALLITO in automatico.
                 const vs = valore;
                 return { attributo: attr, base, valoreAttributo: valore, ps: null, valoreSuccesso: vs, voci: vociR, tiroSpeciale: true,
-                         impossibile: vs < 1 };
+                         nonApplicati: nonApplicatiR, impossibile: vs < 1 };
             }
 
             const ps = (par.ps != null) ? par.ps : 0;
@@ -5223,7 +5226,7 @@
             const vs = valore + ps;
             vociR.push({ fonte: 'ps', valore: ps, motivo: `PS dell'arma: ${ps}` });
             return { attributo: attr, base, valoreAttributo: valore, ps: ps, valoreSuccesso: vs,
-                     critici: M.critici(vs), voci: vociR, impossibile: vs < 1 };
+                     critici: M.critici(vs), voci: vociR, nonApplicati: nonApplicatiR, impossibile: vs < 1 };
         });
 
         // IL DIMEZZAMENTO LO DECIDE IL CAMPO salvAttr DELL'ARMA ("ARM/2",
@@ -5420,6 +5423,11 @@
         ctx = ctx || {};
         if (azione == null && ctx.azione != null) azione = ctx.azione;
         const voci = [], note = [], avvisi = [];
+        // 30 ottobre (Paolo, collaudo grafico P25): i MOD che NON contano si
+        // scrivono anche loro, in grigio col motivo in giallo, sotto il
+        // numero. Qui si raccolgono con valore e perche`; le note restano.
+        const nonApplicati = [];
+        function nonApplica(fonte, valore, perche) { nonApplicati.push({ fonte: fonte, valore: valore, perche: perche }); }
         let colpoAnnullato = false;
         if (azione == null) avvisi.push('M.modAttacco chiamato SENZA azione: il calcolo usa il ramo generale e puo` applicare MOD che l\'Abilita` dichiarata non prevede. Il risultato non e` affidabile.');
         const spec = M.SPEC[azione] || {};
@@ -5657,12 +5665,13 @@
                     // 🔴 No Cover e Limited Cover fanno cadere ENTRAMBE il -3.
                     // La differenza fra loro sta sulla SALVEZZA, non qui.
                     const cs = M.coperturaSkill(difensore);
-                    if (tA.marksmanship) note.push('Marksmanship: il -3 di Copertura non si applica.');
-                    else if (cs && cs.cadeMODTiro) note.push(`${cs.skill}: il -3 di Copertura non si applica.`);
+                    if (tA.marksmanship) { note.push('Marksmanship: il -3 di Copertura non si applica.'); nonApplica('copertura', -3, 'Copertura Parziale: Marksmanship'); }
+                    else if (cs && cs.cadeMODTiro) { note.push(`${cs.skill}: il -3 di Copertura non si applica.`); nonApplica('copertura', -3, `Copertura Parziale: il bersaglio ha ${cs.skill}`); }
                     else if (String(ctx.copertura || '').toUpperCase() === 'VITROFERRO') {
                         // Vitroferro (righe 10682-10684): chi ne reclama Copertura
                         // NON infligge il -3 all'attaccante.
                         note.push('Copertura da Deployable Cover (Vitroferro): nessun -3 all\'attaccante.');
+                        nonApplica('copertura', -3, 'Copertura da Deployable Cover (Vitroferro)');
                     }
                     else aggiungi('copertura', -3, 'Bersaglio in Copertura Parziale: -3');
                 }
@@ -5678,6 +5687,7 @@
                     aggiungi('albedo', alb, `Albedo del bersaglio: ${alb} a chi ha Multispectral Visor o Marksmanship`);
                 } else if (alb < 0) {
                     note.push(`Albedo (${alb}) del bersaglio: non si applica, l'attaccante non ha Multispectral Visor né Marksmanship.`);
+                    nonApplica('albedo', alb, 'Albedo: chi tira non ha Multispectral Visor né Marksmanship');
                 }
 
                 // Mimetismo, ridotto o annullato dai Multispectral Visor
@@ -5702,11 +5712,11 @@
                 if (nfbD && mimFox < 0 && mimProfilo === 0) note.push(nfbD.motivo);
                 if (mim < 0 && mimProfilo === 0) note.push('Mimetism (-3) dallo Stato Foxhole.');
                 if (mim < 0) {
-                    if (tA.msv2) note.push(`Multispectral Visor L2+: il Mimetismo (${mim}) non si applica.`);
+                    if (tA.msv2) { note.push(`Multispectral Visor L2+: il Mimetismo (${mim}) non si applica.`); nonApplica('mimetismo', mim, 'Mimetismo: annullato dal Multispectral Visor L2+'); }
                     else if (tA.msv1) {
                         const r = Math.min(0, mim + 3);
                         if (r < 0) aggiungi('mimetismo', r, `Mimetismo ${mim}, ridotto a ${r} dal Multispectral Visor L1`);
-                        else note.push(`Multispectral Visor L1 annulla il Mimetismo (${mim}).`);
+                        else { note.push(`Multispectral Visor L1 annulla il Mimetismo (${mim}).`); nonApplica('mimetismo', mim, 'Mimetismo: annullato dal Multispectral Visor L1'); }
                     } else aggiungi('mimetismo', mim, `Mimetismo del bersaglio: ${mim}`);
                 }
             }
@@ -5743,7 +5753,9 @@
                 (e.avvisi || []).forEach(function (a) { note.push(a); });
                 if (e.modB < 0) { burstMod += e.modB; note.push(`Zona di Saturazione: ${e.modB} al Burst.`); }
                 if (azione !== M.AZIONI.SPECULATIVO) {
-                    if (e.modBS) aggiungi('terreno', e.modBS, e.note || `Terreno ${terr}: ${e.modBS}`);
+                    // 30 ottobre (P25): la voce del tiro dice solo la parte del
+                    // tiro; la Saturazione va sotto il Burst (vociBurst).
+                    if (e.modBS) aggiungi('terreno', e.modBS, (String(e.note || '').replace(/Zona di Saturazione:[^.]*\.\s*/g, '').trim()) || `Terreno ${terr}: ${e.modBS}`);
                     if (e.lofBloccata) {
                         return { valore: null, lofBloccata: true, base: base, mod: mod, attributo: nomeAttr,
                                  voci, burstMod,
@@ -5772,9 +5784,10 @@
                     const iT = voci.findIndex(v => v.fonte === 'terreno');
                     const modT = iT >= 0 ? voci[iT].valore : 0;
                     if (zz.mod < modT) {
-                        if (iT >= 0) { mod -= voci[iT].valore; voci.splice(iT, 1); note.push('Terreno e zona sulla stessa LoF: si applica solo il pi\u00f9 restrittivo — la zona.'); }
+                        if (iT >= 0) { nonApplica('terreno', voci[iT].valore, String(voci[iT].motivo).split(':')[0] + ': sulla stessa LoF vale solo la zona, più restrittiva'); mod -= voci[iT].valore; voci.splice(iT, 1); note.push('Terreno e zona sulla stessa LoF: si applica solo il pi\u00f9 restrittivo — la zona.'); }
                         aggiungi('zona', zz.mod, zz.note[0]);
                     } else if (zz.mod) {
+                        nonApplica('zona', zz.mod, String(zz.note[0] || 'Zona').split(':')[0] + ': sulla stessa LoF vale solo il terreno, più restrittivo');
                         note.push('Terreno e zona sulla stessa LoF: si applica solo il pi\u00f9 restrittivo — il terreno (' + modT + ').');
                     } else zz.note.forEach(n => note.push(n));
                 }
@@ -5841,6 +5854,7 @@
                 aggiungi('soppressione', -3, `Bersaglio in Fuoco di Soppressione a ${d}": -3`);
             } else {
                 note.push(`Bersaglio in Fuoco di Soppressione ma a ${d}": oltre le 24", il -3 non si applica.`);
+                nonApplica('soppressione', -3, `Bersaglio in Fuoco di Soppressione: è a ${d}", oltre le 24"`);
             }
         }
         if (statoA.stordito || (attaccante && attaccante.states && attaccante.states.stunned)) {
@@ -5867,6 +5881,7 @@
 
         return { valore, base, mod, attributo: nomeAttr, impossibile,
                  critici: M.critici(valore), voci, note, avvisi, burstMod,
+                 nonApplicati: nonApplicati,
                  colpoAnnullato: colpoAnnullato || undefined };
     };
 
@@ -6317,7 +6332,7 @@
         // un MOD): e` un requisito che manca.
         const fuori = o.fuori ? 48 : 0;
         if (o.fuori) {
-            seg += `<div class="range-seg seg-fuori ${o.fuoriAttivo ? 'active' : ''}" style="flex:${bande.length ? '0 0 ' + fuori + 'px' : '1'}; background:${o.fuoriAttivo ? '#ffcc00' : '#332b00'}; color:${o.fuoriAttivo ? '#000' : '#ffcc00'}; font-size:12px;" onclick="${o.fuori}">FUORI</div>`;
+            seg += `<div class="range-seg seg-fuori ${o.fuoriAttivo ? 'active' : ''}" style="flex:${bande.length ? '0 0 ' + fuori + 'px' : '1'}; background:${o.fuoriAttivo ? '#ffcc00' : '#1f242d'}; color:${o.fuoriAttivo ? '#000' : '#ffcc00'}; font-size:12px;" onclick="${o.fuori}" title="Fuori gittata"></div>`;   // 30 ottobre (P19): senza scritta; si tocca lo stesso
         }
         const n = bande.length;
         const lab = M.confiniGittata(bande).map(function (c, i) {
@@ -6349,7 +6364,7 @@
             numeri += numero(fino);
         });
         if (da < S) {
-            barra += `<div class="cella-gittata cella-fuori" data-da="${da}" data-fino="${S}" style="flex:1 1 auto; background:#1f242d; color:#8a93a3; font-family:'Share Tech Mono',monospace; font-size:10px; line-height:22px; text-align:center; overflow:hidden; white-space:nowrap;">${(S - da) >= 16 ? 'FUORI' : ''}</div>`;
+            barra += `<div class="cella-gittata cella-fuori" data-da="${da}" data-fino="${S}" style="flex:1 1 auto; background:#1f242d; color:#8a93a3; font-family:'Share Tech Mono',monospace; font-size:10px; line-height:22px; text-align:center; overflow:hidden; white-space:nowrap;"></div>`;   // 30 ottobre (Paolo, collaudo grafico P19): niente scritta FUORI, solo il nero
         }
         return `<div class="barra-arma" style="display:flex; height:22px; border-radius:3px; overflow:hidden; border:1px solid rgba(0,0,0,.4);">${barra}</div>` +
             `<div class="confini-arma" style="position:relative; height:13px; margin-top:2px; color:#333; font-family:'Share Tech Mono',monospace; font-size:11px; line-height:13px;">${numeri}</div>`;
@@ -6419,7 +6434,7 @@
             stile: esaurito ? 'opacity:.5;' : o.stile,
             sopra: img ? `<img src="${img}" alt="" style="position:absolute; left:-4px; top:6px; width:86px; height:52px; object-fit:contain; filter:drop-shadow(0 4px 8px rgba(0,0,0,.9)); z-index:5;" onerror="${ripiego ? `if(this.dataset.r){this.style.display='none';}else{this.dataset.r=1;this.src='${ripiego}';}` : `this.style.display='none';`}">` : '',
             alta: `<div style="flex:1 1 auto; min-width:0; overflow-wrap:break-word; hyphens:manual; font-size:${M.misuraNomeArma(nome)}px; font-weight:700; color:#fff; text-transform:uppercase; line-height:.95; letter-spacing:1px;">${nome}</div>
-                <div style="flex:0 0 auto; display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; max-width:40%;">${tag}</div>`,
+                <div class="munizioni-arma" style="flex:0 0 auto; display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; max-width:40%; margin-right:12px;">${tag}</div>`,   // 30 ottobre (P19): staccate dal triangolino dell'angolo (un nome lungo puo` andare a capo)
             bassa: bassa
         });
     };
@@ -6643,6 +6658,73 @@
             .replace(/a`/g, 'à').replace(/e`/g, 'è').replace(/i`/g, 'ì').replace(/o`/g, 'ò').replace(/u`/g, 'ù')
             .replace(/A`/g, 'À').replace(/E`/g, 'È').replace(/I`/g, 'Ì').replace(/O`/g, 'Ò').replace(/U`/g, 'Ù');
     };
+    // ==================================================================
+    // 30 ottobre (Paolo, collaudo grafico P4 e P5): NIENTE FINESTRE DEL
+    // BROWSER. Avvisi e domande SÌ/NO si mostrano in un riquadro con la
+    // grafica dell'app (colori della fazione, caratteri Teko e Share Tech
+    // Mono), sopra la pagina, uno dopo l'altro.
+    //   M.mostraAvviso(testo, { titolo })              -> un tasto OK
+    //   M.chiediSiNo(testo, { titolo, si, no }, cb)    -> cb(true | false)
+    // Dove la pagina non c'e` (i banchi) o il browser e` stato sostituito da
+    // una prova (window.confirm non nativo), si usa quella, SUBITO: chi
+    // prova non deve aspettare un tocco che nessuno fara`.
+    // ==================================================================
+    const codaDialoghi = [];
+    let dialogoAperto = false;
+    M.eNativa = function (fn) {
+        try { return typeof fn === 'function' && /\[native code\]/.test(Function.prototype.toString.call(fn)); }
+        catch (e) { return false; }
+    };
+    function puoDisegnare() {
+        const D = G.document;
+        return !!(D && D.body && typeof D.createElement === 'function' && typeof D.body.appendChild === 'function');
+    }
+    function apriDialogo(d) {
+        const D = G.document;
+        dialogoAperto = true;
+        const sfondo = D.createElement('div');
+        sfondo.className = 'dialogo-app-sfondo';
+        sfondo.setAttribute('style', 'position:fixed; inset:0; z-index:100000; background:rgba(0,0,0,.78); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;');
+        const testo = M.accenti(String(d.testo == null ? '' : d.testo)).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+        const titolo = d.titolo ? `<div class="dialogo-app-titolo" style="font-family:'Teko',sans-serif; font-size:30px; font-weight:bold; text-transform:uppercase; color:var(--nomad-orange,#ff6600); text-align:center; line-height:1.05; margin-bottom:10px;">${M.accenti(d.titolo).replace(/</g, '&lt;')}</div>` : '';
+        const tasto = (cls, etichetta, colori) => `<button type="button" class="huge-btn ${cls}" style="flex:1 1 0; min-height:64px; margin:0; font-size:28px; ${colori}">${etichetta}</button>`;
+        const tasti = d.tipo === 'domanda'
+            ? tasto('dialogo-app-si', d.si || 'SÌ', 'background:#004400; border-color:#00ff00; color:#00ff00;') + tasto('dialogo-app-no', d.no || 'NO', 'background:#440000; border-color:#ff3333; color:#ff6666;')
+            : tasto('dialogo-app-ok', 'OK', 'background:#004400; border-color:#00ff00; color:#00ff00;');
+        sfondo.innerHTML = `<div class="dialogo-app" role="dialog" aria-modal="true" style="width:100%; max-width:520px; max-height:90vh; overflow:auto; background:var(--panel-bg,#1f1f1f); border:2px solid var(--nomad-red,#cc0000); border-radius:8px; padding:18px; box-shadow:0 0 24px rgba(0,0,0,.8); box-sizing:border-box;">
+            ${titolo}<div class="dialogo-app-testo" style="font-family:'Share Tech Mono',monospace; font-size:17px; line-height:1.4; color:#eee; white-space:pre-line; margin-bottom:16px;">${testo}</div>
+            <div style="display:flex; gap:10px;">${tasti}</div></div>`;
+        D.body.appendChild(sfondo);
+        const chiudi = function (risposta) {
+            if (sfondo.parentNode) sfondo.parentNode.removeChild(sfondo);
+            dialogoAperto = false;
+            try { if (typeof d.cb === 'function') d.cb(risposta); }
+            catch (e) { G.ultimaEccezione = e; if (G.console) console.error('\u26d4 Dopo il riquadro:', e); }
+            if (codaDialoghi.length) apriDialogo(codaDialoghi.shift());
+        };
+        const q = (c) => sfondo.querySelector('.' + c);
+        if (q('dialogo-app-ok')) q('dialogo-app-ok').onclick = () => chiudi(true);
+        if (q('dialogo-app-si')) q('dialogo-app-si').onclick = () => chiudi(true);
+        if (q('dialogo-app-no')) q('dialogo-app-no').onclick = () => chiudi(false);
+    }
+    function accoda(d) { if (dialogoAperto) codaDialoghi.push(d); else apriDialogo(d); }
+    M.dialogoAperto = function () { return dialogoAperto; };
+    M.mostraAvviso = function (testo, opz) {
+        opz = opz || {};
+        if (!puoDisegnare()) { if (typeof G.__alertNativo === 'function') G.__alertNativo(testo); return; }
+        accoda({ tipo: 'avviso', testo: testo, titolo: opz.titolo, cb: opz.poi });
+    };
+    M.chiediSiNo = function (testo, opz, cb) {
+        if (typeof opz === 'function') { cb = opz; opz = {}; }
+        opz = opz || {};
+        const c = G.confirm;
+        // Una prova (banco) ha sostituito il confirm: risponde lei, subito.
+        const sostituito = typeof c === 'function' && !(c.__conAccenti ? c.__nativo : M.eNativa(c));
+        if (sostituito || !puoDisegnare()) { const r = !!(typeof c === 'function' ? c(M.accenti((opz.titolo ? opz.titolo + '\n\n' : '') + testo)) : false); if (cb) cb(r); return r; }
+        accoda({ tipo: 'domanda', testo: testo, titolo: opz.titolo, si: opz.si, no: opz.no, cb: function (r) { if (cb) cb(!!r); } });
+        return undefined;
+    };
+
     M.nota = function (idStep, titolo, testo, extra) {
         extra = extra || {};
         const t = M.accenti(M.soloTesto(titolo)), x = M.accenti(M.soloTesto(testo));
@@ -7178,8 +7260,14 @@
         }
 
         let burstAtt = (attacco.burst != null) ? attacco.burst : ((arma && arma.burst) || 1);
+        // 30 ottobre (Paolo, collaudo grafico P25): da dove viene il numero dei
+        // dadi, per scriverlo sotto «Dadi da lanciare». base + voci (verdi o
+        // rosse) + nonApplicati (grigi, col perche`).
+        const dettBurstAtt = { base: burstAtt, baseMotivo: (attacco.burst != null && arma && arma.burst && attacco.burst !== arma.burst)
+                                   ? `B ${attacco.burst} su questo bersaglio (l'arma ha B ${arma.burst})` : `B ${burstAtt}`,
+                               voci: [], nonApplicati: [] };
         // Un Idle non tira: nessun dado, nessun Tiro Salvezza.
-        if (att.requisitoFallito) burstAtt = 0;
+        if (att.requisitoFallito) { dettBurstAtt.voci.push({ fonte: 'idle', valore: -burstAtt, motivo: 'Requisito non soddisfatto: Idle, nessun tiro' }); burstAtt = 0; }
         // Sagoma su una mischia con un alleato: il colpo e` annullato, quindi
         // niente dadi e niente Tiro Salvezza su QUESTO bersaglio.
         // Lo stesso colpo di Sagoma prende un altro bersaglio in mischia con
@@ -7188,11 +7276,18 @@
             att.colpoAnnullato = true;
             (att.note = att.note || []).push(`SAGOMA ANNULLATA: è lo stesso colpo che prende anche ${attacco.sagomaAnnullataDa}, in un Corpo a Corpo con un tuo alleato. Il colpo è annullato per TUTTI i bersagli sotto la Sagoma (righe 3584-3594). Gli ARO restano; un uso Disposable dichiarato si consuma lo stesso.`);
         }
-        if (att.colpoAnnullato) burstAtt = 0;
+        if (att.colpoAnnullato && burstAtt > 0) { dettBurstAtt.voci.push({ fonte: 'annullato', valore: -burstAtt, motivo: 'Colpo annullato' }); burstAtt = 0; }
+        else if (att.colpoAnnullato) burstAtt = 0;
         // 🔴 La Saturazione "cannot be reduced below 1" (wiki "Saturation").
         // Il pavimento era 0: un'arma a B1 attraverso la zona faceva 0 colpi.
         // burstMod ha oggi un solo contributore, la Saturazione.
-        if (att.burstMod && burstAtt > 0) burstAtt = Math.max(1, burstAtt + att.burstMod);
+        if (att.burstMod && burstAtt > 0) {
+            const dopo = Math.max(1, burstAtt + att.burstMod);
+            if (dopo !== burstAtt) dettBurstAtt.voci.push({ fonte: 'saturazione', valore: dopo - burstAtt, motivo: 'Zona di Saturazione' });
+            if (dopo - burstAtt !== att.burstMod) dettBurstAtt.nonApplicati.push({ fonte: 'saturazione', valore: att.burstMod - (dopo - burstAtt), perche: 'Zona di Saturazione: il Burst non scende sotto 1' });
+            burstAtt = dopo;
+        } else if (att.burstMod && burstAtt === 0) dettBurstAtt.nonApplicati.push({ fonte: 'saturazione', valore: att.burstMod, perche: 'Zona di Saturazione: non si tira' });
+        att.dettaglioBurst = dettBurstAtt;
 
         // --- 2. il tiro del reattivo ---
         let reaz = null;
@@ -7215,10 +7310,22 @@
             });
             reaz.avvisi.forEach(a => avvisi.push(a));
             burstDif = reaz.burst;
+            // 30 ottobre (P25): il dettaglio dei dadi anche per il reattivo. La
+            // base e le voci vengono da M.burstReattivo (vociBurst): la prima
+            // voce e` la base (B1 in ARO, o il Burst pieno).
+            const vb = Array.isArray(reaz.vociBurst) ? reaz.vociBurst : [];
+            const dettBurstDif = { base: vb.length ? vb[0].valore : burstDif, baseMotivo: vb.length ? vb[0].motivo : `B ${burstDif}`,
+                                   voci: vb.slice(1).filter(v => v && v.valore).map(v => ({ fonte: v.fonte, valore: v.valore, motivo: v.motivo })), nonApplicati: [] };
             // 🔴 La Saturazione vale per OGNI BS Attack da, verso o attraverso
             // la zona — anche quello del reattivo. modReazione calcolava gia` il
             // suo burstMod, e qui veniva buttato via. Mai sotto 1.
-            if (reaz.burstMod && burstDif > 0) burstDif = Math.max(1, burstDif + reaz.burstMod);
+            if (reaz.burstMod && burstDif > 0) {
+                const dopoD = Math.max(1, burstDif + reaz.burstMod);
+                if (dopoD !== burstDif) dettBurstDif.voci.push({ fonte: 'saturazione', valore: dopoD - burstDif, motivo: 'Zona di Saturazione' });
+                if (dopoD - burstDif !== reaz.burstMod) dettBurstDif.nonApplicati.push({ fonte: 'saturazione', valore: reaz.burstMod - (dopoD - burstDif), perche: 'Zona di Saturazione: il Burst non scende sotto 1' });
+                burstDif = dopoD;
+            }
+            reaz.dettaglioBurst = dettBurstDif;
             // 🔴 IL PROGRAMMA IN ARO CONTRO UN BERSAGLIO CHE NON PUO` COLPIRE.
             // Dal lato attivo la schermata filtra i bersagli con
             // M.bersagliValidi; in ARO il bersaglio e` l'attivo e nessuno lo
@@ -7260,7 +7367,10 @@
             }
             // ARO di Hacking via Repeater nemico contro chi non e` Hacker:
             // Requisito fallito, Idle (righe 4799-4802). Non tira.
-            if (reaz.requisitoFallito) burstDif = 0;
+            if (reaz.requisitoFallito) {
+                if (burstDif > 0 && reaz.dettaglioBurst) reaz.dettaglioBurst.voci.push({ fonte: 'idle', valore: -burstDif, motivo: 'Requisito non soddisfatto: Idle, nessun tiro' });
+                burstDif = 0;
+            }
         }
 
         // --- 3. il tipo di confronto ---
@@ -7381,13 +7491,19 @@
                 mod: att.automatico ? 'Auto' : att.valore,
                 automatico: !!att.automatico && azione !== M.AZIONI.SCOPRIRE,
                 successoAutomatico: !!att.automatico && azione === M.AZIONI.SCOPRIRE,
-                impossibile: !!att.impossibile,
+                // 31 ottobre (TEST, giro 26): un colpo automatico (Sagoma Diretta)
+                // ha valore null, e `null < 1` lo segnava impossibile: i dettagli
+                // dicevano «sotto 1: fallisce». Automatico non e` impossibile.
+                impossibile: (!!att.impossibile && !att.automatico) || !!att.requisitoFallito,
                 requisitoFallito: !!att.requisitoFallito,
                 colpoAnnullato: !!att.colpoAnnullato,
                 repeaterNemico: !!attacco.repeaterNemico,
                 lofBloccata: !!att.lofBloccata,
                 burst: (att.automatico && azione === M.AZIONI.SCOPRIRE) ? 0 : burstAtt,
                 voci: att.voci,
+                // 30 ottobre (P25): i MOD che non contano e il dettaglio dei dadi.
+                nonApplicati: att.nonApplicati || [],
+                dettaglioBurst: att.dettaglioBurst || null,
                 note: att.note,
                 // 🔴 Due cose diverse, e l'interfaccia mostrava la sbagliata.
                 // `salvezzaInflitta` e` quella che questa unita` INFLIGGE
@@ -7406,11 +7522,13 @@
                 // per l'attivo: mod 'Auto' e automatico, invece di null.
                 mod: (reaz.automatico && !reaz.requisitoFallito) ? 'Auto' : reaz.valore,
                 automatico: !!reaz.automatico && !reaz.requisitoFallito,
-                impossibile: !!reaz.impossibile || !!reaz.requisitoFallito,
+                impossibile: (!!reaz.impossibile && !reaz.automatico) || !!reaz.requisitoFallito,
                 requisitoFallito: !!reaz.requisitoFallito,
                 repeaterNemico: !!reazione.repeaterNemico,
                 burst: burstDif,
                 voci: reaz.voci,
+                nonApplicati: reaz.nonApplicati || [],
+                dettaglioBurst: reaz.dettaglioBurst || null,
                 note: reaz.note,
                 salvezzaInflitta: salvAttaccante,
                 salvezzaSubita: salvDifensore
@@ -7722,6 +7840,10 @@
             }
             const dichiarata = !!(r && (r.cover === true || r.coverAttaccante === true));
             scontro.coperturaNegata = { azione: copNeg.azione, riga: copNeg.riga, dichiarataEIgnorata: dichiarata };
+            // 30 ottobre (P25): la Copertura dichiarata e ignorata va fra i MOD
+            // che non contano, sotto il numero del reattivo.
+            if (dichiarata && scontro.reattivo) (scontro.reattivo.nonApplicati = scontro.reattivo.nonApplicati || [])
+                .push({ fonte: 'copertura', valore: -3, perche: 'Copertura Parziale: ' + String(copNeg.motivo || 'negata').replace(/\.$/, '') });
             scontro.note = (scontro.note || []).concat([
                 copNeg.motivo + (dichiarata ? ' La Copertura dichiarata nella reazione NON \u00e8 stata applicata.' : '')]);
         }
@@ -11624,7 +11746,16 @@
                     if (dentro.some(function (x) { return x.nome === p.nome; })) return;
                     const usi = M.usiResidui(unita, p);
                     if (usi && usi.residui <= 0) {
-                        escluse.push({ nome: p.nome, motivo: M.messaggioScarico(unita, p) });
+                        // 30 ottobre (Paolo, collaudo grafico P7): l'arma finita
+                        // resta un TASTO spento con «usi 0»; la spiegazione va
+                        // nella ⓘ. Resta in escluse (chi la legge gia` non cambia),
+                        // con in piu`: scarica, usi, e la spiegazione SENZA il nome
+                        // davanti (la pagina lo scriveva due volte).
+                        const msg = M.messaggioScarico(unita, p);
+                        const pre = p.nome + ': ';
+                        escluse.push({ nome: p.nome, motivo: msg, scarica: true, usi: usi,
+                                       spiegazione: msg.indexOf(pre) === 0 ? msg.slice(pre.length) : msg,
+                                       nomeRichiesto: p.nomeRichiesto || p.nome });
                         return;
                     }
                     dentro.push(Object.assign({}, p, { usi: usi }));
@@ -14514,13 +14645,20 @@
     // Gli stati di schieramento che nella propria app hanno un'etichetta e
     // un'icona ma non un numero: oggi il solo Hidden Deployment.
     //   -> { tipo, etichetta, immagine } | null
+    // 30 ottobre (Paolo, collaudo grafico P8): anche lo SCHIERAMENTO AEREO
+    // ('AD'; 'RESERVE' nelle liste salvate prima del 27 ottobre) ha la sua
+    // icona senza numero, come l'Hidden. Il ripiego (emoji) lo da` il catalogo.
     M.segnalinoSenzaNumero = function (unita, fazione) {
         if (!unita) return null;
-        const dep = String(unita.deployState || '').toUpperCase();
-        if (dep !== 'HIDDEN') return null;
-        const C = (((catalogo('SCHIERAMENTO') || {}).segnaliniSenzaNumero) || {}).HIDDEN || {};
-        const file = C.file || 'img/icon_hidden.png';
-        return { tipo: 'HIDDEN', etichetta: C.etichetta || 'HIDDEN',
+        let dep = String(unita.deployState || '').toUpperCase();
+        if (dep === 'RESERVE') dep = 'AD';
+        const T = ((catalogo('SCHIERAMENTO') || {}).segnaliniSenzaNumero) || {};
+        const predefiniti = { HIDDEN: { etichetta: 'HIDDEN', file: 'img/icon_hidden.png', emoji: '\ud83e\udee5' },
+                              AD: { etichetta: 'SCHIERAMENTO AEREO', file: 'img/icon_airborne.png', emoji: '\ud83e\ude82' } };
+        if (!predefiniti[dep]) return null;
+        const C = Object.assign({}, predefiniti[dep], T[dep] || {});
+        const file = C.file;
+        return { tipo: dep, etichetta: C.etichetta, emoji: C.emoji,
                  immagine: M.iconaDellaFazione ? M.iconaDellaFazione(file, fazione || (M.fazionePropria ? M.fazionePropria() : null)) : file,
                  immagineComune: file };
     };
@@ -14549,7 +14687,9 @@
         // va detto: «HIDDEN». Niente numero (non c'e` niente da distinguere al
         // tavolo); all'avversario non arriva comunque (invisibili).
         const H = M.segnalinoSenzaNumero(unita);
-        if (H) return H.etichetta;
+        // Solo l'Hidden: lo Schieramento Aereo (30 ottobre) ha l'icona, ma
+        // nessuna etichetta accanto al nome (Paolo, P8: niente scritta).
+        if (H && H.tipo === 'HIDDEN') return H.etichetta;
         const t = unita && unita.tipoNumeroMarker, n = unita && unita.numeroMarker;
         if (!t || !n || M.segnalinoMarker(unita) !== t) return null;
         const C = ((catalogo('SCHIERAMENTO') || {}).segnaliniNumerati || {})[t] || {};

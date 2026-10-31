@@ -1,4 +1,4 @@
-// @versione 2026-10-29.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-31.1 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -85,8 +85,50 @@ window.toggleTurn = () => {
     window.updateLog(`🔄 CAMBIO TURNO: Ora è il turno di ${window.gameState.activeFaction}`);
 };
 
+// 31 ottobre (Paolo, P5): niente finestre del browser anche all'Hub. Le
+// domande passano dal riquadro del motore (M.chiediSiNo), gli avvisi da
+// M.mostraAvviso. Nel browser la risposta arriva dopo, a `poi`; dove il
+// confirm e` stato sostituito (i banchi) arriva subito.
+window.chiediHub = (testo, opz, poi) => {
+    const M = window.MotoreN5;
+    if (!M || typeof M.chiediSiNo !== 'function') {
+        console.error('\u26d4 M.chiediSiNo assente (serve motore_regole_n5.js dalla 2026-10-30.1): domanda con la finestra del browser.');
+        const r = !!window.confirm(testo);
+        if (poi) poi(r);
+        return r;
+    }
+    return M.chiediSiNo(testo, opz || {}, poi);
+};
+// L'Hub non carica motore_core, che nelle app fa passare window.alert dal
+// riquadro del motore: qui lo stesso, cosi` anche gli avvisi degli altri
+// file dell'Hub sono riquadri. Se window.alert non e` quello del browser
+// (un banco l'ha sostituito) non si tocca.
+(function () {
+    const orig = window.alert;
+    let nativo = false;
+    try { nativo = typeof orig === 'function' && /\[native code\]/.test(Function.prototype.toString.call(orig)); } catch (e) { nativo = false; }
+    if (!nativo || orig.__riquadroHub) return;
+    window.__alertNativo = window.__alertNativo || orig.bind(window);
+    const viaRiquadro = function (testo) {
+        const M = window.MotoreN5;
+        if (M && typeof M.mostraAvviso === 'function' && document && document.body) return M.mostraAvviso(testo);
+        return orig.call(window, testo);
+    };
+    viaRiquadro.__riquadroHub = true;
+    window.alert = viaRiquadro;
+})();
+window.avvisoHub = (testo, opz) => {
+    const M = window.MotoreN5;
+    if (M && typeof M.mostraAvviso === 'function') return M.mostraAvviso(testo, opz || {});
+    console.error('\u26d4 M.mostraAvviso assente (serve motore_regole_n5.js dalla 2026-10-30.1): avviso con la finestra del browser.');
+    window.alert(testo);
+};
+
 window.resetPartita = () => {
-    if(confirm("⚠️ ATTENZIONE! Vuoi resettare l'intera partita? Tutti i dati sul server verranno distrutti e le app torneranno allo schieramento iniziale!")) {
+    window.chiediHub("Tutti i dati sul server verranno distrutti e le app torneranno allo schieramento iniziale.", { titolo: "Resettare l'intera partita?", si: 'RESETTA', no: 'ANNULLA' }, (ok) => { if (ok) window.resetPartitaConfermato(); });
+};
+window.resetPartitaConfermato = () => {
+    {
         const canaliCloud = [
             window.MotoreN5.CANALI.HUB_TURNO, window.MotoreN5.CANALI.HUB_SBLOCCO, window.MotoreN5.CANALI.SETUP_PANOCEANIA, 
             window.MotoreN5.CANALI.SETUP_NOMADI, window.MotoreN5.CANALI.ALLARME_ATTACCO, window.MotoreN5.CANALI.COMUNICAZIONE,
@@ -251,9 +293,26 @@ window.setupAccettabile = (fazione, quante, motivo) => {
     if (motivo === 'AGGIORNAMENTO') return true;
     const nome = (fazione === 'NOMADI') ? 'Nomads' : 'PanOceania';
     window.updateLog('\u26a0\ufe0f ' + nome + ' ha rimandato la lista (' + quante + ' unit\u00e0) mentre ne ha gi\u00e0 ' + inGioco + ' in gioco.');
-    return confirm(nome + ' ha rimandato la lista mentre la partita e` in corso.\n\n' +
-        'In gioco ora: ' + inGioco + ' unit\u00e0. In arrivo: ' + quante + '.\n\n' +
-        'Sostituire quella in gioco significa perdere ferite e stati di quella fazione.\n\nSostituisco?');
+    // 31 ottobre (P5): la domanda nel riquadro del motore. Nel browser la
+    // risposta arriva dopo: intanto la busta resta sul canale (null = in
+    // attesa), e al giro dopo si usa la risposta data.
+    window._rispostaSetup = window._rispostaSetup || {};
+    window._domandaSetup = window._domandaSetup || {};
+    if (window._rispostaSetup[fazione] !== undefined) {
+        const r = window._rispostaSetup[fazione];
+        delete window._rispostaSetup[fazione];
+        return r;
+    }
+    if (window._domandaSetup[fazione]) return null;
+    window._domandaSetup[fazione] = true;
+    let subito;
+    window.chiediHub('In gioco ora: ' + inGioco + ' unit\u00e0. In arrivo: ' + quante + '.\n\n' +
+        'Sostituire quella in gioco significa perdere ferite e stati di quella fazione.',
+        { titolo: nome + ' ha rimandato la lista: sostituisco?', si: 'SOSTITUISCI', no: 'TIENI QUELLA IN GIOCO' },
+        (ok) => { window._domandaSetup[fazione] = false; if (subito === undefined) subito = !!ok; else window._rispostaSetup[fazione] = !!ok; });
+    if (subito !== undefined) return subito;
+    subito = null;
+    return null;
 };
 
 // --- 2. LOOP DI ASCOLTO (IL VIGILE URBANO) ---
@@ -266,11 +325,14 @@ setInterval(() => {
     let sNom = localStorage.getItem(window.MotoreN5.CANALI.SETUP_NOMADI);
     if(sNom) {
         const datiNom = JSON.parse(sNom);
-        if (!window.setupAccettabile('NOMADI', (datiNom.roster || []).length, datiNom.motivo)) {
+        const accN = window.setupAccettabile('NOMADI', (datiNom.roster || []).length, datiNom.motivo);
+        if (accN === null) { /* domanda aperta: la busta resta sul canale */ }
+        else if (!accN) {
             localStorage.removeItem(window.MotoreN5.CANALI.SETUP_NOMADI);
             window.updateLog('\u21a9\ufe0f Lista dei Nomads ignorata: resta quella in gioco.');
             return;
         }
+        else {
         window.gameState.nomads = datiNom.roster;
         // Il pacchetto di schieramento porta da sempre anche strutture e
         // terreni: qui si leggeva solo .roster e il resto finiva nel nulla.
@@ -283,16 +345,20 @@ setInterval(() => {
         localStorage.removeItem(window.MotoreN5.CANALI.SETUP_NOMADI);
         window.updateLog("Nomads: Roster ricevuto.");
         window.refreshUI(); window.broadcastState();
+        }
     }
     // Ascolto Setup PanO
     let sPano = localStorage.getItem(window.MotoreN5.CANALI.SETUP_PANOCEANIA);
     if(sPano) {
         const datiPano = JSON.parse(sPano);
-        if (!window.setupAccettabile('PANOCEANIA', (datiPano.roster || []).length, datiPano.motivo)) {
+        const accP = window.setupAccettabile('PANOCEANIA', (datiPano.roster || []).length, datiPano.motivo);
+        if (accP === null) { /* domanda aperta: la busta resta sul canale */ }
+        else if (!accP) {
             localStorage.removeItem(window.MotoreN5.CANALI.SETUP_PANOCEANIA);
             window.updateLog('\u21a9\ufe0f Lista di PanOceania ignorata: resta quella in gioco.');
             return;
         }
+        else {
         window.gameState.panoceania = datiPano.roster;
         window.gameState.scenario.panoceania = {
             strutture: datiPano.strutture || [],
@@ -301,6 +367,7 @@ setInterval(() => {
         localStorage.removeItem(window.MotoreN5.CANALI.SETUP_PANOCEANIA);
         window.updateLog("PanOceania: Roster ricevuto.");
         window.refreshUI(); window.broadcastState();
+        }
     }
     // Allarme ARO
     let attacco = localStorage.getItem(window.MotoreN5.CANALI.COMUNICAZIONE);
@@ -628,6 +695,9 @@ window.tagStatiDi = (unit) => {
             // Modello imitato (mostraCome): l'etichetta HOLOMASK direbbe a
             // tutti, sullo schermo comune, che e` una maschera.
             if (stato.id === 'holomask' && unit && unit.mostraCome) return;
+            // 31 ottobre (Paolo, P12): di un MARKER si vede solo il segnalino
+            // numerato (la foto della scheda): niente etichetta CAMO / IMP.
+            if ((stato.id === 'camo' || stato.id === 'imp') && unit && String(unit.nome || unit.name || '') === 'MARKER') return;
             const v = window.STATI_TABELLONE[stato.id];
             const nome = stato.nome || (v && v.testo) || String(stato.id).toUpperCase();
             // Il segno Null si legge SOLO dal campo `nullo` dello stato. Non
@@ -884,11 +954,12 @@ window.haArmiUsaGetta = (u) => {
 window.inviaRicaricaForzata = (fazione, unitaId, nome) => {
     const M = window.MotoreN5;
     if (!M || typeof M.comandoRicarica !== 'function' || !M.CANALI || !M.CANALI.HUB_RICARICA) {
-        return alert('\u26d4 Ricarica forzata: serve motore_regole_n5.js dalla 2026-10-26.1.');
+        console.error('\u26d4 Ricarica forzata: serve motore_regole_n5.js dalla 2026-10-26.1.');
+        return window.avvisoHub('\u26d4 Ricarica forzata: serve motore_regole_n5.js dalla 2026-10-26.1.');
     }
     const chi = unitaId == null ? ('TUTTE le truppe ' + fazione) : (nome || 'questa truppa');
-    if (!window.confirm('\ud83d\udd04 Ricarica forzata degli usi limitati (armi Disposable) di ' + chi + '?\n\nL\'app ' + fazione + ' azzera gli usi spesi e lo dice al giocatore.')) return;
-    localStorage.setItem(M.CANALI.HUB_RICARICA, M.comandoRicarica(fazione, unitaId == null ? null : unitaId));
+    window.chiediHub('L\'app ' + fazione + ' azzera gli usi spesi e lo dice al giocatore.', { titolo: 'Ricarica forzata degli usi limitati di ' + chi + '?', si: 'RICARICA', no: 'ANNULLA' },
+        (ok) => { if (ok) localStorage.setItem(M.CANALI.HUB_RICARICA, M.comandoRicarica(fazione, unitaId == null ? null : unitaId)); });
 };
 
 window.schedaTruppa = (u, fazione) => {
@@ -896,7 +967,11 @@ window.schedaTruppa = (u, fazione) => {
     if (u && u.mostraCome) u = window.vistaMascherataHub(u);
     const colore = window.COLORE_FAZIONE[fazione] || '#ffffff';
     const nomePuro = String((u && (u.nome || u.name)) || '?').split('(')[0].trim();
-    const alias = (u && u.alias && u.alias !== nomePuro) ? ` <span class="st-alias">(${u.alias})</span>` : '';
+    // 31 ottobre (P11): il soprannome a capo, e solo se diverso dal nome del
+    // profilo (anche per maiuscole o con l'opzione fra parentesi).
+    const norm = (t) => String(t || '').trim().toUpperCase();
+    const aliasDiverso = !!(u && u.alias) && norm(u.alias) !== norm(nomePuro) && norm(u.alias) !== norm(u.nome || u.name);
+    const alias = aliasDiverso ? `<span class="st-alias">${u.alias}</span>` : '';
     let tags;
     try { tags = window.generateStateTags(u, fazione); }
     catch (errore) {
@@ -1032,11 +1107,11 @@ window.fairyDustHtml = (roster) => {
         const testo = String(f.testo || '').replace(/"/g, '&quot;');
         const scritta = `<span class="fd-testo">\ud83d\udcbb FD ${tipo}</span>`;
         const src = window.ICONE_FAIRY_DUST[tipo];
-        if (!src) return `<span class="fd-voce" title="${testo}" onclick="alert(this.title)">${scritta}</span>`;
+        if (!src) return `<span class="fd-voce" title="${testo}" onclick="window.avvisoHub(this.title)">${scritta}</span>`;
         // Le virgolette doppie della scritta dentro un onerror fra virgolette
         // doppie rompevano l'attributo: la scritta sta gia` accanto, nascosta,
         // e l'onerror la scopre.
-        return `<span class="fd-voce" data-tipo="${tipo}" title="${testo}" onclick="alert(this.title)"><img src="${src}" alt="FD ${tipo}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"><span class="fd-testo" style="display:none;">\ud83d\udcbb FD ${tipo}</span></span>`;
+        return `<span class="fd-voce" data-tipo="${tipo}" title="${testo}" onclick="window.avvisoHub(this.title)"><img src="${src}" alt="FD ${tipo}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"><span class="fd-testo" style="display:none;">\ud83d\udcbb FD ${tipo}</span></span>`;
     }).join('');
 };
 window.aggiornaFairyDust = (id, roster) => {
@@ -1074,6 +1149,89 @@ window.dadiPersiHtml = (busta) => {
         `<b style="color:#ff9900;">\ud83c\udfb2 DADI PERSI</b><br>` + righe.join('<br>') + `</div>`;
 };
 
+// ==========================================================================
+//  31 ottobre (Paolo, collaudo grafico P21-P25): IL TABELLONE NUOVO
+// ==========================================================================
+// Il D20 disegnato in pagina (SVG), del colore della FAZIONE di chi tira:
+// rosso per i Nomadi, azzurro per PanOceania, numeri bianchi (P22).
+window.COLORE_D20 = { NOMADI: '#cc1111', PANOCEANIA: '#0099dd' };
+window.d20Svg = (fazione, px) => {
+    const c = window.COLORE_D20[fazione] || '#777';
+    const d = px || 30;
+    return `<svg class="d20" data-fazione="${fazione || ''}" width="${d}" height="${d}" viewBox="0 0 100 100" aria-label="D20" style="vertical-align:middle; margin-left:6px;">` +
+        `<polygon points="50,3 93,27 93,73 50,97 7,73 7,27" fill="${c}" stroke="#fff" stroke-width="3"/>` +
+        `<polygon points="50,22 78,68 22,68" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="2.5"/>` +
+        `<line x1="50" y1="3" x2="50" y2="22" stroke="#fff" stroke-opacity=".5" stroke-width="2"/><line x1="93" y1="27" x2="78" y2="68" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>` +
+        `<line x1="7" y1="27" x2="22" y2="68" stroke="#fff" stroke-opacity=".5" stroke-width="2"/><line x1="50" y1="97" x2="22" y2="68" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>` +
+        `<line x1="50" y1="97" x2="78" y2="68" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>` +
+        `<text x="50" y="58" text-anchor="middle" font-family="Teko, sans-serif" font-weight="700" font-size="26" fill="#fff">20</text></svg>`;
+};
+// L'icona della fazione nell'angolo della cella, dal lato del giocatore (P21).
+window.ICONA_FAZIONE_HUB = { NOMADI: 'img/icona_nomadi.png', PANOCEANIA: 'img/icona_panoceania.png' };
+window.iconaFazioneCella = (fazione) => {
+    const f = window.ICONA_FAZIONE_HUB[fazione];
+    return f ? `<img class="icona-fazione-cella" src="${f}" alt="${fazione}" style="height:28px; width:auto; vertical-align:middle; margin:0 6px;" onerror="this.style.display='none'">` : '';
+};
+const numeroMod = (v) => (v > 0 ? '+' : '') + v;
+// I testi del motore portano l'accento come apice («e`»): a schermo la lettera vera.
+const accHub = (t) => { const M = window.MotoreN5; return (M && typeof M.accenti === 'function') ? M.accenti(t) : String(t == null ? '' : t); };
+// Le righe del dettaglio sotto un numero (P25): prima la base, poi le voci
+// (positive verdi, negative rosse), poi i MOD che NON contano, in grigio col
+// perche` in giallo. d: { attributo, base, baseMotivo, voci, nonApplicati }.
+window.dettaglioNumeroHub = (titolo, d) => {
+    if (!d) return '';
+    const base = (d.base != null) ? `<div class="det-base" style="color:#ddd;">${d.attributo ? d.attributo + ' ' : ''}${d.base}${d.baseMotivo ? ` <span style="color:#888;">(${d.baseMotivo})</span>` : ''}</div>` : '';
+    const voci = (d.voci || []).map(v => `<div class="det-voce" style="color:${v.valore >= 0 ? '#00dd00' : '#ff5555'};">${numeroMod(v.valore)} ${accHub(v.motivo || '')}</div>`).join('');
+    const no = (d.nonApplicati || []).map(v => `<div class="det-no" style="color:#888;">${v.valore != null ? numeroMod(v.valore) + ' ' : ''}${accHub(v.motivo || '')}${v.perche ? ` <span style="color:#ffcc00;">— ${accHub(v.perche)}</span>` : ''}</div>`).join('');
+    return `<div class="det-numero" style="margin:6px 0 8px;"><div style="color:#aaa; font-size:12px; letter-spacing:1px;">${titolo}</div>${base}${voci}${no}</div>`;
+};
+// Il Tiro Salvezza come la cella dell'Ordine (P24), da lato.tiroSalvezza.
+// Senza (calcolatore_math prima del 30 ottobre) resta l'HTML di prima.
+window.salvezzaHub = (lato) => {
+    const ts = lato && lato.tiroSalvezza;
+    if (!ts) return (lato && lato.salvezza) || '';
+    if (ts.nessuno) return `<span style="color:#888;">${ts.testo || 'Nessun danno'}</span>`;
+    let h = `<span style="color:#aaa; font-size:14px;">Munizioni:</span> <span style="color:#fff;">${ts.munizione || '-'}</span><br>`;
+    (ts.righe || []).forEach(r => {
+        const etichetta = ts.combinato ? ` (${r.attributo})` : '';
+        if (r.impossibile) h += `<span style="color:#ff5555; font-weight:bold;">Successo al${etichetta}: ${r.successo} — sotto 1: fallimento automatico</span><br>`;
+        else h += `<span style="color:#aaa; font-size:14px;">Successo al${etichetta}:</span> <span style="color:#00ff00; font-weight:bold; font-size:22px;">${r.successo}</span> <span style="color:#888; font-size:12px;">(o meno)</span><br>`;
+        h += `<span style="color:#aaa; font-size:14px;">Dadi da lanciare:</span> <span style="color:#ffcc00; font-weight:bold; font-size:22px;">${r.dadi}</span>${window.d20Svg(lato.fazione, 26)}<br>`;
+    });
+    (ts.esito || []).forEach(e => { h += `<div class="ts-esito" style="color:#ff5555; font-weight:bold; margin-top:4px;">${accHub(e)}</div>`; });
+    (ts.marker || []).forEach(m => { h += `<div class="ts-marker" style="margin-top:6px; padding:6px 8px; border:1px solid #ff9900; border-radius:5px; background:#221500; color:#ffbb55;">${accHub(m)}</div>`; });
+    return h;
+};
+// I dettagli di un lato (P25): sotto ogni numero da dove viene. Senza i dati
+// nuovi resta l'HTML di prima (dettagliMod).
+window.dettagliLatoHub = (lato) => {
+    if (!lato) return '-';
+    const d = lato.dettaglio, ts = lato.tiroSalvezza;
+    if (!d && !ts) return lato.dettagliMod || '-';
+    let h = '';
+    if (d && d.successo) h += window.dettaglioNumeroHub('SUCCESSO', d.successo);
+    if (d && d.dadi) h += window.dettaglioNumeroHub('DADI', d.dadi);
+    if (lato.sd > 0) h += `<div style="color:#ffcc00;">🎲 +${lato.sd} Dado Speciale: tira ${lato.sd} dado in più, poi scartane ${lato.sd}</div>`;
+    // Le note del tiro (quelle che prima stavano in dettagliMod, sotto le voci).
+    const e = lato.dati || {};
+    (e.note || []).forEach(n => { h += `<div style="color:#888; font-size:12px;">${accHub(n)}</div>`; });
+    if (e.automatico) h += `<div style="color:#ff9900;">🔥 Sagoma Diretta: colpo automatico</div>`;
+    if (e.lofBloccata) h += `<div style="color:#ff3333;">⚠️ Nessuna Linea di Tiro</div>`;
+    if (e.impossibile) h += `<div style="color:#ff3333;">⚠️ ${e.requisitoFallito ? 'Requisito non soddisfatto: Idle, nessun tiro' : 'Valore di Successo sotto 1: il tiro fallisce automaticamente'}</div>`;
+    if (e.critici && !e.critici.nessunTiro) h += `<div style="color:${e.critici.riesceSempre ? '#00ff00' : '#ffcc00'}; font-size:12px;">🎯 ${accHub(e.critici.testo)}</div>`;
+    if (ts && !ts.nessuno) {
+        (ts.righe || []).forEach(r => {
+            const et = ts.combinato ? ` (${r.attributo})` : '';
+            h += window.dettaglioNumeroHub('TIRO SALVEZZA — SUCCESSO' + et, r.dettaglioSuccesso);
+            h += window.dettaglioNumeroHub('TIRO SALVEZZA — DADI' + et, r.dettaglioDadi);
+            if (r.critico) h += `<div style="color:#ffcc00;">${r.critico}</div>`;
+        });
+        (ts.note || []).forEach(n => { h += `<div style="color:#aaa;">${accHub(n)}</div>`; });
+        if (ts.notaCritico) h += `<div style="color:#888; font-size:12px;">${accHub(ts.notaCritico)}</div>`;
+    }
+    return h || lato.dettagliMod || '-';
+};
+
 // `busta` e` facoltativa: chi la passa vede anche i dadi persi.
 window.mostraSchermataRisoluzione = (scontri, busta) => {
     // Tenuti da parte per ridisegnare quando si invertono i lati.
@@ -1083,6 +1241,8 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
     document.querySelector('.turn-controller').style.display = 'none';
     document.querySelector('.status-grid').style.display = 'none';
     document.querySelector('.log-container').style.display = 'none';
+    // 31 ottobre (P21): il riquadro TAVOLO non si vede durante la risoluzione.
+    { const tav = document.getElementById('pannello-tavolo'); if (tav && tav.style) tav.style.display = 'none'; }
     
     document.getElementById('step-resolution').style.display = 'block';
 
@@ -1115,11 +1275,11 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
         };
         const eSagoma = (lato) => !!(lato && lato.dati && lato.dati.automatico && !lato.dati.requisitoFallito && !lato.dati.colpoAnnullato);
         let dadiDifensoreHtml = eSagoma(scontro.reattivo) ? sagomaHtml(scontro.reattivo) : scontro.reattivo.burst > 0 
-            ? `<div style="margin-top:15px; font-size:18px; color:#fff;">Dadi da lanciare: <span style="color:#ffcc00; font-weight:bold; font-size:28px;">${scontro.reattivo.burst}</span></div>`
+            ? `<div style="margin-top:15px; font-size:18px; color:#fff;">Dadi da lanciare: <span style="color:#ffcc00; font-weight:bold; font-size:28px;">${scontro.reattivo.burst}</span>${window.d20Svg(scontro.reattivo.fazione, 34)}</div>`
             : `<div style="margin-top:15px; font-size:18px; color:#555;">Nessun dado</div>`;
 
         let dadiAttaccanteHtml = eSagoma(scontro.attivo) ? sagomaHtml(scontro.attivo) : scontro.attivo.burst > 0 
-            ? `<div style="margin-top:15px; font-size:18px; color:#fff;">Dadi da lanciare: <span style="color:#ffcc00; font-weight:bold; font-size:28px;">${scontro.attivo.burst}</span></div>`
+            ? `<div style="margin-top:15px; font-size:18px; color:#fff;">Dadi da lanciare: <span style="color:#ffcc00; font-weight:bold; font-size:28px;">${scontro.attivo.burst}</span>${window.d20Svg(scontro.attivo.fazione, 34)}</div>`
             : `<div style="margin-top:15px; font-size:18px; color:#555;">Nessun dado</div>`;
 
         // Un Valore di Successo sotto 1 e` un FALLIMENTO AUTOMATICO. Il motore
@@ -1217,8 +1377,16 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
             return id;
         };
         const allineaDalLatoDi = (fazione) => (window.latoDi(fazione) === 'DX') ? 'right' : 'left';
-        const testa = (lato, attivo) => ruolo(attivo, lato) +
-            `<b style="color:${colore(lato.fazione)}; font-size:22px;">${lato.fazione} ${lato.nome}</b><br>`;
+        // 31 ottobre (P21): niente «NOMADI»/«PANOCEANIA» davanti al nome;
+        // l'icona della fazione nell'angolo in alto della cella, dal lato del
+        // giocatore (a sinistra nella colonna di sinistra, a destra in quella
+        // di destra).
+        const testa = (lato, attivo) => {
+            const aDestra = window.latoDi(lato.fazione) === 'DX';
+            const ico = window.iconaFazioneCella(lato.fazione);
+            return (aDestra ? ruolo(attivo, lato).replace(/<br>$/, '') + ico + '<br>' : ico + ruolo(attivo, lato)) +
+                `<b style="color:${colore(lato.fazione)}; font-size:22px;">${lato.nome}</b><br>`;
+        };
         const cellaPiena = (lato, attivo, modHtml, dadiHtml) => ({ fazione: lato.fazione, html: testa(lato, attivo) +
             `<span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${nomeAzioneTab(lato.azione)}</span><br>
                         ${modHtml}
@@ -1252,8 +1420,8 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
                 riga(cellaPiena(scontro.attivo, true, modAttaccanteHtml, dadiAttaccanteHtml),
                      cellaPiena(scontro.reattivo, false, modDifensoreHtml, dadiDifensoreHtml),
                      'background:#000; border-radius:8px; overflow:hidden;', DUE) +
-                riga({ html: `<b style="color:#aaa;">🛡️ SE COLPITO DAL NEMICO:</b><br>${scontro.attivo.salvezza}` },
-                     { html: `<b style="color:#aaa;">🛡️ SE COLPITO DALL'ATTACCANTE:</b><br>${scontro.reattivo.salvezza}` },
+                riga({ html: `<b style="color:#aaa;">🛡️ TIRO SALVEZZA</b><br>${window.salvezzaHub(scontro.attivo)}` },
+                     { html: `<b style="color:#aaa;">🛡️ TIRO SALVEZZA</b><br>${window.salvezzaHub(scontro.reattivo)}` },
                      'margin-top:10px; background:#0a0a0a; border-radius:5px; padding:10px; font-size:14px; border: 1px solid #333;',
                      { sx: 'border-right:1px dashed #333; padding-right:10px;', dx: 'padding-left:10px;' });
         } else {
@@ -1262,8 +1430,8 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
                     <h4 style="color:#888; margin-top:0; text-align:center;">▶ RISOLUZIONE ${chiTira.fazione}</h4>
                     ${riga(celle[0], celle[1], 'background:#000; border-radius:8px; overflow:hidden; border:1px solid #333;', DUE)}
                     <div style="margin-top:10px; background:#0a0a0a; border-radius:5px; padding:10px; font-size:14px; border: 1px solid #333; text-align:${allineaDalLatoDi(colpito.fazione)};">
-                        <b style="color:#aaa;">🛡️ SE COLPITO DA ${chiTira.fazione}:</b><br>
-                        ${colpito.salvezza}
+                        <b style="color:#aaa;">🛡️ TIRO SALVEZZA</b><br>
+                        ${window.salvezzaHub(colpito)}
                     </div>
                 </div>`;
             htmlScontro =
@@ -1294,7 +1462,7 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
                     <button onclick="window.toggleDettagli('dettagli-${i}')" style="background:#222; border:1px dashed #555; color:#aaa; font-family:'Share Tech Mono'; padding:5px 15px; cursor:pointer; font-size:12px; border-radius:5px;">🔍 MOSTRA DETTAGLI CALCOLI</button>
                 </div>
                 <div id="dettagli-${i}" style="display:none; margin-top:10px; padding:10px; background:#0a0a0a; border:1px solid #333; border-radius:5px; font-size:14px;">
-                    ${riga({ html: scontro.attivo.dettagliMod || "-" }, { html: scontro.reattivo.dettagliMod || "-" }, '',
+                    ${riga({ html: window.dettagliLatoHub(scontro.attivo) }, { html: window.dettagliLatoHub(scontro.reattivo) }, '',
                            { sx: 'border-right:1px solid #333; padding-right:10px; color:#ddd;', dx: 'padding-left:10px; color:#ddd;' })}
                 </div>`;
         disegnati.push({ scontro, index, parti: { riga, cellaPiena, testa, DUE, isF2F, modAttaccanteHtml, dadiAttaccanteHtml,
@@ -1346,11 +1514,11 @@ window.riquadroTiroUnico = (membri) => {
             ? `<div class="tiro-diverso" style="margin-bottom:8px; color:#ffbb55; font-size:13px;">Per questo bersaglio:</div>${q.modAttaccanteHtml}` : '';
         const titolo = `<div style="color:${q.isF2F ? '#00ff00' : '#ffcc00'}; font-size:13px; letter-spacing:1px; margin-bottom:6px;">${eti} · ${s.titolo}</div>`;
         return `<div class="bersaglio-tiro-unico" data-ruolo="${eti}" style="margin-top:12px; border:1px solid #333; border-radius:8px; overflow:hidden;">` +
-            q.riga({ fazione: s.attivo.fazione, acceso: false, html: diverso + `<b style="color:#aaa; font-size:14px;">🛡️ SE COLPITO DA ${s.reattivo.nome}:</b><br>${s.attivo.salvezza}` },
+            q.riga({ fazione: s.attivo.fazione, acceso: false, html: diverso + `<b style="color:#aaa; font-size:14px;">🛡️ TIRO SALVEZZA</b><br>${window.salvezzaHub(s.attivo)}` },
                    { fazione: s.reattivo.fazione, html: titolo + q.testa(s.reattivo, false) +
                        `<span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${q.nomeAzioneTab(s.reattivo.azione)}</span><br>` +
                        q.modDifensoreHtml + q.dadiDifensoreHtml +
-                       `<div style="margin-top:10px; font-size:14px;"><b style="color:#aaa;">🛡️ SE COLPITO DALL'ATTACCANTE:</b><br>${s.reattivo.salvezza}</div>` },
+                       `<div style="margin-top:10px; font-size:14px;"><b style="color:#aaa;">🛡️ TIRO SALVEZZA</b><br>${window.salvezzaHub(s.reattivo)}</div>` },
                    'background:#000;', q.DUE) +
             `<div style="padding:0 15px 10px;">${(s.attaccanteNonRisolto || s.bersaglioNonRisolto || s.coperturaNegata) ? q.noteScontroHtml : riquadroNote((q.noteScontro || []).filter(n => comuni.indexOf(n) < 0))}${q.dettagli}</div></div>`;
     }).join('');
@@ -1372,6 +1540,7 @@ window.chiudiRisoluzione = () => {
     document.querySelector('.turn-controller').style.display = '';
     document.querySelector('.status-grid').style.display = 'grid'; 
     document.querySelector('.log-container').style.display = 'block';
+    { const tav = document.getElementById('pannello-tavolo'); if (tav && tav.style) tav.style.display = ''; }
 
     // 2. Svuota il tabellone degli scontri gia' risolti
     const clash = document.getElementById('clash-container');
@@ -1400,7 +1569,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-10-29.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-10-31.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

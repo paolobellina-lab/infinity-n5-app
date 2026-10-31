@@ -1,4 +1,4 @@
-// @versione 2026-10-28.5 | ordine_attacco_bs.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_attacco_bs.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎯 ATTACCO BS (TIRO A DISTANZA) - ordine_attacco_bs.js
 // ------------------------------------------
@@ -606,6 +606,7 @@
                 : arma.ammoOpzioni
                 .map(o => `<option value="${o}" ${o === tgt.ammo ? 'selected' : ''}>Munizioni: ${o}</option>`).join('');
 
+            const icona = (k) => (typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore(k, 44, true) : '';
             html += `
             <div class="target-card" style="border-left: 4px solid ${bordo}; margin-bottom: 20px; background: rgba(255,255,255,0.03); padding: 15px; overflow: hidden;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -622,8 +623,12 @@
                 </div>
                 ${rangeHtml}
                 <div style="display:flex; gap:10px; margin-top: 15px;">
-                    ${tgt.punto ? '' : `<button class="huge-btn" data-nota="copertura-${index}" style="flex:1; margin:0; min-height:55px; font-size:var(--fs-m); ${coverStyle}" onclick="window.toggleTargetCoverBS(${index})">${tgt.cover ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverSi') : ''}IN COPERTURA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverNo') : ''}NO COPERTURA`}</button>`}
-                    <button class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:var(--fs-m); ${tgt.lof === false ? STILE_NO : STILE_SI}" onclick="window.toggleLineaDiTiroBS(${index})">${tgt.lof === false ? 'LINEA DI TIRO NO' : 'LINEA DI TIRO SÌ'}</button>
+                    <!-- 30 ottobre (Paolo, collaudo grafico P20): come i modificatori
+                         dell'ARO (logica_aro, 27 ottobre sera): icona grande SOPRA la
+                         scritta, scritta centrata e più grande. La Linea di Tiro
+                         prima non aveva l'icona. -->
+                    ${tgt.punto ? '' : `<button class="huge-btn tasto-cover-bs" data-nota="copertura-${index}" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); flex-direction:column; justify-content:center; align-items:center; text-align:center; ${coverStyle}" onclick="window.toggleTargetCoverBS(${index})">${tgt.cover ? `${icona('coverSi')}IN COPERTURA` : `${icona('coverNo')}NO COPERTURA`}</button>`}
+                    <button class="huge-btn tasto-lof-bs" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); flex-direction:column; justify-content:center; align-items:center; text-align:center; ${tgt.lof === false ? STILE_NO : STILE_SI}" onclick="window.toggleLineaDiTiroBS(${index})">${tgt.lof === false ? `${icona('lofNo')}LINEA DI TIRO NO` : `${icona('lofSi')}LINEA DI TIRO SÌ`}</button>
                 </div>
                 ${multiSagome ? '' : window.htmlAlleatiInMischiaBS(tgt, index)}
                 ${(tgt.cover && typeof window.sceltaCopertura === 'function')
@@ -639,7 +644,10 @@
                      come nei modificatori dell'ARO (G06), con la stessa tendina
                      (classe tendina-munizioni di logica_aro). -->
                 <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
-                    <select class="huge-btn tendina-munizioni" style="flex:1 1 100%; width:100%; min-width:0; margin:0; min-height:55px; font-size:var(--fs-m); background:#002233; color:var(--mn-testo,#ffffff); border-color:${bordo}; text-align:center; padding:0 10px;" onchange="window.setTargetAmmoBS(${index}, this.value)">
+                    <!-- 30 ottobre (P20): senza la classe huge-btn, che teneva la scritta
+                         in alto a sinistra; centrata in altezza e larghezza, più grande,
+                         come la tendina dei modificatori dell'ARO. -->
+                    <select class="tendina-munizioni" style="display:block; width:100%; min-width:0; margin:0; height:60px; font-family:'Teko', sans-serif; font-size:var(--fs-titolo-2); font-weight:bold; text-transform:uppercase; background:#002233; color:var(--mn-testo,#ffffff); border:2px solid ${bordo}; border-radius:5px; text-align:center; text-align-last:center; padding:0 10px;" onchange="window.setTargetAmmoBS(${index}, this.value)">
                         ${ammoHtml}
                     </select>
                     <div class="bs-terreno" style="min-width:0;">${window.tendinaTerrenoBS(tgt, index)}</div>
@@ -976,12 +984,18 @@
             window._dropBearInSospeso = { lanci: lanciBS.map(p => ({ unita: p.attaccante, arma: p.arma })), ordineId: ordineIdBS,
                                           nomeArma: String(lanciBS[0].arma.nome).replace(/ \(BS Mode\)/i, '') };
             const sosp = window._dropBearInSospeso;
-            const si = window.confirm('🎯 ' + sosp.nomeArma + ': tira al tavolo.\n\nIl tiro è RIUSCITO?\n\nOK = sì, piazza il segnalino dove è caduto.\nAnnulla = no, fallito (l\'uso è comunque speso).');
-            const esito = window.esitoDropBearBS(!!si);
-            if (typeof window.alert === 'function') {
-                window.alert(si ? ('✅ ' + sosp.nomeArma + ': segnalino piazzato' + (esito && esito.piazzati ? '' : ' (nessun segnalino creato: controlla il roster)') + '.')
-                                : ('❌ ' + sosp.nomeArma + ': tiro fallito, nessun segnalino. L\'uso è comunque speso.'));
-            }
+            // 30 ottobre (P5): la domanda nel riquadro dell'app (M.chiediSiNo), non nella
+            // finestra del browser. Con una prova al posto del confirm risponde lei, subito.
+            const dopoDropBear = function (si) {
+                const esito = window.esitoDropBearBS(!!si);
+                if (typeof window.alert === 'function') {
+                    window.alert(si ? ('✅ ' + sosp.nomeArma + ': segnalino piazzato' + (esito && esito.piazzati ? '' : ' (nessun segnalino creato: controlla il roster)') + '.')
+                                    : ('❌ ' + sosp.nomeArma + ': tiro fallito, nessun segnalino. L\'uso è comunque speso.'));
+                }
+            };
+            const domandaDB = 'Tira al tavolo.\n\nIl tiro è RIUSCITO?\n\nSÌ = piazza il segnalino dove è caduto.\nNO = fallito (l\'uso è comunque speso).';
+            if (typeof M.chiediSiNo === 'function') M.chiediSiNo(domandaDB, { titolo: '🎯 ' + sosp.nomeArma }, dopoDropBear);
+            else dopoDropBear(window.confirm('🎯 ' + sosp.nomeArma + ': ' + domandaDB));
         }
 
         const calcDiv = document.getElementById('calc-result');
@@ -1004,7 +1018,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-28.5', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
