@@ -1,4 +1,4 @@
-// @versione 2026-10-28.4 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
 // ==========================================
 // 🚀 ATTACCO GUIDATO (N5) - ordine_attacco_guidato.js
 // ------------------------------------------
@@ -97,7 +97,7 @@
         const container = document.getElementById('weapon-buttons-container');
         window.MotoreN5.azzeraNote('step-weapon');
 
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `ATTACCO GUIDATO`, nota: `BS ${unita.bs || '?'} · solo Turno Attivo · non richiede LoF` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-weapon', colore: COL, titolo: `ATTACCO GUIDATO`, nota: `BS ${unita.bs || '?'} · solo Turno Attivo · non richiede LoF` })}`;
 
         // La Skill è un requisito: se manca, si dice e non si va avanti.
         if (esito.avvisi.length > 0) {
@@ -207,7 +207,7 @@
         if (!ammessiPrim.length) primari.filter(g => !g.ammesso).forEach(g => M.nota('step-wait-aro', g.nome + ' non bersagliabile', g.motivo, { tipo: 'nonpuo' }));
 
         container.innerHTML = `
-            ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `BERSAGLI DELL'ATTACCO GUIDATO`, nota: `Il primo che tocchi è il <b>Primario</b>: dev'essere Bersagliato, su di lui si centra la Sagoma e fa il Faccia a Faccia. Gli altri che tocchi sono presi dalla Sagoma e fanno solo il proprio Tiro Salvezza.` })}
+            ${window.MotoreN5.intestazioneOrdine({ step: 'step-wait-aro', colore: COL, titolo: `BERSAGLI DELL'ATTACCO GUIDATO`, nota: `Il primo che tocchi è il <b>Primario</b>: dev'essere Bersagliato, su di lui si centra la Sagoma e fa il Faccia a Faccia. Gli altri che tocchi sono presi dalla Sagoma e fanno solo il proprio Tiro Salvezza.` })}
             ${motiviNo}${righe || '<p style="color:var(--mn-spento,#888888); text-align:center;">Nessun nemico coinvolgibile.</p>'}`;
 
         window.goToStep('step-wait-aro');
@@ -390,7 +390,7 @@
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
             // Il tasto diventa IDLE se il requisito manca (M.tastoConRequisiti).
-            M.tastoConRequisiti(nuovo, M.requisitiDichiarati([window.combatTargets[0]], ['gittata']), 'LANCIA MISSILI', function () { window.eseguiCalcoloGuidato(); });
+            M.tastoConRequisiti(nuovo, M.requisitiDichiarati([window.combatTargets[0]], ['gittata']), 'ESEGUI CALCOLO', function () { window.eseguiCalcoloGuidato(); });
         }
     };
 
@@ -486,7 +486,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

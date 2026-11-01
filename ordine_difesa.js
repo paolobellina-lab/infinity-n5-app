@@ -1,4 +1,4 @@
-// @versione 2026-10-28.4 | ordine_difesa.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_difesa.js | proprieta`: chat MOTORE
 // ==========================================
 // 🛡️ DIFESA: SCHIVATA, RESET E SOPPRESSIONE - ordine_difesa.js
 // ------------------------------------------
@@ -99,24 +99,18 @@
 
             u.difesaEsito = esito;
 
-            const colore = schivata ? 'var(--mn-si,#00ff00)' : COL.bordo;
-            const icona = schivata ? '🏃' : '🧠';
-
-            const dettaglio = esito.voci.length
-                ? esito.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                        <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
-                        <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b></div>`).join('')
-                : `<div style="color:var(--mn-spento,#888888); text-align:center;">Nessun modificatore</div>`;
+            // 31 ottobre (Paolo, collaudo grafico): la scheda dell'Attacco BS
+            // (M.schedaBS), senza l'omino e il cervello. Valore e MOD nella ⓘ.
+            const chi = u.alias || u.nome;
+            M.notaValore('step-modifiers', window.coordUnits.length > 1 ? chi : '', esito);
+            if (esito.impossibile) M.nota('step-modifiers', (window.coordUnits.length > 1 ? chi + ': ' : '') + 'Fallimento automatico', 'Valore ' + esito.valore + ' sotto 1: il tiro fallisce automaticamente.', { tipo: 'mod' });
 
             let opzioni = '';
             if (schivata) {
                 // Il -3 di LoF vale solo sulla Schivata: sul Reset non si mostra.
-                const stileLoF = u.difesaOpts.hasLoF
-                    ? 'background:var(--mn-si-fondo,#004400); color:var(--mn-si,#00ff00); border-color:var(--mn-si,#00ff00);'
-                    : 'background:var(--mn-errore-fondo,#330000); color:var(--mn-errore,#ff3333); border-color:var(--mn-errore,#ff3333);';
-                opzioni += `<button type="button" class="huge-btn" style="width:100%; margin-top:10px; min-height:50px; font-size:var(--fs-m); ${stileLoF}"
-                    onclick="window.toggleDifesaLoF(${index}, '${actionId}')">
-                    ${u.difesaOpts.hasLoF ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofSi') : '👁️ '}HO LINEA DI TIRO VERSO CHI ATTACCA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofNo') : '🚫 '}NESSUNA LINEA DI TIRO (-3 PH)`}</button>`;
+                const ic = (k) => (typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore(k, 44, true) : '';
+                opzioni = `<div style="display:flex; gap:10px;"><button type="button" class="huge-btn tasto-lof-difesa" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); flex-direction:column; justify-content:center; align-items:center; text-align:center; ${M.stileColore(u.difesaOpts.hasLoF ? 'si' : 'attenzione')}"
+                    onclick="window.toggleDifesaLoF(${index}, '${actionId}')">${u.difesaOpts.hasLoF ? ic('lofSi') + 'HO LINEA DI TIRO VERSO CHI ATTACCA' : ic('lofNo') + 'NESSUNA LINEA DI TIRO (-3 PH)'}</button></div>`;
 
                 // 26 ottobre (Paolo): il tasto "STO SCHIVANDO UNA SAGOMA" non
                 // serve piu`. All'Hub la Schivata si ricalcola contro l'ARO
@@ -125,24 +119,7 @@
                 // spenti, per le buste vecchie.
             }
 
-            html += `
-            <div class="target-card" style="border-left:4px solid ${colore}; margin-bottom:15px; background:rgba(0,255,255,0.05); padding:15px; border-radius:5px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <b style="color:var(--mn-testo,#ffffff); font-size:var(--fs-l);">${icona} ${u.alias || u.nome}</b>
-                    <div style="text-align:right;">
-                        <span style="color:var(--mn-spento,#888888); font-size:var(--fs-s);">${esito.attributo} ${esito.base} →</span>
-                        ${esito.impossibile
-                            // 🔴 Dopo aver tolto i clamp a 1, Schivata e Reset possono
-                            // scendere sotto 1: e` un FALLIMENTO AUTOMATICO, non un
-                            // numero da tirare. Qui si mostrava "-2". Stesso testo di
-                            // scoprire, osservazione e scenografia. (Chat REGOLE, 21 sett.)
-                            ? '<b style="color:var(--mn-errore,#ff3333); font-size:var(--fs-m);"> FALLIMENTO AUTOMATICO</b><br><span style="color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-xs);">Valore ' + esito.valore + ' sotto 1: il tiro fallisce automaticamente</span>'
-                            : '<b style="color:' + colore + '; font-size:var(--fs-l);"> ' + esito.valore + '</b>'}
-                    </div>
-                </div>
-                <div style="background:var(--mn-ordine-riquadro,#001a1a); border:1px solid var(--mn-ordine-tenue,#005555); padding:10px; border-radius:5px; font-size:var(--fs-s);">${dettaglio}</div>
-                ${opzioni}
-            </div>`;
+            html += M.schedaBS.apri() + M.schedaBS.testa(chi) + opzioni + `</div>`;
             // 28 ottobre (Paolo): le note della Schivata o del Reset nella ⓘ.
             esito.note.forEach(n => M.nota('step-modifiers', (u.alias || u.nome) + ': ' + (schivata ? 'Schivata' : 'Reset'), n, { tipo: 'regole' }));
         });
@@ -159,7 +136,7 @@
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
             nuovo.onclick = function () { window.eseguiCalcoloDifesa(); };
-            nuovo.innerText = 'ESEGUI TIRO FACCIA A FACCIA';
+            nuovo.innerText = 'ESEGUI CALCOLO';   // 31 ottobre (Paolo): un'etichetta sola per tutti gli Ordini
         }
 
         window.goToStep('step-modifiers');
@@ -228,19 +205,23 @@
         const container = document.getElementById('weapon-buttons-container');
 
         window.MotoreN5.azzeraNote('step-weapon');
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `FUOCO DI SOPPRESSIONE`, nota: `Ordine Intero · scegli l'arma da mettere in SF Mode` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-weapon', colore: COL, titolo: `FUOCO DI SOPPRESSIONE`, nota: `Ordine Intero · scegli l'arma da mettere in SF Mode` })}`;
 
         if (esito.armi.length === 0) {
             container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-size:var(--fs-m);">
                 ❌ Nessuna arma utilizzabile per il Fuoco di Soppressione.</p>`;
         } else {
+            // 31 ottobre (Paolo): il bottone dell'arma dell'Attacco BS
+            // (M.bottoneArma), col profilo SF Mode (Burst e gittate SF).
+            M.nota('step-weapon', 'SF Mode', 'Il profilo SF Mode sostituisce gittate e Burst; PS e munizioni restano quelli dell\'arma.', { tipo: 'regole' });
             esito.armi.forEach(function (p) {
-                const sf = M.profiloSF(p);
-                const gittata = sf.bands.map(b => `${b.mod > 0 ? '+' : ''}${b.mod}`).join(' / ');
                 const nomeEsc = p.nome.replace(/'/g, "\\'");
-                container.innerHTML += `<button class="huge-btn" style="border-color:${COL.bordo};" onclick="window.confermaSoppressione('${nomeEsc}')">
-                    ${p.nome}<br><span style="color:${COL.bordo}; font-size:var(--fs-s);">SF Mode: B${sf.burst} · ${gittata} · PS e munizioni invariati</span>
-                </button>`;
+                const tocco = `onclick="window.confermaSoppressione('${nomeEsc}')"`;
+                if (typeof M.bottoneArma !== 'function') {
+                    container.innerHTML += `<button class="huge-btn" style="border-color:${COL.bordo};" ${tocco}>${p.nome}</button>`;
+                    return;
+                }
+                container.innerHTML += M.bottoneArma(Object.assign({}, p, M.profiloSF(p)), { attributi: tocco });
             });
         }
 
@@ -335,7 +316,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_difesa.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_difesa.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.2 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
 // ==========================================
 // ☄️ FUOCO SPECULATIVO (N5) - ordine_fuoco_speculativo.js
 // ------------------------------------------
@@ -87,7 +87,7 @@
         const container = document.getElementById('weapon-buttons-container');
 
         window.MotoreN5.azzeraNote('step-weapon');
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `FUOCO SPECULATIVO`, nota: `Ordine Intero · Non richiede LoF · -6 fisso · Burst 1` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-weapon', colore: COL, titolo: `FUOCO SPECULATIVO`, nota: `Ordine Intero · Non richiede LoF · -6 fisso · Burst 1` })}`;
 
         const esito = M.armiSpeculative(unita);
 
@@ -199,7 +199,7 @@
         const G = giudiziSpeculativo(M);
         window.pendingTargets = window.pendingTargets || [];
         const scelti = window.pendingTargets.map(function (t) { return String(t.id); });
-        let html = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `BERSAGLI DEL FUOCO SPECULATIVO`, nota: `${G.sagoma ? 'Il primo che tocchi è il <b>Bersaglio Principale</b>. Poi tocca chi altro sta sotto la Sagoma: un Marker è ammesso, ma non come Principale.' : 'Un solo bersaglio: quest\'arma non ha una Sagoma Circolare.'}` })}`;
+        let html = `${window.MotoreN5.intestazioneOrdine({ step: 'step-wait-aro', colore: COL, titolo: `BERSAGLI DEL FUOCO SPECULATIVO`, nota: `${G.sagoma ? 'Il primo che tocchi è il <b>Bersaglio Principale</b>. Poi tocca chi altro sta sotto la Sagoma: un Marker è ammesso, ma non come Principale.' : 'Un solo bersaglio: quest\'arma non ha una Sagoma Circolare.'}` })}`;
         // Il PUNTO del tavolo, per le armi Targetless.
         if (G.targetless) {
             const preso = scelti.indexOf('punto') === 0;
@@ -405,7 +405,7 @@
             M.tastoConRequisiti(nuovo, M.requisitiDichiarati([tgt], ['gittata']),
                 (domDB && domDB.esito === 'NON_RISPOSTO') ? 'RISPONDI ALLE DOMANDE'
                     : (domDB && domDB.esito === 'BLOCCATA') ? 'PUNTO NON AMMESSO'
-                    : 'LANCIA ATTACCO SPECULATIVO',
+                    : 'ESEGUI CALCOLO',
                 function () { window.eseguiCalcoloSpeculativo(); });
         }
     };
@@ -689,7 +689,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-31.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

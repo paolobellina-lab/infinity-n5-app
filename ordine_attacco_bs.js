@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_attacco_bs.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.2 | ordine_attacco_bs.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎯 ATTACCO BS (TIRO A DISTANZA) - ordine_attacco_bs.js
 // ------------------------------------------
@@ -128,7 +128,7 @@
         const container = document.getElementById('weapon-buttons-container');
 
         window.MotoreN5.azzeraNote('step-weapon');
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `ATTACCO BS`, nota: `Seleziona l'arma a distanza da utilizzare` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-weapon', colore: COL, titolo: `ATTACCO BS`, nota: `Seleziona l'arma a distanza da utilizzare` })}`;
 
         // Ogni voce del profilo può espandersi in più modalità (MULTI, Plasma,
         // Missile...). Le varianti le trova il motore leggendo il database,
@@ -1018,7 +1018,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_bs.js', versione: '2026-10-31.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

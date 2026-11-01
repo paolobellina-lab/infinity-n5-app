@@ -1,4 +1,4 @@
-// @versione 2026-10-28.4 | ordine_scoprire.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_scoprire.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔍 SCOPRIRE (N5) - ordine_scoprire.js
 // ------------------------------------------
@@ -97,7 +97,7 @@
         window.MotoreN5.azzeraNote('step-wait-aro');
         if (!container) return;
 
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `SCOPRIRE`, nota: `Solo i Marker si possono Scoprire. Serve la Linea di Tiro.` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-wait-aro', colore: COL, titolo: `SCOPRIRE`, nota: `Solo i Marker si possono Scoprire. Serve la Linea di Tiro.` })}`;
 
         if (window.validTargets.length === 0) {
             container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-weight:bold;">Nessun Marker nemico sul tavolo.</p>`;
@@ -112,7 +112,7 @@
                 // c'e` (i banchi) resta il bottone semplice.
                 const clic = `onclick="window.scegliBersaglioScoprire('${String(u.id).replace(/'/g, "\\'")}')"`;
                 container.innerHTML += (typeof window.rigaUnitaConFoto === 'function')
-                    ? window.rigaUnitaConFoto(u, { attributi: clic, fazione: 'NEMICA', sotto: `<span style="font-size:var(--fs-s); color:${COL.bordo};">${tipo}</span>` })
+                    ? window.rigaUnitaConFoto(u, { attributi: clic, fazione: 'NEMICA' })   // 31 ottobre (Paolo): niente «Marker Mimetico» sotto
                     : `<button class="huge-btn" style="width:100%; min-height:60px; font-size:var(--fs-l); margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:${COL.bordo};" ${clic}>
                     🔍 ${nome}<br><span style="font-size:var(--fs-s); color:${COL.bordo};">${tipo}</span></button>`;
             });
@@ -202,8 +202,9 @@
         // barra c'e` anche col successo automatico, perche` il FUORI si
         // dichiara li`. 28 ottobre: la barra e` del motore (M.barraGittata),
         // coi numeri sui confini.
-        const barraGittata = `<div style="text-align:center; color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); margin-bottom:5px;">Gittata (Scoprire ha bande proprie):</div>
-                ${M.barraGittata(arma.bands, { indice: t.rangeIndex, tocco: (i) => `window.setRangeScoprire(${i})`,
+        // 31 ottobre (Paolo): come la barra dell'Attacco BS, senza la scritta sopra.
+        if (!superato.superato) M.nota('step-modifiers', 'Gittata dello Scoprire', 'Lo Scoprire ha bande di gittata proprie, diverse da quelle delle armi.', { tipo: 'regole' });
+        const barraGittata = `${M.barraGittata(arma.bands, { indice: t.rangeIndex, tocco: (i) => `window.setRangeScoprire(${i})`,
                     fuori: 'window.toggleFuoriGittataScoprire()', fuoriAttivo: !!t.fuoriGittata, stile: '' })}`;
 
         let corpo;
@@ -218,34 +219,19 @@
                 <div style="margin-top:12px;">${barraGittata}</div>`;
         } else {
 
-            const dettaglio = e.voci.length
-                ? e.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                        <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
-                        <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b></div>`).join('')
-                : `<div style="color:var(--mn-spento,#888888); text-align:center;">Nessun modificatore</div>`;
-
-            const stileCop = t.cover ? 'background:var(--nomad-orange); color:var(--mn-scuro,#000000);' : 'background:var(--mn-fondo-tasto,#111111); color:var(--mn-testo,#ffffff);';
-
-            corpo = `
-                <div style="background:var(--mn-si-fondo,#004400); border:1px solid var(--mn-si-bordo,#005500); padding:12px; border-radius:5px; margin-bottom:12px;">
-                    <div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:8px;">
-                        WIP ${e.base} → <b style="color:${COL.bordo}; font-size:var(--fs-l);">${e.valore}</b>
-                        ${e.impossibile ? '<br><span style="color:var(--mn-errore,#ff3333); font-size:var(--fs-s);">Valore sotto 1: il tiro fallisce automaticamente</span>' : ''}
-                    </div>
-                    <div style="border-top:1px solid var(--mn-si-fondo,#004400); padding-top:8px; font-size:var(--fs-s);">${dettaglio}</div>
-                    ${e.critici && !e.critici.nessunTiro ? `<div style="text-align:center; color:var(--mn-attenzione,#ffcc00); font-size:var(--fs-xs); margin-top:6px;">🎯 ${e.critici.testo}</div>` : ''}
-                </div>
-                ${barraGittata}
-                <button class="huge-btn" style="width:100%; margin-top:12px; min-height:55px; font-size:var(--fs-m); ${stileCop}"
-                    onclick="window.toggleCoverScoprire()">${t.cover ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverSi') : ''}BERSAGLIO IN COPERTURA` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('coverNo') : ''}BERSAGLIO ALLO SCOPERTO`}</button>`;
+            // 31 ottobre (Paolo): il valore WIP, i MOD e il Critico nella ⓘ;
+            // la scheda come quella dell'Attacco BS.
+            M.notaValore('step-modifiers', '', Object.assign({ attributo: 'WIP' }, e));
+            if (e.impossibile) M.nota('step-modifiers', 'Valore sotto 1', 'Il tiro fallisce automaticamente.', { tipo: 'mod' });
+            corpo = barraGittata;
         }
 
         document.getElementById('targets-allocation-container').innerHTML = `
             ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `SCOPRIRE` })}
-            <div class="target-card" style="border-left:4px solid ${COL.bordo}; background:rgba(0,255,0,0.04); padding:15px; border-radius:5px;">
-                <b style="color:var(--mn-testo,#ffffff); font-size:var(--fs-l); display:block; margin-bottom:12px;">🔍 ${superato.superato ? (M.nomeUnita(difTrovato) || t.name) : t.name}</b>
+            ${M.schedaBS.apri()}${M.schedaBS.testa(superato.superato ? (M.nomeUnita(difTrovato) || t.name) : t.name)}
                 ${corpo}
-                ${superato.superato ? '' : M.rigaRequisiti(['lof'], t, 0, 'window.toggleRequisitoScoprire')}
+                ${superato.superato ? '' : M.rigaRequisiti(['lof'], t, 0, 'window.toggleRequisitoScoprire',
+                    e.automatico ? '' : M.schedaBS.tastoCopertura(t.cover, 'window.toggleCoverScoprire()', { si: 'IN COPERTURA', no: 'NO COPERTURA' }))}
             </div>`;
         // 28 ottobre (Paolo): le note del tiro nella ⓘ (o sotto il tasto).
         if (!superato.superato) e.note.forEach(n => M.nota('step-modifiers', 'Scoprire', n, { tipo: 'regole' }));
@@ -268,7 +254,7 @@
                 nuovo.innerText = sc.etichetta || 'AVANTI: ATTACCO BS';
                 nuovo.style.background = M.COLORE_TASTO.valido;
             } else {
-                M.tastoConRequisiti(nuovo, M.requisitiDichiarati([t], ['lof', 'gittata']), e.automatico ? 'SCOPRI (AUTOMATICO)' : 'ESEGUI TIRO DI SCOPERTA', function () { window.eseguiCalcoloScoprire(); });
+                M.tastoConRequisiti(nuovo, M.requisitiDichiarati([t], ['lof', 'gittata']), 'ESEGUI CALCOLO', function () { window.eseguiCalcoloScoprire(); });
             }
         }
     };
@@ -387,7 +373,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_scoprire.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_scoprire.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-28.4 | ordine_logistica.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_logistica.js | proprieta`: chat MOTORE
 // ==========================================
 // 🪂 INGRESSO IN CAMPO e REQUEST SPEEDBALL - ordine_logistica.js
 // ------------------------------------------
@@ -127,7 +127,7 @@
         e.note.forEach(n => window.MotoreN5.nota('step-modifiers', 'Ingresso in campo', n, { tipo: 'regole' }));
 
         window.aggiornaPulsanteLogistica(!dom.puoProcedere,
-            dom.esito === 'BLOCCATA' ? 'PUNTO NON VALIDO' : (dom.esito === 'NON_RISPOSTO' ? 'RISPONDI ALLA DOMANDA' : 'ESEGUI TIRO PH'));
+            dom.esito === 'BLOCCATA' ? 'PUNTO NON VALIDO' : (dom.esito === 'NON_RISPOSTO' ? 'RISPONDI ALLA DOMANDA' : 'ESEGUI CALCOLO'));
         window.goToStep('step-modifiers');
     };
 
@@ -325,7 +325,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_logistica.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_logistica.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

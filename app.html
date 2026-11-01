@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-10-31.2 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-11-01.2 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -476,25 +476,33 @@
         /* Le icone le disegna window.generaIconeStati con stili in linea da
            45px: qui si fanno grandi quanto le due bande insieme, a destra,
            sopra le bande. Se il file manca c'e` l'emoji (uno <span>). */
-        /* 31 ottobre (Paolo, P17): le icone circa il doppio (80 px), in fila
-           SENZA accavallarsi, due per riga; dalla terza vanno a capo e la riga
-           si allunga (lo spazio lo mette rigaUnitaConFoto). */
+        /* 31 ottobre sera (Paolo, passo indietro su P17): di nuovo in fila a
+           destra, sopra le due bande, centrate in verticale, su UNA riga.
+           Una icona 72 px; due o piu` 56 px, accavallate di 16 come token.
+           (Il 31 mattina: 80 px, due per riga, la riga si allungava.) */
         .riga-unita-foto .rup-icone { position:absolute; right:4px; top:50%; transform:translateY(-50%); z-index:6; display:flex;
-            flex-direction:row; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:4px; max-width:164px; pointer-events:none; }
-        .riga-unita-foto .rup-icone img { width:80px !important; height:80px !important; margin:0 !important;
+            flex-direction:row; flex-wrap:nowrap; justify-content:flex-end; align-items:center; gap:0; pointer-events:none; }
+        .riga-unita-foto .rup-icone img { width:72px !important; height:72px !important; margin:0 !important;
             filter:drop-shadow(0 3px 6px rgba(0,0,0,.9)) !important; }
-        .riga-unita-foto .rup-icone span { font-size:56px !important; margin:0 !important; line-height:1; filter:drop-shadow(0 3px 6px rgba(0,0,0,.9)); }
+        .riga-unita-foto .rup-icone span { font-size:52px !important; margin:0 !important; line-height:1; filter:drop-shadow(0 3px 6px rgba(0,0,0,.9)); }
+        .riga-unita-foto .rup-icone.rup-icone-molte img { width:56px !important; height:56px !important; }
+        .riga-unita-foto .rup-icone.rup-icone-molte span { font-size:40px !important; }
+        .riga-unita-foto .rup-icone.rup-icone-molte > * + * { margin-left:-16px !important; }
         /* 31 ottobre (P13): i SEGNALINI (mine, koala, Marker, copie
            dell'Holoecho) sono tondi: interi, dentro la riga, al centro. */
         .riga-unita-foto .rup-foto.rup-segnalino { left:4px; top:50%; transform:translateY(-50%); width:80px; height:80px; object-position:center center; }
-        /* 27 ottobre (collaudo, G02): con due o piu` icone il nome restava con
-           pochi pixel ("SPEKTR" troncato). Le icone si fanno piu` piccole e si
-           accavallano di piu`: 32 px l'una invece di 56. */
-        /* (Fino al 30 ottobre con due o piu` icone si stringevano a 46 px
-           accavallate: Paolo le vuole grandi e separate, P17.) Con due o piu`
-           icone stanno SOTTO il nome, a destra, due per riga: il nome tiene
-           tutta la larghezza e la riga si allunga quanto serve. */
-        .riga-unita-foto .rup-icone.rup-icone-sotto { top:42px; transform:none; }
+        /* 31 ottobre sera: le DUE VISTE di una riga (window.cambiaVistaRiga).
+           Vista 1 (di partenza): il segnalino di schieramento o la maschera
+           dell'HoloMask; vista 2, dopo un tocco sull'immagine: la foto e il
+           profilo veri. Solo sullo schermo di chi tocca. */
+        .riga-unita-foto:not([data-vista="2"]) .rup-v2 { display:none !important; }
+        .riga-unita-foto[data-vista="2"] .rup-v1 { display:none !important; }
+        /* Le due viste del nome sono <span> dentro il tasto: niente stile dei
+           sottotitoli dei tasti (.huge-btn span: mono, piccolo, arancio). */
+        .riga-unita-foto .rup-nome > .rup-v1, .riga-unita-foto .rup-nome > .rup-v2 { font:inherit; color:inherit; margin:0; letter-spacing:inherit; }
+        .riga-unita-foto .rup-alias .rup-profilo { font:inherit; font-style:normal; margin:0; color:#c8c8c8; }
+        /* L'aura viola dell'HoloMask: solo nella propria app, solo sulla maschera. */
+        .riga-unita-foto.rup-holomask:not([data-vista="2"]) { --rup-o: drop-shadow(0 0 7px #b04cff) drop-shadow(0 0 14px #8a2be2) drop-shadow(0 6px 12px rgba(0,0,0,0.6)); }
         /* Il segnalino numerato senza il suo file: la scritta, non gigante. */
         .riga-unita-foto .rup-icone .segnalino-numerato { font-size:16px !important; line-height:1.2; }
         /* Senza soprannome la fascia bassa porta l'opzione del profilo (D02, E11:
@@ -790,7 +798,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-10-31.2', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-11-01.2', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -1326,15 +1334,14 @@
             // destra il SUO segnalino numerato, lo stesso che vede l'avversario
             // (M.immagineMarker del motore; il numero lo da` M.numeraMarker).
             // Al posto dell'icona dello stato e della scritta «[ SEGNALINO CAMO ]».
-            const Mk = window.MotoreN5;
-            const tipoMk = (Mk && typeof Mk.segnalinoMarker === 'function' && f === window.fazionePropria()) ? Mk.segnalinoMarker(u) : null;
-            const nMk = tipoMk && u.tipoNumeroMarker === tipoMk ? parseInt(u.numeroMarker, 10) : 0;
-            const imgMk = (nMk > 0 && typeof Mk.immagineMarker === 'function') ? Mk.immagineMarker(tipoMk, nMk, f) : null;
-            if (imgMk) {
-                const comuneMk = String(imgMk).replace(/^img\/(nomadi|panoceania)\//, 'img/');
-                const scrittaMk = `<span class=&quot;segnalino-numerato&quot; style=&quot;font-size:14px; font-weight:bold; color:#ffdd66; border:1px solid #ffdd66; border-radius:4px; padding:3px 5px;&quot;>${tipoMk} ${nMk}</span>`;
-                icone += `<img class="icona-segnalino-numerato" ${window.attributiImmagine(imgMk, comuneMk !== imgMk ? [comuneMk] : [], scrittaMk)} alt="${tipoMk} ${nMk}" ${iconStyle}>`;
-            }
+            // 31 ottobre sera (Paolo): il segnalino numerato non sta piu` qui:
+            // sta a SINISTRA, al posto della foto (window.segnalinoSchieramento,
+            // usato da rigaUnitaConFoto). Lo stesso per HIDDEN e AD, sotto.
+            // Ne` CAMO ne` IMP a destra di un MARKER (P8): a sinistra c'e` gia`
+            // il segnalino.
+            const sgSx = window.segnalinoSchieramento(u, f);
+            const eMk = String(u.nome || u.name || '') === 'MARKER' || String(u.tipo || '').toUpperCase() === 'MARKER';
+            const imgMk = !!sgSx || eMk;
             if(s.camo && !imgMk) icone += ic('icon_camo', emoji('👻'));
             // Impersonation (6 ottobre): lo stato non sta in u.states ma in
             // deployState ('IMP_1'/'IMP_2'), quindi questa funzione non lo
@@ -1374,7 +1381,9 @@
             // Solo nella propria app: all'avversario la truppa non arriva.
             // 31 ottobre (P8): anche lo Schieramento Aereo, col suo segnalino
             // senza numero (M.segnalinoSenzaNumero riconosce HIDDEN e AD).
-            if (window.iconaSegnalinoSenzaNumero(u, f, 45)) icone += window.iconaSegnalinoSenzaNumero(u, f, 45);
+            // 31 ottobre sera: ora a sinistra, al posto della foto; qui solo se
+            // la riga non lo puo` mettere (segnalinoSchieramento null).
+            if (!sgSx && window.iconaSegnalinoSenzaNumero(u, f, 45)) icone += window.iconaSegnalinoSenzaNumero(u, f, 45);
 
             if(isDead) icone = ic('icon_dead', emoji('☠️'));
             
@@ -1625,6 +1634,67 @@
         // Senza M.formaBottone la riga NON si disegna a mano: si dice che
         // manca e si mostra il solo nome, ben visibile. Una seconda copia
         // della forma qui e` proprio quello che si e` tolto.
+        // 31 ottobre sera (Paolo): il SEGNALINO DI SCHIERAMENTO di una propria
+        // truppa, da mettere a SINISTRA al posto della foto:
+        //   CAMO / IMP-1 / IMP-2  M.immagineMarker(M.segnalinoMarker(u), n, fazione)
+        //   HIDDEN / AD           M.segnalinoSenzaNumero(u, f).immagine, poi
+        //                         .immagineComune, poi l'emoji
+        // (1 novembre, Paolo: la VERA dell'Holoecho nella propria app ha
+        // sempre la sua foto, anche quando sul tavolo e` un segnalino; la sua
+        // riga dice quale numero e` la miniatura, window.numeroFiguraHoloecho.)
+        // -> { src, ripieghi, finale, alt, tipo } | null. Solo per le truppe
+        // proprie e vive: caduto lo stato (M.segnalinoMarker/SenzaNumero
+        // tornano null) la riga torna alla foto.
+        // 1 novembre (Paolo, Holoecho): il NUMERO che sul tavolo e` la
+        // miniatura (l'elemento con figuraHoloecho, M.creaRepliche), letto fra
+        // vera e copie dello stesso gruppo. null se non si sa (lista di prima).
+        // Esempio: vera = 1, copie 2 e 3, miniatura sul 3. L'avversario vede
+        // la foto sul 3 e i segnalini 1 e 2; il proprietario vede la foto
+        // sulla vera (1), i segnalini 2 e 3, e sulla vera «la figura e` il 3».
+        window.numeroFiguraHoloecho = (u) => {
+            if (!u || !u.gruppoRepliche) return null;
+            const fig = (window.roster || []).concat([u]).find(x => x && x.gruppoRepliche === u.gruppoRepliche && x.figuraHoloecho === true);
+            return fig && fig.numeroReplica ? fig.numeroReplica : null;
+        };
+        window.etichettaFiguraHoloecho = (u) => {
+            const n = window.numeroFiguraHoloecho(u);
+            if (!n) return '';
+            return n === u.numeroReplica ? '\ud83e\uddcd sul tavolo la figura \u00e8 lei (' + n + ')' : '\ud83e\uddcd sul tavolo la figura \u00e8 il ' + n;
+        };
+
+        window.segnalinoSchieramento = (u, fazione) => {
+            const M = window.MotoreN5;
+            if (!u || !M || u.state === 'DEAD' || u.deployable) return null;
+            const f = (fazione === 'NOMADI' || fazione === 'PANOCEANIA') ? fazione : window.fazionePropria();
+            if (f !== window.fazionePropria()) return null;
+            if (String(u.nome || u.name || '') === 'MARKER') return null;
+            const scritta = (t) => `<span class=&quot;rup-sigla segnalino-numerato&quot; style=&quot;font-size:18px; font-weight:bold; color:#ffdd66;&quot;>${t}</span>`;
+            const tipo = typeof M.segnalinoMarker === 'function' ? M.segnalinoMarker(u) : null;
+            const n = tipo && u.tipoNumeroMarker === tipo ? parseInt(u.numeroMarker, 10) : 0;
+            const img = (n > 0 && typeof M.immagineMarker === 'function') ? M.immagineMarker(tipo, n, f) : null;
+            if (img) {
+                const comune = String(img).replace(/^img\/(nomadi|panoceania)\//, 'img/');
+                return { src: img, ripieghi: comune !== img ? [comune] : [], finale: scritta(tipo + ' ' + n), alt: tipo + ' ' + n, tipo: 'numerato' };
+            }
+            const sg = typeof M.segnalinoSenzaNumero === 'function' ? M.segnalinoSenzaNumero(u, f) : null;
+            if (sg) return { src: sg.immagine, ripieghi: sg.immagineComune && sg.immagineComune !== sg.immagine ? [sg.immagineComune] : [],
+                             finale: `<span class=&quot;rup-sigla&quot; style=&quot;font-size:48px;&quot;>${sg.emoji || '🫥'}</span>`, alt: sg.etichetta, tipo: String(sg.tipo).toLowerCase() };
+            return null;
+        };
+
+        // 31 ottobre sera (Paolo, P25 e HoloMask): il tocco sull'immagine di una
+        // riga che ha DUE viste (segnalino / foto vera; maschera / profilo vero)
+        // passa dall'una all'altra. Vista locale: niente parte, nessuno stato
+        // cambia; la scelta resta finche` non si ritocca (anche ridisegnando).
+        window.vistaRiga = window.vistaRiga || {};
+        window.cambiaVistaRiga = (el, id) => {
+            const k = String(id);
+            window.vistaRiga[k] = !window.vistaRiga[k];
+            const b = el && typeof el.closest === 'function' ? el.closest('.riga-unita-foto') : null;
+            if (b && typeof b.setAttribute === 'function') b.setAttribute('data-vista', window.vistaRiga[k] ? '2' : '1');
+            return window.vistaRiga[k];
+        };
+
         window.rigaUnitaConFoto = (u, opz) => {
             opz = opz || {};
             const M = window.MotoreN5;
@@ -1636,6 +1706,14 @@
             // niente foto. I dati veri restano nell'oggetto per i calcoli;
             // cambia solo cio` che si disegna.
             if (u && u.mostraCome && f !== window.fazionePropria()) u = window.vistaMascherata(u);
+            // 31 ottobre sera (Paolo, HoloMask): anche nella PROPRIA app la riga
+            // mostra la maschera (nome, opzione d'arma e foto del Modello
+            // imitato, M.mostraComeHolomask) con l'aura viola, finche` non e`
+            // scoperta o rivelata. Il tocco sull'immagine mostra il profilo vero.
+            const mcMio = (u && f === window.fazionePropria() && M && typeof M.mostraComeHolomask === 'function') ? M.mostraComeHolomask(u) : null;
+            const uVero = u;
+            const uMaschera = mcMio ? window.vistaMascherata(Object.assign({}, u, { mostraCome: mcMio })) : null;
+            if (uMaschera) u = uMaschera;
             const c = window.COLORI_FAZIONE[f];
             const t = c.riga;
             const s = (u && u.states) || {};
@@ -1653,12 +1731,28 @@
             // stesso la fascia bassa restava VUOTA. Ci va l'opzione del profilo,
             // cioe` quello che il nome porta fra parentesi ("Marksman Rifle"), o
             // in mancanza la prima arma. Di un Marker non si scrive niente.
-            const aliasVero = (u && u.alias && u.alias !== nomePuro) ? u.alias : '';
-            const profiloRiga = aliasVero ? '' : window.opzioneDelProfilo(u);
-            const alias = aliasVero ? `<div class="rup-alias">"${aliasVero}"</div>`
-                        : (profiloRiga ? `<div class="rup-alias rup-profilo">${profiloRiga}</div>` : '');
-            const destra = (opz.destra !== undefined) ? opz.destra : window.generaIconeStati(u, f);
-            const attributi = `${opz.id ? `id="${opz.id}" ` : ''}data-fazione="${f}" data-scelta="${opz.scelta ? 'si' : 'no'}" oncontextmenu="return false;" ${opz.attributi || ''}`;
+            // 31 ottobre sera (Paolo): la fascia bassa di un MARKER resta vuota
+            // (niente «Segnalino mimetico (-6) 1»): numero e MOD stanno sul
+            // segnalino. Il dato alias resta nell'oggetto (abbina i bersagli).
+            const eMarkerRiga = !!u && (String(u.nome || u.name || '') === 'MARKER' || String(u.tipo || '').toUpperCase() === 'MARKER');
+            // conOpzione: l'opzione d'arma anche col soprannome (la maschera
+            // dell'HoloMask: si deve leggere quale opzione si imita).
+            const aliasDi = (x, conOpzione) => {
+                const np = window.nomeInElenco(x);
+                const av = (!eMarkerRiga && x && x.alias && x.alias !== np) ? x.alias : '';
+                const pr = (av && !conOpzione) ? '' : window.opzioneDelProfilo(x);
+                if (av && pr) return `<div class="rup-alias">"${av}" <span class="rup-profilo">· ${pr}</span></div>`;
+                return av ? `<div class="rup-alias">"${av}"</div>` : (pr ? `<div class="rup-alias rup-profilo">${pr}</div>` : '');
+            };
+            const iconeDi = (x) => (opz.destra !== undefined) ? opz.destra : window.generaIconeStati(x, f);
+            let alias = aliasDi(u, !!uMaschera);
+            let destra = iconeDi(u);
+            // Le due viste (vedi window.cambiaVistaRiga): quale si vede ora.
+            const sgSx = window.segnalinoSchieramento(uVero, f);
+            const dueViste = !!(uMaschera || sgSx) && opz.toccoFoto === undefined;
+            const idVista = String((uVero && uVero.id) || '');
+            const vista2 = dueViste && !!window.vistaRiga[idVista];
+            const attributi = `${opz.id ? `id="${opz.id}" ` : ''}data-fazione="${f}" data-scelta="${opz.scelta ? 'si' : 'no'}"${dueViste ? ` data-vista="${vista2 ? '2' : '1'}"` : ''} oncontextmenu="return false;" ${opz.attributi || ''}`;
 
             if (!M || typeof M.formaBottone !== 'function') {
                 console.error('⛔ M.formaBottone manca (serve motore_regole_n5.js dalla 2026-10-09.4): riga dell\'unita` senza forma.');
@@ -1668,15 +1762,21 @@
             // Le icone stanno SOPRA le due bande, a destra: il testo deve
             // fermarsi prima, o finisce sotto. Lo spazio dipende da quante
             // sono (64px l'una, accavallate di 8).
-            const quante = (String(destra).match(/<img/g) || []).length || (String(destra).trim() ? 1 : 0);
-            // 31 ottobre (P17): 80 px l'una, due per riga, senza accavallarsi.
-            // Una: a destra, al centro della riga. Due o piu`: sotto il nome,
-            // due per riga, e la riga si allunga (spazio in fondo alla banda alta).
+            // La vista vera dell'HoloMask: nome, opzione e icone del profilo vero.
+            let nomeVero = null, aliasVeroV = null, destraVera = null;
+            if (uMaschera && opz.nome === undefined) {
+                const npv = window.nomeInElenco(uVero);
+                nomeVero = (morto ? `<s>${npv}</s>` : npv) + (opz.dopoNome || '');
+                aliasVeroV = aliasDi(uVero, true);
+                destraVera = iconeDi(uVero);
+            }
+            const contaIcone = (d) => (String(d).match(/<img/g) || []).length || (String(d).trim() ? 1 : 0);
+            const quante = Math.max(contaIcone(destra), destraVera !== null ? contaIcone(destraVera) : 0);
+            // 31 ottobre sera (Paolo): una icona 72 px; due o piu` 56 px
+            // accavallate di 16, su una riga sola. Il nome si ferma prima.
             const molte = quante >= 2;
-            const spazioIcone = quante ? (molte ? 0 : 84) : 0;
-            const spazioBassa = quante ? (molte ? 168 : 84) : 0;
-            const righeIcone = Math.ceil(quante / 2);
-            const altezzaIcone = molte ? 42 + righeIcone * 84 - 4 : 0;
+            const spazioIcone = !quante ? 0 : (molte ? 56 + (quante - 1) * 40 + 4 : 76);
+            const spazioBassa = spazioIcone;
 
             // La foto e` un png senza sfondo: sta libera, intera, senza
             // cornice. Senza foto, la sigla del tipo, libera allo stesso posto.
@@ -1686,23 +1786,48 @@
             // tipo troncato. Un Marker non dice chi e`: "?".
             const eMarker = !!u && (String(u.nome || u.name || '') === 'MARKER' || String(u.tipo || '').toUpperCase() === 'MARKER');
             const sigla = eMarker ? '?' : (String((u && u.tipo) || '').slice(0, 3) || '?');
-            const tocco = opz.toccoFoto ? ` onpointerdown="event.stopPropagation()" onclick="event.stopPropagation(); ${opz.toccoFoto}" title="Tocca per la foto"` : '';
-            const classeTocco = opz.toccoFoto ? ' rup-tocco-foto' : '';
+            const azioneTocco = opz.toccoFoto ? opz.toccoFoto : (dueViste ? `window.cambiaVistaRiga(this, '${idVista.replace(/'/g, '')}')` : '');
+            const tocco = azioneTocco ? ` onpointerdown="event.stopPropagation()" onclick="event.stopPropagation(); ${azioneTocco}" title="Tocca per la foto"` : '';
+            const classeTocco = azioneTocco ? ' rup-tocco-foto' : '';
+            // Il tocco ripetuto DENTRO il ripiego (onerror="this.outerHTML='…'"):
+            // virgolette come &quot; e apici protetti, o l'id fra apici
+            // ('n1') chiude la stringa del ripiego e il gestore non compila.
+            const toccoNelRipiego = tocco.replace(/"/g, '&quot;').replace(/'/g, "\\'");
             // 20 ottobre: se manca l'immagine numerata del segnalino si
             // ripiega sul segnalino comune, non sulla sigla "MAR". 26 ottobre:
             // i ripieghi li elenca fotoUnitaConRipieghi (esercito, poi comune).
             // 31 ottobre (P13): un segnalino tondo (deployable, Marker, copia
             // dell'Holoecho) sta intero dentro la riga, non come una miniatura.
             const tondo = !!u && (u.deployable || eMarker || u.replica || /^holoecho_\d+\.png$/i.test(String(u.imgVariant || '')));
-            const immagine = foto
-                ? `<img class="rup-foto${tondo ? ' rup-segnalino' : ''}${classeTocco}" ${window.attributiImmagine(foto, fr.ripieghi, `<span class=&quot;rup-sigla${classeTocco}&quot;${tocco.replace(/"/g, '&quot;')}>${sigla}</span>`)} alt=""${tocco}>`
-                : `<span class="rup-sigla${classeTocco}"${tocco}>${sigla}</span>`;
+            const disegnaFoto = (src, ripieghi, tondoF, siglaF, vc) => src
+                ? `<img class="rup-foto${tondoF ? ' rup-segnalino' : ''}${classeTocco}${vc}" ${window.attributiImmagine(src, ripieghi, `<span class=&quot;rup-sigla${classeTocco}${vc}&quot;${toccoNelRipiego}>${siglaF}</span>`)} alt=""${tocco}>`
+                : `<span class="rup-sigla${classeTocco}${vc}"${tocco}>${siglaF}</span>`;
+            let immagine = disegnaFoto(foto, fr.ripieghi, tondo, sigla, '');
+            // Il segnalino a sinistra (vista 1) e, dopo il tocco, la foto (vista 2).
+            if (sgSx) {
+                const vc = dueViste ? ' rup-v1' : '';
+                const vSeg = `<img class="rup-foto rup-segnalino rup-segnalino-schieramento${classeTocco}${vc}" ${window.attributiImmagine(sgSx.src, sgSx.ripieghi, sgSx.finale.replace('rup-sigla', 'rup-sigla' + classeTocco + vc).replace('&quot;>', '&quot;' + toccoNelRipiego + '>'))} alt="${sgSx.alt}"${tocco}>`;
+                immagine = dueViste ? vSeg + disegnaFoto(foto, fr.ripieghi, tondo, sigla, ' rup-v2') : vSeg;
+            }
+            // HoloMask: la foto della maschera (vista 1), la vera (vista 2).
+            if (uMaschera && !sgSx) {
+                const frV = window.fotoUnitaConRipieghi(uVero, f);
+                const siglaV = String((uVero && uVero.tipo) || '').slice(0, 3) || '?';
+                immagine = dueViste ? disegnaFoto(foto, fr.ripieghi, tondo, sigla, ' rup-v1') + disegnaFoto(frV.src, frV.ripieghi, false, siglaV, ' rup-v2') : immagine;
+            }
+            const due = (a, b) => (b === null || a === b) ? a : `<span class="rup-v1">${a}</span><span class="rup-v2">${b}</span>`;
+            if (uMaschera && dueViste) {
+                if (nomeVero !== null) nome = due(nome, nomeVero);
+                if (aliasVeroV !== null && aliasVeroV !== alias) alias = `<div class="rup-v1">${alias}</div><div class="rup-v2">${aliasVeroV}</div>`;
+            }
+            const iconeHtml = (d, vc) => `<div class="rup-icone${molte ? ' rup-icone-molte' : ''}${vc}">${d}</div>`;
+            const blocchiIcone = (uMaschera && dueViste && destraVera !== null && destraVera !== destra) ? iconeHtml(destra, ' rup-v1') + iconeHtml(destraVera, ' rup-v2') : iconeHtml(destra, '');
 
             const ombra = 'drop-shadow(0 6px 12px rgba(0,0,0,0.6))';
             const variabili = `--rup-a-n:${t.alta}; --rup-a-s:${t.altaScelta}; --rup-c-n:${c.bordo}; --rup-c-s:${c.bordoScelto}; ` +
                               `--rup-o-n:${ombra}; --rup-o-s:drop-shadow(0 0 6px ${t.luce}) ${ombra}; ` + window.bordoRigaUnita(opz.bordo);
             return M.formaBottone({
-                classe: 'huge-btn riga-unita riga-unita-foto',
+                classe: 'huge-btn riga-unita riga-unita-foto' + (uMaschera ? ' rup-holomask' : ''),
                 attributi: attributi,
                 contorno: 'var(--rup-c)',
                 fondoAlta: 'var(--rup-a)',
@@ -1715,9 +1840,9 @@
                 // qui, perche` il motore non lo dichiarava e la banda veniva
                 // alta 44 invece di 30.
                 stileBassa: (quante ? `padding-right:${10 + spazioBassa}px; ` : '') + 'min-height:30px;',
-                sopra: immagine + `<div class="rup-icone${molte ? ' rup-icone-molte rup-icone-sotto' : ''}">${destra}</div>`,
-                // Con piu` di due icone la riga si allunga quanto le loro righe.
-                alta: `<div class="rup-nome">${nome}</div>` + (altezzaIcone ? `<div class="rup-spazio-icone" style="flex:0 0 0; width:0; height:${altezzaIcone - 44}px;"></div>` : ''),
+                sopra: immagine + blocchiIcone,
+                // (31 ottobre sera: via la riga che si allungava, rup-spazio-icone.)
+                alta: `<div class="rup-nome">${nome}</div>`,
                 // Le etichette PRIMA del soprannome: si leggono fra il nome e il
                 // soprannome, come quando stavano in coda al nome (lo guardano
                 // anche i banchi di TEST, test_novita_23ott e _26ott).
@@ -1907,6 +2032,14 @@
                 const eReplica = !!(MM && typeof MM.eReplica === 'function' && MM.eReplica(u));
                 if (eReplica) etichette += ` <span class="etichetta-replica" style="color:#99ffff; font-size:14px; font-weight:bold; border:1px dashed #99ffff; border-radius:4px; padding:1px 5px;">\ud83e\ude9e REPLICA${u.numeroReplica ? ' ' + u.numeroReplica : ''}</span>`;
                 else if (u.gruppoRepliche && (u.states || {})[u.tipoRepliche === 'DECOY' ? 'decoy' : 'holoecho']) etichette += ` <span class="etichetta-replica" style="color:#99ffff; font-size:14px; font-weight:bold; border:1px solid #99ffff; border-radius:4px; padding:1px 5px;">\u2605 VERA${u.numeroReplica ? ' ' + u.numeroReplica : ''}</span>`;
+                // 31 ottobre sera (Paolo, Holoecho versione B): quale dei tre e` la
+                // MINIATURA sul tavolo (M.creaRepliche, figuraHoloecho). Solo qui:
+                // il dato non parte verso l'avversario.
+                // 1 novembre (Paolo): l'etichetta sta sulla VERA (che ha sempre la
+                // foto) e dice il NUMERO della miniatura; prima «FIGURA SUL
+                // TAVOLO» sull'elemento che era la figura (anche una copia).
+                const figuraV = (!eReplica && u.gruppoRepliche && (u.states || {}).holoecho) ? window.etichettaFiguraHoloecho(u) : '';
+                if (figuraV) etichette += ` <span class="etichetta-figura" style="color:#ffe680; font-size:14px; font-weight:bold; border:1px solid #ffe680; border-radius:4px; padding:1px 5px;">${figuraV}</span>`;
                 // 20 ottobre (Paolo): la Punta di Lancia del Coordinato si
                 // riconosceva solo dal bordo azzurro. Ora ha la sua icona
                 // (img/icon_spearhead.png; senza file, la scritta).
@@ -1953,8 +2086,12 @@
                 // Una replica non riceve Ordini e non fa Tiri Salvezza: esce
                 // dal tavolo se la Scoprono, se un Attacco la colpisce o se un
                 // nemico la tocca. Lo decide chi la possiede, guardando il tavolo.
+                // 1 novembre (Paolo): il tasto TOGLI LA REPLICA non sta piu` sotto la
+                // riga: sta nella pagina degli STATI (tocco prolungato), che e` di
+                // logica_stati.js (chat MOTORE) e chiama window.togliReplicaDalTavolo.
+                // Qui resta la nota nella ⓘ che dice dove trovarlo.
                 if (eReplica) {
-                    container.innerHTML += `<button type="button" class="btn-status togli-replica" style="margin:-4px 0 12px 0; border-color:#99ffff; color:#99ffff;" onclick="window.togliReplicaDalTavolo('${String(u.id).replace(/'/g, "\\'")}')">\ud83e\ude9e TOGLI LA REPLICA (Scoperta, colpita o toccata)</button>`;
+                    notaRiga(u, M_nome(u) + ': replica ' + (u.numeroReplica || ''), 'Non riceve Ordini e non fa Tiri Salvezza. Esce dal tavolo se la Scoprono, se un Attacco la colpisce o se un nemico la tocca: tieni premuta la riga e negli stati tocca TOGLI LA REPLICA.');
                 }
 
                 // Un token sul tavolo si toglie quando esplode o viene

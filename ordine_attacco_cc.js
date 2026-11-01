@@ -1,4 +1,4 @@
-// @versione 2026-10-28.3 | ordine_attacco_cc.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_attacco_cc.js | proprieta`: chat MOTORE
 // ==========================================
 // ⚔️ CORPO A CORPO (N5) - ordine_attacco_cc.js
 // ------------------------------------------
@@ -105,7 +105,7 @@
         const ma = M.livelloMartialArts(unita);
         const container = document.getElementById('weapon-buttons-container');
         window.MotoreN5.azzeraNote('step-weapon');
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `${window.currentOrder.action === 'BERSERK' ? 'BERSERK' : 'ATTACCO IN MISCHIA'}`, nota: `CC ${unita.cc || '?'}${ma ? ` · Martial Arts L${ma}` : ''}` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-weapon', colore: COL, titolo: `${window.currentOrder.action === 'BERSERK' ? 'BERSERK' : 'ATTACCO IN MISCHIA'}`, nota: ma ? `Martial Arts L${ma}` : '' })}`;   // 31 ottobre (Paolo): niente CC nel titolo
 
         let armi = M.armiCC(unita);
 
@@ -247,12 +247,6 @@
             const mods = M.modCC(unita, difensore, arma, { inF2F: true, armaAvversario: armaCCAvversario(M, difensore) });
             const grazia = M.colpoDiGrazia(difensore);
 
-            const dettaglio = mods.voci.length
-                ? mods.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                        <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
-                        <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b></div>`).join('')
-                : `<div style="color:var(--mn-spento,#888888); text-align:center;">Nessun modificatore</div>`;
-
             const ammoHtml = arma.ammoOpzioni
                 .map(o => `<option value="${o}" ${o === tgt.ammo ? 'selected' : ''}>Munizioni: ${o}</option>`).join('');
 
@@ -268,29 +262,13 @@
                     <span style="color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s);">${grazia.motivo}</span></div>`;
             }
 
-            html += `
-            <div class="target-card" style="border-left:4px solid ${COL.bordo}; margin-bottom:20px; background:rgba(255,204,0,0.05); padding:15px; border-radius:5px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <b style="color:${COL.bordo}; font-size:var(--fs-l);">${tgt.name}</b>
-                    <div class="burst-ctrl" style="border-color:${COL.bordo};">
-                        <button class="burst-btn" style="background:${COL.bordo};" onclick="window.adjustTargetBurstCC(${index}, -1)">-</button>
-                        <span style="margin:0 10px; font-size:var(--fs-l); font-weight:bold; color:${tgt.burst > 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-spento,#888888)'}">${tgt.burst} B</span>
-                        <button class="burst-btn" style="background:${COL.bordo}; opacity:${restanti > 0 ? 1 : 0.3}" onclick="window.adjustTargetBurstCC(${index}, 1)">+</button>
-                    </div>
-                </div>
-
+            // 31 ottobre (Paolo, collaudo grafico): la scheda dell'Attacco BS
+            // (M.schedaBS). Il Valore di Successo e i MOD vanno nella ⓘ.
+            M.notaValore('step-modifiers', window.combatTargets.length > 1 ? tgt.name : '', Object.assign({ attributo: 'CC' }, mods));
+            html += M.schedaBS.apri() +
+                M.schedaBS.testa(tgt.name, M.schedaBS.burst(tgt.burst, `window.adjustTargetBurstCC(${index}, -1)`, `window.adjustTargetBurstCC(${index}, 1)`, tgt.burst > 0, restanti > 0)) + `
                 ${graziaHtml}
-
-                <div style="background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-nota-bordo,#664400); padding:10px; border-radius:5px; margin-bottom:12px; font-size:var(--fs-s);">
-                    <div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:6px;">
-                        CC base <b>${mods.base}</b> → Valore di Successo <b style="color:${COL.bordo}; font-size:var(--fs-l);">${mods.valore}</b>
-                    </div>
-                    <div style="border-top:1px solid var(--mn-nota-bordo,#664400); padding-top:6px;">${dettaglio}</div>
-                </div>
-
-                <select class="huge-btn" style="width:100%; margin:0; min-height:55px; font-size:var(--fs-m); background:var(--mn-scuro,#000000); color:var(--mn-testo,#ffffff); border-color:${COL.bordo}; text-align:center; padding:0 10px;" onchange="window.setTargetAmmoCC(${index}, this.value)">
-                    ${ammoHtml}
-                </select>
+                ${M.schedaBS.tendina(ammoHtml, `window.setTargetAmmoCC(${index}, this.value)`)}
                 ${M.rigaRequisiti(['contatto'], tgt, index, 'window.toggleRequisitoCC')}
 
             </div>`;
@@ -309,7 +287,7 @@
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
             // Il tasto diventa IDLE se il requisito manca (M.tastoConRequisiti).
-            M.tastoConRequisiti(nuovo, M.requisitiDichiarati(window.combatTargets, ['contatto']), 'ESEGUI ATTACCO IN CORPO A CORPO', function () { window.eseguiCalcoloCC(); });
+            M.tastoConRequisiti(nuovo, M.requisitiDichiarati(window.combatTargets, ['contatto']), 'ESEGUI CALCOLO', function () { window.eseguiCalcoloCC(); });
         }
     };
 
@@ -415,7 +393,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_cc.js', versione: '2026-10-28.3', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_cc.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

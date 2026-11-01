@@ -1,4 +1,4 @@
-// @versione 2026-10-28.4 | ordine_scenografia.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_scenografia.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏗️ SCENOGRAFIA (N5) - ordine_scenografia.js
 // ------------------------------------------
@@ -106,7 +106,7 @@
         window.MotoreN5.azzeraNote('step-wait-aro');
         if (!container) return;
 
-        container.innerHTML = M.intestazioneOrdine(intestazione);
+        container.innerHTML = M.intestazioneOrdine(Object.assign({ step: 'step-wait-aro' }, intestazione));
 
         if (window.validTargets.length === 0) {
             container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-weight:bold;">
@@ -246,7 +246,7 @@
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
             nuovo.onclick = function () { window.eseguiCalcoloScenografia(); };
-            nuovo.innerText = eDeactivator(azione) ? 'ESEGUI DEACTIVATOR' : 'ESEGUI INTERAZIONE';
+            nuovo.innerText = 'ESEGUI CALCOLO';   // 31 ottobre (Paolo): un'etichetta sola
         }
     };
 
@@ -309,7 +309,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_scenografia.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_scenografia.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

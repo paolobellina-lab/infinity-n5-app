@@ -1,4 +1,4 @@
-// @versione 2026-10-30.1 | ordine_piazzamento.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_piazzamento.js | proprieta`: chat MOTORE
 // ==========================================
 // 📦 PIAZZARE EQUIPAGGIAMENTO (N5) - ordine_piazzamento.js
 // ------------------------------------------
@@ -119,25 +119,30 @@
         window.MotoreN5.azzeraNote('step-weapon');
         if (!container) return;
 
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `PIAZZA EQUIPAGGIAMENTO`, nota: `Abilità Breve, nessun tiro: è sempre la SECONDA metà dell'Ordine (dopo Movimento, Scoprire o Idle).${window.currentOrder && !window.currentOrder.isSecondHalf ? ' Dichiarata per prima vale <b>IDLE + PIAZZARE</b>: l\'Ordine finisce qui.' : ''}<br> Il nemico può reagire contro di te, mai contro ciò che piazzi.` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-weapon', colore: COL, titolo: `PIAZZA EQUIPAGGIAMENTO`, nota: `Abilità Breve, nessun tiro: è sempre la SECONDA metà dell'Ordine (dopo Movimento, Scoprire o Idle).${window.currentOrder && !window.currentOrder.isSecondHalf ? ' Dichiarata per prima vale <b>IDLE + PIAZZARE</b>: l\'Ordine finisce qui.' : ''}<br> Il nemico può reagire contro di te, mai contro ciò che piazzi.` })}`;
 
         if (e.armi.length === 0 && !scariche.length) {
             container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-weight:bold;">
                 Questa unità non ha equipaggiamento da piazzare.</p>`;
         } else {
+            // 31 ottobre (Paolo, collaudo grafico): il bottone dell'arma della
+            // scelta armi dell'Attacco BS (M.bottoneArma), con gli usi dentro.
             e.armi.forEach(function (a) {
                 // Il nome GREZZO, con le notazioni: il modulo lo ririsolve dopo.
                 const nomeEsc = String(a.nomeRichiesto || a.nome).replace(/'/g, "\\'");
-                const usi = a.usi ? `${a.usi.residui}/${a.usi.totali} usi` : 'usi illimitati';
-                container.innerHTML += `<button class="huge-btn" style="width:100%; min-height:62px; font-size:var(--fs-l); margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:${COL.bordo};"
-                    onclick="window.scegliArmaDaPiazzare('${nomeEsc}')">
-                    📦 ${a.nome}<br><span style="font-size:var(--fs-s); color:${COL.bordo};">${usi}</span></button>`;
+                const tocco = `onclick="window.scegliArmaDaPiazzare('${nomeEsc}')"`;
+                container.innerHTML += (typeof M.bottoneArma === 'function')
+                    ? M.bottoneArma(a, { usi: a.usi || null, attributi: tocco })
+                    : `<button class="huge-btn" style="width:100%; min-height:62px; margin-bottom:6px;" ${tocco}>${a.nome}</button>`;
             });
         }
 
         scariche.forEach(function (x, k) {
-            container.innerHTML += `<button class="huge-btn tasto-scarico" data-nota="scarico-${k}" style="width:100%; min-height:62px; font-size:var(--fs-l); margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:#666; color:#888; opacity:.6; cursor:default;">
-                    📦 ${x.nome}<br><span style="font-size:var(--fs-s); color:#888;">0/${(x.usi && x.usi.totali) || 0} usi</span></button>`;
+            const prof = M.profiloArma(x.nomeRichiesto || x.nome);
+            const usi = { residui: 0, spesi: (x.usi && x.usi.totali) || 1, totali: (x.usi && x.usi.totali) || 1 };
+            container.innerHTML += (typeof M.bottoneArma === 'function' && prof && !prof.nonTrovata)
+                ? M.bottoneArma(Object.assign({}, prof, { nome: x.nome }), { usi: usi, attributi: `data-nota="scarico-${k}" disabled` }).replace('class="bottone-arma', 'class="tasto-scarico bottone-arma')
+                : `<button class="huge-btn tasto-scarico" data-nota="scarico-${k}" disabled style="width:100%; min-height:62px; margin-bottom:6px; opacity:.6;">${x.nome}<br><span style="font-size:var(--fs-s);">0/${usi.totali} usi</span></button>`;
             window.MotoreN5.nota('step-weapon', x.nome, x.spiegazione || x.motivo, { tipo: 'nonpuo', tasto: 'scarico-' + k });
         });
 
@@ -172,7 +177,7 @@
         window.MotoreN5.azzeraNote('step-wait-aro');
         if (!container) return;
         const ammessi = giudizi.filter(g => g.ammesso), scartati = giudizi.filter(g => !g.ammesso);
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `${arma.nome}`, nota: `Si piazza a contatto del bersaglio. Scegli su cosa.` })}` +
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-wait-aro', colore: COL, titolo: `${arma.nome}`, nota: `Si piazza a contatto del bersaglio. Scegli su cosa.` })}` +
             // La riga con la foto la disegna la pagina (window.rigaUnitaConFoto);
             // dove non c'e` resta il bottone semplice.
             (ammessi.length ? ammessi.map(function (g) {
@@ -511,7 +516,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-30.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

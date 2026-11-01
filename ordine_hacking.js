@@ -1,4 +1,4 @@
-// @versione 2026-10-28.3 | ordine_hacking.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_hacking.js | proprieta`: chat MOTORE
 // ==========================================
 // 💻 INFOGUERRA (HACKING) N5 - ordine_hacking.js
 // ------------------------------------------
@@ -90,7 +90,7 @@
         const container = document.getElementById('weapon-buttons-container');
         window.MotoreN5.azzeraNote('step-weapon');
 
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `INFOGUERRA`, nota: `WIP ${unita.wip || '?'} · ${esito.dispositivi.length ? esito.dispositivi.join(' + ') : 'nessun dispositivo'}` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-weapon', colore: COL, titolo: `PROGRAMMI HACKING`, nota: `${esito.dispositivi.length ? esito.dispositivi.join(' + ') : 'nessun dispositivo'}` })}`;   // 31 ottobre (Paolo): titolo nuovo, niente WIP
 
         if (esito.programmi.length === 0) {
             container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-size:var(--fs-m);">
@@ -161,7 +161,7 @@
         window.MotoreN5.azzeraNote('step-weapon');
         if (!container) return;
         const lista = window.roster || [];
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `FAIRY DUST`, nota: `Scegli il Tipo di Truppa della tua lista che riceve Firewall (-3) su tutto il tavolo.<br>Abilità Lunga: Ordine intero, nessun tiro.` })}` +
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-weapon', colore: COL, titolo: `FAIRY DUST`, nota: `Scegli il Tipo di Truppa della tua lista che riceve Firewall (-3) su tutto il tavolo.<br>Abilità Lunga: Ordine intero, nessun tiro.` })}` +
             M.TIPI_FAIRY_DUST.map(function (tp) {
                 const quanti = lista.filter(u => String(u.tipo || '').toUpperCase() === tp).length;
                 return `<button class="huge-btn" style="width:100%; min-height:56px; margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:${COL.bordo};"
@@ -321,10 +321,9 @@
         const restanti = window.totalBurst - assegnati;
 
         let html = `<div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:5px; font-size:var(--fs-m);">
-            PROGRAMMI DA ASSEGNARE: <b style="color:${COL.bordo}; font-size:var(--fs-l);">${restanti}</b></div>
-            <div style="text-align:center; color:var(--mn-spento,#888888); font-size:var(--fs-xs); margin-bottom:15px;">
-                ${programma.nome} · B${programma.burst} · ${programma.ammo} · PS ${programma.ps}
-                ${programma.dimezzaBTS ? ' · BTS dimezzato' : ' · BTS pieno'}</div>`;
+            PROGRAMMI DA ASSEGNARE: <b style="color:var(--nomad-orange); font-size:var(--fs-l);">${restanti}</b></div>`;
+        // 31 ottobre (Paolo): i dati del programma nella ⓘ.
+        M.nota('step-modifiers', programma.nome, `B${programma.burst} · ${programma.ammo} · PS ${programma.ps}${programma.dimezzaBTS ? ' · BTS dimezzato' : ' · BTS pieno'}${programma.effetto ? ' · fallendo la salvezza: ' + programma.effetto : ''}`, { tipo: 'regole' });
 
         window.combatTargets.forEach(function (tgt, index) {
             const dif = M.rosterNemico().find(u => u.id === tgt.id) || {};
@@ -333,43 +332,18 @@
             const REP = (window.CATALOGO_N5 && window.CATALOGO_N5.REPEATER_NEMICO) || {};
             const rep = !!tgt.repeaterNemico;
 
-            const dettaglio = mods.voci.length
-                ? mods.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                        <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
-                        <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b></div>`).join('')
-                : `<div style="color:var(--mn-spento,#888888); text-align:center;">Nessun modificatore</div>`;
+            // 31 ottobre (Paolo, collaudo grafico): la scheda dell'Attacco BS;
+            // valore e MOD nella ⓘ; niente riquadro «Se fallisce il Tiro Salvezza».
+            M.notaValore('step-modifiers', window.combatTargets.length > 1 ? tgt.name : '', Object.assign({ attributo: 'WIP' }, mods));
+            if (rep && REP.spiegazione) M.nota('step-modifiers', REP.pulsante || 'Via Repeater nemico', REP.spiegazione, { tipo: 'mod' });
+            const stileRep = rep ? 'background:var(--nomad-orange); color:var(--mn-scuro,#000000);' : `background:${document.title.includes('NOMADS') ? '#1a0000' : '#001122'}; color:var(--mn-testo,#ffffff);`;
+            const tastoRep = `<button type="button" class="huge-btn tasto-repeater" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); flex-direction:column; justify-content:center; align-items:center; text-align:center; ${stileRep}" onclick="window.toggleRepeaterNemicoHacking(${index})">${REP.pulsante || 'VIA REPEATER NEMICO'}: ${rep ? 'SÌ' : 'NO'}</button>`;
 
-            html += `
-            <div class="target-card" style="border-left:4px solid ${COL.bordo}; margin-bottom:20px; background:rgba(0,255,255,0.05); padding:15px; border-radius:5px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <b style="color:${COL.bordo}; font-size:var(--fs-l);">${tgt.name}</b>
-                    <div class="burst-ctrl" style="border-color:${COL.bordo};">
-                        <button class="burst-btn" style="background:${COL.bordo};" onclick="window.adjustTargetBurstHacking(${index}, -1)">-</button>
-                        <span style="margin:0 10px; font-size:var(--fs-l); font-weight:bold; color:${tgt.burst > 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-spento,#888888)'}">${tgt.burst} B</span>
-                        <button class="burst-btn" style="background:${COL.bordo}; opacity:${restanti > 0 ? 1 : 0.3}" onclick="window.adjustTargetBurstHacking(${index}, 1)">+</button>
-                    </div>
-                </div>
-
-                <div style="background:var(--mn-ordine-riquadro,#001a22); border:1px solid var(--mn-ordine-tenue,#005566); padding:10px; border-radius:5px; margin-bottom:10px; font-size:var(--fs-s);">
-                    <div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:6px;">
-                        WIP base <b>${mods.base}</b> → Valore di Successo <b style="color:${COL.bordo}; font-size:var(--fs-l);">${mods.valore}</b>
-                    </div>
-                    <div style="border-top:1px solid var(--mn-ordine-tenue,#004455); padding-top:6px;">${dettaglio}</div>
-                </div>
-
-                <button onclick="window.toggleRepeaterNemicoHacking(${index})"
-                    style="width:100%; padding:12px; margin-bottom:10px; font-size:var(--fs-m); font-weight:bold; border-radius:5px; cursor:pointer;
-                           background:${rep ? 'var(--mn-attenzione-fondo,#554400)' : 'var(--mn-fondo-tasto,#111111)'}; color:${rep ? 'var(--mn-acceso,#ffaa33)' : 'var(--mn-spento,#888888)'}; border:2px solid ${rep ? 'var(--mn-acceso,#ffaa33)' : 'var(--mn-bordo-spento,#555555)'};">
-                    📡 ${REP.pulsante || 'VIA REPEATER NEMICO'}: ${rep ? 'SÌ (Firewall ' + (REP.firewall || -3) + ')' : 'NO'}
-                </button>
-                ${rep ? `<div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); margin:-4px 0 10px; text-align:center;">${REP.spiegazione || ''}</div>` : ''}
-                <div style="margin-bottom:10px;">${M.rigaRequisiti(['area'], tgt, index, 'window.toggleRequisitoHacking')}</div>
-                ${mods.requisitoFallito ? `<div style="padding:10px; margin-bottom:10px; background:var(--mn-errore-fondo,#330000); border:2px solid var(--mn-errore,#ff3333); border-radius:5px; color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s);">
+            html += M.schedaBS.apri() +
+                M.schedaBS.testa(tgt.name, M.schedaBS.burst(tgt.burst, `window.adjustTargetBurstHacking(${index}, -1)`, `window.adjustTargetBurstHacking(${index}, 1)`, tgt.burst > 0, restanti > 0)) + `
+                ${M.rigaRequisiti(['area'], tgt, index, 'window.toggleRequisitoHacking', tastoRep)}
+                ${mods.requisitoFallito ? `<div style="padding:10px; margin-top:10px; background:var(--mn-errore-fondo,#330000); border:2px solid var(--mn-errore,#ff3333); border-radius:5px; color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s);">
                     <b>⚠️ REQUISITO NON SODDISFATTO → IDLE</b><br>${mods.avvisi.join('<br>')}</div>` : ''}
-
-                <div style="text-align:center; padding:8px; background:var(--mn-ordine-riquadro,#001122); border:1px solid ${COL.bordo}; color:${COL.bordo}; font-size:var(--fs-s); border-radius:5px;">
-                    Se fallisce il Tiro Salvezza: <b>${programma.effetto}</b>
-                </div>
             </div>`;
         });
 
@@ -388,7 +362,7 @@
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
             // Il tasto diventa IDLE se il requisito manca (M.tastoConRequisiti).
-            M.tastoConRequisiti(nuovo, M.requisitiDichiarati(window.combatTargets, ['area']), 'ESEGUI ATTACCO CYBER', function () { window.eseguiCalcoloHacking(); });
+            M.tastoConRequisiti(nuovo, M.requisitiDichiarati(window.combatTargets, ['area']), 'ESEGUI CALCOLO', function () { window.eseguiCalcoloHacking(); });
         }
     };
 
@@ -494,7 +468,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_hacking.js', versione: '2026-10-28.3', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_hacking.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

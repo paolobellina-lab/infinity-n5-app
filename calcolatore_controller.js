@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-10-31.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -1168,6 +1168,21 @@ window.d20Svg = (fazione, px) => {
 };
 // L'icona della fazione nell'angolo della cella, dal lato del giocatore (P21).
 window.ICONA_FAZIONE_HUB = { NOMADI: 'img/icona_nomadi.png', PANOCEANIA: 'img/icona_panoceania.png' };
+// 31 ottobre sera (Paolo): le icone delle fazioni escono dalle celle e
+// stanno negli angoli IN ALTO del riquadro dello scontro, all'altezza del
+// titolo, ~75 px, ognuna dal lato del suo giocatore (window.latoDi: segue
+// INVERTI LATI). Solo le fazioni che sono nello scontro.
+window.titoloConIconeHub = (titoloHtml, fazioni) => {
+    const presenti = ['NOMADI', 'PANOCEANIA'].filter(f => (fazioni || []).indexOf(f) >= 0);
+    const ico = (f) => {
+        const file = window.ICONA_FAZIONE_HUB[f];
+        const lato = window.latoDi(f) === 'DX' ? 'right' : 'left';
+        return file ? `<img class="icona-fazione-scontro" data-lato="${lato === 'right' ? 'DX' : 'SX'}" src="${file}" alt="${f}" style="position:absolute; top:0; ${lato}:0; height:75px; width:auto; max-width:75px; object-fit:contain;" onerror="this.style.display='none'">` : '';
+    };
+    return `<div class="titolo-scontro" style="position:relative; min-height:75px; display:flex; align-items:center; justify-content:center; padding:0 82px; margin-bottom:8px;">` +
+        presenti.map(ico).join('') + titoloHtml + `</div>`;
+};
+// (Fino al 31 ottobre mattina l'icona stava dentro la cella del giocatore.)
 window.iconaFazioneCella = (fazione) => {
     const f = window.ICONA_FAZIONE_HUB[fazione];
     return f ? `<img class="icona-fazione-cella" src="${f}" alt="${fazione}" style="height:28px; width:auto; vertical-align:middle; margin:0 6px;" onerror="this.style.display='none'">` : '';
@@ -1377,16 +1392,11 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
             return id;
         };
         const allineaDalLatoDi = (fazione) => (window.latoDi(fazione) === 'DX') ? 'right' : 'left';
-        // 31 ottobre (P21): niente «NOMADI»/«PANOCEANIA» davanti al nome;
-        // l'icona della fazione nell'angolo in alto della cella, dal lato del
-        // giocatore (a sinistra nella colonna di sinistra, a destra in quella
-        // di destra).
-        const testa = (lato, attivo) => {
-            const aDestra = window.latoDi(lato.fazione) === 'DX';
-            const ico = window.iconaFazioneCella(lato.fazione);
-            return (aDestra ? ruolo(attivo, lato).replace(/<br>$/, '') + ico + '<br>' : ico + ruolo(attivo, lato)) +
+        // 31 ottobre (P21): niente «NOMADI»/«PANOCEANIA» davanti al nome.
+        // 31 ottobre sera: l'icona della fazione non sta piu` nella cella, ma
+        // negli angoli in alto del riquadro (window.titoloConIconeHub).
+        const testa = (lato, attivo) => ruolo(attivo, lato) +
                 `<b style="color:${colore(lato.fazione)}; font-size:22px;">${lato.nome}</b><br>`;
-        };
         const cellaPiena = (lato, attivo, modHtml, dadiHtml) => ({ fazione: lato.fazione, html: testa(lato, attivo) +
             `<span style="color:#aaa; font-size:14px;">Azione:</span> <span style="color:#fff;">${nomeAzioneTab(lato.azione)}</span><br>
                         ${modHtml}
@@ -1468,7 +1478,7 @@ window.mostraSchermataRisoluzione = (scontri, busta) => {
         disegnati.push({ scontro, index, parti: { riga, cellaPiena, testa, DUE, isF2F, modAttaccanteHtml, dadiAttaccanteHtml,
             modDifensoreHtml, dadiDifensoreHtml, noteScontro, noteScontroHtml, nomeAzioneTab, dettagli: dettagliHtml(index) }, html: `
             <div style="background:#111; border:2px solid #444; border-radius:10px; padding:15px; margin-bottom:20px; box-shadow: 0 0 15px rgba(255,255,255,0.05);">
-                <h3 style="color:${isF2F ? '#00ff00' : '#ffcc00'}; text-align:center; margin-top:0; font-family:'Teko'; font-size:32px; letter-spacing:1px;">${scontro.titolo}</h3>
+ ${window.titoloConIconeHub(`<h3 style="color:${isF2F ? '#00ff00' : '#ffcc00'}; text-align:center; margin:0; font-family:'Teko'; font-size:32px; letter-spacing:1px;">${scontro.titolo}</h3>`, [scontro.attivo.fazione, scontro.reattivo.fazione])}
                 
                 ${htmlScontro}
                 ${noteScontroHtml}
@@ -1525,7 +1535,7 @@ window.riquadroTiroUnico = (membri) => {
     const noteHtml = riquadroNote(comuni);
     return `
             <div class="riquadro-tiro-unico" style="background:#111; border:2px solid #444; border-radius:10px; padding:15px; margin-bottom:20px; box-shadow: 0 0 15px rgba(255,255,255,0.05);">
-                <h3 style="color:#ffcc00; text-align:center; margin-top:0; font-family:'Teko'; font-size:32px; letter-spacing:1px;">SAGOMA D'IMPATTO: UN TIRO, ${membri.length} BERSAGLI</h3>
+                ${window.titoloConIconeHub(`<h3 style="color:#ffcc00; text-align:center; margin:0; font-family:'Teko'; font-size:32px; letter-spacing:1px;">SAGOMA D'IMPATTO: UN TIRO, ${membri.length} BERSAGLI</h3>`, [sa.attivo.fazione].concat(membri.map(m => m.scontro.reattivo.fazione)))}
                 ${attaccante}
                 ${righe}
                 ${noteHtml}
@@ -1569,7 +1579,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-10-31.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-10-31.2', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

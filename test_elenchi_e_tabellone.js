@@ -1,4 +1,4 @@
-// @versione 2026-10-31.2 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-11-01.3 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -185,6 +185,26 @@
 //      RISCRITTI (dalla 2026-10-31.2, scala dei caratteri del MOTORE): 42
 //      (LoF a var(--fs-l)) e 51-P20 (terreno e tendina ARO a var(--fs-titolo-2),
 //      Copertura a var(--fs-l)); prima 22 / 26 px scritti a numero.
+//  52. Collaudo grafico del 31 ottobre sera (motore 31.2): icone degli stati
+//      a token (72 / 56 accavallate, una riga), segnalini di schieramento a
+//      sinistra (CAMO, IMP, HIDDEN, AD) col tocco foto/segnalino, MARKER senza
+//      CAMO/IMP a destra e senza soprannome, icone delle fazioni negli angoli
+//      del riquadro all Hub, HoloMask (due foto, maschera con aura nella propria
+//      app, tocco sul profilo vero), Holoecho versione B (figura sul tavolo).
+//      RISCRITTI (dalla 2026-10-31.3), col prima/dopo nel commento: 6 (icone
+//      delle fazioni negli angoli), 17 (icone 72 px, spazio 92), 26 (segnalini
+//      CAMO a sinistra), 30 (il Ferito: icona nell angolo), 37 (HIDDEN a
+//      sinistra), 38e (CAMO a sinistra, galleria), 38f (icone a token), 38i
+//      (AD a sinistra), 40 (HIDDEN a sinistra), 51-P2 e 51-P8.
+//      Dalla 2026-11-01.1 (Paolo, Holoecho versione B): RISCRITTA la parte 8
+//      della 52: nella propria app la VERA ha sempre la foto e la sua riga dice
+//      «sul tavolo la figura è il N» (prima «FIGURA SUL TAVOLO» sull'elemento
+//      figura, e la vera non figura col segnalino); in piu` l app avversaria
+//      senza «TOGLI LA REPLICA».
+//      Dalla 2026-11-01.2: RISCRITTO in 34f il tasto TOGLI LA REPLICA (prima
+//      sotto ogni replica, ora nella pagina degli stati di logica_stati; nella
+//      riga resta la nota nella ⓘ).
+//      Dalla 2026-11-01.3: in 52 (parte 8) il tasto negli stati (logica_stati 11-01.1).
 //
 //  SOLO=34a,35a node test_elenchi_e_tabellone.js  gira solo quelle sezioni.
 //
@@ -548,8 +568,17 @@ sezione('6. Hub: i lati sono dove siedono i giocatori', () => {
     const html = T.hub.el('clash-container').innerHTML;
     // Prima: il colore sulla scritta «NOMADI ...». Ora sul nome, e l icona.
     ok(/color:#ff3333; font-size:22px;">Spara</.test(html) && /color:#00ccff; font-size:22px;">Uno</.test(html), 'Nomads rossi, PanOceania blu');
-    ok(/<img class="icona-fazione-cella" src="img\/icona_nomadi\.png"/.test(html) && /<img class="icona-fazione-cella" src="img\/icona_panoceania\.png"/.test(html) && !/>NOMADI Spara|>PANOCEANIA Uno/.test(html),
-       'P21: davanti ai nomi niente «NOMADI»/«PANOCEANIA», c e l icona della fazione nella cella');
+    // RISCRITTO il 31 ottobre sera (Paolo): le icone escono dalla cella
+    // (prima icona-fazione-cella accanto al ruolo) e stanno negli angoli in
+    // alto del riquadro, all'altezza del titolo, 75 px, dal lato del giocatore.
+    const titoloSc = (html.match(/<div class="titolo-scontro"[\s\S]*?<\/h3><\/div>/) || [''])[0];
+    ok(/<img class="icona-fazione-scontro" data-lato="SX" src="img\/icona_nomadi\.png"[^>]*style="position:absolute; top:0; left:0; height:75px;/.test(titoloSc) && /<img class="icona-fazione-scontro" data-lato="DX" src="img\/icona_panoceania\.png"[^>]*right:0; height:75px;/.test(titoloSc) && /<h3[^>]*>TIRO (NORMALE|FACCIA A FACCIA)<\/h3>/.test(titoloSc) &&
+       !/icona-fazione-cella/.test(html) && !/>NOMADI Spara|>PANOCEANIA Uno/.test(html),
+       'P21: davanti ai nomi niente «NOMADI»/«PANOCEANIA»; le icone delle fazioni negli angoli in alto del riquadro, accanto al titolo, non nella cella');
+    T.hub.g.invertiLati();
+    const inv = (T.hub.el('clash-container').innerHTML.match(/<div class="titolo-scontro"[\s\S]*?<\/h3><\/div>/) || [''])[0];
+    T.hub.g.invertiLati();
+    ok(/data-lato="DX" src="img\/icona_nomadi\.png"/.test(inv) && /data-lato="SX" src="img\/icona_panoceania\.png"/.test(inv), 'con INVERTI LATI le icone si scambiano di angolo');
     H.invertiLati();
     t = tabellone(T);
     ok(H.latoDi('NOMADI') === 'DX' && t.indexOf('ATTIVO Uno') < t.indexOf('REATTIVO Spara'), 'INVERTI LATI: lo scontro a schermo si ridisegna con PanOceania a sinistra');
@@ -879,7 +908,11 @@ sezione('17. La riga dell unita` nuova, dentro app.html (Paolo, 9 ottobre)', () 
     // RISCRITTO il 31 ottobre (Paolo, P17): le icone degli stati circa il
     // doppio, 80 px, senza accavallarsi; con due o piu` vanno sotto il nome,
     // due per riga. Prima: 64 px (una) o 46 px accavallate (molte).
-    ok(/\.riga-unita-foto \.rup-icone img \{ width:80px !important; height:80px !important; margin:0 !important;/.test(vera) && /\.riga-unita-foto \.rup-icone \{ position:absolute;[^}]*flex-wrap:wrap;/.test(vera), 'le icone degli stati: 80 px, in fila senza accavallarsi (a capo se servono)');
+    // RISCRITTO il 31 ottobre sera (Paolo, passo indietro su P17): prima 80 px,
+    // flex-wrap:wrap; ora una 72 px, due o piu` 56 px accavallate di 16, una riga.
+    ok(/\.riga-unita-foto \.rup-icone img \{ width:72px !important; height:72px !important; margin:0 !important;/.test(vera) && /\.riga-unita-foto \.rup-icone \{ position:absolute; right:4px; top:50%; transform:translateY\(-50%\);[^}]*flex-wrap:nowrap;/.test(vera) &&
+       /\.rup-icone\.rup-icone-molte img \{ width:56px !important; height:56px !important; \}/.test(vera) && /\.rup-icone\.rup-icone-molte > \* \+ \* \{ margin-left:-16px !important; \}/.test(vera) && !/rup-icone-sotto/.test(vera),
+       'le icone degli stati: a destra, centrate, su una riga; una 72 px, piu` di una 56 px accavallate di 16 (via rup-icone-sotto)');
     const T = creaTavolo(DIR); const N = T.nomadi.g;
     ok(T.problemi.length === 0, 'la pagina si carica senza errori (' + J(T.problemi) + ')');
     ok(N.rigaUnitaConFoto && N.rigaUnitaConFoto.originale === undefined, 'una sola riga: nessuna funzione sostituita sopra un altra');
@@ -909,7 +942,8 @@ sezione('17. La riga dell unita` nuova, dentro app.html (Paolo, 9 ottobre)', () 
     // RISCRITTO il 31 ottobre (Paolo, P17): le icone degli stati circa il
     // doppio, 80 px, senza accavallarsi; con due o piu` vanno sotto il nome,
     // due per riga. Prima: 64 px (una) o 46 px accavallate (molte).
-    ok(/padding:10px 100px 34px 92px/.test(riga('p1')[0] || '') && /padding:10px 16px 34px 92px/.test(riga('p2')[0] || ''), 'con un icona il nome lascia 100 px a destra (80 + margini); senza icone nessuno spazio');
+    // RISCRITTO il 31 ottobre sera: prima 100 px (80 + margini), ora 92 (72 + margini).
+    ok(/padding:10px 92px 34px 92px/.test(riga('p1')[0] || '') && /padding:10px 16px 34px 92px/.test(riga('p2')[0] || ''), 'con un icona il nome lascia 92 px a destra (72 + margini); senza icone nessuno spazio');
     // L'elenco degli ARO: la scelta si accende con data-scelta, non col fondo.
     const P = T.pano.g; P.selectedAroUnits = ['p2'];
     const btn = { className: 'huge-btn riga-unita riga-unita-foto', style: {}, attr: {}, setAttribute(k, v) { this.attr[k] = v; } };
@@ -1708,8 +1742,11 @@ sezione('26. I lavori del 20 ottobre (MOTORE): moto e TAG, TAG vuoto, Marker num
         // RISCRITTO il 31 ottobre (Paolo, P2): non piu` la scritta «CAMO 1»
         // accanto al nome ma il SEGNALINO numerato a destra, con le icone (alt
         // «CAMO 1»; senza il file la stessa scritta).
-        const et = righe.map(r => (r.match(/class="icona-segnalino-numerato"[\s\S]*?alt="([^"]*)"/) || [])[1] || null);
-        ok(J(et) === J(['CAMO 1', 'CAMO 2', null]) && !/etichetta-marker/.test(righe.join('')), 'nella propria app, PRIMA dell invio: CAMO 1, CAMO 2 accanto al nome, niente sulla truppa scoperta (' + J(et) + ')');
+        // RISCRITTO il 31 ottobre sera (Paolo): il segnalino sta a SINISTRA, al
+        // posto della foto (rup-segnalino-schieramento); prima a destra
+        // (icona-segnalino-numerato).
+        const et = righe.map(r => (r.match(/class="rup-foto rup-segnalino rup-segnalino-schieramento[^"]*"[\s\S]*?alt="([^"]*)"/) || [])[1] || null);
+        ok(J(et) === J(['CAMO 1', 'CAMO 2', null]) && !/icona-segnalino-numerato/.test(righe.join('')) && !/etichetta-marker/.test(righe.join('')), 'nella propria app, PRIMA dell invio: CAMO 1, CAMO 2 accanto al nome, niente sulla truppa scoperta (' + J(et) + ')');
         T.schiera(N.roster, [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
         const nemici = P.MotoreN5.rosterNemico();
         ok(J(nemici.map(u => u.alias)) === J(['SEGNALINO MIMETICO 1', 'SEGNALINO MIMETICO 2', 'Terzo']),
@@ -1739,7 +1776,8 @@ sezione('26. I lavori del 20 ottobre (MOTORE): moto e TAG, TAG vuoto, Marker num
         N.aggiornaGraficaRoster();
         const righe = String(T.nomadi.el('unit-buttons-container').innerHTML).split(/(?=<button)/).filter(r => /riga-unita/.test(r));
         // RISCRITTO il 31 ottobre (P2): il segnalino numerato a destra (alt).
-        const et = righe.map(r => (r.match(/class="icona-segnalino-numerato"[\s\S]*?alt="([^"]*)"/) || [])[1] || null);
+        // RISCRITTO il 31 ottobre sera: a sinistra, al posto della foto.
+        const et = righe.map(r => (r.match(/class="rup-foto rup-segnalino rup-segnalino-schieramento[^"]*"[\s\S]*?alt="([^"]*)"/) || [])[1] || null);
         ok(J(et) === J(['CAMO 1', 'CAMO-3 1', 'CAMO 2', 'CAMO-3 2']), 'CAMO e CAMO-3 hanno serie separate, sulla riga del giocatore (' + J(et) + ')');
         T.schiera(N.roster, [truppa(profilo(T, /^Fusilier \(Combi/), { id: 'p1', alias: 'Due' })], 'NOMADI');
         const fP = P.MotoreN5.rosterNemico().map(u => P.fotoUnita(u, 'NOMADI'));
@@ -1897,7 +1935,10 @@ sezione('30. Tabellone: il bersaglio del Supporto e` BERSAGLIO, non REATTIVO (SU
     // RISCRITTO il 31 ottobre (Paolo, P21 e P23): sul tabellone niente piu`
     // «NOMADI»/«PANOCEANIA» davanti al nome (c e l icona della fazione) e la
     // riga delle salvezze si chiama «TIRO SALVEZZA» (prima «SE COLPITO ...»).
-    ok(risoluzione(T) && /BERSAGLIO Ferito/.test(t) && /<img class="icona-fazione-cella" src="img\/icona_nomadi\.png"[^>]*>🩺 BERSAGLIO/.test(T.hub.el('clash-container').innerHTML.replace(/<span[^>]*>/g, '')),
+    // RISCRITTO il 31 ottobre sera: l icona della fazione sta nell angolo del
+    // riquadro (prima nella cella, accanto a «🩺 BERSAGLIO»): una sola, Nomadi.
+    const tsc = (T.hub.el('clash-container').innerHTML.match(/<div class="titolo-scontro"[\s\S]*?<\/h3><\/div>/) || [''])[0];
+    ok(risoluzione(T) && /BERSAGLIO Ferito/.test(t) && /🩺 BERSAGLIO/.test(T.hub.el('clash-container').innerHTML) && (tsc.match(/icona-fazione-scontro/g) || []).length === 1 && /src="img\/icona_nomadi\.png"/.test(tsc),
        'il Ferito e` "BERSAGLIO", della sua fazione (icona Nomadi) (' + (t.match(/(REATTIVO|BERSAGLIO) Ferito/) || ['?'])[0] + ')');
     ok(!/REATTIVO/.test(t), 'e nessuno e` "REATTIVO" in un Supporto senza ARO');
     // CONTROPROVA: in uno scontro vero il reattivo resta REATTIVO.
@@ -2171,7 +2212,11 @@ sezione('34f. Holoecho e Decoy: repliche, etichette, togli, nota in ARO', () => 
         P.currentGroup = 1; P.isCoordinated = false; P.selectedCoordinatedUnits = []; P.aggiornaGraficaRoster();
         const righe = String(T.pano.el('unit-buttons-container').innerHTML);
         ok((righe.match(/🪞 REPLICA \d/g) || []).length === 2 && /★ VERA \d/.test(righe), 'nella propria app: «★ VERA n» e due «🪞 REPLICA n»');
-        ok((righe.match(/class="btn-status togli-replica"/g) || []).length === 2, 'e il tasto TOGLI LA REPLICA solo sulle repliche (2)');
+        // RISCRITTO il 1 novembre (Paolo): il tasto TOGLI LA REPLICA non sta piu`
+        // sotto la riga (prima: 2 tasti togli-replica nell elenco); va nella
+        // pagina degli stati (logica_stati, MOTORE). Qui la nota nella ⓘ dice dove.
+        const noteRep = P.vociInfo('step-unit').filter(v => /replica/.test(v.titolo) && /TOGLI LA REPLICA/.test(v.testo));
+        ok(!/togli-replica|TOGLI LA REPLICA/.test(righe) && noteRep.length === 2 && noteRep.every(v => /^truppa-/.test(v.tasto)), 'niente tasto sotto le repliche; la nota nella ⓘ di ognuna dice: tieni premuto, negli stati TOGLI LA REPLICA (' + noteRep.length + ')');
         const nem = N.MotoreN5.rosterNemico();
         const rigaN = nem.map(u => testo(N.rigaUnitaConFoto(u, { fazione: 'NEMICA' }))).join(' | ');
         ok(nem.length === 3 && !/REPLICA|VERA/.test(rigaN), 'l avversario vede tre truppe uguali, senza etichette (' + nem.length + ')');
@@ -2363,10 +2408,12 @@ sezione('37. Hidden Deployment nella propria app: il segnalino grande fra le ico
     // token in grande a destra come gli altri token»). Prima: etichetta-marker
     // «HIDDEN» con l icona piccola accanto al nome. Ora: niente scritta, il
     // segnalino a 45 px fra le icone degli stati (rup-icone).
+    // RISCRITTO il 31 ottobre sera (Paolo): il segnalino HIDDEN a SINISTRA, al
+    // posto della foto, tondo e intero; prima a destra fra le icone, 45 px.
     const iconeOmbra = (rOmbra.match(/<div class="rup-icone">([\s\S]*?)<\/div>/) || ['', ''])[1];
-    ok(/<img class="icona-segnalino-hidden" src="img\/nomadi\/icon_hidden\.png" data-rip="img\/icon_hidden\.png"[\s\S]*?alt="HIDDEN" style="width:45px; height:45px;/.test(iconeOmbra)
-       && !/etichetta-marker/.test(rOmbra) && !/>HIDDEN</.test(rOmbra),
-       'propria app: il segnalino HIDDEN grande (45 px) fra le icone degli stati, img/nomadi/icon_hidden.png con ripiego img/icon_hidden.png; niente scritta');
+    ok(/<img class="rup-foto rup-segnalino rup-segnalino-schieramento rup-tocco-foto rup-v1" src="img\/nomadi\/icon_hidden\.png" data-rip="img\/icon_hidden\.png"[\s\S]*?alt="HIDDEN"/.test(rOmbra)
+       && !/icon_hidden/.test(iconeOmbra) && !/etichetta-marker/.test(rOmbra) && !/>HIDDEN</.test(rOmbra),
+       'propria app: il segnalino HIDDEN a sinistra al posto della foto, img/nomadi/icon_hidden.png con ripiego img/icon_hidden.png; niente a destra, niente scritta');
     ok(/🫥/.test(rOmbra), 'e se mancano i due file, l emoji 🫥');
     ok(!/etichetta-marker/.test(rVista), 'CONTROPROVA: una truppa a vista non ha l etichetta');
     ok(!P.MotoreN5.rosterNemico().some(u => u.id === 'n1') && !(H.gameState.nomads || []).some(u => u.id === 'n1'), 'l avversario e l Hub non la ricevono (invisibile)');
@@ -2375,8 +2422,10 @@ sezione('37. Hidden Deployment nella propria app: il segnalino grande fra le ico
     // e metti il token grande»). Prima: «[ HIDDEN DEPLOYMENT ]» con l icona
     // piccola. Ora: niente scritta, lo stesso segnalino a 45 px fra le icone.
     const dep = String(T.nomadi.el('deploy-units-container').innerHTML);
-    ok(!/HIDDEN DEPLOYMENT/.test(dep) && !/etichetta-hidden/.test(dep) && /<div class="rup-icone"><img class="icona-segnalino-hidden"[\s\S]*?width:45px/.test(dep),
-       'lista dello schieramento: niente «[ HIDDEN DEPLOYMENT ]», il segnalino grande fra le icone');
+    // RISCRITTO il 31 ottobre sera: il segnalino a sinistra (prima fra le icone, 45 px);
+    // allo schieramento il tocco apre ancora la galleria.
+    ok(!/HIDDEN DEPLOYMENT/.test(dep) && !/etichetta-hidden/.test(dep) && /<img class="rup-foto rup-segnalino rup-segnalino-schieramento rup-tocco-foto" src="img\/nomadi\/icon_hidden\.png"[\s\S]*?window\.cambiaIconaDeploy\(event, 0\)/.test(dep) && !/data-vista/.test(dep),
+       'lista dello schieramento: niente «[ HIDDEN DEPLOYMENT ]», il segnalino a sinistra; toccarlo apre la galleria');
 });
 
 // 38: il collaudo grafico di MOTORE (27 ottobre, 63 schermate a 390 px) e
@@ -2464,11 +2513,14 @@ sezione('38e. Schieramento: la riga con la foto, niente immagine rotta, scelte u
     ok(righe.length === 2, 'le truppe da schierare hanno la riga di tutti gli elenchi, rigaUnitaConFoto (' + righe.length + ')');
     ok(!/TOCCA PER LA FOTO/.test(lista) && !/<img src=""/.test(lista), 'niente piu` immagine vuota col testo TOCCA PER LA FOTO');
     ok(/<span class="rup-sigla rup-tocco-foto" onpointerdown="event\.stopPropagation\(\)" onclick="event\.stopPropagation\(\); window\.cambiaIconaDeploy\(event, 0\)"/.test(righe[0]), 'senza foto: la sigla del tipo, e toccarla apre la galleria');
-    ok(/<img class="rup-foto rup-tocco-foto" src="img\/nomadi\/alguaciles\.png"[\s\S]*?onclick="event\.stopPropagation\(\); window\.cambiaIconaDeploy\(event, 1\)"/.test(righe[1]), 'con la foto: la foto, e toccarla apre la galleria');
+    // RISCRITTO il 31 ottobre sera (Paolo): la truppa in CAMO mostra il suo
+    // segnalino al posto della foto; toccarlo apre la galleria (prima: la foto).
+    ok(/<img class="rup-foto rup-segnalino rup-segnalino-schieramento rup-tocco-foto" src="img\/nomadi\/camo_1\.png"[\s\S]*?onclick="event\.stopPropagation\(\); window\.cambiaIconaDeploy\(event, 1\)"/.test(righe[1]) && !/alguaciles\.png/.test(righe[1]), 'con la foto, in CAMO: il segnalino al posto della foto, e toccarlo apre la galleria');
     ok(/startDeployPress\(0, event\)/.test(righe[0]) && /endDeployPress\(0\)/.test(righe[0]), 'il tocco sulla riga resta quello di prima (breve: schieramento; lungo: stati)');
     // RISCRITTO il 31 ottobre (P2): niente «[ SEGNALINO CAMO ]» nella fascia
     // bassa: c e il segnalino numerato a destra. Prima: la nota nella fascia.
-    ok(!/SEGNALINO CAMO/.test(righe[1]) && /class="icona-segnalino-numerato"/.test(righe[1]), 'la truppa in CAMO: nessuna scritta, il segnalino numerato a destra');
+    // RISCRITTO il 31 ottobre sera: il segnalino a sinistra (prima a destra).
+    ok(!/SEGNALINO CAMO/.test(righe[1]) && /rup-segnalino-schieramento[\s\S]*?alt="CAMO 1"/.test(righe[1]) && !/icona-segnalino-numerato/.test(righe[1]), 'la truppa in CAMO: nessuna scritta, il segnalino numerato a sinistra');
     vmTocco(T.nomadi, (righe[0].match(/onclick="event\.stopPropagation\(\); (window\.cambiaIconaDeploy\(event, 0\))"/) || [])[1].replace('event', 'null'));
     ok(T.nomadi.el('galleria-foto').style.display === 'block' && /assegnaFoto\(0, 'alguaciles\.png'\)/.test(T.nomadi.el('galleria-foto').innerHTML) === false, 'toccata la sigla si apre la galleria (la foto libera e` gia` presa da Due: non compare)');
     N.chiudiGalleriaFoto();
@@ -2531,10 +2583,13 @@ sezione('38f. Testi tagliati (collaudo, punto 6)', () => {
     // RISCRITTO il 31 ottobre (Paolo, P17): le icone degli stati circa il
     // doppio, 80 px, senza accavallarsi; con due o piu` vanno sotto il nome,
     // due per riga. Prima: 64 px (una) o 46 px accavallate (molte).
-    ok(/padding:10px 100px 34px 92px/.test(una) && !/rup-icone-molte/.test(una), 'un icona: a destra, il nome lascia 100 px');
-    ok(/<div class="rup-icone rup-icone-molte rup-icone-sotto">/.test(tre) && /padding:10px 16px 34px 92px/.test(tre) && /class="rup-spazio-icone" style="flex:0 0 0; width:0; height:162px;"/.test(tre),
-       'tre icone: sotto il nome, due per riga; il nome ha tutta la larghezza (G02, \"SPEKTR\") e la riga si allunga per due righe di icone');
-    ok(/\.riga-unita-foto \.rup-icone\.rup-icone-sotto \{ top:42px; transform:none; \}/.test(stileApp()) && !/rup-icone-molte img \{ width:46px/.test(stileApp()), 'la regola: sotto il nome; niente piu` icone strette a 46 px');
+    // RISCRITTO il 31 ottobre sera (passo indietro su P17): una 72 px (spazio
+    // 92), tre 56 px accavallate di 16 su una riga (56 + 2*40 + 4 = 140, spazio
+    // 156); via rup-icone-sotto e rup-spazio-icone. Prima: 100 / sotto il nome.
+    ok(/padding:10px 92px 34px 92px/.test(una) && !/rup-icone-molte/.test(una), 'un icona: a destra, il nome lascia 92 px');
+    ok(/<div class="rup-icone rup-icone-molte">/.test(tre) && /padding:10px 156px 34px 92px/.test(tre) && !/rup-spazio-icone|rup-icone-sotto/.test(tre),
+       'tre icone: a destra su una riga, accavallate; il nome lascia 156 px; la riga non si allunga');
+    ok(!/rup-icone-sotto/.test(stileApp()) && /rup-icone-molte img \{ width:56px/.test(stileApp()), 'la regola: niente piu` icone sotto il nome; accavallate a 56 px');
     // G03 e G06: le reazioni e le munizioni in ARO.
     T.schiera([truppa(profilo(T, /^Alguacil \(HMG/), { id: 'n1', alias: 'Spara' })], [truppa(T.profilo(T.pano, /^Orc \(MULTI Rifle\)/), { id: 'p1', alias: 'Orco' })], 'NOMADI');
     T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Heavy Machine Gun');
@@ -2623,7 +2678,8 @@ sezione('38i. BS-29: lo Schieramento Aereo lo decide il motore (M.opzioniSchiera
     // RISCRITTO il 31 ottobre (Paolo, P8): via la scritta «[ SCHIERAMENTO
     // AEREO ]»; l icona come l Hidden (icon_airborne.png, ripiego 🪂).
     { const dep = T.nomadi.el('deploy-units-container').innerHTML;
-      ok(!/SCHIERAMENTO AEREO \]/.test(dep) && /<img class="icona-segnalino-ad"[^>]*src="img\/nomadi\/icon_airborne\.png"[^>]*data-rip="img\/icon_airborne\.png"[\s\S]*?🪂/.test(dep), 'nella lista dello schieramento: niente scritta, il segnalino dello Schieramento Aereo (🪂 di ripiego)'); }
+      // RISCRITTO il 31 ottobre sera: il segnalino AD a sinistra, al posto della foto (prima fra le icone).
+      ok(!/SCHIERAMENTO AEREO \]/.test(dep) && /<img class="rup-foto rup-segnalino rup-segnalino-schieramento rup-tocco-foto" src="img\/nomadi\/icon_airborne\.png" data-rip="img\/icon_airborne\.png"[\s\S]*?🪂/.test(dep), 'nella lista dello schieramento: niente scritta, il segnalino dello Schieramento Aereo (🪂 di ripiego)'); }
     N.apriDeployStati(0);
     ok(/tasto-opzione opzione-schieramento attivo" data-stato="AD" onclick="window\.setDeployState\(0, 'AD'\)/.test(T.nomadi.el('deploy-states-content').innerHTML), 'riaprendo, la scelta e` accesa');
     N.apriDeployStati(1);
@@ -2735,7 +2791,8 @@ sezione('40. Collaudo grafico, secondo giro (27 ottobre sera): A03, A05, B10/F01
     // prima del soprannome. Ora non c e nessuna etichetta: il segnalino sta
     // fra le icone degli stati, e nome e fascia bassa restano puliti.
     ok(!/etichetta-marker/.test(righe[1]) && !/HIDDEN/.test(nome(righe[1])), 'G02: niente etichetta HIDDEN, ne` nel nome ne` altrove');
-    ok(!/rup-etichette/.test(righe[1]) && /<div class="rup-icone"><img class="icona-segnalino-hidden"/.test(righe[1]), 'il segnalino e` fra le icone, la fascia bassa non ha etichette');
+    // RISCRITTO il 31 ottobre sera: il segnalino a sinistra (prima fra le icone).
+    ok(!/rup-etichette/.test(righe[1]) && /rup-segnalino-schieramento[^"]*" src="img\/nomadi\/icon_hidden\.png"/.test(righe[1]) && !/<div class="rup-icone"><img class="icona-segnalino-hidden"/.test(righe[1]), 'il segnalino e` a sinistra, la fascia bassa non ha etichette');
     const capo = String(N.rigaUnitaConFoto(truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n4', alias: 'Capo', states: { fireteam: 'A', isFireteamLeader: true } }), {}));
     ok(!/TEAM A/.test(nome(capo)) && /rup-etichette[\s\S]*TEAM A/.test(capo), 'il segno del Fireteam lo stesso: fuori dal nome');
 });
@@ -3209,7 +3266,8 @@ sezione('51. Collaudo grafico di Paolo, 30 ottobre (P1-P25): schieramento, riqua
     // --- P2: numerati gia` allo schieramento ---
     const c1 = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Primo', deployState: 'CAMO', states: { camo: true } });
     N.roster = [c1]; N.renderDeployUnits();
-    ok(N.roster[0].numeroMarker === 1 && /class="icona-segnalino-numerato"[\s\S]*?alt="CAMO 1"/.test(T.nomadi.el('deploy-units-container').innerHTML), 'P2: allo schieramento il Marker ha gia` il suo numero (CAMO 1), lo stesso di tutta la partita');
+    // RISCRITTO il 31 ottobre sera: il segnalino a sinistra (prima icona-segnalino-numerato a destra).
+    ok(N.roster[0].numeroMarker === 1 && /rup-segnalino-schieramento[\s\S]*?alt="CAMO 1"/.test(T.nomadi.el('deploy-units-container').innerHTML), 'P2: allo schieramento il Marker ha gia` il suo numero (CAMO 1), lo stesso di tutta la partita');
     // --- P4: Minelayer, il NO scritto in pagina, niente finestra ---
     const task = truppa(profilo(T, /^Taskmaster \(Red Fury/), { id: 'n3', alias: 'Task' });
     N.roster = [task]; N.apriDeployStati(0);
@@ -3245,7 +3303,8 @@ sezione('51. Collaudo grafico di Paolo, 30 ottobre (P1-P25): schieramento, riqua
        'P7: l arma finita e` un tasto spento con «USI RESIDUI: 0»; la spiegazione nella ⓘ, senza ripetere il nome');
     // --- P8: Schieramento Aereo con l icona; ripiego 🪂 ---
     const sp = truppa(profilo(T, /^Spector \(Parachutist/), { id: 'n6', alias: 'Cielo', deployState: 'AD' });
-    ok(/class="icona-segnalino-ad"[\s\S]*?🪂/.test(N.generaIconeStati(sp)) && !/🫥/.test(N.iconaSegnalinoSenzaNumero(sp)), 'P8: lo Schieramento Aereo ha il suo segnalino fra le icone, col ripiego 🪂 (non 🫥)');
+    // RISCRITTO il 31 ottobre sera: il segnalino AD a sinistra (window.segnalinoSchieramento), non piu` fra le icone.
+    ok(/🪂/.test(N.segnalinoSchieramento(sp).finale) && !/icona-segnalino-ad/.test(N.generaIconeStati(sp)) && !/🫥/.test(N.iconaSegnalinoSenzaNumero(sp)), 'P8: lo Schieramento Aereo ha il suo segnalino (a sinistra), col ripiego 🪂 (non 🫥)');
     // --- P9-10: via «HOLOMASK: SEMBRA» ---
     ok(!/HOLOMASK: SEMBRA/.test(senzaCommenti(ros)) && !/etichetta-holomask/.test(senzaCommenti(ros)), 'P9-10: la scritta viola «[ HOLOMASK: SEMBRA … ]» non c e piu`');
     // --- P13: segnalini tondi interi ---
@@ -3305,6 +3364,151 @@ sezione('51. Collaudo grafico di Paolo, 30 ottobre (P1-P25): schieramento, riqua
     const r3 = H.setupAccettabile('NOMADI', 3, 'SCHIERAMENTO');
     H.MotoreN5.chiediSiNo = vera;
     ok(r1 === null && r2 === null && r3 === true, 'Hub: «sostituisco la lista?» nel riquadro: finche` non si risponde la busta aspetta (null), poi vale la risposta (' + J([r1, r2, r3]) + ')');
+});
+
+sezione('52. Collaudo grafico, 31 ottobre sera: icone a token, segnalini a sinistra, tocco, Marker, Hub, HoloMask, Holoecho B', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+    const righeDi = (d, id) => String(d.el(id).innerHTML).split(/(?=<button)/).filter(r => /riga-unita/.test(r));
+    // --- 1. icone a token: una 72, piu` di una 56 accavallate, la riga non si allunga ---
+    const due = String(N.rigaUnitaConFoto(truppa(profilo(T, /^Alguacil \(Combi/), { id: 'x2', alias: 'Due', states: { targeted: true, stunned: true } }), {}));
+    ok(/<div class="rup-icone rup-icone-molte">/.test(due) && /padding:10px 116px 34px 92px/.test(due) && !/rup-spazio-icone|rup-icone-sotto/.test(due), '1: due icone a destra su una riga, accavallate (spazio 56 + 40 + 4 + 16 = 116), la riga non si allunga');
+    // --- 2. segnalini di schieramento a sinistra ---
+    const camo = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Primo', imgVariant: 'alguaciles.png', deployState: 'CAMO', states: { camo: true } });
+    const nasc = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Ombra', deployState: 'HIDDEN', states: { hidden: true } });
+    const aereo = truppa(profilo(T, /^Spector \(Parachutist/), { id: 'n3', alias: 'Cielo', deployState: 'AD' });
+    const vista = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n4', alias: 'Vista', imgVariant: 'alguaciles_2.png' });
+    N.roster = [camo, nasc, aereo, vista]; N.MotoreN5.numeraMarker(N.roster);
+    N.currentGroup = 1; N.isCoordinated = false; N.selectedCoordinatedUnits = []; N.aggiornaGraficaRoster();
+    let r = righeDi(T.nomadi, 'unit-buttons-container');
+    const sx = (x) => (x.match(/<img class="rup-foto rup-segnalino rup-segnalino-schieramento[^"]*" src="([^"]*)"/) || [])[1] || null;
+    const dx = (x) => (x.match(/<div class="rup-icone[^"]*">([\s\S]*?)<\/div>/) || ['', ''])[1];
+    ok(J(r.map(sx)) === J(['img/nomadi/camo_1.png', 'img/nomadi/icon_hidden.png', 'img/nomadi/icon_airborne.png', null]), '2: CAMO, HIDDEN e AD hanno il segnalino a sinistra, la truppa a vista la foto (' + J(r.map(sx)) + ')');
+    ok(!/camo_1|icon_camo|icon_hidden|icon_airborne/.test(r.slice(0, 3).map(dx).join('')), '2: e a destra non c e piu` (ne` il segnalino ne` l icona CAMO)');
+    ok(/<img class="rup-foto rup-tocco-foto rup-v2" src="img\/nomadi\/alguaciles\.png"/.test(r[0]) && /data-vista="1"/.test(r[0]) && !/data-vista/.test(r[3]), '2: sotto il segnalino c e la foto vera (vista 2, nascosta); la truppa a vista ha una vista sola');
+    const imp = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n5', alias: 'Finto', deployState: 'IMP_1' });
+    const sImp = N.MotoreN5.segnalinoMarker(imp) ? (N.MotoreN5.numeraMarker([imp]), N.segnalinoSchieramento(imp)) : null;
+    ok(!N.MotoreN5.segnalinoMarker(imp) || (sImp && /imp/i.test(sImp.src) && sImp.alt === 'IMP-1 1'), '2: anche l IMP-1 ha il suo segnalino numerato (' + J(sImp && sImp.alt) + ')');
+    const caduto = Object.assign({}, camo, { deployState: 'NORMAL', states: {} });
+    ok(N.segnalinoSchieramento(caduto) === null && /<img class="rup-foto" src="img\/nomadi\/alguaciles\.png"/.test(N.rigaUnitaConFoto(caduto, {})), '2: caduto lo stato torna la foto');
+    ok(N.segnalinoSchieramento(camo, 'PANOCEANIA') === null && N.segnalinoSchieramento(Object.assign({}, camo, { state: 'DEAD' })) === null, '2: solo per le truppe proprie e vive');
+    // --- 3. il tocco sul segnalino: foto e ritorno, solo vista locale ---
+    const tocco = (r[0].match(/onclick="event\.stopPropagation\(\); (window\.cambiaVistaRiga\(this, 'n1'\))"/) || [])[1];
+    const prima = J(N.roster[0]); const inviiPrima = J(H.gameState.nomads || []);
+    ok(!!tocco, '3: toccare il segnalino chiama window.cambiaVistaRiga, e il tocco non arriva alla riga (stopPropagation)');
+    vmTocco(T.nomadi, tocco.replace('this', 'null'));
+    N.aggiornaGraficaRoster(); r = righeDi(T.nomadi, 'unit-buttons-container');
+    ok(/data-vista="2"/.test(r[0]) && J(N.roster[0]) === prima && J(H.gameState.nomads || []) === inviiPrima, '3: toccato, la riga mostra la foto (data-vista 2, anche ridisegnata); nessuno stato cambia, niente parte');
+    vmTocco(T.nomadi, tocco.replace('this', 'null'));
+    ok(/data-vista="1"/.test(N.rigaUnitaConFoto(N.roster[0], {})), '3: ritoccato, torna il segnalino');
+    ok(/\.riga-unita-foto:not\(\[data-vista="2"\]\) \.rup-v2 \{ display:none !important; \}/.test(stileApp()) && /\.riga-unita-foto\[data-vista="2"\] \.rup-v1 \{ display:none !important; \}/.test(stileApp()), '3: la regola che mostra una vista sola');
+    // Il ripiego (onerror) ripete il tocco: deve compilare anche con l id fra apici.
+    const gestori = r.concat([N.rigaUnitaConFoto(Object.assign({}, camo, { id: "moran_camo" }), {})]).join('').match(/onerror="[^"]*"/g) || [];
+    const rotti = gestori.map(g => g.slice(9, -1).replace(/&quot;/g, '"').replace(/&amp;/g, '&')).filter(c => { try { new Function(c); return false; } catch (e) { return true; } });
+    ok(gestori.length > 0 && rotti.length === 0, '3: tutti i ripieghi (onerror) delle righe compilano, anche col tocco cambiaVistaRiga(this, \'id\') dentro (' + gestori.length + ' gestori, rotti ' + rotti.length + ')');
+    const btn = { attr: {}, setAttribute(k, v) { this.attr[k] = v; } };
+    N.cambiaVistaRiga({ closest: () => btn }, 'n2');
+    ok(btn.attr['data-vista'] === '2', '3: nel browser il tocco cambia subito data-vista sulla riga');
+    N.cambiaVistaRiga(null, 'n2');
+    const aroRiga = N.rigaUnitaConFoto(nasc, { fazione: 'PROPRIA' });
+    ok(/cambiaVistaRiga\(this, 'n2'\)/.test(aroRiga), '3: anche nell elenco ARO (fazione PROPRIA)');
+    // --- 4 e 6. il MARKER: niente CAMO/IMP a destra, niente soprannome ---
+    T.schiera(N.roster, [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+    const mk = P.MotoreN5.rosterNemico().find(u => u.nome === 'MARKER');
+    const rMk = String(P.rigaUnitaConFoto(mk, { fazione: 'NEMICA' }));
+    ok(mk && /camo/.test(JSON.stringify(mk.states || {})) && !/icon_camo|👻/.test(P.generaIconeStati(mk, 'NOMADI')) && !/icon_imp/.test(P.generaIconeStati(Object.assign({}, mk, { deployState: 'IMP_1' }), 'NOMADI')),
+       '4: a destra di un MARKER niente icona CAMO ne` IMP (il segnalino e` gia` a sinistra)');
+    ok(/icon_camo/.test(P.generaIconeStati(Object.assign({}, mk, { nome: 'Fusilier', tipo: 'LI' }), 'NOMADI')), '4: CONTROPROVA: una truppa vera dell avversario in CAMO l icona la tiene');
+    ok(mk.alias && !/rup-alias/.test(rMk) && testo(rMk).indexOf(mk.alias) < 0, '6: la fascia bassa del MARKER e` vuota (niente «' + mk.alias + '»); il dato alias resta');
+    // --- 5. Hub: icone negli angoli in alto, anche nella Sagoma ---
+    const tit = H.titoloConIconeHub('<h3>X</h3>', ['NOMADI', 'PANOCEANIA', 'PANOCEANIA']);
+    ok((tit.match(/icona-fazione-scontro/g) || []).length === 2 && /class="titolo-scontro"/.test(tit), '5: due icone, una per fazione presente');
+    const ctr = fs.readFileSync(DIR + 'calcolatore_controller.js', 'utf8');
+    ok(/titoloConIconeHub\(`<h3 style="color:#ffcc00;[^`]*SAGOMA D'IMPATTO: UN TIRO, \$\{membri\.length\} BERSAGLI<\/h3>`/.test(ctr), '5: anche il riquadro «Sagoma d Impatto: un tiro, N bersagli»');
+    // --- 7. HoloMask ---
+    {
+        const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+        const bashi = truppa(profilo(T, /^Bashi Bazouk/), { id: 'n1', alias: 'Bashi' });
+        N.roster = [bashi];
+        N.elencoFoto = () => ['bashi_vera.png', 'maschera.png', 'altra.png'];
+        N.apriDeployStati(0); N.apriSceltaHolomask(0);
+        const g0 = (N._gruppiHolomask || [])[0];
+        N.scegliHolomask(0, g0.varianti[0].id);
+        let gal = String(T.nomadi.el('galleria-foto').innerHTML);
+        ok(/assegnaFoto\(0, 'bashi_vera\.png'\)/.test(gal) && !/foto-maschera/.test(gal), '7: senza foto vera, dopo il Modello imitato si sceglie prima la foto VERA');
+        N.assegnaFoto(0, 'bashi_vera.png');
+        gal = String(T.nomadi.el('galleria-foto').innerHTML);
+        ok(/class="foto-maschera"/.test(gal) && !/assegnaFotoMaschera\(0, 'bashi_vera\.png'\)/.test(gal), '7: poi quella della MASCHERA, senza la foto vera');
+        N.assegnaFotoMaschera(0, 'maschera.png');
+        const n0 = N.alert_.length;
+        ok(N.assegnaFoto(0, 'maschera.png') === false && /maschera/.test(N.alert_.slice(n0).join(' ')) && N.roster[0].imgVariant === 'bashi_vera.png', '7: la foto vera non puo` essere quella della maschera');
+        N.apriDeployStati(0);
+        ok(/tasto-foto-vera[^>]*>FOTO VERA: bashi_vera</.test(T.nomadi.el('deploy-states-content').innerHTML) && /FOTO DELLA MASCHERA: maschera/.test(T.nomadi.el('deploy-states-content').innerHTML), '7: nel riquadro HoloMask le due foto, ognuna col suo tasto');
+        const finto = String(g0.varianti[0].nome).split('(')[0].trim();
+        const rN = String(N.rigaUnitaConFoto(N.roster[0], {}));
+        const v1 = (rN.match(/<div class="rup-nome"><span class="rup-v1">([^<]*)<\/span><span class="rup-v2">([^<]*)<\/span>/) || []);
+        ok(/class="huge-btn riga-unita riga-unita-foto rup-holomask"/.test(rN) && v1[1] === finto && v1[2] === 'Bashi Bazouk' && /<img class="rup-foto rup-tocco-foto rup-v1" src="img\/nomadi\/maschera\.png"/.test(rN) && /<img class="rup-foto rup-tocco-foto rup-v2" src="img\/nomadi\/bashi_vera\.png"/.test(rN),
+           '7: nella propria app la riga mostra la maschera (' + v1[1] + ', la sua foto) con l aura; toccando l immagine il profilo vero (' + v1[2] + ', la foto vera)');
+        const opzFinta = N.opzioneDelProfilo({ nome: g0.varianti[0].nome, weapon: g0.varianti[0].weapon });
+        ok(opzFinta && rN.indexOf('<div class="rup-v1"><div class="rup-alias">"Bashi" <span class="rup-profilo">· ' + opzFinta + '</span></div></div>') >= 0, '7: nella fascia bassa della maschera anche l opzione d arma imitata (' + opzFinta + ')');
+        ok(/\.riga-unita-foto\.rup-holomask:not\(\[data-vista="2"\]\) \{ --rup-o: drop-shadow\(0 0 7px #b04cff\)/.test(stileApp()), '7: l aura viola, solo sulla maschera');
+        T.schiera(N.roster, [truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Uno' })], 'NOMADI');
+        const nem = P.MotoreN5.rosterNemico().find(u => u.id === 'n1');
+        const rP = String(P.rigaUnitaConFoto(nem, { fazione: 'NEMICA' }));
+        ok(!/rup-holomask/.test(rP) && !/data-vista/.test(rP) && testo(rP).indexOf('Bashi Bazouk') < 0, '7: l avversario vede la maschera senza aura e senza il tocco');
+        ok(!/HOLOMASK/i.test(testo(H.schedaTruppa((H.gameState.nomads || []).find(u => u.id === 'n1'), 'NOMADI'))), '7: l Hub non scrive HOLOMASK');
+        const scoperto = Object.assign({}, N.roster[0], { states: Object.assign({}, N.roster[0].states, { holomask: false }) });
+        ok(!/rup-holomask|rup-v1/.test(N.rigaUnitaConFoto(scoperto, {})), '7: scoperta: via l aura, la truppa vera');
+    }
+    // --- 8. Holoecho versione B ---
+    {
+        const T = creaTavolo(DIR); const P = T.pano.g;
+        const vera = truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Eco', imgVariant: 'fusilier.png' });
+        vera.equip = String(vera.equip || '') + ', Holoprojector';
+        P.roster = [vera]; P.apriDeployStati(0); P.creaRepliche(0, 'HOLOECHO');
+        const fig = P.roster.filter(u => u.figuraHoloecho === true);
+        ok(fig.length === 1 && P.roster.every(u => typeof u.figuraHoloecho === 'boolean'), '8: premessa (motore): uno dei tre e` la figura');
+        // RISCRITTI il 1 novembre (Paolo, versione B): nella propria app la VERA
+        // ha sempre la foto e la sua riga dice il numero della miniatura
+        // («sul tavolo la figura è il N»); le copie i loro segnalini. Prima:
+        // «FIGURA SUL TAVOLO» sull'elemento figura, e la vera non figura col segnalino.
+        P.roster.forEach((u, i) => { u.figuraHoloecho = (i === 1); });   // la figura e` una copia
+        const nFig = P.roster[1].numeroReplica, vNum = P.roster[0].numeroReplica;
+        P.deployGroup = 1; P.renderDeployUnits();
+        const depH = String(T.pano.el('deploy-units-container').innerHTML);
+        ok((depH.match(/class='etichetta-figura'/g) || []).length === 1 && depH.indexOf('🧍 sul tavolo la figura è il ' + nFig) >= 0 && !/FIGURA SUL TAVOLO/.test(depH), '8: allo schieramento, sulla vera: «sul tavolo la figura è il ' + nFig + '»; nient altro');
+        P.currentGroup = 1; P.isCoordinated = false; P.selectedCoordinatedUnits = []; P.aggiornaGraficaRoster();
+        const lista = String(T.pano.el('unit-buttons-container').innerHTML);
+        const rV = lista.split(/(?=<button)/).filter(r => /riga-unita/.test(r)).find(r => /★ VERA/.test(r)) || '';
+        ok((lista.match(/class="etichetta-figura"/g) || []).length === 1 && /class="etichetta-figura"[^>]*>🧍 sul tavolo la figura è il \d</.test(rV) && /★ VERA \d/.test(lista) && (lista.match(/🪞 REPLICA \d/g) || []).length === 2,
+           '8: nell elenco: «★ VERA ' + vNum + '» con «sul tavolo la figura è il ' + nFig + '», due «REPLICA n»');
+        ok(/<img class="rup-foto" src="img\/panoceania\/fusilier\.png"/.test(rV) && !/rup-segnalino-schieramento/.test(rV), '8: la vera ha sempre la sua foto, anche se sul tavolo e` un segnalino');
+        P.roster.forEach((u, i) => { u.figuraHoloecho = (i === 0); });   // la figura e` la vera
+        ok(P.etichettaFiguraHoloecho(P.roster[0]) === '🧍 sul tavolo la figura è lei (' + vNum + ')' && P.segnalinoSchieramento(P.roster[0]) === null, '8: se la figura e` la vera, la riga lo dice (e la foto resta)');
+        ok(P.roster.filter(u => u.replica).every(r => /^holoecho_\d\.png$/.test(r.imgVariant)), '8: le copie restano coi loro segnalini');
+        // 1 novembre (Paolo): nell app dell AVVERSARIO niente «TOGLI LA REPLICA»:
+        // le copie le toglie il proprietario. Non arrivano ne` replica ne` il gruppo.
+        T.schiera([truppa(profilo(T, /^Alguacil \(HMG/), { id: 'n1', alias: 'Spara' })], P.roster, 'NOMADI');
+        const nemH = T.nomadi.g.MotoreN5.rosterNemico();
+        T.apriMenu(T.nomadi, 0); T.nomadi.g.selectAction('ATTACCO BS', false); T.nomadi.g.declareAttackBS('Heavy Machine Gun');
+        const bersN = String(T.nomadi.el('enemy-target-buttons').innerHTML);
+        ok(nemH.length === 3 && nemH.every(u => !u.replica && !u.gruppoRepliche && u.figuraHoloecho === undefined) && !/togli-replica|TOGLI LA REPLICA|VERA|REPLICA|sul tavolo la figura/.test(bersN) && (bersN.match(/riga-unita-foto/g) || []).length === 3,
+           '8: l app avversaria vede tre bersagli uguali, senza «TOGLI LA REPLICA» ne` etichette');
+        // 1 novembre (logica_stati 2026-11-01.1, MOTORE): il tasto e` nella pagina
+        // degli stati della replica, non della vera, e passa da window.togliReplicaDalTavolo.
+        const T2 = creaTavolo(DIR); const P2 = T2.pano.g;
+        { const v2 = truppa(T2.profilo(T2.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Eco' }); v2.equip = String(v2.equip || '') + ', Holoprojector'; P2.roster = [v2]; P2.apriDeployStati(0); P2.creaRepliche(0, 'HOLOECHO'); }
+        if (typeof P2.togliReplicaDaStati === 'function') {
+            const iV = P2.roster.findIndex(u => !u.replica), iR = P2.roster.findIndex(u => u.replica);
+            P2.apriPaginaStati(iV); const stV = String(T2.pano.el('states-content').innerHTML); P2.annullaStati && P2.annullaStati();
+            P2.apriPaginaStati(iR); const stR = String(T2.pano.el('states-content').innerHTML);
+            const quante = P2.roster.length;
+            P2.confirm = () => true; P2.togliReplicaDaStati(); T2.giro();
+            ok(!/togli-replica/.test(stV) && /class="huge-btn togli-replica"[^>]*onclick="window\.togliReplicaDaStati\(\)">\s*🪞 TOGLI LA REPLICA/.test(stR) && P2.roster.length === quante - 1 && P2.roster.filter(u => u.replica).length === 1,
+               'negli stati (logica_stati 11-01.1): il tasto sulla replica si`, sulla vera no; premuto, passa da window.togliReplicaDalTavolo e la replica esce (' + quante + ' -> ' + P2.roster.length + ')');
+        } else ok(false, 'logica_stati senza window.togliReplicaDaStati (serve la 2026-11-01.1): la replica non si toglie dagli stati');
+        const pub = P.MotoreN5.rosterPubblico(P.roster);
+        ok(pub.every(u => u.figuraHoloecho === undefined), '8: figuraHoloecho non parte verso l avversario');
+    }
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | logica_stati.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.1 | logica_stati.js | proprieta`: chat MOTORE
 // ==========================================
 // NOTA: le regole di questo file passano da MotoreN5.
 //  - la cancellazione degli stati Marker (Ritirata!, Ingaggiato, Stati Nulli)
@@ -278,6 +278,14 @@ window.apriPaginaStati = (index) => {
     if (esp && esp.puo) {
         profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:#1a1a33; border-color:#8888ff; color:#ccccff; font-size:var(--fs-m);" onclick="window.espelliPilotaDaStati()">
             🪂 ESCAPE SYSTEM: FAI USCIRE IL PILOTA<br><span class="desc-tasto" style="font-size:var(--fs-xs); color:#9999cc;">A fine Ordine, quando il TAG ha ricevuto le ferite indicate. Il TAG resta vuoto sul tavolo; il pilota può risalire.</span></button>`;
+    }
+    // 1 novembre (Paolo, via INTERFACCIA): il tasto per togliere una REPLICA
+    // (Holoecho, Decoy) sta qui, negli stati (tocco prolungato sulla riga), non
+    // piu` sotto la riga. La regola e la conferma sono di window.togliReplicaDalTavolo
+    // (app.html, M.togliReplica): con l'ultima replica cade anche lo stato della vera.
+    if (Mp && typeof Mp.eReplica === 'function' && Mp.eReplica(window.unitToEdit)) {
+        profiloHtml += `<button type="button" class="huge-btn togli-replica" style="width:100%; min-height:60px; margin:0 0 8px; background:#002a2a; border-color:#99ffff; color:#99ffff; font-size:var(--fs-m);" onclick="window.togliReplicaDaStati()">
+            🪞 TOGLI LA REPLICA<br><span class="desc-tasto" style="font-size:var(--fs-xs); color:#77cccc;">Scoperta, colpita da un Attacco riuscito o toccata da un nemico.</span></button>`;
     }
     if (profiloHtml) html += `</div></div><div style="margin-top:15px;">${profiloHtml}</div><div><div>`;
 
@@ -675,12 +683,27 @@ window.salvaStatiUnita = () => {
     window.annullaStati(); 
 };
 
+// 1 novembre: dal tasto della pagina degli stati. Si chiude la pagina (le
+// modifiche non salvate di questa replica non contano: esce dal tavolo) e si
+// passa alla funzione della pagina, che chiede conferma nel riquadro dell'app.
+window.togliReplicaDaStati = () => {
+    const u = window.unitToEdit;
+    if (!u) return;
+    if (typeof window.togliReplicaDalTavolo !== 'function') {
+        console.error('\u26d4 window.togliReplicaDalTavolo assente (serve app.html dalla 2026-10-26): la replica non si toglie da qui.');
+        return;
+    }
+    const id = u.id;
+    if (typeof window.annullaStati === 'function') window.annullaStati();
+    window.togliReplicaDalTavolo(id);
+};
+
 // Dichiarazione di versione per il controllo incrociato fra chat.
 // Funziona anche se questo file si carica PRIMA del motore: in quel
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_stati.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'logica_stati.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

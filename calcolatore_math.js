@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | calcolatore_math.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.2 | calcolatore_math.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧮 CALCOLATORE N5 — adattatore sopra MotoreN5
 // ------------------------------------------
@@ -209,8 +209,11 @@
         const dadi = db ? { base: db.base, baseMotivo: db.baseMotivo, voci: vociPulite(db.voci), nonApplicati: nonApplicatiPuliti(db.nonApplicati) } : null;
         return { successo: succ, dadi: dadi };
     }
-    const NOMI_STATO = { 'IMM-A': 'Immobilizzato-A', 'IMM-B': 'Immobilizzato-B', 'ISOLATO': 'Isolato', 'STORDITO': 'Stordito' };
-    function strutturaSalvezza(s) {
+    const NOMI_STATO = { 'IMM-A': 'Immobilizzato-A', 'IMM-B': 'Immobilizzato-B', 'ISOLATO': 'Isolato', 'STORDITO': 'Stordito',
+                         'BERSAGLIATO': 'Bersagliato', 'POSSEDUTO': 'Posseduto', 'MORTO': 'Morto' };
+    // `chi`: il lato che INFLIGGE la salvezza (chi tira per colpire). Il
+    // Critico che conta e` il suo, non quello del dado della salvezza.
+    function strutturaSalvezza(s, chi) {
         if (!s || !s.offensivo) return { nessuno: true, testo: (s && s.note && s.note[0]) || 'Nessun danno' };
         const rami = (s.combinato || (Array.isArray(s.rami) && s.rami.length)) ? s.rami : [{ attributo: s.attributo, base: s.base, valoreAttributo: s.valoreAttributo,
                                                ps: s.ps, valoreSuccesso: s.valoreSuccesso, voci: s.voci, critici: s.critici,
@@ -220,7 +223,8 @@
             const baseVoce = (r.voci || []).find(v => v && v.fonte === 'base');
             return {
                 attributo: r.attributo, successo: r.valoreSuccesso, dadi: perColpo, impossibile: !!r.impossibile,
-                critico: (r.critici && !r.critici.nessunTiro) ? r.critici.testo : null,
+                // 31 ottobre (Paolo): un Critico sul dado della SALVEZZA non fa niente.
+                critico: null,
                 dettaglioSuccesso: { attributo: r.attributo, base: baseVoce ? baseVoce.valore : r.base,
                                      voci: vociPulite(r.voci), nonApplicati: nonApplicatiPuliti(r.nonApplicati) },
                 dettaglioDadi: { base: perColpo, baseMotivo: `${perColpo} per colpo (munizione ${s.munizione})`, voci: [], nonApplicati: [] }
@@ -232,7 +236,16 @@
         const marker = (s.cancellaMarker && Array.isArray(s.noteMarker)) ? s.noteMarker.slice() : [];
         const note = (s.note || []).filter(n => marker.indexOf(n) < 0);
         return { munizione: s.munizione, combinato: !!s.combinato, righe: righe, esito: esito, marker: marker, note: note,
-                 notaCritico: s.senzaCritico ? s.senzaCritico : `Un Critico aggiunge ${s.critExtra || 1} Tiro Salvezza extra.` };
+                 notaCritico: s.senzaCritico ? s.senzaCritico : notaCriticoDi(chi, s.critExtra || 1) };
+    }
+    // Il Critico di chi attacca: "Ogni Critico di X (con un 11) aggiunge 1
+    // Tiro Salvezza extra." Niente nota se chi infligge non tira (Sagoma
+    // Diretta, deployable) o non ha un valore da tirare.
+    function notaCriticoDi(chi, extra) {
+        const M = window.MotoreN5;
+        const c = (chi && chi.critici) || (chi && typeof chi.mod === 'number' && M && typeof M.critici === 'function' ? M.critici(chi.mod) : null);
+        if (!chi || chi.automatico || !(chi.burst > 0) || !c || c.nessunTiro || !Array.isArray(c.valori) || !c.valori.length) return null;
+        return `Ogni Critico di ${chi.nome || 'chi attacca'} (con un ${c.valori.join(', ')}) aggiunge ${extra} Tiro Salvezza extra.`;
     }
 
     // ------------------------------------------------------------------
@@ -339,7 +352,7 @@
                     azione: 'Nessun tiro',
                     mod: '-', burst: 0, dettagliMod: '',
                     salvezza: rendiSalvezza((sx && sx.salvezzaSubita) || (dx && dx.salvezzaInflitta)),
-                    tiroSalvezza: strutturaSalvezza((sx && sx.salvezzaSubita) || (dx && dx.salvezzaInflitta)),
+                    tiroSalvezza: strutturaSalvezza((sx && sx.salvezzaSubita) || (dx && dx.salvezzaInflitta), dx),
                     dettaglio: { successo: null, dadi: null },
                     dati: sx
                 } : {
@@ -356,7 +369,7 @@
                     // superare se perde il confronto, non quella che infligge.
                     salvezza: rendiSalvezza(sx.salvezzaSubita || sx.salvezzaInflitta),
                     salvezzaInflitta: rendiSalvezza(sx.salvezzaInflitta),
-                    tiroSalvezza: strutturaSalvezza(sx.salvezzaSubita || sx.salvezzaInflitta),
+                    tiroSalvezza: strutturaSalvezza(sx.salvezzaSubita || sx.salvezzaInflitta, dx),
                     dettaglio: dettaglioLato(sx),
                     dati: sx
                 }),
@@ -376,7 +389,7 @@
                     salvezza: orfano ? '<span style="color:#555;">Nessun danno</span>'
                                      : rendiSalvezza(dx.salvezzaSubita || dx.salvezzaInflitta),
                     salvezzaInflitta: rendiSalvezza(dx.salvezzaInflitta),
-                    tiroSalvezza: orfano ? { nessuno: true, testo: 'Nessun danno' } : strutturaSalvezza(dx.salvezzaSubita || dx.salvezzaInflitta),
+                    tiroSalvezza: orfano ? { nessuno: true, testo: 'Nessun danno' } : strutturaSalvezza(dx.salvezzaSubita || dx.salvezzaInflitta, sx),
                     dettaglio: dettaglioLato(dx),
                     dati: dx
                 } : {
@@ -422,7 +435,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_math.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'calcolatore_math.js', versione: '2026-10-31.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

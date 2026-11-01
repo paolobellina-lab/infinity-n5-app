@@ -1,4 +1,4 @@
-// @versione 2026-10-28.4 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
 // ==========================================
 // 👻 ATTACCO INTUITIVO (N5) - ordine_attacco_intuitivo.js
 // ------------------------------------------
@@ -91,7 +91,7 @@
         const container = document.getElementById('weapon-buttons-container');
 
         window.MotoreN5.azzeraNote('step-weapon');
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `ATTACCO INTUITIVO`, nota: `Ordine Intero · Tiro WIP non modificato · Burst 1` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-weapon', colore: COL, titolo: `ATTACCO INTUITIVO`, nota: `Ordine Intero · Tiro WIP non modificato · Burst 1` })}`;
 
         const esito = M.armiIntuitive(unita);
 
@@ -167,7 +167,7 @@
             : `background:var(--mn-fondo-riquadro,#222222); border-color:var(--mn-bordo-spento,#555555); color:var(--mn-debole,#aaaaaa);`;
 
         container.innerHTML = `
-            ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `BERSAGLIO PRINCIPALE — UNO SOLO`, nota: `Se la Sagoma coinvolge altri nemici, il tiratore deve comunque sceglierne uno solo come Principale.` })}
+            ${window.MotoreN5.intestazioneOrdine({ step: 'step-wait-aro', colore: COL, titolo: `BERSAGLIO PRINCIPALE — UNO SOLO`, nota: `Se la Sagoma coinvolge altri nemici, il tiratore deve comunque sceglierne uno solo come Principale.` })}
             <button class="huge-btn" style="width:100%; min-height:55px; font-size:var(--fs-m); margin-bottom:15px; ${statoLoF}" onclick="window.toggleIntuitivoFuoriLoF()">
                 ${fuoriLoF ? `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofNo') : '🌫️ '}NESSUNA LoF — Zona di Visibilità Zero` : `${(typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore('lofSi') : '👁️ '}HO LINEA DI TIRO (solo Marker bersagliabili)`}
             </button>
@@ -267,22 +267,14 @@
         container.innerHTML = `
             ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `ATTACCO INTUITIVO` })}
 
-            <div style="background:var(--mn-errore-fondo,#330000); border:1px solid var(--mn-errore,#ff3333); padding:15px; border-radius:5px; margin-bottom:20px; text-align:center;">
-                <b style="color:var(--mn-errore,#ff3333); font-size:var(--fs-m);">TIRO NORMALE SU WIP ${unita.wip}</b><br>
-                <span style="color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s);">${regole.noteTiro}</span>
-            </div>
-
-            <div class="target-card" style="border-left:4px solid ${COL.bordo}; margin-bottom:15px; background:rgba(255,153,0,0.05); padding:15px; border-radius:5px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <b style="color:var(--mn-testo,#ffffff); font-size:var(--fs-l);">🎯 ${tgt.name}</b>
-                    <div style="font-size:var(--fs-l); font-weight:bold; color:${COL.bordo};">1 B</div>
-                </div>
-                <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-s); line-height:1.6;">
-                    Bersaglio Principale${regole.sagoma ? ` · Sagoma ${regole.sagoma.forma || regole.sagoma.tipo}` : ''}
-                </div>
+            ${M.schedaBS.apri()}${M.schedaBS.testa(tgt.name, M.schedaBS.burstFisso(1))}
                 ${M.rigaRequisiti(REQ_INTUITIVO, tgt, 0, 'window.toggleRequisitoIntuitivo')}
                 ${(M.domandaAlleatiInMischia && arma && arma.isTemplate) ? M.domandaAlleatiInMischia(tgt, 0, 'window.setAlleatiInMischiaIntuitivo') : ''}
             </div>`;
+        // 31 ottobre (Paolo, collaudo grafico): il valore WIP e il bersaglio
+        // nella ⓘ; la scheda come quella dell'Attacco BS, senza il 🎯.
+        M.nota('step-modifiers', 'Tiro Normale su WIP ' + unita.wip, regole.noteTiro, { tipo: 'mod' });
+        M.nota('step-modifiers', 'Bersaglio', 'Bersaglio Principale' + (regole.sagoma ? ' · Sagoma ' + (regole.sagoma.forma || regole.sagoma.tipo) : ''), { tipo: 'regole' });
         // 28 ottobre (Paolo): le regole del tiro nella ⓘ (o in cima), non a schermo.
         M.nota('step-modifiers', 'Critico', 'Vale solo sul Bersaglio Principale; sui secondari colpiti dalla Sagoma è un successo normale.', { tipo: 'regole' });
         if (regole.coperturaAnnullaSalvezza) M.nota('step-modifiers', 'Copertura', 'Chi è colpito NON ha il +3 al Tiro Salvezza per Copertura Parziale.', { tipo: 'mod' });
@@ -299,7 +291,7 @@
             // onclick funzionante, pulsante non cliccabile.
             nuovo.style.display = '';
             // Il tasto diventa IDLE se il requisito manca (M.tastoConRequisiti).
-            M.tastoConRequisiti(nuovo, M.requisitiDichiarati([tgt], REQ_INTUITIVO), 'LANCIA ATTACCO INTUITIVO', function () { window.eseguiCalcoloIntuitivo(); });
+            M.tastoConRequisiti(nuovo, M.requisitiDichiarati([tgt], REQ_INTUITIVO), 'ESEGUI CALCOLO', function () { window.eseguiCalcoloIntuitivo(); });
         }
 
         window.goToStep('step-modifiers');
@@ -380,7 +372,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-10-28.4', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

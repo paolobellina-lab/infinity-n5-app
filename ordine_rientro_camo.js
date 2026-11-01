@@ -1,4 +1,4 @@
-// @versione 2026-10-28.3 | ordine_rientro_camo.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_rientro_camo.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎭 ENTRARE IN FORMA DI MARKER (N5) - ordine_rientro_camo.js
 // ------------------------------------------
@@ -176,7 +176,7 @@
         };
 
         container.innerHTML = `
-            ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `${A.titolo}`, nota: 'Ordine Intero, nessun tiro. Il calcolatore non ha la mappa.' })}
+            ${window.MotoreN5.intestazioneOrdine({ step: 'step-modifiers', colore: COL, titolo: `${A.titolo}`, nota: 'Ordine Intero, nessun tiro. Il calcolatore non ha la mappa.' })}
 
             ${pre.unUso ? `<div style="margin-bottom:12px; padding:10px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-acceso,#ffaa33); border-radius:4px; color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-s);">
                 ⚠️ Camouflage (1 Use): rientrando si consuma l'unico uso (FAQ F07).</div>` : ''}
@@ -316,7 +316,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_rientro_camo.js', versione: '2026-10-28.3', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_rientro_camo.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

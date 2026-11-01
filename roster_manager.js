@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-11-01.1 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -976,8 +976,13 @@ window.assegnaFoto = (index, file) => {
         if ((window.elencoFoto() || []).indexOf(file) < 0) { alert('⛔ "' + file + '" non e` nell\'elenco delle foto.'); return false; }
         const chi = window.chiTieneFoto(u, undefined, file);
         if (chi) { alert('⛔ Questa foto e` gia` su ' + chi + ': una miniatura sta su una sola unita`.'); return false; }
+        // 31 ottobre sera (Paolo, HoloMask): la foto vera non puo` essere
+        // quella della maschera (e viceversa, assegnaFotoMaschera).
+        if (u.imgMaschera && file === u.imgMaschera) { alert('\u26d4 E` la foto della maschera dell\'HoloMask: la foto vera deve essere un\'altra.'); return false; }
     }
     u.imgVariant = file || '0';
+    // 31 ottobre sera (HoloMask): dopo la foto vera, quella della maschera.
+    if (window.fotoMascheraDopo === index) { window.fotoMascheraDopo = null; window.apriGalleriaFoto(index, 'maschera'); return true; }
     // Subito dopo, le foto collegate (pilota, moto), se l'unita` ne ha.
     const coll = window.fotoCollegateDi(u);
     if (coll.length) { window.apriGalleriaFoto(index, coll[0].chiave); return true; }
@@ -1336,6 +1341,11 @@ window.renderDeployUnits = () => {
         const Mr = window.MotoreN5;
         if (u.replica) note.push(`<span class='etichetta-replica' style='color:#99ffff;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'} ${u.numeroReplica || ''} — REPLICA ]</span>`);
         else if (u.gruppoRepliche) note.push(`<span class='etichetta-replica' style='color:#99ffff;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'} ${u.numeroReplica || ''} — VERA ]</span>`);
+        // 31 ottobre sera (Paolo, Holoecho versione B): quale numero e` la
+        // MINIATURA sul tavolo (figuraHoloecho, M.creaRepliche).
+        // 1 novembre (Paolo): sulla VERA, col numero (window.etichettaFiguraHoloecho,
+        // app.html); prima «FIGURA SUL TAVOLO» sull'elemento figura.
+        if (!u.replica && u.gruppoRepliche && u.tipoRepliche !== 'DECOY' && typeof window.etichettaFiguraHoloecho === 'function' && window.etichettaFiguraHoloecho(u)) note.push(`<span class='etichetta-figura' style='color:#ffe680;'>[ ${window.etichettaFiguraHoloecho(u)} ]</span>`);
         // 31 ottobre (Paolo, P9-10): via la scritta viola «[ HOLOMASK: SEMBRA … ]».
         void Mr;
 
@@ -1630,7 +1640,8 @@ window.bottoniHolomask = (index) => {
     if (u.states && u.states.holomask) {
         return `<div class="riquadro-holomask" style="margin-top:10px; padding:10px; border:1px solid #cc00ff; border-radius:6px; background:#1a0022;">
             <div style="color:#e6aaff; font-size:15px;">\ud83c\udfad HOLOMASK: l'avversario vede <b>${mc ? mc.nome : '?'}</b>.</div>
-            <button class="huge-btn tasto-opzione tasto-foto-maschera" style="margin-top:8px;" onclick="window.apriGalleriaFoto(${index}, 'maschera')">FOTO DELLA MASCHERA: ${u.imgMaschera ? String(u.imgMaschera).replace(/\.[a-z]+$/i, '').replace(/</g, '&lt;') : 'NESSUNA'}</button>
+            <button class="huge-btn tasto-opzione tasto-foto-vera" style="margin-top:8px;" onclick="window.apriGalleriaFoto(${index})">FOTO VERA: ${window.fotoAssegnata(u) ? String(window.fotoAssegnata(u)).replace(/\.[a-z]+$/i, '').replace(/</g, '&lt;') : 'NESSUNA'}</button>
+            <button class="huge-btn tasto-opzione tasto-foto-maschera" onclick="window.apriGalleriaFoto(${index}, 'maschera')">FOTO DELLA MASCHERA: ${u.imgMaschera ? String(u.imgMaschera).replace(/\.[a-z]+$/i, '').replace(/</g, '&lt;') : 'NESSUNA'}</button>
             <button class="huge-btn tasto-opzione" onclick="window.apriSceltaHolomask(${index})">CAMBIA MODELLO IMITATO</button>
             <button class="huge-btn tasto-opzione" onclick="window.togliHolomask(${index})">TOGLI HOLOMASK</button>
         </div>`;
@@ -1716,7 +1727,11 @@ window.scegliHolomask = (index, idProfilo) => {
     window.apriDeployStati(index);
     if (window.renderDeployUnits) window.renderDeployUnits();
     // 29 ottobre (ST-24): subito dopo, la foto della truppa imitata.
-    window.apriGalleriaFoto(index, 'maschera');
+    // 31 ottobre sera (Paolo): le DUE foto. Se la vera non c'e` ancora, prima
+    // la vera; dalla galleria della vera si passa a quella della maschera
+    // (window.assegnaFoto -> fotoMascheraDopo).
+    if (!window.fotoAssegnata(u) || window.fotoAssegnata(u) === '0') { window.fotoMascheraDopo = index; window.apriGalleriaFoto(index); }
+    else window.apriGalleriaFoto(index, 'maschera');
 };
 window.togliHolomask = (index) => {
     const u = (window.roster || [])[index];
@@ -2131,7 +2146,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-10-31.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-11-01.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

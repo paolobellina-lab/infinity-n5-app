@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_supporto.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.2 | ordine_supporto.js | proprieta`: chat MOTORE
 // ==========================================
 // 🩺 SUPPORTO: MEDICO E INGEGNERE (N5) - ordine_supporto.js
 // ------------------------------------------
@@ -86,7 +86,7 @@
         window.MotoreN5.azzeraNote('step-weapon');
         if (!container) return;
 
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `SUPPORTO`, nota: `Bersaglia gli ALLEATI. Abilità Breve, contatto di Silhouette.` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-weapon', colore: COL, titolo: `SUPPORTO`, nota: `Bersaglia gli ALLEATI. Abilità Breve, contatto di Silhouette.` })}`;
 
         if (strumenti.length === 0) {
             container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-size:var(--fs-m);">
@@ -130,7 +130,7 @@
         window.MotoreN5.azzeraNote('step-wait-aro');
         if (!container) return;
 
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `${strumento.nome || window.supportoStrumento} — SCEGLI L'ALLEATO`, nota: `${strumento.bersaglio || 'Alleato da soccorrere.'}` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-wait-aro', colore: COL, titolo: `${strumento.nome || window.supportoStrumento} — SCEGLI L'ALLEATO`, nota: `${strumento.bersaglio || 'Alleato da soccorrere.'}` })}`;
 
         if (window.validTargets.length === 0) {
             container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-weight:bold;">Nessun alleato da soccorrere.</p>`;
@@ -253,7 +253,7 @@
             // Tiro e gittata. Se mancano, il tasto diventa IDLE.
             const req = window.requisitiSupporto();
             nuovo.onclick = function () { return (req && req.idle) ? M.idleDaRequisito(req) : window.eseguiCalcoloSupporto(); };
-            nuovo.innerText = (req && req.idle) ? 'IDLE' : 'ESEGUI ' + e.strumento.toUpperCase();
+            nuovo.innerText = (req && req.idle) ? 'IDLE' : 'ESEGUI CALCOLO';
             if (M.COLORE_TASTO) nuovo.style.background = (req && req.idle) ? M.COLORE_TASTO.idle : M.COLORE_TASTO.valido;
         }
     };
@@ -371,7 +371,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_supporto.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_supporto.js', versione: '2026-10-31.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

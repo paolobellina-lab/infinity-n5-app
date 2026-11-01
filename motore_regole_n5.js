@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.2 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-31.1';
+    M.VERSIONE = '2026-10-31.2';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -5282,6 +5282,15 @@
                 if (MAPPA[voce]) statiDalTratto.push(MAPPA[voce]);
             }
         })();
+        // 31 ottobre (Paolo, collaudo grafico): un PROGRAMMA di Hacking porta lo
+        // stato nel suo campo `effetto` (Carbonite IMM-B, Oblivion Isolato,
+        // Spotlight Bersagliato, Total Control Posseduto), non in un Tratto:
+        // la salvezza non lo diceva, e il tabellone nemmeno.
+        if (arma && arma.isHacking && arma.effetto) {
+            const ST = { 'IMM-A': 'IMM-A', 'IMM-B': 'IMM-B', 'ISOLATO': 'ISOLATO', 'STORDITO': 'STORDITO', 'BERSAGLIATO': 'BERSAGLIATO', 'POSSEDUTO': 'POSSEDUTO' };
+            const k = ST[String(arma.effetto).trim().toUpperCase()];
+            if (k && statiDalTratto.indexOf(k) < 0) statiDalTratto.push(k);
+        }
         const statiFallimentoTutti = (par.statiFallimento || []).concat(statiDalTratto.filter(x => (par.statiFallimento || []).indexOf(x) < 0));
 
         // Tiri per attributo: "1e1" del Plasma = uno per ciascuno.
@@ -6748,9 +6757,17 @@
         // titolo (🎯 ATTACCO BS, 🩺 SUPPORTO...). I moduli non la passano
         // piu`; qui la si toglie comunque, cosi` la regola sta in un posto.
         const titolo = M.senzaIconaIniziale(o.titolo);
+        // 31 ottobre (Paolo, collaudo grafico): nel titolo SOLO il nome
+        // dell'Ordine. La riga di spiegazione (`nota`) va nella ⓘ dello step
+        // (`o.step`), come nota delle regole. Senza `step` la nota non si
+        // perde: resta in window.INFO della schermata visibile, e lo si dice.
+        if (o.nota) {
+            const passo = o.step || (typeof G.stepVisibile === 'function' ? G.stepVisibile() : null);
+            if (!o.step) console.error('\u26d4 M.intestazioneOrdine: nota senza `step` (' + titolo + '): va nella ⓘ della schermata visibile.');
+            if (passo) M.nota(passo, titolo, o.nota, { tipo: 'regole' });
+        }
         return `<div class="intestazione-ordine" style="background:${sfondo}; border:1px solid ${bordo}; padding:10px 12px; border-radius:5px; margin-bottom:15px; text-align:center;${o.stile ? ' ' + o.stile : ''}">` +
-            `<b style="color:${bordo}; font-size:18px; letter-spacing:1px;">${titolo}</b>` +
-            (o.nota ? `<br><span style="color:#aaa; font-size:13px;">${o.nota}</span>` : '') + `</div>`;
+            `<b style="color:${bordo}; font-size:18px; letter-spacing:1px;">${titolo}</b></div>`;
     };
 
     M.formaBottone = function (o) {
@@ -6774,14 +6791,67 @@
 
     // La riga di interruttori per la scheda di un bersaglio. `comando` e` il
     // NOME della funzione della schermata: riceve (indice, chiave).
-    M.rigaRequisiti = function (chiavi, bersaglio, indice, comando) {
-        return '<div style="display:flex; gap:10px; margin-top:10px;">' + (chiavi || []).map(function (k) {
+    // `prima` (facoltativo): un altro tasto da mettere nella stessa riga,
+    // davanti ai requisiti (la Copertura, come nell'Attacco BS).
+    M.rigaRequisiti = function (chiavi, bersaglio, indice, comando, prima) {
+        return '<div style="display:flex; gap:10px; margin-top:15px;">' + (prima || '') + (chiavi || []).map(function (k) {
             const R = M.REQUISITI_TAVOLO[k]; if (!R) return '';
             const manca = M.requisitoManca(bersaglio, k);
-            return '<button type="button" class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:16px; ' +
-                (manca ? 'background:#554400; border-color:#ffcc00; color:#ffcc00;' : 'background:#004400; border-color:#00ff00; color:#00ff00;') +
-                '" onclick="' + comando + '(' + indice + ', \'' + k + '\')">' + (manca ? R.no : R.si) + '</button>';
+            // 31 ottobre (Paolo, collaudo grafico): come i tasti Copertura e
+            // Linea di Tiro dell'Attacco BS: alti 90, scritta centrata a
+            // var(--fs-l), colori del SI`/NO dei requisiti, e per la Linea di
+            // Tiro l'icona grande sopra la scritta (window.iconaInterruttore).
+            const icona = (k === 'lof' && typeof G.iconaInterruttore === 'function') ? G.iconaInterruttore(manca ? 'lofNo' : 'lofSi', 44, true) : '';
+            return '<button type="button" class="huge-btn tasto-requisito" data-requisito="' + k + '" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); flex-direction:column; justify-content:center; align-items:center; text-align:center; ' +
+                M.stileColore(manca ? 'attenzione' : 'si') +
+                '" onclick="' + comando + '(' + indice + ', \'' + k + '\')">' + icona + (manca ? R.no : R.si) + '</button>';
         }).join('') + '</div>';
+    };
+    // LA SCHEDA DEL BERSAGLIO (31 ottobre, Paolo: "stessi colori e
+    // dimensioni carattere della pagina BS"). I pezzi della scheda
+    // dell'Attacco BS, in un posto solo, per CC, Scoprire, Schivata, Reset,
+    // Hacking, Intuitivo...:
+    //   M.schedaBS.apri()                  il riquadro (bordo a sinistra)
+    //   M.schedaBS.nome(testo)             il nome del bersaglio
+    //   M.schedaBS.burst(n, meno, piu, puoMeno, puoPiu, etichetta)
+    //   M.schedaBS.tendina(opzioni, onchange)   la tendina delle munizioni
+    M.schedaBS = {
+        bordo: function () { return String((G.document && G.document.title) || '').indexOf('NOMADS') >= 0 ? 'var(--nomad-red)' : 'var(--nomad-orange)'; },
+        apri: function () { return `<div class="target-card" style="border-left: 4px solid ${M.schedaBS.bordo()}; margin-bottom: 20px; background: rgba(255,255,255,0.03); padding: 15px; overflow: hidden;">`; },
+        testa: function (nome, destra) {
+            return `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">` +
+                `<b style="color:var(--nomad-orange); font-size:var(--fs-l);">${nome}</b>${destra || ''}</div>`;
+        },
+        burst: function (n, meno, piu, puoMeno, puoPiu, etichetta) {
+            return `<div class="burst-ctrl">` +
+                `<button class="burst-btn" style="opacity:${puoMeno ? 1 : 0.3}" onclick="${meno}">-</button>` +
+                `<span style="margin: 0 10px; font-size:var(--fs-l); font-weight:bold; color:${n > 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-spento,#888888)'}">${n} ${etichetta || 'B'}</span>` +
+                `<button class="burst-btn" style="opacity:${puoPiu ? 1 : 0.3}" onclick="${piu}">+</button></div>`;
+        },
+        // Il tasto della Copertura dell'Attacco BS (icona grande sopra).
+        tastoCopertura: function (cover, onclick, testi) {
+            const nom = String((G.document && G.document.title) || '').indexOf('NOMADS') >= 0;
+            const t = testi || {};
+            const ic = (k) => (typeof G.iconaInterruttore === 'function') ? G.iconaInterruttore(k, 44, true) : '';
+            const stile = cover ? 'background:var(--nomad-orange); color:var(--mn-scuro,#000000);' : `background:${nom ? '#1a0000' : '#001122'}; color:var(--mn-testo,#ffffff);`;
+            return `<button type="button" class="huge-btn tasto-copertura" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); flex-direction:column; justify-content:center; align-items:center; text-align:center; ${stile}" onclick="${onclick}">` +
+                (cover ? ic('coverSi') + (t.si || 'IN COPERTURA') : ic('coverNo') + (t.no || 'NO COPERTURA')) + `</button>`;
+        },
+        // Solo il numero, senza tasti (Burst fisso: Intuitivo, Speculativo).
+        burstFisso: function (n, etichetta) {
+            return `<span style="font-size:var(--fs-l); font-weight:bold; color:var(--mn-si,#00ff00);">${n} ${etichetta || 'B'}</span>`;
+        },
+        tendina: function (opzioni, onchange) {
+            return `<select class="tendina-munizioni" style="display:block; width:100%; min-width:0; margin:10px 0 0; height:60px; font-family:'Teko', sans-serif; font-size:var(--fs-titolo-2); font-weight:bold; text-transform:uppercase; background:#002233; color:var(--mn-testo,#ffffff); border:2px solid ${M.schedaBS.bordo()}; border-radius:5px; text-align:center; text-align-last:center; padding:0 10px;" onchange="${onchange}">${opzioni}</select>`;
+        }
+    };
+    // Il calcolo che prima stava in un riquadro sulla scheda, ora nella ⓘ
+    // (31 ottobre, Paolo): "ATTRIBUTO base → valore" e una riga per MOD.
+    M.notaValore = function (idStep, chi, esito, extra) {
+        if (!esito) return;
+        const voci = (esito.voci || []).filter(v => v && v.valore).map(v => (v.valore > 0 ? '+' : '') + v.valore + ' ' + M.soloTesto(v.motivo || ''));
+        const base = (esito.base != null) ? (esito.attributo || '') + ' ' + esito.base + ' → ' : '';
+        M.nota(idStep, (chi ? chi + ': ' : '') + 'Valore di Successo', base + (esito.valore != null ? esito.valore : '?') + (voci.length ? ' (' + voci.join(' · ') + ')' : ' (nessun modificatore)'), Object.assign({ tipo: 'mod' }, extra || {}));
     };
     // Il tasto del calcolo: IDLE se manca tutto, altrimenti l'etichetta sua.
     M.tastoConRequisiti = function (tasto, req, etichetta, esegui) {
@@ -9477,6 +9547,13 @@
         const segnaleHolo = (st.holoecho || String(unita.tipo).toUpperCase() === 'HOLOECHO') ? M.fileSegnalinoHoloecho(unita.numeroReplica) : null;
         const inMaschera = !!(st.holomask || deploy === 'HOLOMASK');
         if (segnaleHolo || st.holoecho) p.imgVariant = segnaleHolo || '0';
+        // 31 ottobre (Paolo, versione B): l'elemento che sul tavolo e` la
+        // MINIATURA si mostra con la foto della truppa vera (la sua miniatura),
+        // gli altri col segnalino numerato.
+        if ((segnaleHolo || st.holoecho) && unita.figuraHoloecho === true) {
+            const vera = unita.replica ? ((G.roster || []).find(x => x && x.id === unita.replicaDi) || null) : unita;
+            if (vera && M.fotoValida(vera.imgVariant)) p.imgVariant = vera.imgVariant;
+        }
         else if (inMaschera) p.imgVariant = M.fotoValida(unita.imgMaschera) ? unita.imgMaschera : '0';
 
         // 26 ottobre: HOLOMASK. Prima si scrivevano "Sconosciuta" nelle armi:
@@ -14228,6 +14305,15 @@
         for (let i = numeri.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const x = numeri[i]; numeri[i] = numeri[j]; numeri[j] = x; }
         tutte.forEach((u, i) => { u.numeroReplica = numeri[i]; });
         if (t === 'HOLOECHO') repliche.forEach(r => { r.imgVariant = M.fileSegnalinoHoloecho(r.numeroReplica) || '0'; });
+        // 31 ottobre (Paolo, versione B): sul tavolo UNO dei tre elementi e`
+        // la miniatura, gli altri due sono segnalini. Quale sia la figura si
+        // tira a caso, indipendente da chi e` vera: l'avversario vede la foto
+        // della miniatura su quel numero e i segnalini sugli altri, ma non sa
+        // chi e` vera. `figuraHoloecho` NON parte (non e` fra i campi visibili).
+        if (t === 'HOLOECHO') {
+            const f = Math.floor(Math.random() * tutte.length);
+            tutte.forEach((u, i) => { u.figuraHoloecho = (i === f); });
+        }
         note.push(t === 'DECOY'
             ? 'Decoy: ' + quante + ' replica/e statiche entro Coerenza. Si possono bersagliare: una replica colpita da un Attacco riuscito si toglie senza Tiro Salvezza.'
             : 'Holoecho: ' + quante + ' copie olografiche in Coerenza; eseguono lo stesso Ordine della truppa vera. Una copia colpita da un Attacco riuscito si toglie senza Tiro Salvezza.');

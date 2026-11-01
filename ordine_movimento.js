@@ -1,4 +1,4 @@
-// @versione 2026-10-30.2 | ordine_movimento.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_movimento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏃 MOVIMENTO E INSTRADAMENTO (N5) - ordine_movimento.js
 // ------------------------------------------
@@ -350,7 +350,7 @@
         // (M.coloreOrdine('CAUTO'): Ordine Intero, rosso), con l'intestazione comune.
         const M = window.MotoreN5;
         const col = M.segnaColoreOrdine(M.coloreOrdine('CAUTO'));
-        cont.innerHTML = M.intestazioneOrdine({ colore: col, titolo: 'MOVIMENTO CAUTO', nota: 'Ordine Intero · il calcolatore non ha la mappa' }) + `
+        cont.innerHTML = M.intestazioneOrdine({ step: 'step-modifiers', colore: col, titolo: 'MOVIMENTO CAUTO', nota: 'Ordine Intero · il calcolatore non ha la mappa' }) + `
             <div style="background:${col.riquadro}; border:1px solid ${col.tenue}; padding:14px; border-radius:5px;">
                 <div style="text-align:center; color:var(--mn-testo-2,#cccccc); font-size:var(--fs-m); margin-bottom:12px;">
                     Il movimento inizia E finisce fuori dalla LoF e dalla ZdC di ogni nemico?
@@ -389,7 +389,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_movimento.js', versione: '2026-10-30.2', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_movimento.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

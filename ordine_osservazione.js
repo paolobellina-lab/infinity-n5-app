@@ -1,4 +1,4 @@
-// @versione 2026-10-28.3 | ordine_osservazione.js | proprieta`: chat MOTORE
+// @versione 2026-10-31.1 | ordine_osservazione.js | proprieta`: chat MOTORE
 // ==========================================
 // 👁️ OSSERVAZIONE (N5) - ordine_osservazione.js
 // ------------------------------------------
@@ -103,7 +103,7 @@
 
         window.MotoreN5.azzeraNote('step-weapon');
         if (!container) return;
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `TRIANGULATED FIRE`, nota: `Ordine Intero. Nessun MOD al tiro,<br> tranne quelli che toccano il Burst.` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-weapon', colore: COL, titolo: `TRIANGULATED FIRE`, nota: `Ordine Intero. Nessun MOD al tiro,<br> tranne quelli che toccano il Burst.` })}`;
 
         // 18 ottobre (Paolo): la stessa grafica dell'Attacco BS — il bottone
         // approvato (M.bottoneArma) — invece dei bottoni col solo nome.
@@ -153,7 +153,7 @@
             window.targetsScartati.forEach(t => window.MotoreN5.nota('step-wait-aro', t.nome + ' non bersagliabile', t.motivo, { tipo: 'nonpuo' }));
             return window.goToStep('step-wait-aro');
         }
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `${fo ? 'FORWARD OBSERVER' : 'TRIANGULATED FIRE'}`, nota: `${fo ? 'Serve la Linea di Tiro.<br>Non infligge danno: impone lo Stato Bersagliato.' : 'Serve la Linea di Tiro.'}` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-wait-aro', colore: COL, titolo: `${fo ? 'FORWARD OBSERVER' : 'TRIANGULATED FIRE'}`, nota: `${fo ? 'Serve la Linea di Tiro.<br>Non infligge danno: impone lo Stato Bersagliato.' : 'Serve la Linea di Tiro.'}` })}`;
 
         if (window.validTargets.length === 0) {
             container.innerHTML += `<p style="color:var(--mn-errore,#ff3333); text-align:center; font-weight:bold;">Nessun bersaglio valido.</p>`;
@@ -369,7 +369,7 @@
         // Il tasto diventa IDLE se manca la Linea di Tiro o la gittata.
         const M = motore();
         const req = (M && !disabilitato) ? window.requisitiOsservazione() : null;
-        if (M && req) M.tastoConRequisiti(nuovo, req, 'ESEGUI TIRO', function () { window.eseguiOsservazione(); });
+        if (M && req) M.tastoConRequisiti(nuovo, req, 'ESEGUI CALCOLO', function () { window.eseguiOsservazione(); });
         else { nuovo.onclick = function () {}; nuovo.innerText = 'NON DISPONIBILE'; }
     };
 
@@ -449,7 +449,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_osservazione.js', versione: '2026-10-28.3', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_osservazione.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
