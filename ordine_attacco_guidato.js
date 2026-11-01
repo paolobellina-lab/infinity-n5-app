@@ -1,4 +1,4 @@
-// @versione 2026-11-01.1 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.2 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
 // ==========================================
 // 🚀 ATTACCO GUIDATO (N5) - ordine_attacco_guidato.js
 // ------------------------------------------
@@ -97,7 +97,7 @@
         const container = document.getElementById('weapon-buttons-container');
         window.MotoreN5.azzeraNote('step-weapon');
 
-        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-weapon', colore: COL, titolo: `ATTACCO GUIDATO`, nota: `BS ${unita.bs || '?'} · solo Turno Attivo · non richiede LoF` })}`;
+        container.innerHTML = `${window.MotoreN5.intestazioneOrdine({ step: 'step-weapon', colore: COL, titolo: `ATTACCO GUIDATO`, nota: `Solo Turno Attivo · non richiede LoF` })}`;
 
         // La Skill è un requisito: se manca, si dice e non si va avanti.
         if (esito.avvisi.length > 0) {
@@ -461,7 +461,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-11-01.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

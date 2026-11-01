@@ -1,4 +1,4 @@
-// @versione 2026-10-27.1 | test_sostituzione_unita.js | proprieta`: chat INTERFACCIA
+// @versione 2026-11-01.1 | test_sostituzione_unita.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 6 ottobre 2026.
 //
@@ -110,14 +110,21 @@ if (m) {
   ok(g.invii.includes('AGGIORNAMENTO'), 'e parte un AGGIORNAMENTO all\'Hub', g.invii);
 }
 
-console.log('\n--- 3. Infiltrazione fallita, in schieramento: NIENTE invio ---');
-g = pagina2(/^Heckler/);
-ok(g.MotoreN5.camoUnUso(g.roster[0]) === true, 'premessa: l\'Heckler del database ha Camouflage (1 Use)');
+console.log('\n--- 3. Tiro di schieramento NON SUPERATO, in schieramento: NIENTE invio ---');
+// RISCRITTO il 1 novembre (MOTORE 11-01.1): il tasto «TIRO DI INFILTRAZIONE
+// FALLITO» (infiltrazioneFallita, Heckler) e` diventato TIRO DI SCHIERAMENTO:
+// la domanda e il tiro del motore, l'esito lo applica
+// window.faseSchieramento.tiroDiSchieramento. Il Moran ha Infiltrazione e
+// Camouflage (1 Use). Prima: l'Heckler, che oggi non ha un tiro di schieramento.
+g = pagina2(/^Moran/, (u) => { u.deployState = 'CAMO'; u.states.camo = true; });
+ok(g.MotoreN5.camoUnUso(g.roster[0]) === true && !!g.MotoreN5.tiroDiSchieramento(g.roster[0]), 'premessa: il Moran del database ha Camouflage (1 Use) e un tiro di schieramento');
 const heck = g.roster[0]; g.invii.length = 0;
-g.infiltrazioneFallita(0);
-ok(g.roster[0].camoUsato === true, 'l\'uso del CAMO e` segnato nel roster', g.roster[0].camoUsato);
+{ let k = 0; const r = [true, false]; g.confirm = (t) => { g.domande.push(String(t)); return r[k++]; }; }
+g.apriTiroSchieramento(0);
+ok(g.roster[0].camoUsato === true && g.roster[0].tiroSchieramento === 'FALLITO', 'l\'uso del CAMO e` segnato nel roster', g.roster[0].camoUsato);
 ok(g.roster[0] === heck, 'sullo stesso oggetto');
 ok(g.invii.length === 0, 'e all\'Hub NON parte niente (prima della conferma dello schieramento)', g.invii);
+g.confirm = (t) => { g.domande.push(String(t)); return g.rispostaConferma; };
 
 console.log('\n--- 4. Deployable piazzato in schieramento: NIENTE invio ---');
 // RISCRITTO il 27 ottobre (DEP-10, MOTORE 26.1; roster_manager 26.2). Chi ha

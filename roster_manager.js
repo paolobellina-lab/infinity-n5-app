@@ -1,4 +1,4 @@
-// @versione 2026-11-01.1 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-11-01.3 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -1385,64 +1385,66 @@ window.testoMimetismo = (u) => {
     }
 };
 
-// CAMOUFLAGE (1 USE) E TIRO DI INFILTRAZIONE FALLITO (FAQ F07)
-// Una truppa col CAMO monouso che tenta di schierarsi come Marker e
-// fallisce il Tiro di Infiltrazione ha consumato l'uso. Il tiro si fa al
-// tavolo, quindi l'app non puo` saperlo: lo dichiara il giocatore.
-//
-// Chi e` nel caso lo decide il MOTORE, non una ricerca di parole nelle
-// skill: M.camoUnUso per il CAMO monouso, e per l'Infiltrazione lo
-// stesso promemoriaSchieramento che oggi chiede "hai fatto il Tiro di
-// Infiltrazione?". Chiamato su UNA sola unita`, cosi` non si confrontano
-// soprannomi, che con due truppe uguali sarebbero ambigui.
-window.puoFallireInfiltrazioneCamo = (u) => {
+// IL TIRO DI SCHIERAMENTO (1 novembre, Paolo, via MOTORE)
+// Prima: «TIRO DI INFILTRAZIONE FALLITO» sotto la voce CAMO, solo per il
+// Camouflage (1 Use) e solo per il fallimento (puoFallireInfiltrazioneCamo,
+// infiltrazioneFallita). Ora un tasto per ogni truppa che ha un tiro di
+// schieramento (M.tiroDiSchieramento). Al tocco, nel riquadro dell'app:
+//   1. la domanda del motore (t.domande[0]: nella meta` avversaria?) SI`/NO;
+//   2. NO -> t2.testo e CHIUDI, niente cambia; SI` -> t2.testo (il valore del
+//      tiro) coi tasti t2.tastoSi / t2.tastoNo; le righe di t2.seFallisce
+//      vanno nella ⓘ, non a schermo;
+//   3. l'esito lo applica window.faseSchieramento.tiroDiSchieramento (motore:
+//      unita` aggiornata senza invio, via i segnalini del Minelayer); qui si
+//      mostrano e.note e si ridisegna.
+window.bottoneTiroSchieramento = (index) => {
     const M = window.MotoreN5;
-    if (!u || !M || typeof M.camoUnUso !== 'function' || typeof M.promemoriaSchieramento !== 'function') return false;
-    if (u.camoUsato) return false;
-    if (String(u.deployState || '').indexOf('CAMO') !== 0) return false;
-    try {
-        if (!M.camoUnUso(u)) return false;
-        return (M.promemoriaSchieramento([u]) || []).some(p => p.skill === 'INFILTRATION');
-    } catch (e) {
-        window.ultimaEccezione = e;
-        return false;
+    const u = (window.roster || [])[index];
+    if (!u) return '';
+    if (!M || typeof M.tiroDiSchieramento !== 'function') {
+        console.error('\u26d4 M.tiroDiSchieramento assente (serve motore_regole_n5.js dalla 2026-11-01.1): niente tasto TIRO DI SCHIERAMENTO.');
+        return '';
     }
+    const t = M.tiroDiSchieramento(u);
+    if (!t) return '';
+    const fatto = u.tiroSchieramento ? `<span class="usi-residui" style="display:block; font-family:'Share Tech Mono', monospace; font-size:var(--fs-s); font-weight:normal; color:#ccc;">ESITO: ${u.tiroSchieramento === 'FALLITO' ? 'NON SUPERATO' : u.tiroSchieramento}</span>` : '';
+    // Cosa succede se fallisce: nella ⓘ, legato al tasto (non a schermo).
+    (t.seFallisce || []).forEach(r => window.infoSchieramento(t.titolo + ': se fallisce', r, 'tiro-schieramento'));
+    return `<button class="huge-btn tasto-opzione tasto-tiro-schieramento" data-nota="tiro-schieramento" onclick="window.apriTiroSchieramento(${index})">${t.titolo}${fatto}</button>`;
 };
-
-window.infiltrazioneFallita = (index) => {
+window.apriTiroSchieramento = (index) => {
     const M = window.MotoreN5;
-    const u = window.roster[index];
-    if (!u || !M || typeof M.consumaCamo !== 'function') {
-        console.error('\u26d4 M.consumaCamo assente: serve motore_regole_n5.js dalla 2026-09-21.25 in su.');
-        return;
-    }
-    window.chiedi('Con Camouflage (1 Use) l\'uso del CAMO e` consumato (FAQ F07): per il resto della partita la truppa non potra` rientrare nello stato CAMO.',
-        { titolo: (u.alias || u.nome) + ': Tiro di Infiltrazione FALLITO', si: 'CONFERMO', no: 'ANNULLA' },
-        (ok) => { if (ok) window.infiltrazioneFallitaConfermata(index); });
-};
-window.infiltrazioneFallitaConfermata = (index) => {
-    const M = window.MotoreN5;
-    const u = window.roster[index];
-    if (!u || !M) return;
-
-    // L'unita` aggiornata la calcola il motore; qui si sostituisce e basta,
-    // come per applicaIdle. Non si toccano altri campi di nostra iniziativa.
-    const esito = M.consumaCamo(u);
-    // 6 ottobre: non piu` roster[index] scritto a mano ma il posto unico,
-    // window.sostituisciUnita. SENZA INVIO: siamo in schieramento, prima
-    // della conferma, e l'avversario non deve ancora vedere niente (chat
-    // MOTORE). L'invio vero parte con la conferma dello schieramento.
-    if (esito && esito.unitaAggiornata) {
-        if (typeof window.sostituisciUnita === 'function') {
-            window.sostituisciUnita(u, esito.unitaAggiornata, 'Infiltrazione fallita: uso del CAMO consumato', { senzaInvio: true });
-        } else {
-            // Senza motore_core.js il cambio non si perde: come prima.
-            window.roster[index] = esito.unitaAggiornata;
-            console.error('\u26d4 window.sostituisciUnita manca (motore_core.js non caricato?): uso del CAMO segnato a mano.');
+    const u = (window.roster || [])[index];
+    if (!u || !M || typeof M.tiroDiSchieramento !== 'function') return;
+    const t = M.tiroDiSchieramento(u);
+    if (!t) return;
+    const titolo = (u.alias || u.nome || '') + ' \u2014 ' + t.titolo;
+    window.chiedi(((t.domande || [])[0] || {}).testo || '', { titolo: titolo, si: 'S\u00cc', no: 'NO' }, (meta) => {
+        const t2 = M.tiroDiSchieramento(u, { metaAvversaria: !!meta });
+        if (!t2) return;
+        if (t2.esito === 'SENZA_TIRO') {
+            if (typeof M.mostraAvviso === 'function') M.mostraAvviso(t2.testo, { titolo: titolo });
+            else console.error('\u26d4 M.mostraAvviso assente (serve motore_regole_n5.js dalla 2026-10-30.1).');
+            return;
         }
+        // (Cosa succede se fallisce e` gia` nella ⓘ della pagina: bottoneTiroSchieramento.)
+        window.chiedi(t2.testo, { titolo: titolo, si: t2.tastoSi, no: t2.tastoNo }, (superato) => window.esitoTiroSchieramento(u.id, !!superato));
+    });
+};
+window.esitoTiroSchieramento = (id, superato) => {
+    const F = window.faseSchieramento;
+    if (!F || typeof F.tiroDiSchieramento !== 'function') {
+        console.error('\u26d4 window.faseSchieramento.tiroDiSchieramento assente (serve fase_schieramento.js dalla 2026-11-01.1): esito del tiro non applicato.');
+        return null;
     }
-    window.apriDeployStati(index);
+    const e = F.tiroDiSchieramento(id, superato);
+    if (!e) return null;
+    const i = (window.roster || []).findIndex(x => x && String(x.id) === String(id));
+    if (i >= 0 && window.apriDeployStati) window.apriDeployStati(i);
     if (window.renderDeployUnits) window.renderDeployUnits();
+    const M = window.MotoreN5;
+    if ((e.note || []).length && M && typeof M.mostraAvviso === 'function') M.mostraAvviso(e.note.join('\n\n'), { titolo: superato ? 'SUPERATO' : 'NON SUPERATO' });
+    return e;
 };
 
 // REMDRIVER: il pilota guida un REM, e quel REM prende i suoi valori.
@@ -1584,15 +1586,18 @@ window.apriDeployStati = (index) => {
                 if (v.nota && v.disponibile === false) html += `<div class="nota-opzione">${testo(v.nota)}</div>`;
                 // Le note delle voci accese stanno nella ⓘ della pagina.
                 else if (v.nota) window.infoSchieramento(v.etichetta, v.nota);   // va al tasto con la stessa scritta
-                // Sotto la voce CAMO: il tiro di Infiltrazione fallito (Camouflage
-                // 1 Use, FAQ F07). Chi e` nel caso lo decide il motore
-                // (puoFallireInfiltrazioneCamo chiede M.camoUnUso e M.promemoriaSchieramento).
-                if (stato === 'CAMO' && window.puoFallireInfiltrazioneCamo(u)) {
-                    html += `<button class="tasto-uscita" style="border-color:#ffaa00; color:#ffaa00; margin:0 0 10px 0;" onclick="window.infiltrazioneFallita(${index})">TIRO DI INFILTRAZIONE FALLITO</button>`;
-                }
+                // (1 novembre: il «TIRO DI INFILTRAZIONE FALLITO» sotto la voce
+                // CAMO e` diventato il tasto TIRO DI SCHIERAMENTO, piu` sotto.)
             });
         }
     }
+
+    // 1 novembre (Paolo, via MOTORE): il TIRO DI SCHIERAMENTO, per ogni
+    // truppa per cui M.tiroDiSchieramento(u) non e` null (il motore esclude
+    // repliche, Deployable, AD, Riserva, a bordo). Sostituisce il tasto
+    // «TIRO DI INFILTRAZIONE FALLITO» (Camouflage 1 Use), che valeva solo
+    // per il CAMO monouso e solo per il fallimento.
+    html += window.bottoneTiroSchieramento(index);
 
     // HOLOMASK (26 ottobre, MOTORE 26.1): si sceglie il Modello da imitare
     // fra quelli che il motore ammette (M.profiliImitabili).
@@ -1831,31 +1836,6 @@ window.generaOloEcoVecchioN = (index, risposta) => {
     window.renderDeployUnits();
 };
 
-window.apriDeployAzioni = (index) => {
-    window.unitToEdit = window.roster[index];
-    document.querySelectorAll('.step-container').forEach(el => el.style.display = 'none');
-    document.getElementById('step-deploy-actions').style.display = 'flex';
-    
-    let container = document.getElementById('deploy-action-list-container');
-    container.innerHTML = ""; 
-    
-    let u = window.unitToEdit;
-    let skills = (u.skills || "").toLowerCase();
-    let weapons = ((u.weapon || "") + " " + (u.equip || "")).toLowerCase();
-    let hasBottoni = false;
-
-    let btnBg = window.isNomadsApp() ? '#330000' : '#002244';
-    let btnBorder = window.isNomadsApp() ? '#ff0000' : '#00ccff';
-
-    if (skills.includes('minelayer') || weapons.includes('mine') || weapons.includes('koala') || weapons.includes('panda') || weapons.includes('dropbear') || weapons.includes('deployable') || weapons.includes('crazykoalas') || weapons.includes('fastpanda')) {
-        container.innerHTML += `<button class="huge-btn" style="background:${btnBg}; border-color:${btnBorder}; width:100%; margin-bottom:10px;" onclick="window.mostraMenuDeployables(${index})">SCHIERA EQUIPAGGIAMENTO / MINE</button>`;
-        hasBottoni = true;
-    }
-
-    if (!hasBottoni) {
-        container.innerHTML = `<p style="color:#aaa; text-align:center; margin-top:20px; font-size:18px;">Questa unità non ha abilità o equipaggiamenti speciali da dispiegamento.</p>`;
-    }
-};
 
 
 
@@ -1872,56 +1852,31 @@ window.apriDeployAzioni = (index) => {
 // l'uso scalato da M.creaDeployable. E` la stessa strada dell'ordine
 // PIAZZARE EQUIPAGGIAMENTO a partita iniziata, quindi schieramento e partita
 // contano gli usi allo stesso modo.
-window._piazzabiliMostrati = {};
-
 window.bottoniDeployables = (index) => {
     const M = window.MotoreN5;
     const u = window.roster[index];
     if (!u) return '';
-    // 26 ottobre (DEP-10, Paolo: "ne piazzava 3 e nessuna domanda"): chi ha
-    // MINELAYER piazza in schieramento dal percorso del motore
-    // (window.faseSchieramento.minelayer): il limite (1, o il numero fra
-    // parentesi) e le due domande dei requisiti. Il percorso qui sotto non li
-    // conosceva.
-    const ml = window.opzioniMinelayerDi(u);
-    if (ml && ml.ha) return window.bottoniMinelayer(index, ml);
-    if (!M || typeof M.armiPiazzabili !== 'function' || typeof M.creaDeployable !== 'function') {
-        return `<p style="color:#ff6666; text-align:center;">\u26d4 Motore assente: impossibile sapere cosa piazza questa truppa.</p>`;
+    // 1 novembre (Paolo, via MOTORE): in schieramento i Deployable si
+    // piazzano SOLO col Minelayer (M.piazzabiliInSchieramento). Senza, niente
+    // tasti: il motivo va nella ⓘ (solo per chi ha qualcosa da piazzare in
+    // partita). Prima chi non aveva Minelayer piazzava da schieraPiazzabile
+    // (M.creaDeployable, ordineId 'schieramento_<ora>'): ora il motore
+    // risponde E63, e quel percorso e` tolto.
+    if (!M || typeof M.piazzabiliInSchieramento !== 'function') {
+        console.error('\u26d4 M.piazzabiliInSchieramento assente (serve motore_regole_n5.js dalla 2026-11-01.1): niente equipaggiamento da piazzare.');
+        return `<p style="color:#ff6666; text-align:center;">\u26d4 Motore senza M.piazzabiliInSchieramento: non si sa cosa piazza questa truppa.</p>`;
     }
-
-    let esito;
-    try { esito = M.armiPiazzabili(u) || {}; }
-    catch (e) { window.ultimaEccezione = e; return `<p style="color:#ff6666;">\u26d4 Errore leggendo i piazzabili: ${e.message}</p>`; }
-
-    const armi = esito.armi || [];
-    window._piazzabiliMostrati[index] = armi;
-
-    // 27 ottobre sera (Paolo): sotto il nome dell'equipaggiamento niente
-    // tratti (Intuitive Attack, Disposable...): solo il nome.
-    // I tratti, tolti dal tasto, stanno nella ⓘ della pagina.
-    // 31 ottobre (Paolo, P6): sotto il nome «USI RESIDUI: n» (usi del
-    // motore, arma.usi), come nel Minelayer. La nota va al tasto per il suo
-    // data-nota: la scritta del tasto ora ha anche gli usi.
-    armi.forEach((a, k) => { if (a.traits) window.infoSchieramento(a.nome, Array.isArray(a.traits) ? a.traits.join(', ') : a.traits, 'piazzabile-' + k); });
-    let html = armi.map((arma, k) => `
-        <button class="huge-btn tasto-opzione" onclick="window.schieraPiazzabile(${index}, ${k})" data-nota="piazzabile-${k}">
-            ${arma.nome}${window.rigaUsiResidui(arma.usi)}
-        </button>`).join('');
-
-    // Le escluse col motivo. 31 ottobre (P7): un'arma FINITA (scarica: gli
-    // usi sono a zero) resta un tasto spento con «USI RESIDUI: 0», e la
-    // spiegazione va nella ⓘ, senza ripetere il nome. Le altre escluse
-    // (non piazzabili per altri motivi) restano scritte come prima.
-    (esito.escluse || []).forEach((x, k) => {
-        if (x.scarica) {
-            html += `<button class="huge-btn tasto-opzione arma-finita" disabled data-nota="finita-${k}">${x.nome}${window.rigaUsiResidui(x.usi || { residui: 0 })}</button>`;
-            window.infoSchieramento(x.nome, x.spiegazione || x.motivo, 'finita-' + k);
-            return;
-        }
-        html += `<div style="color:#888; font-size:14px; margin:4px 0 8px 0;">${x.nome}: ${x.motivo}</div>`;
-    });
-
-    return html;
+    const p = M.piazzabiliInSchieramento(u) || {};
+    if (!p.consentito) {
+        let ha = false;
+        try { const a = (typeof M.armiPiazzabili === 'function') ? (M.armiPiazzabili(u) || {}) : {}; ha = !!((a.armi || []).length || (a.escluse || []).length); }
+        catch (e) { window.ultimaEccezione = e; }
+        if (ha && p.motivo) window.infoSchieramento('EQUIPAGGIAMENTO DA PIAZZARE', p.motivo);
+        return '';
+    }
+    // Il Minelayer passa da window.faseSchieramento.minelayer (un pezzo per
+    // Minelayer, le domande dei requisiti).
+    return window.bottoniMinelayer(index, window.opzioniMinelayerDi(u) || p.minelayer);
 };
 // La riga degli usi sotto il nome di un equipaggiamento (31 ottobre, P6):
 // «USI RESIDUI: n», o niente se l'arma non ha usi limitati.
@@ -1947,7 +1902,17 @@ window.bottoniMinelayer = (index, ml) => {
     (ml.armi || []).forEach((a, k) => {
         const attivo = ml.restanti > 0 && a.disponibile;
         const usi = (a.usiResidui != null) ? window.rigaUsiResidui({ residui: a.usiResidui }) : '';
-        html += `<button class="huge-btn bottone-minelayer" ${attivo ? `onclick="window.piazzaConMinelayer(${index}, ${k})"` : 'disabled'} data-nota="minelayer">${a.nome}${usi}</button>`;
+        // Un'arma con gli usi finiti: tasto spento, «USI RESIDUI: 0», e la
+        // spiegazione del motore (M.armiPiazzabili, escluse) nella ⓘ (P7).
+        const finita = !a.disponibile && a.usiResidui === 0;
+        if (finita) {
+            const M = window.MotoreN5;
+            let x = null;
+            try { x = ((M && typeof M.armiPiazzabili === 'function' ? (M.armiPiazzabili(u) || {}).escluse : null) || []).find(e => e && e.nome === a.nome); }
+            catch (e) { window.ultimaEccezione = e; }
+            window.infoSchieramento(a.nome, (x && (x.spiegazione || x.motivo)) || 'Usi esauriti.', 'finita-' + k);
+        }
+        html += `<button class="huge-btn bottone-minelayer${finita ? ' arma-finita' : ''}" ${attivo ? `onclick="window.piazzaConMinelayer(${index}, ${k})"` : 'disabled'} data-nota="${finita ? 'finita-' + k : 'minelayer'}">${a.nome}${usi}</button>`;
     });
     if (!(ml.armi || []).length) html += `<p style="color:#888; text-align:center;">Nessuna arma da piazzare col Minelayer.</p>`;
     return html;
@@ -2013,94 +1978,13 @@ window.piazzaConMinelayerRisposte = (index, k, risposte) => {
     if (window.renderDeployUnits) window.renderDeployUnits();
 };
 
-window.schieraPiazzabile = (index, k) => {
-    const M = window.MotoreN5;
-    const portatore = window.roster[index];
-    const arma = (window._piazzabiliMostrati[index] || [])[k];
-    if (!portatore || !arma) return;
-
-    const e = M.creaDeployable(portatore, arma, { ordineId: 'schieramento_' + Date.now(), viaEsito: false });
-    if (e.errori && e.errori.length) {
-        return alert('\u26d4 ' + e.errori.map(x => x.messaggio + (x.dettaglio ? '\n   ' + x.dettaglio : '')).join('\n\n'));
-    }
-
-    // Il portatore con l'uso scalato: va tenuto, altrimenti app e motore
-    // contano usi diversi e il pulsante resterebbe per sempre.
-    // 6 ottobre: stesso posto unico, e anche qui SENZA INVIO (schieramento,
-    // prima della conferma).
-    if (typeof window.sostituisciUnita === 'function') {
-        window.sostituisciUnita(portatore, e.portatoreAggiornato, 'Deployable piazzato in schieramento', { senzaInvio: true });
-    } else {
-        // Senza motore_core.js il cambio non si perde: come prima.
-        window.roster[index] = Object.assign({}, portatore, e.portatoreAggiornato);
-        console.error('\u26d4 window.sostituisciUnita manca (motore_core.js non caricato?): usi del portatore scalati a mano.');
-    }
-
-    // Il gettone del motore ha una forma sua (armi, isCamo, proprietario...):
-    // qui si aggiungono solo i campi che la lista dello schieramento legge.
-    // Se e` mimetico lo dice il motore (isCamo); il valore scritto e`
-    // l'unico segnalino camo che esiste in N5.
-    const g = e.token;
-    window.roster.push(Object.assign({}, g, {
-        name: g.nome,
-        // Il gettone ha DUE campi vicini di nome e diversi di significato:
-        // weapon e` l'arma (la torretta porta qui il Combi o il Marksman del
-        // profilo), armi sulle mine e` la MUNIZIONE ("AP", "Shock"). Leggere
-        // solo armi faceva comparire la munizione al posto dell'arma.
-        // Il ripiego serve perche` la lista chiama weapon.split: un gettone
-        // senza quel campo la farebbe esplodere.
-        weapon: g.weapon || g.armi || '-',
-        combatGroup: portatore.combatGroup,
-        imgVariant: '0',
-        deployState: g.isCamo ? 'CAMO' : 'NORMAL',
-        state: 'ACTIVE',
-        tipo: g.tipo || 'DEPLOYABLE'
-    }));
-
-    alert(`\u2705 ${g.nome} posizionato sul tavolo.`);
-    window.apriDeployStati(index);
-    if (window.renderDeployUnits) window.renderDeployUnits();
-};
+// (1 novembre: tolto window.schieraPiazzabile, il piazzamento in schieramento
+// senza Minelayer: il motore ora risponde E63. Vedi bottoniDeployables.)
 
 
-window.mostraMenuDeployables = (parentIndex) => {
-    // Stessa lista della pagina di schieramento: una sola fonte, il motore.
-    const container = document.getElementById('deploy-action-list-container');
-    if (!container) return;
-    const titleColor = window.isNomadsApp() ? 'var(--nomad-orange)' : '#00ccff';
-    const bottoni = window.bottoniDeployables(parentIndex);
-    container.innerHTML = `<p style="color:${titleColor}; text-align:center; margin-bottom:10px;">SELEZIONA COSA PIAZZARE:</p>` +
-        (bottoni || `<p style="color:#888; text-align:center; margin-top:20px;">Nessun equipaggiamento piazzabile nel profilo di questa unit\u00e0.</p>`);
-};
-
-window.schieraDeployableSelezionato = (parentIndex, depId) => {
-    let genitore = window.roster[parentIndex];
-    let depBase = window.DB_DEPLOYABLES.find(d => d.id === depId);
-    
-    let nuovoMarker = {
-        id: 'dep_' + Date.now(),
-        nome: depBase.nome + " (" + (genitore.nome || "").split('(')[0].trim() + ")",
-        name: depBase.nome,
-        alias: depBase.nome,
-        combatGroup: genitore.combatGroup, 
-        imgVariant: "0",
-        deployState: depBase.isCamo ? "CAMO" : "NORMAL", 
-        states: { camo: depBase.isCamo, impersonation: false, hidden: false, reserve: false },
-        tipo: depBase.tipo,
-        arm: depBase.arm,
-        bts: depBase.bts,
-        str: depBase.str,
-        s: depBase.s,
-        skills: depBase.equip,
-        weapon: depBase.armi,
-        state: "ACTIVE" 
-    };
-    
-    window.roster.push(nuovoMarker);
-    alert(`✅ ${depBase.nome} posizionato sul tavolo!`);
-    window.goToStep('step-deploy-units');
-    window.renderDeployUnits();
-};
+// (1 novembre sera, d'accordo con MOTORE: tolti apriDeployAzioni,
+// mostraMenuDeployables e schieraDeployableSelezionato. Nessuno li chiamava
+// piu`, e l'ultimo costruiva i segnalini a mano, senza il motore.)
 
 // 27 ottobre: questa funzione NON e` quella che gira. fase_schieramento.js
 // (chat MOTORE), caricato dopo, ridefinisce window.confermaSchieramento con
@@ -2146,7 +2030,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-11-01.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-11-01.3', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

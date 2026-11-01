@@ -1,4 +1,4 @@
-// @versione 2026-10-31.2 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.2 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-10-31.2';
+    M.VERSIONE = '2026-11-01.2';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -9635,7 +9635,9 @@
                     const mP = /INFILTRATION\s*[\(\[]\s*(?:PH\s*=?\s*)?(\d+)\s*[\)\]]/.exec(s);
                     const ph = parseInt(u.ph, 10);
                     const tiro = mP ? parseInt(mP[1], 10) : (isFinite(ph) ? ph - 3 : null);
-                    if (tiro != null) testo += ` Tiro a ${tiro} (${mP ? 'PH fra parentesi del profilo' : 'PH ' + ph + ' - 3'}).`;
+                    // 1 novembre (Paolo): il numero sta SOLO nel popup TIRO DI
+                    // SCHIERAMENTO (M.tiroDiSchieramento), non nel promemoria.
+                    void tiro;
                 }
                 out.push({ unita: M.nomeUnita(u), skill: k, testo: testo });
             });
@@ -9652,6 +9654,67 @@
         return out;
     };
 
+
+    // ==================================================================
+    // IL TIRO DI SCHIERAMENTO (1 novembre, Paolo)
+    // ------------------------------------------------------------------
+    // Il tasto della pagina degli stati di schieramento apre un riquadro con
+    // la domanda (nella meta` avversaria?), il valore del tiro e due tasti,
+    // SUPERATO e NON SUPERATO. NON SUPERATO vale come la vecchia
+    // «TIRO DI INFILTRAZIONE FALLITO», allargata a tutti gli esiti.
+    //   M.tiroDiSchieramento(u, { metaAvversaria })
+    //     -> null (nessun tiro di schieramento) oppure
+    //        { skill, titolo, domande:[{id,testo}], esito: 'NON_RISPOSTO' |
+    //          'SENZA_TIRO' | 'TIRO', valore, testo, seFallisce:[testi],
+    //          tastoSi, tastoNo }
+    //   M.esitoTiroSchieramento(u, superato, roster)
+    //     -> { unitaAggiornata, daTogliere:[id token], note:[testi] }
+    // ==================================================================
+    M.tiroDiSchieramento = function (unita, risposte) {
+        if (!unita || unita.replica || unita.deployable) return null;
+        const s = skillsDi(unita);
+        if (s.indexOf('INFILTRATION') < 0) return null;
+        const deploy = String(unita.deployState || 'NORMAL').toUpperCase();
+        if (deploy === 'AD' || deploy === 'RESERVE' || deploy === 'A_BORDO') return null;
+        const T = (catalogo('SCHIERAMENTO') || {}).tiroDiSchieramento || {};
+        const r = risposte || {};
+        const mP = /INFILTRATION\s*[\(\[]\s*(?:PH\s*=?\s*)?(\d+)\s*[\)\]]/.exec(s);
+        const ph = parseInt(unita.ph, 10);
+        const valore = mP ? parseInt(mP[1], 10) : (isFinite(ph) ? ph - 3 : null);
+        const spiega = mP ? 'PH fra parentesi del profilo' : 'PH ' + ph + ' - 3';
+        const seFallisce = (T.seFallisce || []).slice();
+        if (M.camoUnUso(unita)) seFallisce.push(T.seFallisceCamoUnUso);
+        if (/MINELAYER/.test(s)) seFallisce.push(T.seFallisceMinelayer);
+        const out = { skill: 'INFILTRATION', titolo: T.titolo || 'TIRO DI SCHIERAMENTO',
+                      domande: [{ id: 'metaAvversaria', testo: M.accenti(T.domanda || '') }],
+                      esito: 'NON_RISPOSTO', valore: valore, testo: '',
+                      seFallisce: seFallisce.filter(Boolean).map(M.accenti),
+                      tastoSi: T.superato || 'SUPERATO', tastoNo: T.nonSuperato || 'NON SUPERATO' };
+        if (r.metaAvversaria === false) { out.esito = 'SENZA_TIRO'; out.testo = M.accenti(T.senzaTiro || ''); }
+        else if (r.metaAvversaria === true) {
+            out.esito = 'TIRO';
+            out.testo = M.accenti(String(T.valore || '').replace('{n}', valore).replace('{spiega}', spiega));
+        }
+        return out;
+    };
+    M.esitoTiroSchieramento = function (unita, superato, roster) {
+        const T = (catalogo('SCHIERAMENTO') || {}).tiroDiSchieramento || {};
+        if (superato) return { unitaAggiornata: Object.assign({}, unita, { tiroSchieramento: 'SUPERATO' }), daTogliere: [], note: [] };
+        let u = Object.assign({}, unita, { tiroSchieramento: 'FALLITO', deployState: 'NORMAL',
+                    states: Object.assign({}, unita.states || {}, { camo: false, impersonation: false, hidden: false }) });
+        const note = (T.seFallisce || []).map(M.accenti);
+        if (M.camoUnUso(unita)) { u = M.consumaCamo(u).unitaAggiornata; note.push(M.accenti(T.seFallisceCamoUnUso || '')); }
+        const daTogliere = [];
+        (roster || []).forEach(function (t) {
+            if (!t || !t.deployable || !t.schieratoDaMinelayer || String(t.proprietario) !== String(unita.id)) return;
+            // Il token esiste gia`: l'uso e` stato scalato quando lo si e`
+            // piazzato (M.piazzaConMinelayer). Esce dal tavolo e l'uso resta
+            // speso: niente M.minelayerTiroFallito, che lo scalerebbe di nuovo.
+            daTogliere.push(t.id);
+            note.push(M.accenti(T.seFallisceMinelayer || '') + ' (' + (t.nome || t.chiaveArma) + ')');
+        });
+        return { unitaAggiornata: u, daTogliere: daTogliere, note: note };
+    };
 
     // ==================================================================
     // PARTE 29: SCOPRIRE
@@ -12555,6 +12618,16 @@
     M.creaDeployable = function (portatore, arma, ctx) {
         ctx = ctx || {};
         const avvisi = [], errori = [];
+        // 1 novembre (Paolo): in fase di SCHIERAMENTO un Deployable si piazza
+        // solo col MINELAYER (riga 9125), e col suo limite (M.piazzaConMinelayer,
+        // ordineId 'SCHIERAMENTO'). La vecchia strada dello schieramento
+        // (roster_manager, schieraPiazzabile, ordineId 'schieramento_<ora>')
+        // piazzava qualunque truppa, senza limite: ora si ferma qui.
+        if (/^schieramento_/.test(String(ctx.ordineId || ''))) {
+            errori.push(err('E63', 'In schieramento i Deployable si piazzano solo col Minelayer.',
+                'Senza Minelayer si piazzano in partita, con PIAZZARE EQUIPAGGIAMENTO.'));
+            return { token: null, portatoreAggiornato: portatore, avvisi, errori };
+        }
         if (M.eDetonazioneAContatto(arma)) {
             errori.push(err('E23', `"${arma.nome}" detona nello stesso Ordine: non diventa un segnalino.`,
                 'Va risolta con M.detonazioneAContatto (righe 6043-6047).'));
@@ -14172,6 +14245,15 @@
             });
         return { ha: true, pezzi: pezzi, usati: usati, restanti: Math.max(0, pezzi - usati),
                  armi: armi, domande: (C.domande || []).slice(), requisiti: (C.requisiti || []).slice() };
+    };
+
+    // Cosa si puo` piazzare in SCHIERAMENTO (1 novembre, Paolo): solo col
+    // Minelayer. -> { consentito, motivo, minelayer: M.opzioniMinelayer(u) }
+    M.piazzabiliInSchieramento = function (unita) {
+        const ml = M.opzioniMinelayer(unita);
+        if (ml.ha) return { consentito: true, motivo: null, minelayer: ml };
+        return { consentito: false, minelayer: ml,
+                 motivo: 'Senza Minelayer i Deployable non si piazzano in schieramento: si piazzano in partita, con PIAZZARE EQUIPAGGIAMENTO.' };
     };
 
     M.piazzaConMinelayer = function (unita, nomeArma, risposte) {

@@ -1,4 +1,4 @@
-// @versione 2026-10-06.4 | fase_schieramento.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.1 | fase_schieramento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🚀 FASE DI SCHIERAMENTO
 // ------------------------------------------
@@ -125,6 +125,22 @@ window.faseSchieramento.minelayer = {
     }
 };
 
+// 1 novembre (Paolo): il TIRO DI SCHIERAMENTO (Infiltrazione). La domanda e il
+// valore li da` M.tiroDiSchieramento; qui si applica l'esito al roster:
+// l'unita` aggiornata dal motore (M.esitoTiroSchieramento) e, se il tiro e`
+// fallito, i Deployable piazzati col Minelayer escono dal roster.
+//   window.faseSchieramento.tiroDiSchieramento(idUnita, superato) -> esito
+window.faseSchieramento.tiroDiSchieramento = function (idUnita, superato) {
+    const M = window.MotoreN5;
+    const i = (window.roster || []).findIndex(x => x && String(x.id) === String(idUnita));
+    if (!M || typeof M.esitoTiroSchieramento !== 'function' || i < 0) return null;
+    const e = M.esitoTiroSchieramento(window.roster[i], !!superato, window.roster);
+    if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(window.roster[i], e.unitaAggiornata, 'Tiro di schieramento', { senzaInvio: true });
+    else window.roster[i] = e.unitaAggiornata;
+    if (e.daTogliere.length) window.roster = window.roster.filter(x => !x || e.daTogliere.indexOf(x.id) < 0);
+    return e;
+};
+
 window.confermaSchieramento = function() {
     window.faseSchieramento.concludiSchieramento();
 };
@@ -134,7 +150,7 @@ window.confermaSchieramento = function() {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'fase_schieramento.js', versione: '2026-10-06.4', proprieta: 'MOTORE' };
+    var v = { file: 'fase_schieramento.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

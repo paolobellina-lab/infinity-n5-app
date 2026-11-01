@@ -1,4 +1,4 @@
-// @versione 2026-10-30.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-11-01.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -993,6 +993,25 @@ window.CATALOGO_N5.SCHIERAMENTO = {
         'METACHEMISTRY': 'Ricorda di tirare sulla tabella Metachemistry.',
         // Il PH fra parentesi nel profilo, se c'e`, sostituisce il PH-3.
         'INFILTRATION':  'Se ti sei schierato nella meta` avversaria, hai fatto il Tiro di Infiltrazione (PH-3, o il PH fra parentesi del profilo)?'
+    },
+    // 1 novembre (Paolo): il TIRO DI SCHIERAMENTO come domanda guidata (tasto
+    // nella pagina degli stati di schieramento, riquadro dell'app). Prima c'era
+    // solo «TIRO DI INFILTRAZIONE FALLITO», e solo per il Camouflage (1 Use).
+    // Gli esiti del fallimento sono quelli dell'Infiltrazione fallita
+    // (PRONTUARIO §1.17, F07, MINELAYER riga 9131).
+    tiroDiSchieramento: {
+        titolo:      'TIRO DI SCHIERAMENTO',
+        domanda:     'Ti sei schierato oltre la meta` del tavolo, nella meta` avversaria?',
+        senzaTiro:   'Nella tua meta` del tavolo il Tiro di Infiltrazione non serve.',
+        valore:      'Tiro di Infiltrazione: tira a {n} ({spiega}).',
+        superato:    'SUPERATO',
+        nonSuperato: 'NON SUPERATO',
+        seFallisce: [
+            'Ti schieri nella tua Zona di Schieramento, a contatto col bordo del tavolo, come Modello.',
+            'Perdi l\'opzione di schierarti come Marker (CAMO, Impersonation, Hidden).'
+        ],
+        seFallisceCamoUnUso: 'Camouflage (1 Use): l\'uso del CAMO e` consumato (FAQ F07).',
+        seFallisceMinelayer: 'Perdi anche il Deployable piazzato col Minelayer: l\'uso resta speso.'
     }
 };
 
@@ -2889,7 +2908,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-10-30.1', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

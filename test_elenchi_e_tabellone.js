@@ -1,4 +1,4 @@
-// @versione 2026-11-01.4 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-11-01.7 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -209,6 +209,16 @@
 //      11-01.1): in ARO Schivata e Reset senza il riquadro «PH 10 → 10», il
 //      tasto della Linea di Tiro della Schivata come in ordine_difesa; nessun
 //      Valore di Successo, MOD o Critico nella scheda ne` nella ⓘ.
+//  54. Tiro di schieramento (M.tiroDiSchieramento, faseSchieramento.
+//      tiroDiSchieramento) e piazzamento in schieramento solo col Minelayer
+//      (M.piazzabiliInSchieramento; via schieraPiazzabile, E63). RISCRITTI
+//      (dalla 2026-11-01.5): 21 (clic fantasma col Minelayer; FastPanda
+//      piazzato in partita), 40 (Moran: TIRO DI SCHIERAMENTO invece di TIRO DI
+//      INFILTRAZIONE FALLITO), 51-P6/P7 (Taskmaster col Minelayer; Hellcat
+//      senza tasti, motivo nella ⓘ).
+//      Dalla 2026-11-01.6: in 54 anche il codice morto tolto (roster 11-01.3).
+//      Dalla 2026-11-01.7 (motore 11-01.2): RISCRITTO 51-P1, il numero del tiro
+//      d Infiltrazione non e` piu` nella ⓘ ma nel TIRO DI SCHIERAMENTO.
 //
 //  SOLO=34a,35a node test_elenchi_e_tabellone.js  gira solo quelle sezioni.
 //
@@ -1129,9 +1139,13 @@ const clicBrowser = (d, codice) => {
 sezione('21. Dal tavolo di Paolo, 13-14 ottobre (sette punti di MOTORE)', () => {
     // --- 1. Il clic fantasma nello schieramento --------------------------
     {
+        // RISCRITTO il 1 novembre (MOTORE: in schieramento si piazza SOLO col
+        // Minelayer, E63). Prima: l Interventor col FastPanda e il tasto
+        // schieraPiazzabile; ora il Taskmaster e il tasto del Minelayer
+        // (piazzaConMinelayer), con le domande dei requisiti (risponde il confirm).
         const T = creaTavolo(DIR); const N = T.nomadi.g;
-        const prof = N.DB_NOMADI.find(x => x.id === 'interventor_hacker_fastpanda');
-        N.roster = [truppa(prof, { id: 'n1', alias: 'Ago' })];
+        N.roster = [truppa(profilo(T, /^Taskmaster \(Red Fury/), { id: 'n1', alias: 'Ago' })];
+        N.confirm = (t) => !/nemiche|Marker Mimetici/i.test(String(t));
         N.apriSchieramento(); N.apriGruppoDeploy(1);
         // Tocco rapido sulla riga: dito giu`, dito su. Il timer del tocco
         // lungo NON deve scattare (nel banco setTimeout esegue subito).
@@ -1139,15 +1153,22 @@ sezione('21. Dal tavolo di Paolo, 13-14 ottobre (sette punti di MOTORE)', () => 
         ditoGiu(T.nomadi); N.startDeployPress(0, { clientX: 5, clientY: 5 }); N.endDeployPress(0);
         N.setTimeout = tempo;
         const pagina = T.nomadi.el('deploy-states-content').innerHTML;
-        const piazza = (pagina.match(/onclick="(window\.schieraPiazzabile\([^"]*\))"/) || [])[1];
-        ok(!!piazza, 'premessa: aperta la pagina, c e il bottone del FastPanda');
+        const piazza = (pagina.match(/onclick="(window\.piazzaConMinelayer\([^"]*\))"/) || [])[1];
+        ok(!!piazza, 'premessa: aperta la pagina, c e il bottone del Minelayer');
         // Subito dopo il sollevamento il telefono manda il click a cio` che
         // c'e` ADESSO sotto il dito: il bottone del FastPanda appena disegnato.
         clicBrowser(T.nomadi, piazza || 'void 0');
-        ok(N.roster.length === 1, 'il click che segue il tocco sulla riga NON piazza il FastPanda (roster: ' + N.roster.map(u => u.nome || u.name).join(', ') + ')');
+        ok(N.roster.length === 1, 'il click che segue il tocco sulla riga NON piazza la mina (roster: ' + N.roster.map(u => u.nome || u.name).join(', ') + ')');
         // Un tocco vero, dopo, funziona.
         ditoGiu(T.nomadi); clicBrowser(T.nomadi, piazza || 'void 0');
-        ok(N.roster.length === 2 && /FastPanda/.test(N.roster[1].nome || N.roster[1].name), 'il tocco VOLUTO sul bottone lo piazza');
+        ok(N.roster.length === 2 && N.roster[1].deployable === true, 'il tocco VOLUTO sul bottone la piazza');
+        // --- 2. (RISCRITTO il 1 novembre) il FastPanda si piazza in partita:
+        // il gettone lo crea M.creaDeployable come PIAZZARE EQUIPAGGIAMENTO.
+        { const prof = N.DB_NOMADI.find(x => x.id === 'interventor_hacker_fastpanda');
+          const ago = truppa(prof, { id: 'n2', alias: 'Panda', combatGroup: 1 });
+          const g = N.MotoreN5.creaDeployable(ago, (N.MotoreN5.armiPiazzabili(ago).armi || []).find(a => /FastPanda/i.test(a.nome)), { ordineId: 'partita_1', viaEsito: false });
+          N.roster = [ago, Object.assign({}, g.token, { name: g.token.nome, weapon: g.token.weapon || '-', combatGroup: 1, imgVariant: '0', deployState: 'NORMAL', state: 'ACTIVE', tipo: g.token.tipo || 'DEPLOYABLE' })];
+          N.deployGroup = 1; N.renderDeployUnits(); }
 
         // --- 2. La foto assegnata al segnalino si vede nell'app ----------
         N.FOTO_MINIATURE = ['panda_dipinto.png', 'alguaciles.png'];
@@ -2748,7 +2769,10 @@ sezione('39. Gli stati di schieramento tutti dal motore (M.opzioniSchieramento, 
     // RISCRITTO il 27 ottobre sera: prima il tasto CAMO conteneva solo testo
     // ([^<]*); ora ha il div voce-con-icona col segnalino. Si guarda che fra il
     // tasto CAMO e quello del tiro fallito non ci siano altri tasti.
-    ok(/data-stato="CAMO"(?:(?!<button)[\s\S])*?<\/button>\s*<button class="tasto-uscita"[^>]*infiltrazioneFallita\(0\)/.test(pagina()), 'Moran in CAMO: TIRO DI INFILTRAZIONE FALLITO subito sotto la voce CAMO');
+    // RISCRITTO il 1 novembre (MOTORE): il tasto «TIRO DI INFILTRAZIONE
+    // FALLITO» sotto la voce CAMO e` diventato TIRO DI SCHIERAMENTO, dopo le
+    // voci di schieramento, per ogni truppa con M.tiroDiSchieramento.
+    ok(!/infiltrazioneFallita|INFILTRAZIONE FALLITO/.test(pagina()) && /<button class="huge-btn tasto-opzione tasto-tiro-schieramento" data-nota="tiro-schieramento" onclick="window\.apriTiroSchieramento\(0\)">TIRO DI SCHIERAMENTO</.test(pagina()), 'Moran in CAMO: il tasto TIRO DI SCHIERAMENTO (non piu` «TIRO DI INFILTRAZIONE FALLITO»)');
     // Il tocco.
     zero.deployState = 'NORMAL'; prova(zero);
     vmTocco(T.nomadi, (pagina().match(/data-stato="CAMO" onclick="([^"]*)"/) || [])[1] || 'void 0');
@@ -3265,8 +3289,12 @@ sezione('51. Collaudo grafico di Paolo, 30 ottobre (P1-P25): schieramento, riqua
     N.roster = [intr]; N.deployGroup = 1; N.renderDeployUnits();
     const dep = String(T.nomadi.el('deploy-units-container').innerHTML);
     const tiro = N.vociInfo('step-deploy-units').find(v => /INFILTRATION/.test(v.titolo)) || {};
-    ok(!/TIRI DA FARE/.test(dep) && tiro.tipo === 'regole' && tiro.tasto === 'truppa-n1' && /Tiro a 9/.test(tiro.testo) && /data-nota="truppa-n1"/.test(dep),
-       'P1: il tiro d Infiltrazione non e` piu` nel riquadro in pagina: e` nella ⓘ, legato alla riga della truppa (' + tiro.titolo + ')');
+    // RISCRITTO il 1 novembre sera (motore 11-01.2): il NUMERO del tiro sta
+    // solo nel riquadro TIRO DI SCHIERAMENTO (M.tiroDiSchieramento().valore);
+    // nella ⓘ resta il promemoria, senza numero. Prima: /Tiro a 9/ nella ⓘ.
+    const tS = N.MotoreN5.tiroDiSchieramento(intr) || {};
+    ok(!/TIRI DA FARE/.test(dep) && tiro.tipo === 'regole' && tiro.tasto === 'truppa-n1' && !!tiro.testo && tS.valore === 9 && /data-nota="truppa-n1"/.test(dep),
+       'P1: il tiro d Infiltrazione non e` piu` nel riquadro in pagina: il promemoria e` nella ⓘ, legato alla riga della truppa (' + tiro.titolo + '); il numero (9) lo da` il TIRO DI SCHIERAMENTO');
     // --- P2: numerati gia` allo schieramento ---
     const c1 = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Primo', deployState: 'CAMO', states: { camo: true } });
     N.roster = [c1]; N.renderDeployUnits();
@@ -3296,15 +3324,23 @@ sezione('51. Collaudo grafico di Paolo, 30 ottobre (P1-P25): schieramento, riqua
     ok(!tornato, 'P5: «Torni al menu?» con NO resta nella pagina (riquadro, non confirm del browser)');
     N.location = loc; N.currentOrder = {}; N.spearheadUnit = null;
     // --- P6 e P7: usi residui, arma finita spenta con la spiegazione nella ⓘ ---
-    const hc = truppa(profilo(T, /^Hellcat \(Boarding/), { id: 'n5', alias: 'Cat' });
-    N.roster = [hc]; N.apriDeployStati(0);
+    // RISCRITTI il 1 novembre (MOTORE: in schieramento si piazza solo col
+    // Minelayer). Prima: Hellcat e le D-Charges col tasto schieraPiazzabile;
+    // ora il Taskmaster e i CrazyKoalas col tasto del Minelayer. L Hellcat
+    // (senza Minelayer) non ha tasti: il motivo e` nella ⓘ.
+    const tk = truppa(profilo(T, /^Taskmaster \(Red Fury/), { id: 'n5', alias: 'Task' });
+    N.roster = [tk]; N.apriDeployStati(0);
     let pag = String(T.nomadi.el('deploy-states-content').innerHTML);
-    ok(/schieraPiazzabile\(0, 0\)" data-nota="piazzabile-0">[\s\S]*?USI RESIDUI: 3 \/ 3/.test(pag), 'P6: sotto il nome dell equipaggiamento «USI RESIDUI: 3 / 3»');
-    hc.usiSpesi = { 'D-CHARGES': 3 }; N.apriDeployStati(0);
+    ok(/piazzaConMinelayer\(0, 0\)" data-nota="minelayer">CrazyKoalas[\s\S]*?USI RESIDUI: 2/.test(pag), 'P6: sotto il nome dell equipaggiamento «USI RESIDUI: 2»');
+    tk.usiSpesi = { 'CRAZYKOALAS': 2 }; N.apriDeployStati(0);
     pag = String(T.nomadi.el('deploy-states-content').innerHTML);
     const fin = N.vociInfo('step-deploy-states').find(v => v.tasto === 'finita-0') || {};
-    ok(/<button class="huge-btn tasto-opzione arma-finita" disabled data-nota="finita-0">D-Charges \(Demolition Mode\)[\s\S]*?USI RESIDUI: 0 \/ 3/.test(pag) && /^usi esauriti/.test(fin.testo || '') && !/D-Charges/.test(fin.testo || ''),
-       'P7: l arma finita e` un tasto spento con «USI RESIDUI: 0»; la spiegazione nella ⓘ, senza ripetere il nome');
+    ok(/<button class="huge-btn bottone-minelayer arma-finita" disabled data-nota="finita-0">CrazyKoalas[\s\S]*?USI RESIDUI: 0/.test(pag) && /usi esauriti/i.test(fin.testo || '') && !/CrazyKoalas/.test(fin.testo || ''),
+       'P7: l arma finita e` un tasto spento con «USI RESIDUI: 0»; la spiegazione nella ⓘ, senza ripetere il nome (' + (fin.testo || '').slice(0, 40) + ')');
+    const hc = truppa(profilo(T, /^Hellcat \(Boarding/), { id: 'n6', alias: 'Cat' });
+    N.roster = [hc]; N.apriDeployStati(0);
+    pag = String(T.nomadi.el('deploy-states-content').innerHTML);
+    ok(!/EQUIPAGGIAMENTO DA PIAZZARE|D-Charges|schieraPiazzabile/.test(pag) && N.vociInfo('step-deploy-states').some(v => /Senza Minelayer/.test(v.testo)), 'senza Minelayer (Hellcat): niente tasti di piazzamento, il motivo del motore nella ⓘ');
     // --- P8: Schieramento Aereo con l icona; ripiego 🪂 ---
     const sp = truppa(profilo(T, /^Spector \(Parachutist/), { id: 'n6', alias: 'Cielo', deployState: 'AD' });
     // RISCRITTO il 31 ottobre sera: il segnalino AD a sinistra (window.segnalinoSchieramento), non piu` fra le icone.
@@ -3540,6 +3576,47 @@ sezione('53. Nessun valore prima dell Hub (1 novembre, Paolo via MOTORE): Schiva
     ok(arma1 && P.aroCurrentConfig.azione === 'BS_ATTACK' && /burst-ctrl/.test(h) && numeri(h).length === 0, 'Attacco BS in ARO (' + arma1 + '): nessun Valore di Successo nella scheda (' + J(numeri(h)) + ')');
     const voci = P.vociInfo('step-aro-modifiers').map(v => v.titolo + ' ' + v.testo).join(' | ');
     ok(!/Valore di Successo|\bMOD\b|Critic/.test(voci), 'nemmeno nella ⓘ: niente Valore di Successo, MOD o Critico (' + voci.slice(0, 80) + ')');
+});
+
+sezione('54. Tiro di schieramento e piazzamento solo col Minelayer (1 novembre, MOTORE 11-01.1)', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g;
+    const pag = () => String(T.nomadi.el('deploy-states-content').innerHTML);
+    const moran = () => truppa(profilo(T, /^Moran/), { id: 'n1', alias: 'Moran', deployState: 'CAMO', states: { camo: true }, combatGroup: 1 });
+    // il tasto: per chi ha il tiro, non per gli altri
+    N.roster = [moran(), truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n2', alias: 'Alg', combatGroup: 1 })];
+    N.apriDeployStati(1);
+    ok(!/tasto-tiro-schieramento/.test(pag()), 'senza Infiltrazione (Alguacil): nessun tasto TIRO DI SCHIERAMENTO');
+    N.apriDeployStati(0);
+    ok(/tasto-tiro-schieramento[^>]*>TIRO DI SCHIERAMENTO</.test(pag()) && !/infiltrazioneFallita/.test(pag()), 'Moran: il tasto TIRO DI SCHIERAMENTO');
+    const seF = N.vociInfo('step-deploy-states').filter(v => v.tasto === 'tiro-schieramento');
+    ok(seF.length >= 2 && seF.every(v => /se fallisce/.test(v.titolo)) && !/Ti schieri nella tua Zona/.test(pag()), 'le righe «se fallisce» nella ⓘ, legate al tasto; non a schermo (' + seF.length + ')');
+    // NO alla domanda: SENZA_TIRO, niente cambia
+    let domande = []; const risp = (lista) => { let i = 0; N.confirm = (t) => { domande.push(String(t)); return lista[i++]; }; };
+    const avvisi = []; const veroAvviso = N.MotoreN5.mostraAvviso; N.MotoreN5.mostraAvviso = (t, o) => avvisi.push((o && o.titolo ? o.titolo + ': ' : '') + t);
+    const prima = J(N.roster[0]);
+    risp([false]); N.apriTiroSchieramento(0);
+    ok(/metà avversaria/.test(domande[0] || '') && J(N.roster[0]) === prima && avvisi.length === 1 && avvisi[0].indexOf(N.MotoreN5.tiroDiSchieramento(N.roster[0], { metaAvversaria: false }).testo) >= 0,
+       'NO (nella tua meta`): il testo del motore nel riquadro (CHIUDI), la truppa non cambia (' + (avvisi[0] || '').slice(0, 60) + ')');
+    // SI` e SUPERATO
+    domande = []; risp([true, true]); N.apriTiroSchieramento(0);
+    ok(/8/.test(domande[1] || '') && N.roster[0].tiroSchieramento === 'SUPERATO' && N.roster[0].deployState === 'CAMO', 'SÌ: il valore del tiro (8), e SUPERATO: resta in CAMO, tiroSchieramento SUPERATO');
+    ok(/tasto-tiro-schieramento[\s\S]*?ESITO: SUPERATO/.test(pag()), 'il tasto dice l esito');
+    // NON SUPERATO, con una mina del Minelayer gia` piazzata
+    N.roster = [moran()]; N.apriDeployStati(0);
+    risp([false, true]); N.piazzaConMinelayer(0, 0);
+    const conMina = N.roster.length;
+    const nA2 = avvisi.length;
+    risp([true, false]); N.apriTiroSchieramento(0);
+    const u = N.roster[0];
+    ok(conMina === 2 && N.roster.length === 1 && u.tiroSchieramento === 'FALLITO' && u.deployState === 'NORMAL' && !u.states.camo && u.camoUsato === true,
+       'NON SUPERATO: la mina del Minelayer esce dal roster, la truppa si schiera come Modello e il CAMO monouso e` consumato (' + conMina + ' -> ' + N.roster.length + ')');
+    ok(avvisi.length === nA2 + 1 && /^NON SUPERATO: /.test(avvisi[nA2] || '') && /CrazyKoala/.test(avvisi[nA2] || '') && /Minelayer/.test(avvisi[nA2] || ''), 'e le note del motore (anche la mina persa) si mostrano nel riquadro');
+    N.MotoreN5.mostraAvviso = veroAvviso;
+    // senza Minelayer niente tasti; il vecchio percorso non c e piu`
+    const ros = fs.readFileSync(DIR + 'roster_manager.js', 'utf8').replace(/\/\/.*$/gm, '');
+    ok(!/window\.schieraPiazzabile\s*=/.test(ros) && !/schieraPiazzabile\(/.test(ros) && /M\.piazzabiliInSchieramento\(u\)/.test(ros), 'tolto schieraPiazzabile (E63): si passa da M.piazzabiliInSchieramento e dal Minelayer');
+    ok(['apriDeployAzioni', 'mostraMenuDeployables', 'schieraDeployableSelezionato'].every(f => typeof N[f] === 'undefined') && !/DB_DEPLOYABLES\.find\(d => d\.id === depId\)/.test(ros),
+       'tolto il codice morto (apriDeployAzioni, mostraMenuDeployables, schieraDeployableSelezionato: segnalini costruiti a mano, senza il motore)');
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

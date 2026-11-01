@@ -1,4 +1,4 @@
-// @versione 2026-11-01.1 | ordine_osservazione.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.2 | ordine_osservazione.js | proprieta`: chat MOTORE
 // ==========================================
 // 👁️ OSSERVAZIONE (N5) - ordine_osservazione.js
 // ------------------------------------------
@@ -271,7 +271,9 @@
             ${inCima}
             ${sotto}`;
         // 28 ottobre (Paolo): le note del tiro nella ⓘ (o sotto il tasto).
-        e.note.forEach(n => window.MotoreN5.nota('step-modifiers', titolo, n, { tipo: 'regole' }));
+        // I MOD ignorati del Triangulated hanno gia` la loro nota (tipo mod,
+        // sopra): qui non si ripetono (giro 29 di TEST).
+        e.note.filter(n => !/^MOD ignorati dal Triangulated/.test(String(n || ''))).forEach(n => window.MotoreN5.nota('step-modifiers', titolo, n, { tipo: 'regole' }));
 
         window.aggiornaPulsanteOsservazione(false);
         window.goToStep('step-modifiers');
@@ -428,7 +430,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_osservazione.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_osservazione.js', versione: '2026-11-01.2', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
