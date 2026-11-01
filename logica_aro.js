@@ -1,4 +1,4 @@
-// @versione 2026-10-31.2 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-11-01.1 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -1139,25 +1139,20 @@
             cfg.valoreSuccesso = esito.valore;
             cfg.attributo = esito.attributo;
 
-            const dettaglio = esito.voci.length
-                ? esito.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                        <span style="color:#aaa;">${v.motivo}</span>
-                        <b style="color:${v.valore >= 0 ? '#00ff00' : '#ff6666'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b></div>`).join('')
-                : `<div style="color:#888; text-align:center;">Nessun modificatore</div>`;
-
-            corpo = `<div style="background:#001a1a; border:1px solid #005555; padding:10px; border-radius:5px; margin-bottom:12px; font-size:14px;">
-                    <div style="text-align:center; color:#fff; margin-bottom:6px;">
-                        ${esito.attributo} ${esito.base} → <b style="color:#00ff00; font-size:22px;">${esito.valore}</b></div>
-                    <div style="border-top:1px solid #004455; padding-top:6px;">${dettaglio}</div>
-                 </div>`;
-
+            // 1 novembre (Paolo, via MOTORE: «nessun valore prima dell'Hub, si
+            // combina con quelli dell'avversario»): via il riquadro «PH 10 -> 10»
+            // coi modificatori. Il valore resta in cfg (lo calcola l'Hub), la
+            // scheda mostra solo cio` che si dichiara al tavolo.
+            // Il tasto della Linea di Tiro come nel turno attivo (ordine_difesa
+            // 11-01.1): alto 90, var(--fs-l), icona 44 sopra, colori del motore.
+            corpo = '';
             if (cfg.azione === 'DODGE') {
-                const stile = cfg.hasLoF ? 'background:#004400; color:#00ff00; border-color:#00ff00;'
-                                         : 'background:#440000; color:#ff5555; border-color:#ff0000;';
-                corpo += `<button type="button" class="huge-btn" style="width:100%; margin-top:10px; min-height:60px; font-size:20px; ${stile}"
+                const stile = (typeof M.stileColore === 'function') ? M.stileColore(cfg.hasLoF ? 'si' : 'attenzione')
+                    : (console.error('\u26d4 M.stileColore manca (serve motore_regole_n5.js dal 28 ottobre): tasto della Linea di Tiro senza i colori del motore.'), '');
+                corpo += `<div style="display:flex; gap:10px;"><button type="button" class="huge-btn tasto-lof-schivata-aro" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); flex-direction:column; justify-content:center; align-items:center; text-align:center; ${stile}"
                     onclick="window.toggleAroLoF()">${cfg.hasLoF
-                        ? window.iconaInterruttore('lofSi') + 'HO LINEA DI TIRO'
-                        : window.iconaInterruttore('lofNo') + 'NESSUNA LINEA DI TIRO (-3 PH)'}</button>`;
+                        ? window.iconaInterruttore('lofSi', 44, true) + 'HO LINEA DI TIRO VERSO CHI ATTACCA'
+                        : window.iconaInterruttore('lofNo', 44, true) + 'NESSUNA LINEA DI TIRO (-3 PH)'}</button></div>`;
             }
             esito.note.forEach(n => info('step-aro-modifiers', cfg.azione === 'DODGE' ? 'Schivata' : 'Reset', soloTesto(n), { tipo: 'regole' }));
         } else {
@@ -1634,7 +1629,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-10-31.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-11-01.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_attacco_cc.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.1 | ordine_attacco_cc.js | proprieta`: chat MOTORE
 // ==========================================
 // ⚔️ CORPO A CORPO (N5) - ordine_attacco_cc.js
 // ------------------------------------------
@@ -263,8 +263,7 @@
             }
 
             // 31 ottobre (Paolo, collaudo grafico): la scheda dell'Attacco BS
-            // (M.schedaBS). Il Valore di Successo e i MOD vanno nella ⓘ.
-            M.notaValore('step-modifiers', window.combatTargets.length > 1 ? tgt.name : '', Object.assign({ attributo: 'CC' }, mods));
+            // (M.schedaBS). Nessun valore prima dell'Hub (1 novembre, Paolo).
             html += M.schedaBS.apri() +
                 M.schedaBS.testa(tgt.name, M.schedaBS.burst(tgt.burst, `window.adjustTargetBurstCC(${index}, -1)`, `window.adjustTargetBurstCC(${index}, 1)`, tgt.burst > 0, restanti > 0)) + `
                 ${graziaHtml}
@@ -393,7 +392,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_cc.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_cc.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

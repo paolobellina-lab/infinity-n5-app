@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_scoprire.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.1 | ordine_scoprire.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔍 SCOPRIRE (N5) - ordine_scoprire.js
 // ------------------------------------------
@@ -219,10 +219,8 @@
                 <div style="margin-top:12px;">${barraGittata}</div>`;
         } else {
 
-            // 31 ottobre (Paolo): il valore WIP, i MOD e il Critico nella ⓘ;
-            // la scheda come quella dell'Attacco BS.
-            M.notaValore('step-modifiers', '', Object.assign({ attributo: 'WIP' }, e));
-            if (e.impossibile) M.nota('step-modifiers', 'Valore sotto 1', 'Il tiro fallisce automaticamente.', { tipo: 'mod' });
+            // 1 novembre (Paolo): nessun valore prima dell'Hub (si combina con
+            // quelli dell'avversario); la scheda come quella dell'Attacco BS.
             corpo = barraGittata;
         }
 
@@ -373,7 +371,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_scoprire.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_scoprire.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_hacking.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.1 | ordine_hacking.js | proprieta`: chat MOTORE
 // ==========================================
 // 💻 INFOGUERRA (HACKING) N5 - ordine_hacking.js
 // ------------------------------------------
@@ -333,8 +333,7 @@
             const rep = !!tgt.repeaterNemico;
 
             // 31 ottobre (Paolo, collaudo grafico): la scheda dell'Attacco BS;
-            // valore e MOD nella ⓘ; niente riquadro «Se fallisce il Tiro Salvezza».
-            M.notaValore('step-modifiers', window.combatTargets.length > 1 ? tgt.name : '', Object.assign({ attributo: 'WIP' }, mods));
+            // nessun valore prima dell'Hub (1 novembre); niente riquadro «Se fallisce il Tiro Salvezza».
             if (rep && REP.spiegazione) M.nota('step-modifiers', REP.pulsante || 'Via Repeater nemico', REP.spiegazione, { tipo: 'mod' });
             const stileRep = rep ? 'background:var(--nomad-orange); color:var(--mn-scuro,#000000);' : `background:${document.title.includes('NOMADS') ? '#1a0000' : '#001122'}; color:var(--mn-testo,#ffffff);`;
             const tastoRep = `<button type="button" class="huge-btn tasto-repeater" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); flex-direction:column; justify-content:center; align-items:center; text-align:center; ${stileRep}" onclick="window.toggleRepeaterNemicoHacking(${index})">${REP.pulsante || 'VIA REPEATER NEMICO'}: ${rep ? 'SÌ' : 'NO'}</button>`;
@@ -468,7 +467,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_hacking.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_hacking.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

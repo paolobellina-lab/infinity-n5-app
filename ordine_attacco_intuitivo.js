@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.1 | ordine_attacco_intuitivo.js | proprieta`: chat MOTORE
 // ==========================================
 // 👻 ATTACCO INTUITIVO (N5) - ordine_attacco_intuitivo.js
 // ------------------------------------------
@@ -273,7 +273,7 @@
             </div>`;
         // 31 ottobre (Paolo, collaudo grafico): il valore WIP e il bersaglio
         // nella ⓘ; la scheda come quella dell'Attacco BS, senza il 🎯.
-        M.nota('step-modifiers', 'Tiro Normale su WIP ' + unita.wip, regole.noteTiro, { tipo: 'mod' });
+        M.nota('step-modifiers', 'Tiro Normale su WIP', regole.noteTiro, { tipo: 'mod' });
         M.nota('step-modifiers', 'Bersaglio', 'Bersaglio Principale' + (regole.sagoma ? ' · Sagoma ' + (regole.sagoma.forma || regole.sagoma.tipo) : ''), { tipo: 'regole' });
         // 28 ottobre (Paolo): le regole del tiro nella ⓘ (o in cima), non a schermo.
         M.nota('step-modifiers', 'Critico', 'Vale solo sul Bersaglio Principale; sui secondari colpiti dalla Sagoma è un successo normale.', { tipo: 'regole' });
@@ -372,7 +372,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_intuitivo.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

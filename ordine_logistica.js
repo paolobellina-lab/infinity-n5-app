@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_logistica.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.1 | ordine_logistica.js | proprieta`: chat MOTORE
 // ==========================================
 // 🪂 INGRESSO IN CAMPO e REQUEST SPEEDBALL - ordine_logistica.js
 // ------------------------------------------
@@ -88,42 +88,25 @@
         const dom = window.statoDomandaIngresso();
         container.innerHTML = `
             ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `🪂 INGRESSO IN CAMPO` })}
-            <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-s); text-align:center; margin-bottom:16px;">
-                Ordine Intero. Il calcolatore non ha la mappa.</div>
-
-            <div style="background:var(--mn-ordine-riquadro,#0d1428); border:1px solid var(--mn-ordine-tenue,#2a3a66); padding:12px; border-radius:5px;">
-                <div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:8px;">
-                    PH <b style="color:${COL.bordo}; font-size:var(--fs-l);">${e.valore}</b></div>
-                ${e.voci.map(v => `<div style="display:flex; justify-content:space-between; color:var(--mn-debole,#aaaaaa); font-size:var(--fs-s);">
-                    <span>${v.motivo}</span></div>`).join('')}
-                ${e.critici && !e.critici.nessunTiro ? `<div style="text-align:center; color:var(--mn-attenzione,#ffcc00); font-size:var(--fs-xs); margin-top:6px;">🎯 ${e.critici.testo}</div>` : ''}
-            </div>
-
             <div style="margin-top:14px; background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:14px; border-radius:5px;">
                 <div style="color:var(--mn-testo,#ffffff); font-size:var(--fs-m); margin-bottom:10px;">${e.domanda}</div>
-                <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); line-height:1.6; margin-bottom:12px;">
-                    ${e.divieti.map(d => `• ${d}`).join('<br>')}</div>
+
                 <div style="display:flex; gap:8px;">
-                    <button class="huge-btn" style="flex:1; min-height:48px; ${r === true ? 'background:var(--mn-si-fondo,#004400); border-color:var(--mn-si,#00ff00);' : 'background:var(--mn-fondo-tasto,#111111);'}"
+                    <button class="huge-btn" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); ${r === true ? 'background:var(--mn-si-fondo,#004400); border-color:var(--mn-si,#00ff00);' : 'background:var(--mn-fondo-tasto,#111111);'}"
                         onclick="window.rispondiLogistica(true)">SÌ</button>
-                    <button class="huge-btn" style="flex:1; min-height:48px; ${r === false ? 'background:var(--mn-attenzione-fondo,#554400); border-color:var(--mn-acceso,#ffaa33);' : 'background:var(--mn-fondo-tasto,#111111);'}"
+                    <button class="huge-btn" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); ${r === false ? 'background:var(--mn-attenzione-fondo,#554400); border-color:var(--mn-acceso,#ffaa33);' : 'background:var(--mn-fondo-tasto,#111111);'}"
                         onclick="window.rispondiLogistica(false)">NO</button>
                 </div>
                 ${dom.esito === 'BLOCCATA' ? `<div style="margin-top:10px; padding:10px; background:var(--mn-errore-fondo,#330000); border:1px solid var(--mn-errore,#ff3333); border-radius:4px; color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s);">
                     ⛔ ${dom.motivo}</div>` : ''}
             </div>
 
-            <div style="margin-top:14px; padding:12px; background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-nota-bordo,#664400); border-radius:5px;">
-                <b style="color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-s);">SE IL TIRO FALLISCE</b>
-                <div style="color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s); margin-top:6px; line-height:1.6;">
-                    • ${e.seFallisce.dove}<br>
-                    • ${e.seFallisce.perdeMarker}<br>
-                    • ${e.seFallisce.deployableRimossi}
-                </div>
-                <div style="color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-xs); margin-top:8px;">
-                    La truppa entra comunque: l'Ordine non è sprecato.</div>
-            </div>`;
+`;
         // 28 ottobre (Paolo): le note nella ⓘ (o sotto il tasto).
+        // 1 novembre (Paolo): nessun valore prima dell'Hub; spiegazioni nella ⓘ.
+        window.MotoreN5.nota('step-modifiers', 'Ingresso in campo', 'Ordine Intero. Il calcolatore non ha la mappa.', { tipo: 'regole' });
+        window.MotoreN5.nota('step-modifiers', 'I divieti del punto di atterraggio', e.divieti.join(' · '), { tipo: 'regole' });
+        window.MotoreN5.nota('step-modifiers', 'Se il tiro fallisce', [e.seFallisce.dove, e.seFallisce.perdeMarker, e.seFallisce.deployableRimossi].join(' · ') + ' La truppa entra comunque: l\'Ordine non è sprecato.', { tipo: 'regole' });
         e.note.forEach(n => window.MotoreN5.nota('step-modifiers', 'Ingresso in campo', n, { tipo: 'regole' }));
 
         window.aggiornaPulsanteLogistica(!dom.puoProcedere,
@@ -325,7 +308,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_logistica.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_logistica.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

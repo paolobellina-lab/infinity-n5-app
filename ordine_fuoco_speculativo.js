@@ -1,4 +1,4 @@
-// @versione 2026-10-31.2 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.1 | ordine_fuoco_speculativo.js | proprieta`: chat MOTORE
 // ==========================================
 // ☄️ FUOCO SPECULATIVO (N5) - ordine_fuoco_speculativo.js
 // ------------------------------------------
@@ -332,43 +332,22 @@
         M.nota('step-modifiers', 'Si applica invece', 'La gittata, che nell\'Attacco Intuitivo non conta.', { tipo: 'mod' });
         if (regole.noteSagoma) M.nota('step-modifiers', 'Sagoma Circolare', regole.noteSagoma, { tipo: 'regole' });
 
-        const valoreBase = unita[String(regole.attributo).toLowerCase()] || 0;
         const domDB = window.statoDomandeDropBear();
+        if (domDB) M.nota('step-modifiers', 'Drop Bear', 'Il punto d\'impatto deve rispettare la restrizione di piazzamento. Il calcolatore non ha la mappa.', { tipo: 'regole' });
 
         // 28 ottobre (Paolo): la barra e` del motore (M.barraGittata), coi
         // numeri sui confini; il FUORI GITTATA e` il segmento in coda.
         const barra = M.barraGittata(arma.bands, { indice: tgt.rangeIndex, tocco: (i) => `window.setTargetRangeSpeculativo(${i})`,
             fuori: 'window.toggleFuoriGittataSpeculativo()', fuoriAttivo: !!tgt.fuoriGittata, stile: '' });
 
-        const dettaglio = regole.voci.map(v =>
-            `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
-                <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b>
-             </div>`).join('');
-
+        // 1 novembre (Paolo): nessun valore prima dell'Hub (si combina con
+        // quelli dell'avversario): niente riquadro «TIRO SU... / MOD totale».
+        if (regole.noteAttributo) M.nota('step-modifiers', 'Attributo del tiro', regole.noteAttributo, { tipo: 'regole' });
+        M.nota('step-modifiers', 'Gittata', 'Si misura in linea retta fino al punto d\'impatto.', { tipo: 'regole' });
         document.getElementById('targets-allocation-container').innerHTML = `
             ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `FUOCO SPECULATIVO` })}
 
-            <div style="background:var(--mn-ordine-riquadro,#220022); border:1px solid ${COL.bordo}; padding:15px; border-radius:5px; margin-bottom:20px;">
-                <div style="text-align:center; margin-bottom:12px;">
-                    <b style="color:var(--mn-ordine-testo,#ff33ff); font-size:var(--fs-m);">TIRO SU ${regole.attributo} ${valoreBase}</b>
-                    ${regole.noteAttributo ? `<br><span style="color:var(--mn-ordine-testo,#cc99cc); font-size:var(--fs-xs);">${regole.noteAttributo}</span>` : ''}
-                </div>
-                <div style="border-top:1px solid var(--mn-ordine-tenue,#553355); padding-top:10px; font-size:var(--fs-s);">
-                    ${dettaglio}
-                    <div style="display:flex; justify-content:space-between; border-top:1px solid var(--mn-ordine-tenue,#553355); margin-top:8px; padding-top:8px;">
-                        <b style="color:var(--mn-testo,#ffffff);">MOD totale</b>
-                        <b style="color:${regole.modTotale >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'}; font-size:var(--fs-m);">${regole.modTotale > 0 ? '+' + regole.modTotale : regole.modTotale}</b>
-                    </div>
-                </div>
-            </div>
-
-            <div class="target-card" style="border-left:4px solid ${COL.bordo}; margin-bottom:15px; background:rgba(204,0,255,0.05); padding:15px; border-radius:5px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <b style="color:var(--mn-testo,#ffffff); font-size:var(--fs-l);">🎯 ${tgt.name}</b>
-                    <div style="font-size:var(--fs-l); font-weight:bold; color:${COL.bordo};">1 B</div>
-                </div>
-                <div style="text-align:center; color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); margin-bottom:5px;">Seleziona la gittata (in linea retta fino al punto d'impatto):</div>
+            ${M.schedaBS.apri()}${M.schedaBS.testa(tgt.name, M.schedaBS.burstFisso(1))}
                 ${barra}
                 ${M.domandaAlleatiInMischia ? M.domandaAlleatiInMischia(tgt, 0, 'window.setAlleatiInMischiaSpeculativo') : ''}
             </div>
@@ -376,7 +355,7 @@
             ${window.htmlSecondariSpeculativo()}
 
             ${domDB ? `<div style="margin-top:14px;">
-                <div style="color:var(--mn-ordine-testo,#cc99cc); font-size:var(--fs-s); margin-bottom:8px;">Drop Bear: il punto d'impatto rispetta la restrizione di piazzamento. Il calcolatore non ha la mappa.</div>` +
+` +
                 domDB.domande.map(function (d) {
                     const r = (window.dropBearRisposte || {})[d.id];
                     return `<div style="background:var(--mn-ordine-riquadro,#1a1020); border:1px solid var(--mn-ordine-tenue,#442255); padding:14px; border-radius:5px; margin-bottom:10px;">
@@ -689,7 +668,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-10-31.2', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_fuoco_speculativo.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

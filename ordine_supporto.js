@@ -1,4 +1,4 @@
-// @versione 2026-10-31.2 | ordine_supporto.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.1 | ordine_supporto.js | proprieta`: chat MOTORE
 // ==========================================
 // 🩺 SUPPORTO: MEDICO E INGEGNERE (N5) - ordine_supporto.js
 // ------------------------------------------
@@ -142,9 +142,9 @@
                 // 28 ottobre (piano grafico, GR-E19): la riga con la foto, come negli
                 // altri elenchi; il perche` (Incosciente...) nella fascia bassa.
                 container.innerHTML += (typeof window.rigaUnitaConFoto === 'function')
-                    ? window.rigaUnitaConFoto(u, { attributi: clic, etichette: `<span style="color:${COL.bordo};">🩺 ${nota}</span>` })
+                    ? window.rigaUnitaConFoto(u, { attributi: clic, etichette: `<span style="color:${COL.bordo};">${nota}</span>` })
                     : `<button class="huge-btn" style="width:100%; min-height:60px; font-size:var(--fs-l); margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:${COL.bordo};" ${clic}>
-                    🩺 ${M.nomeUnita(u)}<br><span style="font-size:var(--fs-s); color:${COL.bordo};">${nota}</span></button>`;
+                    ${M.nomeUnita(u)}<br><span style="font-size:var(--fs-s); color:${COL.bordo};">${nota}</span></button>`;
             });
         }
 
@@ -193,10 +193,6 @@
             return;
         }
 
-        const dettaglio = e.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
-                <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.fonte === 'base' ? '' : (v.valore > 0 ? '+' + v.valore : v.valore)}</b></div>`).join('');
-
         // Chi tira è l'informazione che il giocatore sbaglia più facilmente.
         const chiTira = e.chiTira === 'UTENTE'
             ? `<b style="color:var(--mn-si-testo,#88ff88);">TIRI TU</b> — ${e.nomeChiTira}`
@@ -211,10 +207,9 @@
 
         let colpire = '';
         if (e.tiroPerColpire) {
-            colpire = `<div style="margin-bottom:12px; padding:10px; background:var(--mn-ordine-riquadro,#001a2a); border:1px solid ${COL.bordo}; border-radius:5px;">
-                <div style="text-align:center; color:${COL.bordo}; font-size:var(--fs-s);">Uso a distanza: prima serve colpire</div>
-                <div style="text-align:center; color:var(--mn-testo,#ffffff);">BS ${e.tiroPerColpire.base} → <b style="font-size:var(--fs-l);">${e.tiroPerColpire.valore}</b></div>
-                ${window.barraGittataSupporto(t, e.tiroPerColpire.bande || [])}</div>`;
+            // 1 novembre (Paolo): nessun valore prima dell'Hub.
+            M.nota('step-modifiers', 'Uso a distanza', 'Prima serve colpire con un tiro BS (gittata e Linea di Tiro).', { tipo: 'regole' });
+            colpire = `<div style="margin-bottom:12px;">${window.barraGittataSupporto(t, e.tiroPerColpire.bande || [])}</div>`;
         }
 
         const stileContatto = window.supportoInContatto !== false
@@ -223,19 +218,12 @@
 
         document.getElementById('targets-allocation-container').innerHTML = `
             ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `${e.strumento.toUpperCase()}` })}
-            <div class="target-card" style="border-left:4px solid ${COL.bordo}; background:rgba(0,204,255,0.05); padding:15px; border-radius:5px;">
-                <b style="color:var(--mn-testo,#ffffff); font-size:var(--fs-l); display:block; margin-bottom:10px;">🩺 ${t.name}</b>
-                <div style="text-align:center; color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s); margin-bottom:12px;">${chiTira}</div>
+            ${M.schedaBS.apri()}${M.schedaBS.testa(t.name)}
+                <div style="text-align:center; color:var(--mn-testo-2,#cccccc); font-size:var(--fs-m); margin-bottom:12px;">${chiTira}</div>
                 ${colpire}
-                <div style="background:var(--mn-ordine-riquadro,#001a22); border:1px solid var(--mn-ordine-tenue,#005566); padding:12px; border-radius:5px;">
-                    <div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:8px;">
-                        ${e.attributo} ${e.base} → <b style="color:${COL.bordo}; font-size:var(--fs-l);">${e.valore}</b></div>
-                    <div style="border-top:1px solid var(--mn-ordine-tenue,#004455); padding-top:8px; font-size:var(--fs-s);">${dettaglio}</div>
-                    ${e.critici && !e.critici.nessunTiro ? `<div style="text-align:center; color:var(--mn-attenzione,#ffcc00); font-size:var(--fs-xs); margin-top:6px;">🎯 ${e.critici.testo}</div>` : ''}
-                </div>
                 ${avvertimento}
-                ${window.supportoEquipaggiamento(e) ? `<button class="huge-btn" style="width:100%; margin-top:12px; min-height:55px; font-size:var(--fs-m); ${stileContatto}"
-                    onclick="window.toggleContattoSupporto()">${window.supportoInContatto !== false ? '🤝 IN CONTATTO DI SILHOUETTE' : '🎯 A DISTANZA (serve la LoF)'}</button>` : ''}
+                ${window.supportoEquipaggiamento(e) ? `<div style="display:flex; gap:10px; margin-top:15px;"><button type="button" class="huge-btn tasto-contatto-supporto" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); flex-direction:column; justify-content:center; align-items:center; text-align:center; ${stileContatto}"
+                    onclick="window.toggleContattoSupporto()">${window.supportoInContatto !== false ? 'IN CONTATTO DI SILHOUETTE' : 'A DISTANZA (SERVE LA LOF)'}</button></div>` : ''}
             </div>`;
         // 28 ottobre (Paolo): le note nella ⓘ (o sotto il tasto).
         e.note.forEach(n => M.nota('step-modifiers', e.strumento || 'Supporto', n, { tipo: 'regole' }));
@@ -267,12 +255,13 @@
     // come nella scheda dell'Attacco BS.
     window.barraGittataSupporto = function (t, bande) {
         if (!t || !bande.length) return '';
-        const lofNo = t.lof === false;
         // 28 ottobre: la barra e` del motore (M.barraGittata), coi numeri sui confini.
+        // 1 novembre: la Linea di Tiro come nel BS (M.rigaRequisiti, 90 px con l'icona).
         return window.MotoreN5.barraGittata(bande, { indice: t.rangeIndex || 0, tocco: (i) => `window.setTargetRangeSupporto(${i})`,
-                fuori: "window.toggleRequisitoSupporto('gittata')", fuoriAttivo: !!t.fuoriGittata, stile: 'margin-top:10px;' }) + `
-            <button class="huge-btn" style="width:100%; margin:10px 0 0; min-height:48px; font-size:var(--fs-m); ${window.MotoreN5.stileColore(lofNo ? 'attenzione' : 'si')}" onclick="window.toggleRequisitoSupporto('lof')">${lofNo ? 'LINEA DI TIRO NO' : 'LINEA DI TIRO SÌ'}</button>`;
+                fuori: "window.toggleRequisitoSupporto('gittata')", fuoriAttivo: !!t.fuoriGittata, stile: 'margin-top:10px;' }) +
+            window.MotoreN5.rigaRequisiti(['lof'], t, 0, 'window.toggleRequisitoSupportoRiga');
     };
+    window.toggleRequisitoSupportoRiga = function (i, chiave) { window.toggleRequisitoSupporto(chiave); };
     window.setTargetRangeSupporto = function (i) {
         const t = window.combatTargets && window.combatTargets[0]; if (!t) return;
         t.rangeIndex = i; t.fuoriGittata = false;
@@ -371,7 +360,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_supporto.js', versione: '2026-10-31.2', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_supporto.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

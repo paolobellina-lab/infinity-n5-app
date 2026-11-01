@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.1 | ordine_attacco_guidato.js | proprieta`: chat MOTORE
 // ==========================================
 // 🚀 ATTACCO GUIDATO (N5) - ordine_attacco_guidato.js
 // ------------------------------------------
@@ -329,46 +329,21 @@
         const barra = M.barraGittata(arma.bands, { indice: primo.rangeIndex, tocco: (i) => `window.setTargetRangeGuidato(${i})`,
             fuori: 'window.toggleFuoriGittataGuidato()', fuoriAttivo: !!primo.fuoriGittata, stile: '' });
 
-        const dettaglio = regole.voci.map(v =>
-            `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
-                <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.valore > 0 ? '+' + v.valore : v.valore}</b>
-             </div>`).join('');
-
-        let html = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `ATTACCO GUIDATO` })}
-
-            <div style="background:var(--mn-errore-fondo,#330000); border:1px solid ${COL.bordo}; padding:15px; border-radius:5px; margin-bottom:20px;">
-                <div style="text-align:center; margin-bottom:12px;">
-                    <b style="color:var(--mn-errore,#ff3333); font-size:var(--fs-m);">TIRO SU BS ${unita.bs || '?'}</b><br>
-                    <span style="color:var(--mn-errore,#ff3333); font-size:var(--fs-xs);">${arma.nome} · ${arma.ammo} · Sagoma ${arma.template || 'Circolare'} · B${regole.burst}</span>
-                </div>
-                <div style="border-top:1px solid var(--mn-errore-bordo,#883333); padding-top:10px; font-size:var(--fs-s);">
-                    ${dettaglio}
-                    <div style="display:flex; justify-content:space-between; border-top:1px solid var(--mn-errore-bordo,#883333); margin-top:8px; padding-top:8px;">
-                        <b style="color:var(--mn-testo,#ffffff);">MOD totale</b>
-                        <b style="color:${regole.modTotale >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'}; font-size:var(--fs-m);">${regole.modTotale > 0 ? '+' + regole.modTotale : regole.modTotale}</b>
-                    </div>
-                </div>
-            </div>`;
+        // 1 novembre (Paolo): nessun valore prima dell'Hub; la scheda come il BS.
+        M.nota('step-modifiers', 'Arma', `${arma.nome} · ${arma.ammo} · Sagoma ${arma.template || 'Circolare'} · B${regole.burst}`, { tipo: 'regole' });
+        M.nota('step-modifiers', 'Gittata', regole.noteGittata || 'Si misura in linea retta fino al bersaglio.', { tipo: 'regole' });
+        M.nota('step-modifiers', 'Reazione del bersaglio', regole.reazioneBersaglio, { tipo: 'regole' });
+        let html = `${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `ATTACCO GUIDATO` })}`;
 
         window.combatTargets.forEach(function (tgt, index) {
             const primario = (index === 0);
-            html += `
-            <div class="target-card" style="border-left:4px solid ${primario ? COL.bordo : 'var(--mn-bordo-spento,#555555)'}; margin-bottom:15px; background:rgba(0,0,0,0.4); padding:15px; border-radius:5px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <b style="color:${primario ? 'var(--mn-testo,#ffffff)' : 'var(--mn-debole,#aaaaaa)'}; font-size:var(--fs-l);">${primario ? '🎯 [PRIMARIO]' : '💥 [SECONDARIO]'} ${tgt.name}</b>
-                </div>`;
+            html += M.schedaBS.apri() + M.schedaBS.testa(tgt.name + ` <span style="font-size:var(--fs-s); color:var(--mn-debole,#aaaaaa);">${primario ? 'PRIMARIO' : 'SECONDARIO'}</span>`, primario ? M.schedaBS.burstFisso(regole.burst) : '');
 
             if (primario) {
-                html += `<div style="text-align:center; color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); margin-bottom:5px;">${regole.noteGittata || 'Seleziona la gittata.'}</div>
-                    ${barra}
-                    ${M.domandaAlleatiInMischia ? M.domandaAlleatiInMischia(tgt, index, 'window.setAlleatiInMischiaGuidato') : ''}
-                    <div style="margin-top:10px; padding:8px; background:var(--mn-ordine-riquadro,#001a33); border:1px solid ${COL.testo}; border-radius:5px; color:${COL.testo}; font-size:var(--fs-xs); text-align:center;">
-                        Reazione del bersaglio: ${regole.reazioneBersaglio}
-                    </div>`;
+                html += `${barra}
+                    ${M.domandaAlleatiInMischia ? M.domandaAlleatiInMischia(tgt, index, 'window.setAlleatiInMischiaGuidato') : ''}`;
             } else {
-                html += `<div style="text-align:center; padding:10px; background:var(--mn-errore-fondo,#330000); border:1px solid ${COL.bordo}; color:var(--mn-attenzione,#ffcc00); font-weight:bold; border-radius:5px;">
-                    💥 COINVOLTO NELLA SAGOMA<br><span style="font-size:var(--fs-xs); color:var(--mn-testo,#ffffff);">Solo Tiro Salvezza. Nessun Faccia a Faccia, e il Critico qui vale come successo normale.</span></div>`;
+                M.nota('step-modifiers', tgt.name + ': coinvolto nella Sagoma', 'Solo Tiro Salvezza. Nessun Faccia a Faccia, e il Critico qui vale come successo normale.', { tipo: 'regole' });
                 html += (M.domandaAlleatiInMischia ? M.domandaAlleatiInMischia(tgt, index, 'window.setAlleatiInMischiaGuidato') : '');
             }
             html += `</div>`;
@@ -486,7 +461,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_guidato.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

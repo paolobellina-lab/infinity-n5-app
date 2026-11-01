@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_difesa.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.1 | ordine_difesa.js | proprieta`: chat MOTORE
 // ==========================================
 // 🛡️ DIFESA: SCHIVATA, RESET E SOPPRESSIONE - ordine_difesa.js
 // ------------------------------------------
@@ -102,8 +102,6 @@
             // 31 ottobre (Paolo, collaudo grafico): la scheda dell'Attacco BS
             // (M.schedaBS), senza l'omino e il cervello. Valore e MOD nella ⓘ.
             const chi = u.alias || u.nome;
-            M.notaValore('step-modifiers', window.coordUnits.length > 1 ? chi : '', esito);
-            if (esito.impossibile) M.nota('step-modifiers', (window.coordUnits.length > 1 ? chi + ': ' : '') + 'Fallimento automatico', 'Valore ' + esito.valore + ' sotto 1: il tiro fallisce automaticamente.', { tipo: 'mod' });
 
             let opzioni = '';
             if (schivata) {
@@ -316,7 +314,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_difesa.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_difesa.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

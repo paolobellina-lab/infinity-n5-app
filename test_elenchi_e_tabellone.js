@@ -1,4 +1,4 @@
-// @versione 2026-11-01.3 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-11-01.4 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -205,6 +205,10 @@
 //      sotto ogni replica, ora nella pagina degli stati di logica_stati; nella
 //      riga resta la nota nella ⓘ).
 //      Dalla 2026-11-01.3: in 52 (parte 8) il tasto negli stati (logica_stati 11-01.1).
+//  53. Nessun valore prima dell Hub (1 novembre, Paolo via MOTORE, moduli
+//      11-01.1): in ARO Schivata e Reset senza il riquadro «PH 10 → 10», il
+//      tasto della Linea di Tiro della Schivata come in ordine_difesa; nessun
+//      Valore di Successo, MOD o Critico nella scheda ne` nella ⓘ.
 //
 //  SOLO=34a,35a node test_elenchi_e_tabellone.js  gira solo quelle sezioni.
 //
@@ -3509,6 +3513,33 @@ sezione('52. Collaudo grafico, 31 ottobre sera: icone a token, segnalini a sinis
         const pub = P.MotoreN5.rosterPubblico(P.roster);
         ok(pub.every(u => u.figuraHoloecho === undefined), '8: figuraHoloecho non parte verso l avversario');
     }
+});
+
+sezione('53. Nessun valore prima dell Hub (1 novembre, Paolo via MOTORE): Schivata e Reset in ARO', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g;
+    const f = profilo(T, /^Fusilier \(Combi/);
+    T.schiera([truppa(profilo(T, /^Alguacil \(HMG/), { id: 'n1', alias: 'Spara' })], [truppa(f, { id: 'p1', alias: 'Uno' })], 'NOMADI');
+    T.apriMenu(T.nomadi, 0); N.selectAction('ATTACCO BS', false); N.declareAttackBS('Heavy Machine Gun');
+    N.toggleTargetSelection('p1'); N.confirmMultiAro(false); T.giro();
+    P.apriSelezioneAro(); P.toggleAroUnit('p1'); P.confermaSelezioneAro(); P.selezionaAzioneAro('DODGE');
+    const pag = () => String(T.pano.el('aro-modifiers-content').innerHTML);
+    const numeri = (h) => testo(h).match(/\b(PH|WIP|BS) \d+|→\s*\d+|Successo|Nessun modificatore/g) || [];
+    let h = pag();
+    ok(numeri(h).length === 0, 'Schivata in ARO: niente riquadro «PH 10 → 10» ne` modificatori (' + J(numeri(h)) + ')');
+    const stile = (k) => P.MotoreN5.stileColore(k);
+    ok(h.indexOf('class="huge-btn tasto-lof-schivata-aro" style="flex:1; margin:0; min-height:90px; font-size:var(--fs-l); flex-direction:column; justify-content:center; align-items:center; text-align:center; ' + stile(P.aroCurrentConfig.hasLoF ? 'si' : 'attenzione')) >= 0 && /class="icona-interruttore"[^>]*height:44px/.test(h),
+       'il tasto della Linea di Tiro come nel turno attivo (ordine_difesa 11-01.1): alto 90, var(--fs-l), icona 44 sopra, colore del motore');
+    const prima = P.aroCurrentConfig.hasLoF; P.toggleAroLoF(); h = pag();
+    ok(P.aroCurrentConfig.hasLoF === !prima && h.indexOf(stile(P.aroCurrentConfig.hasLoF ? 'si' : 'attenzione')) >= 0 && /NESSUNA LINEA DI TIRO \(-3 PH\)|HO LINEA DI TIRO VERSO CHI ATTACCA/.test(h) && numeri(h).length === 0, 'toccato: cambia colore e scritta, e ancora nessun numero');
+    ok(typeof P.aroCurrentConfig.valoreSuccesso === 'number', 'il valore resta nei dati (lo usa l Hub), solo non si mostra');
+    P.selezionaAzioneAro('RESET'); h = pag();
+    ok(numeri(h).length === 0 && !/tasto-lof-schivata-aro/.test(h), 'Reset in ARO: niente numeri e niente tasto della Linea di Tiro');
+    P.selezionaAzioneAro('BS_ATTACK');
+    const arma1 = (String(T.pano.el('aro-weapon-list').innerHTML).match(/selezionaArmaAro\('([^']*)'/) || [])[1];
+    if (arma1) P.selezionaArmaAro(arma1); h = pag();
+    ok(arma1 && P.aroCurrentConfig.azione === 'BS_ATTACK' && /burst-ctrl/.test(h) && numeri(h).length === 0, 'Attacco BS in ARO (' + arma1 + '): nessun Valore di Successo nella scheda (' + J(numeri(h)) + ')');
+    const voci = P.vociInfo('step-aro-modifiers').map(v => v.titolo + ' ' + v.testo).join(' | ');
+    ok(!/Valore di Successo|\bMOD\b|Critic/.test(voci), 'nemmeno nella ⓘ: niente Valore di Successo, MOD o Critico (' + voci.slice(0, 80) + ')');
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

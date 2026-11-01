@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_osservazione.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.1 | ordine_osservazione.js | proprieta`: chat MOTORE
 // ==========================================
 // 👁️ OSSERVAZIONE (N5) - ordine_osservazione.js
 // ------------------------------------------
@@ -189,15 +189,16 @@
         const unita = window.coordUnits[window.coordIndex];
         const azione = window.currentOrder.action;
         let e, corpo = '', titolo = '', carta = '';
+        window.MotoreN5.azzeraNote('step-modifiers');   // prima delle note di Sensor e Triangulated (1 novembre)
 
         if (azione === M.AZIONI.SENSOR) {
             e = M.regoleSensor(unita, M.rosterNemico());
             titolo = 'SENSOR';
             if (e.valido) {
-                corpo = `<div style="margin-top:12px; padding:12px; background:var(--mn-ordine-riquadro,#0d2a28); border:1px solid ${COL.bordo}; border-radius:5px;">
-                    <div style="color:${COL.bordo}; font-size:var(--fs-s); margin-bottom:8px;">Un tiro solo, e li Scopre TUTTI:</div>
+                M.nota('step-modifiers', 'Sensor', 'Un tiro solo, e li Scopre TUTTI.', { tipo: 'regole' });
+                corpo = `${M.schedaBS.apri()}
                     ${e.bersagli.length
-                        ? e.bersagli.map(b => `<div style="color:var(--mn-testo,#ffffff); font-size:var(--fs-m);">👁️ ${b.nome}</div>`).join('')
+                        ? e.bersagli.map(b => M.schedaBS.testa(b.nome)).join('')
                         : '<div style="color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s);">Nessun nemico Nascosto o in CAMO nella ZdC.</div>'}
                 </div>`;
             }
@@ -237,15 +238,9 @@
                     // Il Triangulated ignora la Copertura (riga 10340): niente tasto.
                     t.cover = false;
                     carta = window.cartaBersaglioOsservazione(t, arma, { senzaCopertura: true });
+                    if (e.modIgnorati.length) M.nota('step-modifiers', 'MOD ignorati dal Triangulated Fire', e.modIgnorati.map(v => v.motivo).join(' · '), { tipo: 'mod' });
                     corpo = 
-                        (e.modIgnorati.length
-                            ? `<div style="margin-top:12px; padding:12px; background:var(--mn-ordine-riquadro,#0d2a28); border:1px solid ${COL.bordo}; border-radius:5px;">
-                                <div style="color:${COL.bordo}; font-size:var(--fs-s); margin-bottom:6px;">MOD ignorati dal Triangulated Fire:</div>
-                                ${e.modIgnorati.map(v => `<div style="display:flex; justify-content:space-between; color:var(--mn-spento,#888888); font-size:var(--fs-s);">
-                                    <span style="text-decoration:line-through;">${v.motivo}</span>
-                                    <b style="text-decoration:line-through;">${v.valore > 0 ? '+' : ''}${v.valore}</b></div>`).join('')}
-                                <div style="color:var(--mn-debole,#aaaaaa); font-size:var(--fs-xs); margin-top:8px;">Senza questa Abilità il tiro sarebbe ${e.valoreConMod}.</div>
-                            </div>` : '')
+                        ''
                         + (e.oltreGittata ? `<div style="margin-top:10px; padding:10px; background:var(--mn-errore-fondo,#330000); border:1px solid var(--mn-errore,#ff3333); border-radius:4px; color:var(--mn-errore-testo,#ff9999); font-size:var(--fs-s);">
                             ⛔ Oltre la Gittata Massima dell'arma: il Triangulated Fire non lo permette.</div>` : '');
                 }
@@ -254,7 +249,6 @@
 
         window.osservazioneEsito = e;
         const container = document.getElementById('targets-allocation-container');
-        window.MotoreN5.azzeraNote('step-modifiers');
         if (!container) return;
 
         if (!e || !e.valido) {
@@ -265,9 +259,7 @@
             return window.goToStep('step-modifiers');
         }
 
-        const dettaglio = e.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
-                <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.fonte === 'base' ? '' : (v.valore > 0 ? '+' + v.valore : v.valore)}</b></div>`).join('');
+        // 1 novembre (Paolo): nessun valore prima dell'Hub: niente riquadro del tiro.
 
         // 19 ottobre (Paolo): Forward Observer e Triangulated hanno la scheda
         // del bersaglio dell'Attacco BS (cartaBersaglioOsservazione) in
@@ -277,14 +269,6 @@
         container.innerHTML = `
             ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: titolo })}
             ${inCima}
-            <div class="riquadro-tiro" style="background:var(--mn-ordine-riquadro,#0d2018); border:1px solid var(--mn-ordine-tenue,#2a5550); padding:12px; border-radius:5px; margin-top:${inCima ? '10px' : '0'};">
-                <div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:8px;">
-                    ${e.attributo} ${e.base} → <b style="color:${COL.bordo}; font-size:var(--fs-l);">${e.valore}</b>
-                    ${e.impossibile ? '<br><span style="color:var(--mn-errore,#ff3333); font-size:var(--fs-s);">Valore sotto 1: il tiro fallisce automaticamente</span>' : ''}
-                </div>
-                <div style="border-top:1px solid var(--mn-ordine-tenue,#1a4440); padding-top:8px; font-size:var(--fs-s);">${dettaglio}</div>
-                ${e.critici && !e.critici.nessunTiro ? `<div style="text-align:center; color:var(--mn-attenzione,#ffcc00); font-size:var(--fs-xs); margin-top:6px;">🎯 ${e.critici.testo}</div>` : ''}
-            </div>
             ${sotto}`;
         // 28 ottobre (Paolo): le note del tiro nella ⓘ (o sotto il tasto).
         e.note.forEach(n => window.MotoreN5.nota('step-modifiers', titolo, n, { tipo: 'regole' }));
@@ -322,18 +306,13 @@
         const noLoF = M.requisitoManca(t, 'lof');
         const icona = (k) => (typeof window.iconaInterruttore === 'function') ? window.iconaInterruttore(k) : '';
         const coverStyle = t.cover ? 'background:var(--nomad-orange); color:var(--mn-scuro,#000000);' : `background:${sfondo}; color:var(--mn-testo,#ffffff);`;
-        return `
-            <div class="target-card" style="border-left: 4px solid ${bordo}; margin-bottom: 10px; background: rgba(255,255,255,0.03); padding: 15px; overflow: hidden;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                    <b style="color:var(--nomad-orange); font-size:var(--fs-l);">${t.name || 'Bersaglio'}</b>
-                    <div class="burst-ctrl"><span style="font-size:var(--fs-l); font-weight:bold; color:var(--mn-si,#00ff00);">Burst <b style="color:var(--mn-si,#00ff00);">${t.burst || 1}</b></span></div>
-                </div>
-                ${window.barraGittata(arma, t, 'window.setRangeOsservazione')}
-                <div style="display:flex; gap:10px; margin-top: 15px;">
-                    ${opz.senzaCopertura ? '' : `<button class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:var(--fs-m); ${coverStyle}" onclick="window.toggleCoperturaOsservazione()">${t.cover ? icona('coverSi') + 'IN COPERTURA' : icona('coverNo') + 'NO COPERTURA'}</button>`}
-                    <button class="huge-btn" style="flex:1; margin:0; min-height:55px; font-size:var(--fs-m); ${noLoF ? STILE_NO : STILE_SI}" onclick="window.toggleRequisitoOsservazione(0, 'lof')">${noLoF ? (RQ.no || 'LINEA DI TIRO NO') : (RQ.si || 'LINEA DI TIRO SÌ')}</button>
-                </div>
-            </div>`;
+        // 1 novembre (Paolo): come la scheda dell'Attacco BS (M.schedaBS,
+        // M.rigaRequisiti: tasti alti 90 con l'icona sopra).
+        void STILE_SI; void STILE_NO; void RQ; void noLoF; void icona; void coverStyle;
+        return M.schedaBS.apri() + M.schedaBS.testa(t.name || 'Bersaglio', M.schedaBS.burstFisso(t.burst || 1)) +
+            window.barraGittata(arma, t, 'window.setRangeOsservazione') +
+            M.rigaRequisiti(['lof'], t, 0, 'window.toggleRequisitoOsservazione',
+                opz.senzaCopertura ? '' : M.schedaBS.tastoCopertura(t.cover, 'window.toggleCoperturaOsservazione()')) + `</div>`;
     };
     window.toggleCoperturaOsservazione = function () {
         const t = (window.combatTargets || [])[0]; if (!t) return;
@@ -449,7 +428,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_osservazione.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_osservazione.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

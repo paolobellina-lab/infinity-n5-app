@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_scenografia.js | proprieta`: chat MOTORE
+// @versione 2026-11-01.1 | ordine_scenografia.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏗️ SCENOGRAFIA (N5) - ordine_scenografia.js
 // ------------------------------------------
@@ -118,7 +118,7 @@
                             : (g.tipo || 'dispositivo');
                 container.innerHTML += `<button class="huge-btn" style="width:100%; min-height:62px; font-size:var(--fs-l); margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:${COL.bordo};"
                     onclick="window.scegliBersaglioScenografia('${String(g.unita.id).replace(/'/g, "\\'")}')">
-                    ${eDeactivator(azione) ? '🔌' : '🎯'} ${nome}<br>
+                    ${nome}<br>
                     <span style="font-size:var(--fs-s); color:${COL.bordo};">${sotto}</span></button>`;
             });
         }
@@ -214,22 +214,10 @@
         }
         window.scenografiaEsito = e;
 
-        const dettaglio = e.voci.map(v => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-                <span style="color:var(--mn-debole,#aaaaaa);">${v.motivo}</span>
-                <b style="color:${v.valore >= 0 ? 'var(--mn-si,#00ff00)' : 'var(--mn-errore,#ff3333)'};">${v.fonte === 'base' ? '' : (v.valore > 0 ? '+' + v.valore : v.valore)}</b></div>`).join('');
-
+        // 1 novembre (Paolo): nessun valore prima dell'Hub; la scheda come il BS.
         document.getElementById('targets-allocation-container').innerHTML = `
             ${window.MotoreN5.intestazioneOrdine({ colore: COL, titolo: `${eDeactivator(azione) ? 'DEACTIVATOR' : 'INTERAGIRE CON OBIETTIVO'}` })}
-            <div class="target-card" style="border-left:4px solid ${COL.bordo}; background:rgba(255,170,51,0.05); padding:15px; border-radius:5px;">
-                <b style="color:var(--mn-testo,#ffffff); font-size:var(--fs-l); display:block; margin-bottom:12px;">${eDeactivator(azione) ? '🔌' : '🎯'} ${t.name}</b>
-                <div style="background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-attenzione-fondo,#554400); padding:12px; border-radius:5px;">
-                    <div style="text-align:center; color:var(--mn-testo,#ffffff); margin-bottom:8px;">
-                        WIP ${e.base} → <b style="color:${COL.bordo}; font-size:var(--fs-l);">${e.valore}</b>
-                        ${e.impossibile ? '<br><span style="color:var(--mn-errore,#ff3333); font-size:var(--fs-s);">Valore sotto 1: il tiro fallisce automaticamente</span>' : ''}
-                    </div>
-                    <div style="border-top:1px solid var(--mn-nota-bordo,#664400); padding-top:8px; font-size:var(--fs-s);">${dettaglio}</div>
-                    ${e.critici && !e.critici.nessunTiro ? `<div style="text-align:center; color:var(--mn-attenzione,#ffcc00); font-size:var(--fs-xs); margin-top:6px;">🎯 ${e.critici.testo}</div>` : ''}
-                </div>
+            ${M.schedaBS.apri()}${M.schedaBS.testa(t.name)}
                 ${corpo}
             </div>`;
         // 28 ottobre (Paolo): le note nella ⓘ (o sotto il tasto).
@@ -309,7 +297,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_scenografia.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_scenografia.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
