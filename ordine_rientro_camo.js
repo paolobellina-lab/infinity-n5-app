@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_rientro_camo.js | proprieta`: chat MOTORE
+// @versione 2026-11-04.1 | ordine_rientro_camo.js | proprieta`: chat MOTORE
 // ==========================================
 // 🎭 ENTRARE IN FORMA DI MARKER (N5) - ordine_rientro_camo.js
 // ------------------------------------------
@@ -81,6 +81,22 @@
             esegui: function (u, R) { return M.attivaCybermask(u, R, { inAro: false }); },
             regole: function (e) { return { cybermask: true, entraInImp2: e.esito === 'ENTRA' }; }
         };
+        // 4 novembre (Paolo, REGOLE): rientro in Holoecho e HoloMask, stessa
+        // schermata (Abilita` Lunga, domanda sulla LoF, IDLE se in LoF).
+        TAB[M.AZIONI.RIENTRO_HOLOECHO] = {
+            titolo: 'RIENTRARE IN HOLOECHO', fatto: 'RIENTRATO IN HOLOECHO', riquadro: 'RIENTRA IN HOLOECHO',
+            pulsante: 'RIENTRA IN HOLOECHO', ok: 'RIENTRA',
+            puo: function (u) { return M.puoRientrareInHolo(u, 'HOLOECHO', { inAro: false }); },
+            esegui: function (u, R) { return M.rientraInHolo(u, 'HOLOECHO', R, { inAro: false, roster: window.roster }); },
+            regole: function (e) { return { rientraInHoloecho: e.esito === 'RIENTRA' }; }
+        };
+        TAB[M.AZIONI.RIENTRO_HOLOMASK] = {
+            titolo: 'RIENTRARE IN HOLOMASK', fatto: 'RIENTRATO IN HOLOMASK', riquadro: 'RIENTRA IN HOLOMASK',
+            pulsante: 'RIENTRA IN HOLOMASK', ok: 'RIENTRA', sceltaModello: true,
+            puo: function (u) { return M.puoRientrareInHolo(u, 'HOLOMASK', { inAro: false }); },
+            esegui: function (u, R) { return M.rientraInHolo(u, 'HOLOMASK', R, { inAro: false }); },
+            regole: function (e) { return { rientraInHolomask: e.esito === 'RIENTRA' }; }
+        };
         return TAB[String(actionId || '')] || null;
     }
     function abilitaCorrente(M) {
@@ -137,7 +153,7 @@
         const pre = A.puo(unita);
         if (!pre.puo) {
             container.innerHTML = `<div style="background:${COL.sfondo}; border:1px solid var(--mn-errore-bordo,#883333); padding:16px; border-radius:5px; text-align:center;">
-                <b style="color:var(--mn-errore,#ff3333); font-size:var(--fs-m);">🎭 ${A.titolo} NON DISPONIBILE</b>
+                <b style="color:var(--mn-errore,#ff3333); font-size:var(--fs-m);">${A.titolo} NON DISPONIBILE</b>
                 <div style="color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s); margin-top:10px;">${pre.motivo}</div>
                 ${pre.blocchi.length > 1 ? `<div style="color:var(--mn-spento,#888888); font-size:var(--fs-xs); margin-top:8px;">` +
                     pre.blocchi.slice(1).map(b => `• ${b}`).join('<br>') + `</div>` : ''}
@@ -165,7 +181,7 @@
             const coloreSi = (d.rispostaBloccante === false) ? buono : cattivo;
             const coloreNo = (d.rispostaBloccante === false) ? cattivo : buono;
             return `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:14px; border-radius:5px; margin-bottom:10px;">
-                <div style="color:var(--mn-testo,#ffffff); font-size:var(--fs-m); margin-bottom:12px;">${d.testo}</div>
+                <div style="color:var(--mn-testo,#ffffff); font-size:var(--fs-m); margin-bottom:12px;">${(typeof M.accenti === 'function') ? M.accenti(d.testo) : d.testo}</div>
                 <div style="display:flex; gap:8px;">
                     <button class="huge-btn" style="flex:1; min-height:50px; ${r === true ? coloreSi : 'background:var(--mn-fondo-tasto,#111111);'}"
                         onclick="window.rispondiRientroCamo('${d.id}', true)">SÌ</button>
@@ -186,6 +202,15 @@
                 ⚠️ ${cambio.note.join('<br>')}</div>` : ''}
 
             ${pre.domande.map(riquadro).join('')}
+
+            ${A.sceltaModello ? `<div style="background:${COL.sfondo}; border:1px solid ${COL.bordo}; padding:14px; border-radius:5px; margin-bottom:10px;">
+                <div style="color:var(--mn-testo,#ffffff); font-size:var(--fs-m); margin-bottom:12px;">Quale Modello imita?</div>
+                <select class="tendina-holomask" style="width:100%; min-height:50px; font-size:var(--fs-m);" onchange="window.rispondiRientroCamo('imitato', this.value || null)">
+                    <option value="">— scegli —</option>
+                    ${(typeof M.profiliImitabiliRaggruppati === 'function' ? M.profiliImitabiliRaggruppati(unita) : [{ unita: '', varianti: pre.imitabili || [] }])
+                        .map(g => `<optgroup label="${String(g.unita || '').replace(/"/g, '&quot;')}">` + (g.varianti || []).map(p => `<option value="${String(p.id).replace(/"/g, '&quot;')}" ${R.imitato === p.id ? 'selected' : ''}>${p.nome}</option>`).join('') + `</optgroup>`).join('')}
+                </select>
+            </div>` : ''}
 
             ${esito.esito === 'VIETATO' ? `<div style="margin-top:14px; padding:14px; background:var(--mn-errore-fondo,#330000); border:2px solid var(--mn-errore,#ff3333); border-radius:5px;">
                 <b style="color:var(--mn-errore,#ff3333); font-size:var(--fs-m);">⛔ NON SI PUÒ: ${A.titolo}</b>
@@ -292,6 +317,12 @@
         // avvisa anche l'Hub.
         const sospesi = window.rientriCamoInSospeso; window.rientriCamoInSospeso = [];
         sospesi.forEach(function (s) {
+            // Holoecho: le 2 copie entrano nel roster subito dopo la vera,
+            // PRIMA dell'aggiornamento, cosi` l'Hub le riceve insieme.
+            if (s.esito && Array.isArray(s.esito.repliche) && s.esito.repliche.length) {
+                const i = (window.roster || []).indexOf(s.unita);
+                window.roster.splice(i >= 0 ? i + 1 : window.roster.length, 0, ...s.esito.repliche);
+            }
             if (typeof window.sostituisciUnita === 'function') {
                 window.sostituisciUnita(s.unita, s.esito.unitaAggiornata, azione);
             } else {
@@ -316,7 +347,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_rientro_camo.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_rientro_camo.js', versione: '2026-11-04.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

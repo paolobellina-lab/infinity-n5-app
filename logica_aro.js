@@ -1,4 +1,4 @@
-// @versione 2026-11-01.1 | logica_aro.js | proprieta`: chat INTERFACCIA
+// @versione 2026-11-04.1 | logica_aro.js | proprieta`: chat INTERFACCIA
 //
 // PASSATO ALLA CHAT INTERFACCIA il 23 settembre 2026, su proposta della
 // chat MOTORE e decisione di Paolo. Il criterio e` quello di sempre: le
@@ -256,7 +256,11 @@
         // c'era una riga propria: solo il nome, senza foto ne` alias.
         // L'ordine: prima per Gruppo, poi come nel roster.
         const gruppoDi = (u) => (typeof window.gruppoDi === 'function') ? window.gruppoDi(u) : (parseInt(u && u.combatGroup, 10) || 1);
-        const inOrdine = (window.roster || []).slice().sort((a, b) => gruppoDi(a) - gruppoDi(b));
+        // 4 novembre (MOTORE): repliche in fila e Periferiche sotto il
+        // controllore (window.ordinaElenco, app.html), poi per Gruppo (l'ordinamento e` stabile).
+        const base = (typeof window.ordinaElenco === 'function') ? window.ordinaElenco(window.roster || [])
+                   : (console.error('\u26d4 window.ordinaElenco manca (app.html non caricato?): elenco ARO nell ordine del roster.'), (window.roster || []).slice());
+        const inOrdine = base.sort((a, b) => gruppoDi(a) - gruppoDi(b));
         const righeElenco = [];   // { g: Gruppo, html }: si scrivono dopo, coi conteggi
         let gruppoScritto = null;
         if (typeof window.rigaUnitaConFoto !== 'function') {
@@ -1629,7 +1633,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_aro.js', versione: '2026-11-01.1', proprieta: 'INTERFACCIA' };
+    var v = { file: 'logica_aro.js', versione: '2026-11-04.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

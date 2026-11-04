@@ -1,4 +1,4 @@
-// @versione 2026-11-01.3 | roster_manager.js | proprieta`: chat INTERFACCIA
+// @versione 2026-11-04.1 | roster_manager.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 📋 GESTORE SCHIERAMENTO E ROSTER (UNIVERSALE)
 // ==========================================
@@ -509,6 +509,24 @@ window.importaDaTesto = () => {
     };
     let assorbite = 0;
 
+    // 4 novembre (MOTORE, DATABASE 11-04.1): le Periferiche stanno sulla riga
+    // del CONTROLLORE (periferiche: [{ id, q }], M.perifericheDi). La riga
+    // rientrata sotto di lui («3X PUPNIK» sotto la Chimera, «JACKBOT» sotto il
+    // Fiddler) crea q istanze del profilo della Periferica, una volta sola per
+    // controllore. Prima si cercava il profilo dal testo della riga: dopo la
+    // rinomina di DATABASE («3X Pupnik» -> «Pupnik (Chimera)») non si trovava.
+    const Mp = window.MotoreN5;
+    if (!Mp || typeof Mp.perifericheDi !== 'function') console.error('\u26d4 M.perifericheDi assente (serve motore_regole_n5.js dalla 2026-11-04): le Periferiche rientrate si cercano dal testo della riga.');
+    const senzaQuantita = (t) => window.normalizzaTestoArmy(String(t || '').replace(/^\s*\d+\s*X\s+/i, ''));
+    const perifericaDellaRiga = (madre, x) => {
+        if (!Mp || typeof Mp.perifericheDi !== 'function' || !madre || !madre.profilo) return null;
+        const r = senzaQuantita(x.line);
+        return Mp.perifericheDi(madre.profilo).filter(p => p.profilo).find(p => {
+            const b = window.nomeBaseArmy(p.profilo);
+            return b && new RegExp('^' + b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Z0-9])').test(r);
+        }) || null;
+    };
+
     righe.forEach((x, i) => {
         if (x.intestazione || x.salta) return;
         const extra = [];
@@ -520,6 +538,16 @@ window.importaDaTesto = () => {
         }
         // Pilota o moto della truppa madre: fa parte di lei, non si importa.
         if (madre && madre.base && x.base && legatiA(madre.base).indexOf(x.base) >= 0) { assorbite++; return; }
+        // Una Periferica del controllore: q istanze, una volta sola.
+        const per = perifericaDellaRiga(madre, x);
+        if (per) {
+            madre.periferichePrese = madre.periferichePrese || {};
+            if (!madre.periferichePrese[per.id]) {
+                madre.periferichePrese[per.id] = true;
+                for (let k = 0; k < per.q; k++) { window.roster.push(window.unitaDaProfiloArmy(per.profilo, x.gruppo)); count++; }
+            } else assorbite++;
+            return;
+        }
         // Le righe figlie: quelle sotto, piu` rientrate, fino alla prossima
         // riga allo stesso livello.
         for (let j = i + 1; j < righe.length && !righe[j].intestazione && righe[j].rientro > x.rientro; j++) {
@@ -528,6 +556,7 @@ window.importaDaTesto = () => {
         const e = window.riconosciRigaArmy(x.line, dbFazione, extra);
         if (e.stato === 'OK') {
             window.roster.push(window.unitaDaProfiloArmy(e.profilo, x.gruppo));
+            x.profilo = e.profilo;   // per le sue Periferiche, nelle righe sotto
             count++;
         } else if (e.stato === 'AMBIGUA') {
             window.righeAmbigueImport.push({ riga: x.line.trim(), gruppo: x.gruppo, candidati: e.candidati });
@@ -539,9 +568,16 @@ window.importaDaTesto = () => {
     window.righeAssorbiteImport = assorbite;
 
     const amb = window.righeAmbigueImport.length;
+    const coll = window.collegaPerifericheLista();
+    const manca = ((coll && coll.mancanti) || []).map(m => {
+        const c = window.roster.find(u => u && u.id === m.controllore);
+        const p = Mp && typeof Mp.profiloDaId === 'function' ? Mp.profiloDaId(m.id) : null;
+        return (c ? (c.alias || c.nome) : m.controllore) + ': ' + (m.attese - m.trovate) + ' ' + (p ? p.nome : m.id);
+    });
     if(count > 0 || amb > 0) {
         alert(`✅ Importate ${count} unità dal testo, nei rispettivi Gruppi di Combattimento.` +
-              (amb ? `\n\n⚠️ ${amb} ${amb === 1 ? 'riga è ambigua' : 'righe sono ambigue'}: scegli tu il profilo sotto il riquadro del testo.` : ''));
+              (amb ? `\n\n⚠️ ${amb} ${amb === 1 ? 'riga è ambigua' : 'righe sono ambigue'}: scegli tu il profilo sotto il riquadro del testo.` : '') +
+              (manca.length ? `\n\n⚠️ Periferiche mancanti nella lista: ${manca.join('; ')}.` : ''));
         if (!amb) document.getElementById('army-import-text').value = "";
         window.renderRoster();
     } else {
@@ -641,6 +677,23 @@ window.rinominaStruttura = (index) => {
     });
 };
 
+// 4 novembre (MOTORE): il legame Periferica -> controllore fra le truppe di
+// UNA lista (campo `controllore`, id dell'istanza). Si rifa` da capo a ogni
+// cambio della lista, cosi` togliendo un controllore la sua Periferica non
+// resta legata a chi non c'e` piu`. -> { roster, legami, mancanti } | null
+window.collegaPerifericheLista = () => {
+    const M = window.MotoreN5;
+    if (!M || typeof M.collegaPeriferiche !== 'function') {
+        console.error('\u26d4 M.collegaPeriferiche assente (serve motore_regole_n5.js dalla 2026-11-04): Periferiche non collegate al controllore.');
+        return null;
+    }
+    const pulito = (window.roster || []).map(u => { if (!u || !('controllore' in u)) return u; const c = Object.assign({}, u); delete c.controllore; return c; });
+    const r = M.collegaPeriferiche(pulito);
+    window.roster = r.roster;
+    window.perifericheMancanti = r.mancanti || [];
+    return r;
+};
+
 window.renderRoster = () => {
     const container = document.getElementById('localRoster');
     if(window.roster.length === 0) return container.innerHTML = "<i>Nessuna unità schierata.</i>";
@@ -648,9 +701,17 @@ window.renderRoster = () => {
     let groupColor = window.isNomadsApp() ? '#00ff00' : '#00ffff';
     
     container.innerHTML = "";
-    window.roster.forEach((u, i) => {
-        const armaCorta = u.weapon.split('/')[0].split(',')[0];
-        container.innerHTML += `<div class="roster-item"><div><b style="color:${groupColor};">[G${u.combatGroup}]</b> <b>${u.alias}</b> <span style="color:#aaa;">| ${armaCorta}</span></div>
+    // 4 novembre (MOTORE): dopo ogni aggiunta o tolta, le Periferiche si
+    // ricollegano al loro controllore (M.collegaPeriferiche), e in elenco
+    // stanno subito sotto di lui (window.ordinaElenco), un po` rientrate.
+    window.collegaPerifericheLista();
+    const Mr = window.MotoreN5;
+    const inElenco = (typeof window.ordinaElenco === 'function') ? window.ordinaElenco(window.roster) : window.roster.slice();
+    inElenco.forEach((u) => {
+        const i = window.roster.indexOf(u);
+        const armaCorta = String(u.weapon || '').split('/')[0].split(',')[0];
+        const diChi = (Mr && typeof Mr.controlloreDi === 'function') ? Mr.controlloreDi(u, window.roster) : null;
+        container.innerHTML += `<div class="roster-item${diChi ? ' roster-periferica' : ''}"${diChi ? ' style="margin-left:24px;"' : ''}><div><b style="color:${groupColor};">[G${u.combatGroup}]</b> <b>${u.alias}</b> <span style="color:#aaa;">| ${armaCorta}</span></div>
             <div style="display:flex; align-items:center; gap:8px;">
                 <button type="button" class="tasto-riga-lista" title="Assegna o cambia il soprannome" aria-label="Soprannome" onclick="window.rinominaUnita(${i})">✏️</button>
                 <button type="button" class="tasto-riga-lista togli del-btn" aria-label="Togli" onclick="window.removeUnit(${i})">X</button>
@@ -1293,6 +1354,9 @@ window.renderDeployUnits = () => {
     let reserveColor = isNomads ? 'yellow' : '#00ffff';
 
     let truppeDelGruppo = window.roster.filter(u => parseInt(u.combatGroup) === window.deployGroup);
+    // 4 novembre (MOTORE): le repliche in fila (prima la figura, poi per
+    // numero) e ogni Periferica subito sotto il suo controllore.
+    truppeDelGruppo = window.ordinaElenco(truppeDelGruppo);
 
     // 27 ottobre (collaudo grafico, B02-B03): la riga e` quella di tutti gli
     // altri elenchi, window.rigaUnitaConFoto (app.html), con la foto, la
@@ -1339,13 +1403,15 @@ window.renderDeployUnits = () => {
             notaRiga(u, nomeU + ': a bordo ' + (tag ? 'del ' + String(tag.nome || tag.name || 'TAG').split('(')[0].trim() : 'del TAG'), 'Non si schiera: sta nel TAG finche` non scende.');
         }
         const Mr = window.MotoreN5;
-        if (u.replica) note.push(`<span class='etichetta-replica' style='color:#99ffff;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'} ${u.numeroReplica || ''} — REPLICA ]</span>`);
+        // 4 novembre (Paolo, via MOTORE): l'Holoecho come al calcolatore
+        // (window.vistaHoloechoDi -> M.vistaHoloecho): il nome HOLOECHO n e la
+        // foto stanno nella riga; sulla vera «QUESTA È LA VERA». Prima:
+        // «[ HOLOECHO n — VERA/REPLICA ]» e «sul tavolo la figura è…». Il
+        // Decoy resta com'era.
+        const vhD = (typeof window.vistaHoloechoDi === 'function') ? window.vistaHoloechoDi(u) : null;
+        if (vhD) { if (vhD.etichettaVera) note.push(`<span class='etichetta-replica etichetta-vera' style='color:#99ffff;'>[ ${vhD.etichettaVera} ]</span>`); }
+        else if (u.replica) note.push(`<span class='etichetta-replica' style='color:#99ffff;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'} ${u.numeroReplica || ''} — REPLICA ]</span>`);
         else if (u.gruppoRepliche) note.push(`<span class='etichetta-replica' style='color:#99ffff;'>[ ${u.tipoRepliche === 'DECOY' ? 'DECOY' : 'HOLOECHO'} ${u.numeroReplica || ''} — VERA ]</span>`);
-        // 31 ottobre sera (Paolo, Holoecho versione B): quale numero e` la
-        // MINIATURA sul tavolo (figuraHoloecho, M.creaRepliche).
-        // 1 novembre (Paolo): sulla VERA, col numero (window.etichettaFiguraHoloecho,
-        // app.html); prima «FIGURA SUL TAVOLO» sull'elemento figura.
-        if (!u.replica && u.gruppoRepliche && u.tipoRepliche !== 'DECOY' && typeof window.etichettaFiguraHoloecho === 'function' && window.etichettaFiguraHoloecho(u)) note.push(`<span class='etichetta-figura' style='color:#ffe680;'>[ ${window.etichettaFiguraHoloecho(u)} ]</span>`);
         // 31 ottobre (Paolo, P9-10): via la scritta viola «[ HOLOMASK: SEMBRA … ]».
         void Mr;
 
@@ -1912,7 +1978,15 @@ window.bottoniMinelayer = (index, ml) => {
             catch (e) { window.ultimaEccezione = e; }
             window.infoSchieramento(a.nome, (x && (x.spiegazione || x.motivo)) || 'Usi esauriti.', 'finita-' + k);
         }
-        html += `<button class="huge-btn bottone-minelayer${finita ? ' arma-finita' : ''}" ${attivo ? `onclick="window.piazzaConMinelayer(${index}, ${k})"` : 'disabled'} data-nota="${finita ? 'finita-' + k : 'minelayer'}">${a.nome}${usi}</button>`;
+        // 4 novembre (Paolo, via MOTORE): il CrazyKoala mostra la foto che
+        // prendera` la miniatura (M.fotoProssimoDeployable), come il tasto di
+        // PIAZZARE EQUIPAGGIAMENTO in partita; se il file manca, l'immagine
+        // dell'arma, poi niente.
+        const Mf = window.MotoreN5;
+        const foto = (Mf && typeof Mf.fotoProssimoDeployable === 'function') ? Mf.fotoProssimoDeployable(a.nome, window.roster) : null;
+        const imgArma = (Mf && typeof Mf.nomeImmagineArma === 'function') ? 'img/armi/' + Mf.nomeImmagineArma(a.nome) + '.png' : '';
+        const immagine = foto ? `<img class="foto-prossimo-deployable" src="${foto}"${imgArma ? ` data-rip="${imgArma}"` : ''} alt="" style="display:block; height:64px; width:auto; margin:0 auto 4px; object-fit:contain;" onerror="if(this.dataset.rip){this.src=this.dataset.rip;this.removeAttribute('data-rip');return;}this.style.display='none'">` : '';
+        html += `<button class="huge-btn bottone-minelayer${finita ? ' arma-finita' : ''}" ${attivo ? `onclick="window.piazzaConMinelayer(${index}, ${k})"` : 'disabled'} data-nota="${finita ? 'finita-' + k : 'minelayer'}">${immagine}${a.nome}${usi}</button>`;
     });
     if (!(ml.armi || []).length) html += `<p style="color:#888; text-align:center;">Nessuna arma da piazzare col Minelayer.</p>`;
     return html;
@@ -2030,7 +2104,7 @@ if (document.readyState === "loading") {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'roster_manager.js', versione: '2026-11-01.3', proprieta: 'INTERFACCIA' };
+    var v = { file: 'roster_manager.js', versione: '2026-11-04.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_piazzamento.js | proprieta`: chat MOTORE
+// @versione 2026-11-03.1 | ordine_piazzamento.js | proprieta`: chat MOTORE
 // ==========================================
 // 📦 PIAZZARE EQUIPAGGIAMENTO (N5) - ordine_piazzamento.js
 // ------------------------------------------
@@ -132,7 +132,10 @@
                 const nomeEsc = String(a.nomeRichiesto || a.nome).replace(/'/g, "\\'");
                 const tocco = `onclick="window.scegliArmaDaPiazzare('${nomeEsc}')"`;
                 container.innerHTML += (typeof M.bottoneArma === 'function')
-                    ? M.bottoneArma(a, { usi: a.usi || null, attributi: tocco })
+                    // 3 novembre (Paolo): il CrazyKoala mostra la foto che
+                    // prendera` la miniatura (M.fotoProssimoDeployable).
+                    ? M.bottoneArma(a, { usi: a.usi || null, attributi: tocco,
+                                         immagine: (typeof M.fotoProssimoDeployable === 'function' && M.fotoProssimoDeployable(a.nome, window.roster)) || undefined })
                     : `<button class="huge-btn" style="width:100%; min-height:62px; margin-bottom:6px;" ${tocco}>${a.nome}</button>`;
             });
         }
@@ -516,7 +519,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_piazzamento.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_piazzamento.js', versione: '2026-11-03.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

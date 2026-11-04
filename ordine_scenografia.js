@@ -1,4 +1,4 @@
-// @versione 2026-11-01.1 | ordine_scenografia.js | proprieta`: chat MOTORE
+// @versione 2026-11-03.1 | ordine_scenografia.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏗️ SCENOGRAFIA (N5) - ordine_scenografia.js
 // ------------------------------------------
@@ -116,10 +116,19 @@
                 const nome = g.nome;
                 const sotto = (g.tratti && g.tratti.length) ? g.tratti.join(', ')
                             : (g.tipo || 'dispositivo');
-                container.innerHTML += `<button class="huge-btn" style="width:100%; min-height:62px; font-size:var(--fs-l); margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:${COL.bordo};"
-                    onclick="window.scegliBersaglioScenografia('${String(g.unita.id).replace(/'/g, "\\'")}')">
+                const clic = `onclick="window.scegliBersaglioScenografia('${String(g.unita.id).replace(/'/g, "\\'")}')"`;
+                // 3 novembre (Paolo): la stessa riga dei bersagli dell'Attacco
+                // BS (window.rigaUnitaConFoto): foto del dispositivo, colori
+                // della fazione. Niente «DEPLOYABLE» sotto: i Tratti vanno
+                // nella ⓘ. Dove la pagina non c'e` (i banchi), il bottone semplice.
+                if (eDeactivator(azione) && typeof window.rigaUnitaConFoto === 'function') {
+                    container.innerHTML += window.rigaUnitaConFoto(g.unita, { attributi: clic, fazione: 'NEMICA' });
+                    if (g.tratti && g.tratti.length) M.nota('step-wait-aro', nome, 'Tratti: ' + g.tratti.join(', '), { tipo: 'regole' });
+                } else {
+                    container.innerHTML += `<button class="huge-btn" style="width:100%; min-height:62px; font-size:var(--fs-l); margin-bottom:6px; background:var(--mn-fondo-tasto,#111111); border-color:${COL.bordo};" ${clic}>
                     ${nome}<br>
                     <span style="font-size:var(--fs-s); color:${COL.bordo};">${sotto}</span></button>`;
+                }
             });
         }
 
@@ -297,7 +306,7 @@
 // Dichiarazione di versione per il controllo incrociato fra chat.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_scenografia.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_scenografia.js', versione: '2026-11-03.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

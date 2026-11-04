@@ -1,4 +1,4 @@
-// @versione 2026-10-31.2 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
+// @versione 2026-11-04.1 | calcolatore_controller.js | proprieta`: chat INTERFACCIA
 // ==========================================
 // 🖥️ HUB CONTROLLER & UI - hub-controller.js
 // ==========================================
@@ -573,8 +573,11 @@ window.iconaHubDellaFazione = (percorso, fazione) => {
 };
 
 window.etichettaStato = (icona, testo, sfondo, colore, titolo, nullo, idStato) => {
-    const bordo = nullo ? ' box-shadow: inset 0 0 0 2px #ff2020;' : '';
-    const segno = nullo ? ` <b style="color:#ff5050; font-size:9px; letter-spacing:1px;">NULL</b>` : '';
+    // 4 novembre (Paolo, via MOTORE): niente bordo rosso e niente parola
+    // NULL sull'etichetta: resta solo l'icona. «Stato Null…» resta nel
+    // suggerimento e nel riquadro che si apre toccando.
+    const bordo = '';
+    const segno = '';
     const suggerimento = nullo
         ? (titolo ? titolo + ' \u2014 ' : '') + 'Stato Null: non da` Ordini ne` Punti Vittoria'
         : (titolo || testo);
@@ -1155,7 +1158,18 @@ window.dadiPersiHtml = (busta) => {
 // Il D20 disegnato in pagina (SVG), del colore della FAZIONE di chi tira:
 // rosso per i Nomadi, azzurro per PanOceania, numeri bianchi (P22).
 window.COLORE_D20 = { NOMADI: '#cc1111', PANOCEANIA: '#0099dd' };
+// 4 novembre (Paolo, via MOTORE): il dado e` un'immagine, img/d20_nomadi.png
+// e img/d20_panoceania.png, con la stessa classe "d20", data-fazione e
+// altezza. Se il file manca, al suo posto il disegno di prima (d20Disegno).
+window.FILE_D20 = { NOMADI: 'img/d20_nomadi.png', PANOCEANIA: 'img/d20_panoceania.png' };
 window.d20Svg = (fazione, px) => {
+    const d = px || 30;
+    const file = window.FILE_D20[fazione];
+    const disegno = window.d20Disegno(fazione, d);
+    if (!file) return disegno;
+    return `<img class="d20" data-fazione="${fazione || ''}" src="${file}" alt="D20" height="${d}" style="height:${d}px; width:auto; vertical-align:middle; margin-left:6px;" onerror="this.outerHTML='${disegno.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}'">`;   // < e > come entita`: chi legge il testo della pagina non le scambia per tag
+};
+window.d20Disegno = (fazione, px) => {
     const c = window.COLORE_D20[fazione] || '#777';
     const d = px || 30;
     return `<svg class="d20" data-fazione="${fazione || ''}" width="${d}" height="${d}" viewBox="0 0 100 100" aria-label="D20" style="vertical-align:middle; margin-left:6px;">` +
@@ -1167,7 +1181,16 @@ window.d20Svg = (fazione, px) => {
         `<text x="50" y="58" text-anchor="middle" font-family="Teko, sans-serif" font-weight="700" font-size="26" fill="#fff">20</text></svg>`;
 };
 // L'icona della fazione nell'angolo della cella, dal lato del giocatore (P21).
-window.ICONA_FAZIONE_HUB = { NOMADI: 'img/icona_nomadi.png', PANOCEANIA: 'img/icona_panoceania.png' };
+// 4 novembre (Paolo, via MOTORE): i loghi SENZA sfondo, img/logo_nomadi.png e
+// img/logo_panoceania.png; se mancano, le icone di prima (icona_*.png, che
+// restano per favicon, manifest e home). window.attributiLogoHub fa il ripiego.
+window.ICONA_FAZIONE_HUB = { NOMADI: 'img/logo_nomadi.png', PANOCEANIA: 'img/logo_panoceania.png' };
+window.ICONA_FAZIONE_HUB_RIPIEGO = { NOMADI: 'img/icona_nomadi.png', PANOCEANIA: 'img/icona_panoceania.png' };
+window.attributiLogoHub = (f) => {
+    const file = window.ICONA_FAZIONE_HUB[f], rip = window.ICONA_FAZIONE_HUB_RIPIEGO[f];
+    if (!file) return '';
+    return `src="${file}"` + (rip && rip !== file ? ` data-rip="${rip}" onerror="if(this.dataset.rip){this.src=this.dataset.rip;this.removeAttribute('data-rip');return;}this.style.display='none'"` : ` onerror="this.style.display='none'"`);
+};
 // 31 ottobre sera (Paolo): le icone delle fazioni escono dalle celle e
 // stanno negli angoli IN ALTO del riquadro dello scontro, all'altezza del
 // titolo, ~75 px, ognuna dal lato del suo giocatore (window.latoDi: segue
@@ -1177,7 +1200,7 @@ window.titoloConIconeHub = (titoloHtml, fazioni) => {
     const ico = (f) => {
         const file = window.ICONA_FAZIONE_HUB[f];
         const lato = window.latoDi(f) === 'DX' ? 'right' : 'left';
-        return file ? `<img class="icona-fazione-scontro" data-lato="${lato === 'right' ? 'DX' : 'SX'}" src="${file}" alt="${f}" style="position:absolute; top:0; ${lato}:0; height:75px; width:auto; max-width:75px; object-fit:contain;" onerror="this.style.display='none'">` : '';
+        return file ? `<img class="icona-fazione-scontro" data-lato="${lato === 'right' ? 'DX' : 'SX'}" ${window.attributiLogoHub(f)} alt="${f}" style="position:absolute; top:0; ${lato}:0; height:75px; width:auto; max-width:75px; object-fit:contain;">` : '';
     };
     return `<div class="titolo-scontro" style="position:relative; min-height:75px; display:flex; align-items:center; justify-content:center; padding:0 82px; margin-bottom:8px;">` +
         presenti.map(ico).join('') + titoloHtml + `</div>`;
@@ -1185,7 +1208,7 @@ window.titoloConIconeHub = (titoloHtml, fazioni) => {
 // (Fino al 31 ottobre mattina l'icona stava dentro la cella del giocatore.)
 window.iconaFazioneCella = (fazione) => {
     const f = window.ICONA_FAZIONE_HUB[fazione];
-    return f ? `<img class="icona-fazione-cella" src="${f}" alt="${fazione}" style="height:28px; width:auto; vertical-align:middle; margin:0 6px;" onerror="this.style.display='none'">` : '';
+    return f ? `<img class="icona-fazione-cella" ${window.attributiLogoHub(fazione)} alt="${fazione}" style="height:28px; width:auto; vertical-align:middle; margin:0 6px;">` : '';
 };
 const numeroMod = (v) => (v > 0 ? '+' : '') + v;
 // I testi del motore portano l'accento come apice («e`»): a schermo la lettera vera.
@@ -1579,7 +1602,7 @@ window.chiudiRisoluzione = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'calcolatore_controller.js', versione: '2026-10-31.2', proprieta: 'INTERFACCIA' };
+    var v = { file: 'calcolatore_controller.js', versione: '2026-11-04.1', proprieta: 'INTERFACCIA' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,4 +1,4 @@
-// @versione 2026-11-01.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
+// @versione 2026-11-04.1 | catalogo_n5.js | proprieta`: chat MOTORE (con contributi DATABASE)
 // ==========================================
 // --- catalogo_n5.js ---
 // CATALOGO NORMALIZZATO DELLE REGOLE INFINITY N5 (aggiornato a N5.2)
@@ -725,6 +725,11 @@ window.CATALOGO_N5.MOVIMENTO = {
                               note: 'Ordine Intero, nessun tiro. Requisito: fuori dalla LoF di Modelli e Marker nemici. L\'Hacker entra in IMP-2.' },
         'RIENTRARE IN CAMO': { nome: 'Rientrare in CAMO', tipo: 'LONG_SKILL', generaAro: true, soloDaModello: true,
                               note: 'Ordine Intero, nessun tiro. Solo fuori dalla LoF di Modelli e Marker nemici.' },
+        // 4 novembre (Paolo, REGOLE): rientro negli stati dell'Holoprojector.
+        'RIENTRARE IN HOLOECHO': { nome: 'Rientrare in Holoecho', tipo: 'LONG_SKILL', generaAro: true, soloDaModello: true,
+                              note: 'Ordine Intero, nessun tiro. Solo fuori dalla LoF nemica: si piazzano 2 copie a contatto (righe 13943-13944).' },
+        'RIENTRARE IN HOLOMASK': { nome: 'Rientrare in HoloMask', tipo: 'LONG_SKILL', generaAro: true, soloDaModello: true,
+                              note: 'Ordine Intero, nessun tiro. Solo fuori dalla LoF nemica: si sceglie il Modello da imitare (righe 14038-14041).' },
         // FAIRY DUST (righe 5192-5209, Paolo 12 ottobre: "e` un programma
         // hacking e quindi va li`"): si dichiara dalla schermata Hacking.
         // Long Skill, Supportware, No Roll: Ordine intero, nessun bersaglio.
@@ -765,6 +770,8 @@ window.CATALOGO_N5.ORDINE_COORDINATO = {
 
     massimoTruppe: 4,
     costo: '1 Command Token PIU` 1 Ordine Regolare dal Pool del Gruppo di Combattimento dei partecipanti.',
+    // 3 novembre (Paolo, CO-13): sul tabellone, nel primo scontro dell'Ordine.
+    promemoriaToken: 'Ordine Coordinato: scala a mano 1 Command Token (e 1 Ordine Regolare dal Pool).',
     quando: 'Solo durante la Fase Ordini del proprio Turno Attivo.',
 
     requisitiPartecipanti: [
@@ -976,6 +983,8 @@ window.CATALOGO_N5.SCHIERAMENTO = {
         'CAMO': 'SEGNALINO MIMETICO',
         'IMP':  'PERSONAGGIO SCONOSCIUTO',
         'HOLOECHO': 'HOLOECHO',
+        // 3 novembre (Paolo): nell'app del proprietario, accanto alla vera.
+        'VERA_HOLOECHO': 'QUESTA E` LA VERA',
         'DECOY': 'BERSAGLIO DECOY',
         'SEED': 'SEED-EMBRYO'
     },
@@ -984,6 +993,13 @@ window.CATALOGO_N5.SCHIERAMENTO = {
     // all'avversario e all'Hub col SEGNALINO numerato, non con la foto. Il
     // file sta nella cartella dell'esercito (img/nomadi/, img/panoceania/).
     segnalinoHoloecho: { file: 'holoecho_{n}.png', immagini: 3 },
+    // 3 novembre (Paolo): i Deployable con le foto in sequenza (una per
+    // miniatura, la prima libera al prossimo piazzato: app.html,
+    // window.fotoInSequenza). Il tasto per piazzarlo mostra la foto che
+    // prendera` la miniatura. Cartella dell'esercito (cartelleSegnalini).
+    fotoInSequenza: [
+        { arma: 'CRAZY ?KOALA', file: 'crazykoala_{n}.png', quante: 4 }
+    ],
 
     holomask: 'Con HoloMask l\'avversario vede il nome FINTO e non le armi reali: il resto del profilo resta nascosto.',
     foxhole: 'Foxhole e` pubblico: l\'avversario lo vede.',
@@ -1038,7 +1054,10 @@ window.CATALOGO_N5.SUPPORTO = {
         // N5.2 (wiki "Doctor", chat REGOLE, 28 settembre):
         annullaStordito: 'Cancella lo Stato Stordito su un bersaglio con VITA anche se non e` Incosciente: Abilita` Breve a contatto, Tiro Normale di WIP. Per chi ha STR serve l\'Ingegnere.',
         riTiroCommandToken: 'Il Command Token puo` ripetere un tiro del Dottore anche dopo il ReRoll, ma senza applicare il WIP della parentesi.',
-        riTiro: 'Se il bersaglio ha un Cubo, si possono spendere Command Token per ripetere un tiro fallito.'
+        // 3 novembre (Paolo, SUP-07): la nota esce SOLO se il bersaglio ha
+        // il Cubo (riTiroSe), e va al calcolatore, non nella ⓘ del modulo.
+        riTiroSe: { caratteristica: 'CUBE' },
+        riTiro: 'Il bersaglio ha un Cubo: si possono spendere Command Token per ripetere un tiro fallito.'
     },
 
     'INGEGNERE': {
@@ -1050,7 +1069,8 @@ window.CATALOGO_N5.SUPPORTO = {
         fallimento: 'Il bersaglio riceve 1 Ferita invece di rimuoverla, entrando in Incosciente o Morto se il caso.',
         fallimentoLetale: false,
         modalitaStati: 'In alternativa, superando il tiro WIP, annulla TUTTI gli Stati del bersaglio annullabili dall\'Ingegnere TRANNE l\'Incosciente: Immobilizzato-A, Immobilizzato-B, Bersagliato e cosi` via.',
-        riTiro: 'Se il bersaglio ha Remote Presence, si possono spendere Command Token per ripetere un tiro fallito.'
+        riTiroSe: { skill: 'REMOTE PRESENCE' },
+        riTiro: 'Il bersaglio ha Remote Presence: si possono spendere Command Token per ripetere un tiro fallito.'
     },
 
     'MEDIKIT': {
@@ -1523,6 +1543,14 @@ window.CATALOGO_N5.ICONE_EFFETTO = {
 // 2026-10-09.3 (Paolo): contorno delle armi grigio chiaro, non piu` bianco.
 window.CATALOGO_N5.CONTORNO_BOTTONI = { ARMA: '#b4b8bf', PROGRAMMA: '#00e5ff' };
 
+// 4 novembre (Paolo, chat REGOLE): rientro in Holoecho e HoloMask nel Turno
+// Attivo, con un'Abilita` Lunga fuori dalla LoF nemica. La domanda e
+// l'esito in LoF (IDLE) sono quelli del rientro in CAMO.
+window.CATALOGO_N5.RIENTRO_HOLO = {
+    HOLOECHO: { righe: 'righe 13943-13944', fatto: 'Rientra in Holoecho: piazza 2 copie olografiche a contatto di Silhouette.' },
+    HOLOMASK: { righe: 'righe 14038-14041', fatto: 'Rientra in HoloMask: da adesso l\'avversario vede il Modello imitato.' }
+};
+
 window.CATALOGO_N5.RIENTRO_CAMO = {
 
     skillRichiesta: 'Camouflage',
@@ -1894,6 +1922,8 @@ window.CATALOGO_N5.CLASSI_AZIONE = {
         // Non e` nella tabella: e` l'attivazione di uno Stato che costa una
         // Long Skill (riga 13603).
         'RIENTRARE IN CAMO': { classe: 'LONG', aro: false, nomeRegola: 'Camouflaged State, Activation', fuoriTabella: true },
+        'RIENTRARE IN HOLOECHO': { classe: 'LONG', aro: false, nomeRegola: 'Holoecho State, Activation', fuoriTabella: true },
+        'RIENTRARE IN HOLOMASK': { classe: 'LONG', aro: false, nomeRegola: 'HoloMask State, Activation', fuoriTabella: true },
         'ATTACCO BS':        { classe: 'SHORT', aro: true,  nomeRegola: 'BS Attack' },
         'CC_ATTACK':         { classe: 'SHORT', aro: true,  nomeRegola: 'CC Attack' },
         'SCHIVATA':          { classe: 'SHORT', aro: true,  nomeRegola: 'Dodge' },
@@ -2908,7 +2938,7 @@ console.log('✅ catalogo_n5.js caricato: munizioni, skill, equip, hacking, stat
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'catalogo_n5.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
+    var v = { file: 'catalogo_n5.js', versione: '2026-11-04.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @versione 2026-11-01.2 | app.html | proprieta`: chat INTERFACCIA -->
+<!-- @versione 2026-11-04.2 | app.html | proprieta`: chat INTERFACCIA -->
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -634,11 +634,8 @@
         <button id="indietro-deploy-stati" class="tasto-uscita" onclick="window.goToStep('step-deploy-units')">INDIETRO</button>
     </div>
 
-    <div id="step-deploy-actions" class="step-container">
-        <h1>AZIONI DISPIEGAMENTO</h1>
-        <div id="deploy-action-list-container" style="overflow-y:auto; flex-grow:1; padding:5px; border:1px solid #444; background:#111; border-radius:5px;"></div>
-        <button class="tasto-uscita" onclick="window.goToStep('step-deploy-units')">INDIETRO</button>
-    </div>
+    <!-- 4 novembre: tolta la pagina «AZIONI DISPIEGAMENTO» (step-deploy-actions):
+         la usavano solo le funzioni morte tolte da roster_manager il 1 novembre. -->
 
     <div id="step-sync" class="step-container" style="flex-grow: 1; flex-direction: column; text-align:center; padding: 20px;">
         <h1>CONNESSIONE STABILITA</h1>
@@ -798,7 +795,7 @@
             // questa riga no: MotoreN5.versioni() dichiarava una pagina vecchia
             // di cinque giorni. Le due vanno cambiate INSIEME (lo controlla
             // test_voce_cybermask.js).
-            var v = { file: 'app.html', versione: '2026-11-01.2', proprieta: 'INTERFACCIA' };
+            var v = { file: 'app.html', versione: '2026-11-04.2', proprieta: 'INTERFACCIA' };
             if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
             else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
         })();
@@ -898,6 +895,10 @@
                 // id, catalogo e schermata dicono CAMO: due nomi per la stessa
                 // cosa (rilievo della chat MOTORE).
                 { id: 'RIENTRARE IN CAMO', nome: 'RIENTRARE IN CAMO', desc: 'Ordine Intero: torna Marker, fuori dalla LoF nemica.', type: 'LONG_SKILL' },
+                // 4 novembre (MOTORE): rientrare in Holoecho e in HoloMask,
+                // come il CAMO (stesso router, avviaFaseRientroCamo).
+                { id: 'RIENTRARE IN HOLOECHO', nome: 'RIENTRARE IN HOLOECHO', desc: 'Ordine Intero: piazza 2 copie, fuori dalla LoF nemica.', type: 'LONG_SKILL' },
+                { id: 'RIENTRARE IN HOLOMASK', nome: 'RIENTRARE IN HOLOMASK', desc: 'Ordine Intero: imita un Modello, fuori dalla LoF nemica.', type: 'LONG_SKILL' },
                 // 18 ottobre (Paolo, via MOTORE): la voce CYBERMASK non sta
                 // piu` qui. Il Cybermask si dichiara dalla schermata
                 // dell'Hacking (ordine_hacking.js), insieme al White Noise:
@@ -1188,6 +1189,14 @@
                     const M = window.MotoreN5;
                     if (!M || typeof M.puoRientrareInCamo !== 'function') return false;
                     return M.puoRientrareInCamo(unit, { inAro: false }).puo === true;
+                }
+
+                // 4 novembre (MOTORE): Holoecho e HoloMask come il CAMO, senza ripiego.
+                case 'RIENTRARE IN HOLOECHO':
+                case 'RIENTRARE IN HOLOMASK': {
+                    const M = window.MotoreN5;
+                    if (!M || typeof M.puoRientrareInHolo !== 'function') return false;
+                    return M.puoRientrareInHolo(unit, actionId === 'RIENTRARE IN HOLOMASK' ? 'HOLOMASK' : 'HOLOECHO', { inAro: false }).puo === true;
                 }
 
                 // (Il caso CYBERMASK e` stato tolto il 18 ottobre con la voce del
@@ -1639,27 +1648,47 @@
         //   CAMO / IMP-1 / IMP-2  M.immagineMarker(M.segnalinoMarker(u), n, fazione)
         //   HIDDEN / AD           M.segnalinoSenzaNumero(u, f).immagine, poi
         //                         .immagineComune, poi l'emoji
-        // (1 novembre, Paolo: la VERA dell'Holoecho nella propria app ha
-        // sempre la sua foto, anche quando sul tavolo e` un segnalino; la sua
-        // riga dice quale numero e` la miniatura, window.numeroFiguraHoloecho.)
         // -> { src, ripieghi, finale, alt, tipo } | null. Solo per le truppe
         // proprie e vive: caduto lo stato (M.segnalinoMarker/SenzaNumero
         // tornano null) la riga torna alla foto.
-        // 1 novembre (Paolo, Holoecho): il NUMERO che sul tavolo e` la
-        // miniatura (l'elemento con figuraHoloecho, M.creaRepliche), letto fra
-        // vera e copie dello stesso gruppo. null se non si sa (lista di prima).
-        // Esempio: vera = 1, copie 2 e 3, miniatura sul 3. L'avversario vede
-        // la foto sul 3 e i segnalini 1 e 2; il proprietario vede la foto
-        // sulla vera (1), i segnalini 2 e 3, e sulla vera «la figura e` il 3».
-        window.numeroFiguraHoloecho = (u) => {
-            if (!u || !u.gruppoRepliche) return null;
-            const fig = (window.roster || []).concat([u]).find(x => x && x.gruppoRepliche === u.gruppoRepliche && x.figuraHoloecho === true);
-            return fig && fig.numeroReplica ? fig.numeroReplica : null;
+        // (4 novembre: tolti window.numeroFiguraHoloecho e
+        // window.etichettaFiguraHoloecho. La vista dell'Holoecho nella propria
+        // app la da` il motore, M.vistaHoloecho: vedi window.vistaHoloechoDi.)
+        // 4 novembre (Paolo, via MOTORE): l'Holoecho nella PROPRIA app si vede
+        // come sul tavolo e all'Hub. M.vistaHoloecho(u, roster) da` il nome
+        // (HOLOECHO n), la foto (la figura: la foto della miniatura vera; le
+        // altre: il segnalino holoecho_n) e, sulla vera, l'etichetta
+        // «QUESTA È LA VERA». null per chi non e` un Holoecho (anche il Decoy).
+        // 4 novembre (MOTORE): l'ordine delle righe di un elenco di truppe
+        // proprie. 1) Le repliche di un gruppo in fila, al posto della prima
+        // (M.inFilaRepliche: prima la figura, poi per numero). 2) Ogni
+        // Periferica subito sotto il suo controllore (M.controlloreDi), se
+        // il controllore e` nello stesso elenco. Non tocca la lista.
+        window.ordinaElenco = (lista) => {
+            const M = window.MotoreN5;
+            let l = (lista || []).slice();
+            if (M && typeof M.inFilaRepliche === 'function') l = M.inFilaRepliche(l);
+            else console.error('\u26d4 M.inFilaRepliche assente (serve motore_regole_n5.js dalla 2026-11-03): repliche nell ordine del roster.');
+            if (!M || typeof M.controlloreDi !== 'function') {
+                console.error('\u26d4 M.controlloreDi assente (serve motore_regole_n5.js dalla 2026-11-04): Periferiche nell ordine del roster.');
+                return l;
+            }
+            const capo = (u) => { const c = u ? M.controlloreDi(u, window.roster || []) : null; return (c && l.indexOf(c) >= 0) ? c : null; };
+            const periferiche = l.filter(u => capo(u));
+            const out = [];
+            const metti = (u) => { out.push(u); periferiche.filter(p => capo(p) === u).forEach(metti); };
+            l.filter(u => periferiche.indexOf(u) < 0).forEach(metti);
+            return out;
         };
-        window.etichettaFiguraHoloecho = (u) => {
-            const n = window.numeroFiguraHoloecho(u);
-            if (!n) return '';
-            return n === u.numeroReplica ? '\ud83e\uddcd sul tavolo la figura \u00e8 lei (' + n + ')' : '\ud83e\uddcd sul tavolo la figura \u00e8 il ' + n;
+
+        window.vistaHoloechoDi = (u) => {
+            const M = window.MotoreN5;
+            if (!u || !u.gruppoRepliche) return null;
+            if (!M || typeof M.vistaHoloecho !== 'function') {
+                console.error('\u26d4 M.vistaHoloecho assente (serve motore_regole_n5.js dalla 2026-11-03): Holoecho mostrato coi nomi veri.');
+                return null;
+            }
+            return M.vistaHoloecho(u, window.roster || []);
         };
 
         window.segnalinoSchieramento = (u, fazione) => {
@@ -1714,6 +1743,10 @@
             const uVero = u;
             const uMaschera = mcMio ? window.vistaMascherata(Object.assign({}, u, { mostraCome: mcMio })) : null;
             if (uMaschera) u = uMaschera;
+            // 4 novembre: l'Holoecho proprio come sul tavolo (M.vistaHoloecho):
+            // nome HOLOECHO n e la foto della figura o il segnalino.
+            const vh = (u && f === window.fazionePropria() && !uMaschera && (window.roster || []).indexOf(uVero) >= 0) ? window.vistaHoloechoDi(uVero) : null;
+            if (vh) u = Object.assign({}, u, { nome: vh.nome, name: vh.nome, imgVariant: vh.imgVariant });
             const c = window.COLORI_FAZIONE[f];
             const t = c.riga;
             const s = (u && u.states) || {};
@@ -1739,7 +1772,11 @@
             // dell'HoloMask: si deve leggere quale opzione si imita).
             const aliasDi = (x, conOpzione) => {
                 const np = window.nomeInElenco(x);
-                const av = (!eMarkerRiga && x && x.alias && x.alias !== np) ? x.alias : '';
+                // 4 novembre (Paolo, punto 9): il soprannome non si scrive nemmeno
+                // quando e` il nome COMPLETO del profilo («GATOR (TAG)»): come per
+                // il solo nome, al suo posto l'opzione del profilo.
+                const uguale = (t) => String(t || '').trim().toUpperCase() === String(x && x.alias || '').trim().toUpperCase();
+                const av = (!eMarkerRiga && x && x.alias && !uguale(np) && !uguale(x.nome || x.name)) ? x.alias : '';
                 const pr = (av && !conOpzione) ? '' : window.opzioneDelProfilo(x);
                 if (av && pr) return `<div class="rup-alias">"${av}" <span class="rup-profilo">· ${pr}</span></div>`;
                 return av ? `<div class="rup-alias">"${av}"</div>` : (pr ? `<div class="rup-alias rup-profilo">${pr}</div>` : '');
@@ -1798,7 +1835,9 @@
             // i ripieghi li elenca fotoUnitaConRipieghi (esercito, poi comune).
             // 31 ottobre (P13): un segnalino tondo (deployable, Marker, copia
             // dell'Holoecho) sta intero dentro la riga, non come una miniatura.
-            const tondo = !!u && (u.deployable || eMarker || u.replica || /^holoecho_\d+\.png$/i.test(String(u.imgVariant || '')));
+            // 4 novembre: dell'Holoecho conta la vista del motore: la FIGURA
+            // (anche se e` una copia) ha la foto della miniatura, non il tondo.
+            const tondo = !!u && (vh ? !vh.figura : (u.deployable || eMarker || u.replica || /^holoecho_\d+\.png$/i.test(String(u.imgVariant || ''))));
             const disegnaFoto = (src, ripieghi, tondoF, siglaF, vc) => src
                 ? `<img class="rup-foto${tondoF ? ' rup-segnalino' : ''}${classeTocco}${vc}" ${window.attributiImmagine(src, ripieghi, `<span class=&quot;rup-sigla${classeTocco}${vc}&quot;${toccoNelRipiego}>${siglaF}</span>`)} alt=""${tocco}>`
                 : `<span class="rup-sigla${classeTocco}${vc}"${tocco}>${siglaF}</span>`;
@@ -1962,6 +2001,13 @@
             container.innerHTML = "";
             
             let truppeDelGruppo = window.roster.filter(u => window.gruppoDi(u) === parseInt(window.currentGroup));
+            // 4 novembre (MOTORE): il pilota A BORDO del TAG non sta fra le
+            // unita` attive (prima compariva spento); lo dice la ⓘ del TAG.
+            const pilotiABordo = truppeDelGruppo.filter(u => String(u.deployState || '').toUpperCase() === 'A_BORDO');
+            truppeDelGruppo = truppeDelGruppo.filter(u => pilotiABordo.indexOf(u) < 0);
+            // Le repliche in fila (prima la figura, poi per numero) e ogni
+            // Periferica subito sotto il suo controllore.
+            truppeDelGruppo = window.ordinaElenco(truppeDelGruppo);
             // 20 ottobre (Paolo): i Marker numerati. Il numero si da` QUI,
             // prima del primo invio all'Hub, perche` il giocatore legga sulla
             // riga lo stesso "CAMO 2" che l'avversario vede sul segnalino.
@@ -1981,6 +2027,16 @@
                 else console.error('\u26d4 M.nota assente (serve motore_regole_n5.js dalla 2026-10-28.1): nota di ' + titolo + ' persa.');
             };
             if (MM && typeof MM.azzeraNote === 'function') MM.azzeraNote('step-unit');
+            pilotiABordo.forEach(p => {
+                const tag = (window.roster || []).find(t => t && t.id === p.aBordoDi);
+                const nomeP = (MM && typeof MM.nomeUnita === 'function') ? MM.nomeUnita(p) : (p.alias || p.nome || '');
+                if (tag) notaRiga(tag, ((MM && typeof MM.nomeUnita === 'function') ? MM.nomeUnita(tag) : (tag.alias || tag.nome || '')) + ': pilota a bordo', 'Pilota a bordo: ' + nomeP + '.');
+            });
+            // La Periferica dice di chi e` (M.controlloreDi), nella ⓘ.
+            if (MM && typeof MM.controlloreDi === 'function') truppeDelGruppo.forEach(u => {
+                const c = MM.controlloreDi(u, window.roster || []);
+                if (c) notaRiga(u, MM.nomeUnita(u) + ': Periferica', 'Periferica di ' + MM.nomeUnita(c) + '.');
+            });
 
             truppeDelGruppo.forEach(u => {
                 let originalIndex = window.roster.indexOf(u); 
@@ -2030,16 +2086,16 @@
                 // proprietario sa chi e` la truppa vera: la riga lo dice, col
                 // numero che l'avversario vede sul segnalino.
                 const eReplica = !!(MM && typeof MM.eReplica === 'function' && MM.eReplica(u));
-                if (eReplica) etichette += ` <span class="etichetta-replica" style="color:#99ffff; font-size:14px; font-weight:bold; border:1px dashed #99ffff; border-radius:4px; padding:1px 5px;">\ud83e\ude9e REPLICA${u.numeroReplica ? ' ' + u.numeroReplica : ''}</span>`;
-                else if (u.gruppoRepliche && (u.states || {})[u.tipoRepliche === 'DECOY' ? 'decoy' : 'holoecho']) etichette += ` <span class="etichetta-replica" style="color:#99ffff; font-size:14px; font-weight:bold; border:1px solid #99ffff; border-radius:4px; padding:1px 5px;">\u2605 VERA${u.numeroReplica ? ' ' + u.numeroReplica : ''}</span>`;
-                // 31 ottobre sera (Paolo, Holoecho versione B): quale dei tre e` la
-                // MINIATURA sul tavolo (M.creaRepliche, figuraHoloecho). Solo qui:
-                // il dato non parte verso l'avversario.
-                // 1 novembre (Paolo): l'etichetta sta sulla VERA (che ha sempre la
-                // foto) e dice il NUMERO della miniatura; prima «FIGURA SUL
-                // TAVOLO» sull'elemento che era la figura (anche una copia).
-                const figuraV = (!eReplica && u.gruppoRepliche && (u.states || {}).holoecho) ? window.etichettaFiguraHoloecho(u) : '';
-                if (figuraV) etichette += ` <span class="etichetta-figura" style="color:#ffe680; font-size:14px; font-weight:bold; border:1px solid #ffe680; border-radius:4px; padding:1px 5px;">${figuraV}</span>`;
+                // 4 novembre (Paolo, via MOTORE): l'Holoecho come al calcolatore.
+                // Sulla vera «QUESTA È LA VERA» (M.vistaHoloecho, etichettaVera);
+                // le copie si leggono dal nome (HOLOECHO n). Prima: «★ VERA n»,
+                // «🪞 REPLICA n» e «sul tavolo la figura è…». Il Decoy resta com'era.
+                const vhR = window.vistaHoloechoDi(u);
+                if (vhR) {
+                    if (vhR.etichettaVera) etichette += ` <span class="etichetta-replica etichetta-vera" style="color:#99ffff; font-size:14px; font-weight:bold; border:1px solid #99ffff; border-radius:4px; padding:1px 5px;">${vhR.etichettaVera}</span>`;
+                }
+                else if (eReplica) etichette += ` <span class="etichetta-replica" style="color:#99ffff; font-size:14px; font-weight:bold; border:1px dashed #99ffff; border-radius:4px; padding:1px 5px;">\ud83e\ude9e REPLICA${u.numeroReplica ? ' ' + u.numeroReplica : ''}</span>`;
+                else if (u.gruppoRepliche && (u.states || {}).decoy) etichette += ` <span class="etichetta-replica" style="color:#99ffff; font-size:14px; font-weight:bold; border:1px solid #99ffff; border-radius:4px; padding:1px 5px;">\u2605 VERA${u.numeroReplica ? ' ' + u.numeroReplica : ''}</span>`;
                 // 20 ottobre (Paolo): la Punta di Lancia del Coordinato si
                 // riconosceva solo dal bordo azzurro. Ora ha la sua icona
                 // (img/icon_spearhead.png; senza file, la scritta).

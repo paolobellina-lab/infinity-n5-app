@@ -1,4 +1,4 @@
-// @versione 2026-10-28.1 | ordine_coordinato.js | proprieta`: chat MOTORE
+// @versione 2026-11-03.1 | ordine_coordinato.js | proprieta`: chat MOTORE
 // ==========================================
 // 🔗 ORDINE COORDINATO E SELEZIONE (N5) - ordine_coordinato.js
 // ------------------------------------------
@@ -251,7 +251,13 @@ window.mostraTitoloUnitaCorrente = () => {
         // 🔴 La Punta di Lancia usa META` del Burst, non il Burst pieno.
         // Qui c'era scritto "FULL BURST", che e` il contrario della regola.
         let dadi = '';
-        if (window.MotoreN5 && currentUnit.weapon) {
+        // 3 novembre (Paolo, CO-11): in mischia tira solo la Punta di Lancia,
+        // con +1B per gregario; i gregari non tirano.
+        const inCC = /^(ATTACCO CC|CC_ATTACK|BERSERK|PROTHEION)$/.test(String((window.currentOrder && window.currentOrder.action) || ''));
+        if (inCC) {
+            const g = Math.max(0, (window.coordUnits || []).length - 1);
+            dadi = ' — tira solo lei' + (g ? `, +${g}B` : '');
+        } else if (window.MotoreN5 && currentUnit.weapon) {
             const arma = window.MotoreN5.profiloArma(String(currentUnit.weapon).split(',')[0]);
             if (!arma.nonTrovata && !arma.soloModalita) {
                 const b = window.MotoreN5.burstIniziale(currentUnit, arma, {
@@ -264,8 +270,8 @@ window.mostraTitoloUnitaCorrente = () => {
         let lanciaStr = isSpearhead 
             // 20 ottobre (Paolo): l'icona della Punta di Lancia. Se il file
             // manca torna il 🎯 di prima.
-            ? `<br><span style="font-size:var(--fs-m); color:#00ff00;">[<img src="img/icon_spearhead.png" class="spearhead-token" style="margin:0 6px 0 0;" alt="" onerror="this.outerHTML='🎯 '">PUNTA DI LANCIA — metà Burst${dadi}]</span>` 
-            : `<br><span style="font-size:var(--fs-m); color:#ff9900;">[GREGARIO — Burst 1]</span>`;
+            ? `<br><span style="font-size:var(--fs-m); color:var(--mn-si,#00ff00);">[<img src="img/icon_spearhead.png" class="spearhead-token" style="margin:0 6px 0 0;" alt="" onerror="this.outerHTML='🎯 '">PUNTA DI LANCIA${inCC ? '' : ' — metà Burst'}${dadi}]</span>` 
+            : `<br><span style="font-size:var(--fs-m); color:var(--mn-attenzione,#ffcc00);">[GREGARIO — ${inCC ? 'in mischia non tira' : 'Burst 1'}]</span>`;
         
         header.style.display = 'block';
         header.innerHTML = `<h2 style="margin-bottom:0;">-- ${nomePuro}${testoAlias} --</h2>${lanciaStr}`;
@@ -280,7 +286,7 @@ window.mostraTitoloUnitaCorrente = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_coordinato.js', versione: '2026-10-28.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_coordinato.js', versione: '2026-11-03.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

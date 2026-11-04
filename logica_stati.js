@@ -1,4 +1,4 @@
-// @versione 2026-11-01.1 | logica_stati.js | proprieta`: chat MOTORE
+// @versione 2026-11-03.1 | logica_stati.js | proprieta`: chat MOTORE
 // ==========================================
 // NOTA: le regole di questo file passano da MotoreN5.
 //  - la cancellazione degli stati Marker (Ritirata!, Ingaggiato, Stati Nulli)
@@ -139,7 +139,7 @@ window.apriPaginaStati = (index) => {
     let html = `
         <div style="background:var(--mn-fondo-tasto,#111111); padding:15px; border:1px solid var(--mn-bordo-spento,#555555); border-radius:8px;">
             ${s.fairyDust ? `<label style="display:block; margin:6px 0; padding:8px; background:var(--mn-fondo-tasto,#111111); border:1px solid #66aaff; border-radius:5px; color:var(--mn-testo-2,#cccccc); font-size:var(--fs-s);">
-                <input type="checkbox" id="st-fairydust" checked> 💻 Fairy Dust attivo sui <b>${s.fairyDust}</b>
+                <input type="checkbox" id="st-fairydust" checked> Fairy Dust attivo sui <b>${s.fairyDust}</b>
                 <span style="color:var(--mn-spento,#888888); font-size:var(--fs-xs);">— togli la spunta se è caduto (es. una truppa protetta ha ricevuto un altro Supportware, righe 4735-4737)</span></label>` : ''}
             <div class="state-grid" id="main-state-grid">
                 <label class="state-label" title="Morto">
@@ -268,16 +268,16 @@ window.apriPaginaStati = (index) => {
     let profiloHtml = '';
     if (trasf && !trasf.gia) {
         profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:var(--mn-nota-fondo,#1a1000); border-color:var(--mn-acceso,#ffaa33); color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-m);" onclick="window.cambiaProfiloDaStati()">
-            🔄 ${trasf.tipo === 'WIP' ? 'TIRO RIUSCITO: ' : ''}PASSA AL PROFILO: ${trasf.nome}<br><span class="desc-tasto" style="font-size:var(--fs-xs); color:var(--mn-nota-tenue,#cc9955);">${trasf.quando} ${trasf.nota}</span></button>`;
+            ${trasf.tipo === 'WIP' ? 'TIRO RIUSCITO: ' : ''}PASSA AL PROFILO: ${trasf.nome}<br><span class="desc-tasto" style="font-size:var(--fs-xs); color:var(--mn-nota-tenue,#cc9955);">${trasf.quando} ${trasf.nota}</span></button>`;
     } else if (trasf && trasf.gia && trasf.reversibile) {
         profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:var(--mn-fondo-tasto,#111111); border-color:var(--mn-acceso,#ffaa33); color:var(--mn-nota-testo,#ffcc66); font-size:var(--fs-m);" onclick="window.tornaPrimoProfiloDaStati()">
-            ↩️ TORNA AL PRIMO PROFILO<br><span class="desc-tasto" style="font-size:var(--fs-xs); color:var(--mn-nota-tenue,#cc9955);">In uso: ${trasf.nome}. ${trasf.nota}</span></button>`;
+            TORNA AL PRIMO PROFILO<br><span class="desc-tasto" style="font-size:var(--fs-xs); color:var(--mn-nota-tenue,#cc9955);">In uso: ${trasf.nome}. ${trasf.nota}</span></button>`;
     } else if (trasf && trasf.gia) {
-        profiloHtml += `<div style="color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s); margin-bottom:8px;">🔄 Secondo profilo in uso: ${trasf.nome}. ${trasf.nota}</div>`;
+        profiloHtml += `<div style="color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s); margin-bottom:8px;">Secondo profilo in uso: ${trasf.nome}. ${trasf.nota}</div>`;
     }
     if (esp && esp.puo) {
         profiloHtml += `<button type="button" class="huge-btn" style="width:100%; min-height:60px; margin:0 0 8px; background:#1a1a33; border-color:#8888ff; color:#ccccff; font-size:var(--fs-m);" onclick="window.espelliPilotaDaStati()">
-            🪂 ESCAPE SYSTEM: FAI USCIRE IL PILOTA<br><span class="desc-tasto" style="font-size:var(--fs-xs); color:#9999cc;">A fine Ordine, quando il TAG ha ricevuto le ferite indicate. Il TAG resta vuoto sul tavolo; il pilota può risalire.</span></button>`;
+            ESCAPE SYSTEM: FAI USCIRE IL PILOTA<br><span class="desc-tasto" style="font-size:var(--fs-xs); color:#9999cc;">A fine Ordine, quando il TAG ha ricevuto le ferite indicate. Il TAG resta vuoto sul tavolo; il pilota può risalire.</span></button>`;
     }
     // 1 novembre (Paolo, via INTERFACCIA): il tasto per togliere una REPLICA
     // (Holoecho, Decoy) sta qui, negli stati (tocco prolungato sulla riga), non
@@ -285,7 +285,7 @@ window.apriPaginaStati = (index) => {
     // (app.html, M.togliReplica): con l'ultima replica cade anche lo stato della vera.
     if (Mp && typeof Mp.eReplica === 'function' && Mp.eReplica(window.unitToEdit)) {
         profiloHtml += `<button type="button" class="huge-btn togli-replica" style="width:100%; min-height:60px; margin:0 0 8px; background:#002a2a; border-color:#99ffff; color:#99ffff; font-size:var(--fs-m);" onclick="window.togliReplicaDaStati()">
-            🪞 TOGLI LA REPLICA<br><span class="desc-tasto" style="font-size:var(--fs-xs); color:#77cccc;">Scoperta, colpita da un Attacco riuscito o toccata da un nemico.</span></button>`;
+            TOGLI LA REPLICA<br><span class="desc-tasto" style="font-size:var(--fs-xs); color:#77cccc;">Scoperta, colpita da un Attacco riuscito o toccata da un nemico.</span></button>`;
     }
     if (profiloHtml) html += `</div></div><div style="margin-top:15px;">${profiloHtml}</div><div><div>`;
 
@@ -423,7 +423,9 @@ window.espelliPilotaDaStati = () => {
     const e = M.espelliPilota(u);
     if (!e.possibile) return alert('⛔ ' + e.motivo);
     chiediConferma(`Il pilota esce da ${M.nomeUnita(u)}.\n\n${e.note.join('\n')}\n(Le altre modifiche non salvate di questa pagina si perdono.)\n\nConfermi?`, 'ESCAPE SYSTEM', function () {
-        window.roster.push(e.nuova);
+        // 3 novembre (Paolo): il pilota va subito sotto il TAG, non in fondo.
+        const iTag = window.roster.indexOf(u);
+        if (iTag >= 0) window.roster.splice(iTag + 1, 0, e.nuova); else window.roster.push(e.nuova);
         if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(u, e.unitaAggiornata, 'Escape System');
         else Object.assign(u, e.unitaAggiornata);
         window.annullaStati();
@@ -703,7 +705,7 @@ window.togliReplicaDaStati = () => {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'logica_stati.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
+    var v = { file: 'logica_stati.js', versione: '2026-11-03.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

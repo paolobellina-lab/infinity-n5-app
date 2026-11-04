@@ -1,4 +1,4 @@
-// @versione 2026-10-30.2 | motore_core.js | proprieta`: chat MOTORE
+// @versione 2026-11-04.3 | motore_core.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE CORE v2.1 - IL VIGILE URBANO & HUB CLOUD
 // ==========================================
@@ -149,6 +149,44 @@ function marcaAllarmeConVistaPubblica(payload) {
     const traduci = (n) => { const u = squadra.find(x => M.nomeUnita(x) === n); return u ? nomePubblico(u) : n; };
     if (typeof payload.attaccante === 'string') payload.attaccante = traduci(payload.attaccante);
     if (Array.isArray(payload.attaccanti)) payload.attaccanti = payload.attaccanti.map(n => typeof n === 'string' ? traduci(n) : n);
+    // 3 novembre (Paolo): con l'Holoecho le copie eseguono lo STESSO Ordine
+    // della vera, quindi si attivano anche loro e sono bersagli dell'ARO.
+    // Nell'allarme vanno tutte e tre, col nome che vede l'avversario
+    // (HOLOECHO n), in ordine di numero: ne` l'ordine ne` `attaccante`
+    // dicono quale e` la vera. Prima partiva solo la vera, col nome vero.
+    const conRepliche = squadra.filter(u => u && u.gruppoRepliche && u.tipoRepliche === 'HOLOECHO' && !u.replica);
+    if (conRepliche.length) {
+        const nomi = [];
+        squadra.forEach(function (u) {
+            if (!u) return;
+            if (u.gruppoRepliche && u.tipoRepliche === 'HOLOECHO' && !u.replica) {
+                (window.roster || []).concat([u])
+                    .filter((x, i, a) => x && x.gruppoRepliche === u.gruppoRepliche && a.indexOf(x) === i && x.state !== 'DEAD')
+                    .sort((a, b) => (a.numeroReplica || 0) - (b.numeroReplica || 0))
+                    .forEach(x => { const p = pubblica(x); const n = (p && p.alias) || M.nomeUnita(x); if (nomi.indexOf(n) < 0) nomi.push(n); });
+            } else {
+                const n = nomePubblico(u); if (nomi.indexOf(n) < 0) nomi.push(n);
+            }
+        });
+        payload.attaccanti = nomi;
+        payload.attaccante = nomi[0];
+    }
+    // 4 novembre (Paolo): una Periferica SYNCHRONIZED agisce con l'Ordine del
+    // suo controllore (Pupnik con la Chimera, Bambabot col Coyote...): si
+    // attiva anche lei, e l'avversario la puo` bersagliare in ARO.
+    if (typeof M.periferichePresenti === 'function') {
+        const nomiP = [];
+        squadra.forEach(function (u) {
+            M.periferichePresenti(u, window.roster, { sincronizzate: true }).forEach(function (p) {
+                const n = nomePubblico(p);
+                if (n && nomiP.indexOf(n) < 0) nomiP.push(n);
+            });
+        });
+        if (nomiP.length) {
+            payload.attaccanti = (Array.isArray(payload.attaccanti) ? payload.attaccanti : [payload.attaccante]).filter(Boolean);
+            nomiP.forEach(n => { if (payload.attaccanti.indexOf(n) < 0) payload.attaccanti.push(n); });
+        }
+    }
 }
 
 window.inviaAllarmeAro = (payload) => {
@@ -442,6 +480,8 @@ window.ROUTER_AZIONI = [
     // Senza questa riga l'azione, che e` "senza tiro", cadrebbe nel modulo
     // del Movimento: la truppa "muoverebbe" e resterebbe Modello.
     { test: (a) => a === 'RIENTRARE IN CAMO',         modulo: 'avviaFaseRientroCamo', nome: 'Rientrare in CAMO' },
+    // 4 novembre (Paolo): rientro negli stati dell'Holoprojector, stessa schermata.
+    { test: (a) => a === 'RIENTRARE IN HOLOECHO' || a === 'RIENTRARE IN HOLOMASK', modulo: 'avviaFaseRientroCamo', nome: 'Rientrare in Holoecho / HoloMask' },
     // Il Cybermask e` una Long Skill senza tiro con la stessa schermata del
     // rientro (una domanda sulla LoF, poi il Marker): stesso modulo, che
     // distingue le due Abilita` dall'azione. Senza questa riga cadrebbe nel
@@ -476,6 +516,9 @@ window.sostituisciUnita = function (unita, aggiornata, perche, opzioni) {
     if (eraReplicata && M && typeof M.togliRepliche === 'function' && !(unita.states && (unita.states.decoy || unita.states.holoecho))) {
         const tolte = M.togliRepliche(window.roster || [], unita.id);
         if (tolte.length) console.log(`👥 ${M.nomeUnita(unita)} si rivela: tolte ${tolte.length} repliche.`);
+        // 4 novembre: senza repliche la truppa non e` piu` un gruppo (le
+        // righe in fila, la figura, il numero: M.vistaHoloecho).
+        [unita, nelRoster].filter(Boolean).forEach(x => { ['gruppoRepliche', 'tipoRepliche', 'numeroReplica', 'figuraHoloecho'].forEach(k => { x[k] = undefined; }); });
     }
     // 🔴 9 ottobre (chat REGOLE, F07): con Camouflage (1 Use) l'uso e`
     // l'ENTRATA nello Stato CAMO, schieramento compreso. Chi ESCE dal CAMO lo
@@ -505,7 +548,7 @@ window.applicaStatoDaAbilita = function (unita, azione) {
     if (!unita || !M || typeof M.statoDopoAbilita !== 'function') return { cambiato: false };
     const deploy = String(unita.deployState || 'NORMAL').toUpperCase();
     const st = unita.states || {};
-    if (deploy === 'NORMAL' && !st.camo && !st.impersonation) return { cambiato: false };
+    if (deploy === 'NORMAL' && !st.camo && !st.impersonation && !st.holoecho && !st.holomask && !st.decoy) return { cambiato: false };
     const r = M.statoDopoAbilita(unita, azione, {});
     if (!r || !r.dopo || !r.prima) return { cambiato: false };
     // `azione` e `unita`: chi mostra window.ultimoCambioStato deve poter
@@ -527,7 +570,8 @@ window.applicaStatoDaAbilita = function (unita, azione) {
     // AGGIORNAMENTO all'Hub per niente.
     const vP = M.statoBersaglio(unita), vD = M.statoBersaglio(r.unitaAggiornata);
     if (r.dopo.deployState === r.prima.deployState &&
-        vP.camo === vD.camo && vP.imp === vD.imp && vP.hidden === vD.hidden) return esito;
+        vP.camo === vD.camo && vP.imp === vD.imp && vP.hidden === vD.hidden &&
+        !!vP.holoecho === !!vD.holoecho && !!vP.holomask === !!vD.holomask && !!vP.decoy === !!vD.decoy) return esito;
     esito.cambiato = true;
     window.ultimoCambioStato = esito;
     // 23 ottobre (Paolo, AR-10): la truppa era NASCOSTA (Marker, Hidden
@@ -991,7 +1035,7 @@ window.azzeraAllarmiConsumati = function () {
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'motore_core.js', versione: '2026-10-30.2', proprieta: 'MOTORE' };
+    var v = { file: 'motore_core.js', versione: '2026-11-04.3', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

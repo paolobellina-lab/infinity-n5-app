@@ -1,4 +1,4 @@
-// @versione 2026-11-01.7 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
+// @versione 2026-11-04.2 | test_elenchi_e_tabellone.js | proprieta`: chat INTERFACCIA
 // ============================================================================
 //  Dalla chat INTERFACCIA, 7 ottobre 2026. Le correzioni di Paolo dal
 //  collaudo al tavolo, viste dai tre dispositivi (app Nomadi, app
@@ -219,6 +219,17 @@
 //      Dalla 2026-11-01.6: in 54 anche il codice morto tolto (roster 11-01.3).
 //      Dalla 2026-11-01.7 (motore 11-01.2): RISCRITTO 51-P1, il numero del tiro
 //      d Infiltrazione non e` piu` nella ⓘ ma nel TIRO DI SCHIERAMENTO.
+//  55. MOTORE 4 novembre (motore 11-04.3, database 11-04.1): voci RIENTRARE
+//      IN HOLOECHO / HOLOMASK, Periferiche sotto il controllore (lista,
+//      Gruppo, ARO), pilota a bordo fuori dall elenco, Hub (stato Null solo
+//      icona, loghi senza sfondo, dado in PNG), foto del prossimo koala.
+//      RISCRITTI (dalla 2026-11-04.1), col prima/dopo nel commento: 6 e 30
+//      (loghi logo_*.png), 25b (3X Pupnik -> tre Pupnik della Chimera, 46
+//      righe), 26b (foto del koala nel tasto del Minelayer), 34f (Holoecho:
+//      HOLOECHO n e «QUESTA È LA VERA»), 51-P6/P7 (foto nel tasto), 51-P22 e
+//      P24 (dado in PNG), 52 parte 8 (Holoecho come al calcolatore; tasto
+//      degli stati senza icona).
+//      Dalla 2026-11-04.2: in 55 il punto 9 (soprannome = nome completo).
 //
 //  SOLO=34a,35a node test_elenchi_e_tabellone.js  gira solo quelle sezioni.
 //
@@ -586,13 +597,15 @@ sezione('6. Hub: i lati sono dove siedono i giocatori', () => {
     // (prima icona-fazione-cella accanto al ruolo) e stanno negli angoli in
     // alto del riquadro, all'altezza del titolo, 75 px, dal lato del giocatore.
     const titoloSc = (html.match(/<div class="titolo-scontro"[\s\S]*?<\/h3><\/div>/) || [''])[0];
-    ok(/<img class="icona-fazione-scontro" data-lato="SX" src="img\/icona_nomadi\.png"[^>]*style="position:absolute; top:0; left:0; height:75px;/.test(titoloSc) && /<img class="icona-fazione-scontro" data-lato="DX" src="img\/icona_panoceania\.png"[^>]*right:0; height:75px;/.test(titoloSc) && /<h3[^>]*>TIRO (NORMALE|FACCIA A FACCIA)<\/h3>/.test(titoloSc) &&
+    // RISCRITTO il 4 novembre (Paolo, via MOTORE): i loghi senza sfondo (logo_*.png), col
+    // ripiego sulle icone di prima (data-rip). Prima: src="img/icona_*.png".
+    ok(/<img class="icona-fazione-scontro" data-lato="SX" src="img\/logo_nomadi\.png" data-rip="img\/icona_nomadi\.png"[^>]*style="position:absolute; top:0; left:0; height:75px;/.test(titoloSc) && /<img class="icona-fazione-scontro" data-lato="DX" src="img\/logo_panoceania\.png" data-rip="img\/icona_panoceania\.png"[^>]*right:0; height:75px;/.test(titoloSc) && /<h3[^>]*>TIRO (NORMALE|FACCIA A FACCIA)<\/h3>/.test(titoloSc) &&
        !/icona-fazione-cella/.test(html) && !/>NOMADI Spara|>PANOCEANIA Uno/.test(html),
        'P21: davanti ai nomi niente «NOMADI»/«PANOCEANIA»; le icone delle fazioni negli angoli in alto del riquadro, accanto al titolo, non nella cella');
     T.hub.g.invertiLati();
     const inv = (T.hub.el('clash-container').innerHTML.match(/<div class="titolo-scontro"[\s\S]*?<\/h3><\/div>/) || [''])[0];
     T.hub.g.invertiLati();
-    ok(/data-lato="DX" src="img\/icona_nomadi\.png"/.test(inv) && /data-lato="SX" src="img\/icona_panoceania\.png"/.test(inv), 'con INVERTI LATI le icone si scambiano di angolo');
+    ok(/data-lato="DX" src="img\/logo_nomadi\.png"/.test(inv) && /data-lato="SX" src="img\/logo_panoceania\.png"/.test(inv), 'con INVERTI LATI le icone si scambiano di angolo');
     H.invertiLati();
     t = tabellone(T);
     ok(H.latoDi('NOMADI') === 'DX' && t.indexOf('ATTIVO Uno') < t.indexOf('REATTIVO Spara'), 'INVERTI LATI: lo scontro a schermo si ridisegna con PanOceania a sinistra');
@@ -1465,7 +1478,9 @@ sezione('24. Le foto dei deployable: koala in sequenza, mine in ARO come i koala
             const i = N.roster.findIndex(u => u.id === id);
             N.apriDeployStati(i);
             const h = T.nomadi.el('deploy-states-content').innerHTML;
-            const m = h.match(/window\.piazzaConMinelayer\((\d+), (\d+)\)"[^>]*>\s*Crazy/i);
+            // RISCRITTO il 4 novembre: prima del nome c e la foto del prossimo
+            // koala (M.fotoProssimoDeployable). Prima: il nome subito dopo il tag.
+            const m = h.match(/window\.piazzaConMinelayer\((\d+), (\d+)\)"[^>]*>(?:<img[^>]*>)?\s*Crazy/i);
             if (!m) return false;
             N.piazzaConMinelayer(+m[1], +m[2]); return true;
         };
@@ -1601,10 +1616,14 @@ sezione('25b. Import: la lista di collaudo di Paolo, il testo vero di Infinity A
     // [2, "Zondnaut-A"] e [2, "Zondmate (REM)"] dopo la Zondnautica-A. Ora
     // pilota e moto nascono in partita (SCENDI DALLA MOTO): la Zondnautica
     // e` UNA unita`, e le righe attese sono 44.
-    const ATTESI = [[1, "Alguacil (Combi Rifle)"], [1, "Alguacil (HMG)"], [1, "Alguacil (Missile Launcher)"], [1, "Alguacil (Forward Observer)"], [1, "Alguacil (Paramedic)"], [1, "Daktari (Doctor)"], [1, "Clockmaker (Engineer)"], [1, "Interventor (Hacker Plus, FastPanda)"], [1, "Zero (Hacker, Killer Hacking Device)"], [1, "Intruder (MULTI Sniper Rifle)"], [2, "Grenzer (Marksmanship)"], [2, "Grenzer (Forward Observer, Sensor, NCO)"], [2, "Morlock (Assault Pistol)"], [2, "Chimera"], [2, "3X Pupnik"], [2, "Reaktion Zond (HMG)"], [2, "Mobile Brigada (HMG)"], [2, "Puppetbot (Red Fury)"], [2, "Zondnautica-A"], [2, "Moran (Surprise Attack [-3], Camouflage [1 Use], Combi Rifle)"], [2, "Sin-Eater (MULTI Sniper Rifle)"], [2, "Mary Problems (Hacker)"], [3, "Puppet Masters (Minelayer)"], [3, "Intruder (HMG)"], [3, "Intruder (Hacker, Killer Hacking Device)"], [3, "Wolfgang Amadeus"], [3, "Warcor (Sixth Sense)"], [3, "Vertigo Zond (Missile Launcher)"], [3, "Triphammer (Heavy Shotgun, Heavy Rocket Launcher, Panzerfaust)"], [3, "Turtlemek (Triphammer)"], [3, "Krakot Renegade (Boarding Shotgun)"], [3, "Coyote (Forward Deployment (+4')) - Boarding Shotgun, Bambabot-1"], [3, "Bambabot-1 (Chain Rifle (ps=6))"], [3, "Coyote (Forward Deployment (+4')) - Boarding Shotgun, Bambabot-1"], [3, "Bambabot-1 (Chain Rifle (ps=6))"], [4, "Kulak (Hacker, Killer Hacking Device)"], [4, "Marspider (Grenades)"], [5, "Bambadroid (Forward Observer)"], [5, "Go-Pod (MULTI Rifle)"], [5, "Go-Bot (REM)"], [5, "Racerbot Mk-I (Adhesive Launcher Rifle)"], [5, "Racerbot Mk-II (Heavy Riotstopper)"], [5, "Morlock (Kobra Pistol, DA CC)"], [5, "Clockmaker (Armed Turret)"]];
+    const ATTESI = [[1, "Alguacil (Combi Rifle)"], [1, "Alguacil (HMG)"], [1, "Alguacil (Missile Launcher)"], [1, "Alguacil (Forward Observer)"], [1, "Alguacil (Paramedic)"], [1, "Daktari (Doctor)"], [1, "Clockmaker (Engineer)"], [1, "Interventor (Hacker Plus, FastPanda)"], [1, "Zero (Hacker, Killer Hacking Device)"], [1, "Intruder (MULTI Sniper Rifle)"], [2, "Grenzer (Marksmanship)"], [2, "Grenzer (Forward Observer, Sensor, NCO)"], [2, "Morlock (Assault Pistol)"], [2, "Chimera"], [2, "Pupnik (Chimera)"], [2, "Pupnik (Chimera)"], [2, "Pupnik (Chimera)"], [2, "Reaktion Zond (HMG)"], [2, "Mobile Brigada (HMG)"], [2, "Puppetbot (Red Fury)"], [2, "Zondnautica-A"], [2, "Moran (Surprise Attack [-3], Camouflage [1 Use], Combi Rifle)"], [2, "Sin-Eater (MULTI Sniper Rifle)"], [2, "Mary Problems (Hacker)"], [3, "Puppet Masters (Minelayer)"], [3, "Intruder (HMG)"], [3, "Intruder (Hacker, Killer Hacking Device)"], [3, "Wolfgang Amadeus"], [3, "Warcor (Sixth Sense)"], [3, "Vertigo Zond (Missile Launcher)"], [3, "Triphammer (Heavy Shotgun, Heavy Rocket Launcher, Panzerfaust)"], [3, "Turtlemek (Triphammer)"], [3, "Krakot Renegade (Boarding Shotgun)"], [3, "Coyote (Forward Deployment (+4')) - Boarding Shotgun, Bambabot-1"], [3, "Bambabot-1 (Chain Rifle (ps=6))"], [3, "Coyote (Forward Deployment (+4')) - Boarding Shotgun, Bambabot-1"], [3, "Bambabot-1 (Chain Rifle (ps=6))"], [4, "Kulak (Hacker, Killer Hacking Device)"], [4, "Marspider (Grenades)"], [5, "Bambadroid (Forward Observer)"], [5, "Go-Pod (MULTI Rifle)"], [5, "Go-Bot (REM)"], [5, "Racerbot Mk-I (Adhesive Launcher Rifle)"], [5, "Racerbot Mk-II (Heavy Riotstopper)"], [5, "Morlock (Kobra Pistol, DA CC)"], [5, "Clockmaker (Armed Turret)"]];
     const T = creaTavolo(DIR); const N = T.nomadi.g;
     N.roster = [];
     T.nomadi.el('army-import-text').value = TESTO;
+    // RISCRITTO il 4 novembre (MOTORE, DATABASE 11-04.1): «3X PUPNIK» sotto
+    // la Chimera non e` piu` un profilo a se` («3X Pupnik», una riga): sono le
+    // Periferiche della Chimera (periferiche: [{ id: 'pupnik', q: 3 }]), tre
+    // istanze di «Pupnik (Chimera)». Prima: [2, "3X Pupnik"] e 44 righe; ora 46.
     N.importaDaTesto();
     const letti = N.roster.map(u => [u.combatGroup, u.name]);
     const diversi = ATTESI.map((a, i) => J(a) === J(letti[i]) ? null : (i + 1) + ': atteso ' + J(a) + ', letto ' + J(letti[i])).filter(Boolean);
@@ -1621,6 +1640,17 @@ sezione('25b. Import: la lista di collaudo di Paolo, il testo vero di Infinity A
     // ambigua, e le tre righe sono fra le attese qui sopra.
     const amb = (N.righeAmbigueImport || []).map(a => a.riga.slice(0, 9));
     ok(amb.length === 0, 'nessuna riga ambigua: Turtlemek e Coyote si riconoscono dalle righe rientrate vicine (' + J(amb) + ')');
+    // 4 novembre: le Periferiche legate al controllore (M.collegaPeriferiche).
+    const chim = N.roster.find(u => u.name === 'Chimera');
+    const pup = N.roster.filter(u => u.name === 'Pupnik (Chimera)');
+    ok(chim && pup.length === 3 && pup.every(u => u.controllore === chim.id), 'i tre Pupnik hanno controllore = la Chimera (' + J(pup.map(u => u.controllore)) + ')');
+    N.renderRoster();
+    const lista = String(T.nomadi.el('localRoster').innerHTML).split(/(?=<div class="roster-item)/).filter(r => /roster-item/.test(r));
+    const iC = lista.findIndex(r => /<b>Chimera<\/b>/.test(r));
+    ok(iC >= 0 && [1, 2, 3].every(k => /roster-periferica/.test(lista[iC + k] || '') && /Pupnik/.test(lista[iC + k] || '')), 'nella lista i tre Pupnik stanno subito sotto la Chimera, rientrati');
+    const idC = chim && chim.id;
+    N.removeUnit(N.roster.indexOf(N.roster.find(u => u.id === idC)));
+    ok(N.roster.filter(u => u.name === 'Pupnik (Chimera)').every(u => !u.controllore), 'tolta la Chimera, i Pupnik non restano legati a chi non c e` piu`');
 });
 
 sezione('25c. Import: i periferici sulla riga rientrata scelgono il profilo (Drummer, Turtlemek)', () => {
@@ -1963,7 +1993,7 @@ sezione('30. Tabellone: il bersaglio del Supporto e` BERSAGLIO, non REATTIVO (SU
     // RISCRITTO il 31 ottobre sera: l icona della fazione sta nell angolo del
     // riquadro (prima nella cella, accanto a «🩺 BERSAGLIO»): una sola, Nomadi.
     const tsc = (T.hub.el('clash-container').innerHTML.match(/<div class="titolo-scontro"[\s\S]*?<\/h3><\/div>/) || [''])[0];
-    ok(risoluzione(T) && /BERSAGLIO Ferito/.test(t) && /🩺 BERSAGLIO/.test(T.hub.el('clash-container').innerHTML) && (tsc.match(/icona-fazione-scontro/g) || []).length === 1 && /src="img\/icona_nomadi\.png"/.test(tsc),
+    ok(risoluzione(T) && /BERSAGLIO Ferito/.test(t) && /🩺 BERSAGLIO/.test(T.hub.el('clash-container').innerHTML) && (tsc.match(/icona-fazione-scontro/g) || []).length === 1 && /src="img\/logo_nomadi\.png"/.test(tsc),   // 4 novembre: logo_*.png (prima icona_*.png)
        'il Ferito e` "BERSAGLIO", della sua fazione (icona Nomadi) (' + (t.match(/(REATTIVO|BERSAGLIO) Ferito/) || ['?'])[0] + ')');
     ok(!/REATTIVO/.test(t), 'e nessuno e` "REATTIVO" in un Supporto senza ARO');
     // CONTROPROVA: in uno scontro vero il reattivo resta REATTIVO.
@@ -2236,7 +2266,11 @@ sezione('34f. Holoecho e Decoy: repliche, etichette, togli, nota in ARO', () => 
         T.schiera([truppa(profilo(T, /^Alguacil \(Combi/), { id: 'n1', alias: 'Spara' })], P.roster, 'PANOCEANIA');
         P.currentGroup = 1; P.isCoordinated = false; P.selectedCoordinatedUnits = []; P.aggiornaGraficaRoster();
         const righe = String(T.pano.el('unit-buttons-container').innerHTML);
-        ok((righe.match(/🪞 REPLICA \d/g) || []).length === 2 && /★ VERA \d/.test(righe), 'nella propria app: «★ VERA n» e due «🪞 REPLICA n»');
+        // RISCRITTO il 4 novembre (MOTORE, M.vistaHoloecho): l Holoecho come al
+        // calcolatore. Prima: «★ VERA n» e due «🪞 REPLICA n»; ora tre righe
+        // «HOLOECHO n» e, sulla vera, «QUESTA È LA VERA».
+        ok((righe.match(/<div class="rup-nome">HOLOECHO \d<\/div>/g) || []).length === 3 && (righe.match(/class="etichetta-replica etichetta-vera"[^>]*>QUESTA È LA VERA</g) || []).length === 1 && !/★ VERA|🪞 REPLICA/.test(righe),
+           'nella propria app: tre righe «HOLOECHO n» e sulla vera «QUESTA È LA VERA»');
         // RISCRITTO il 1 novembre (Paolo): il tasto TOGLI LA REPLICA non sta piu`
         // sotto la riga (prima: 2 tasti togli-replica nell elenco); va nella
         // pagina degli stati (logica_stati, MOTORE). Qui la nota nella ⓘ dice dove.
@@ -3169,7 +3203,11 @@ sezione('49. Collaudo di Paolo, 29 ottobre (MOTORE 29.5): mina una volta in ARO,
         P.roster = [vera]; P.apriDeployStati(0); P.creaRepliche(0, 'HOLOECHO');
         P.deployGroup = 1; P.renderDeployUnits();
         const dep = String(T.pano.el('deploy-units-container').innerHTML);
-        ok((dep.match(/\[ HOLOECHO \d+ — REPLICA \]/g) || []).length === 2 && !/COPIA OLOGRAFICA/.test(dep), 'nello schieramento le copie dicono «HOLOECHO n — REPLICA», non piu` «COPIA OLOGRAFICA»');
+        // RISCRITTO il 4 novembre (MOTORE, M.vistaHoloecho): prima «[ HOLOECHO n —
+        // REPLICA ]» sulle copie; ora le righe si chiamano HOLOECHO n e sulla vera
+        // «[ QUESTA È LA VERA ]».
+        ok((dep.match(/<div class="rup-nome">HOLOECHO \d<\/div>/g) || []).length === 3 && (dep.match(/\[ QUESTA È LA VERA \]/g) || []).length === 1 && !/— REPLICA \]|— VERA \]|COPIA OLOGRAFICA/.test(dep),
+           'nello schieramento: tre righe «HOLOECHO n», sulla vera «[ QUESTA È LA VERA ]»');
         const righe = dep.split(/(?=<button type="button" class="huge-btn riga-unita)/).filter(r => /riga-unita/.test(r));
         const iR = P.roster.findIndex(u => u.replica);
         ok(righe.length === 3 && !new RegExp('cambiaIconaDeploy\\(event, ' + iR + '\\)').test(dep) && /cambiaIconaDeploy\(event, 0\)/.test(dep), 'la foto si tocca solo sulla vera: le copie non aprono la galleria');
@@ -3331,11 +3369,12 @@ sezione('51. Collaudo grafico di Paolo, 30 ottobre (P1-P25): schieramento, riqua
     const tk = truppa(profilo(T, /^Taskmaster \(Red Fury/), { id: 'n5', alias: 'Task' });
     N.roster = [tk]; N.apriDeployStati(0);
     let pag = String(T.nomadi.el('deploy-states-content').innerHTML);
-    ok(/piazzaConMinelayer\(0, 0\)" data-nota="minelayer">CrazyKoalas[\s\S]*?USI RESIDUI: 2/.test(pag), 'P6: sotto il nome dell equipaggiamento «USI RESIDUI: 2»');
+    // RISCRITTO il 4 novembre: fra il tag e il nome c e la foto del prossimo koala.
+    ok(/piazzaConMinelayer\(0, 0\)" data-nota="minelayer">(?:<img[^>]*>)?CrazyKoalas[\s\S]*?USI RESIDUI: 2/.test(pag), 'P6: sotto il nome dell equipaggiamento «USI RESIDUI: 2»');
     tk.usiSpesi = { 'CRAZYKOALAS': 2 }; N.apriDeployStati(0);
     pag = String(T.nomadi.el('deploy-states-content').innerHTML);
     const fin = N.vociInfo('step-deploy-states').find(v => v.tasto === 'finita-0') || {};
-    ok(/<button class="huge-btn bottone-minelayer arma-finita" disabled data-nota="finita-0">CrazyKoalas[\s\S]*?USI RESIDUI: 0/.test(pag) && /usi esauriti/i.test(fin.testo || '') && !/CrazyKoalas/.test(fin.testo || ''),
+    ok(/<button class="huge-btn bottone-minelayer arma-finita" disabled data-nota="finita-0">(?:<img[^>]*>)?CrazyKoalas[\s\S]*?USI RESIDUI: 0/.test(pag) && /usi esauriti/i.test(fin.testo || '') && !/CrazyKoalas/.test(fin.testo || ''),
        'P7: l arma finita e` un tasto spento con «USI RESIDUI: 0»; la spiegazione nella ⓘ, senza ripetere il nome (' + (fin.testo || '').slice(0, 40) + ')');
     const hc = truppa(profilo(T, /^Hellcat \(Boarding/), { id: 'n6', alias: 'Cat' });
     N.roster = [hc]; N.apriDeployStati(0);
@@ -3376,7 +3415,11 @@ sezione('51. Collaudo grafico di Paolo, 30 ottobre (P1-P25): schieramento, riqua
     H.chiudiRisoluzione();
     ok(/<div class="faction-panel" id="pannello-tavolo"/.test(hub) && tavNascosto === 'none' && T.hub.el('pannello-tavolo').style.display === '', 'P21: il riquadro TAVOLO si nasconde durante la risoluzione e torna dopo');
     // --- P22: il D20 del colore della fazione ---
-    ok(/fill="#cc1111"/.test(H.d20Svg('NOMADI')) && /fill="#0099dd"/.test(H.d20Svg('PANOCEANIA')) && />20<\/text>/.test(H.d20Svg('NOMADI')) && /fill="#fff">20/.test(H.d20Svg('NOMADI')), 'P22: il D20 disegnato: rosso per i Nomadi, azzurro per PanOceania, numeri bianchi');
+    // RISCRITTO il 4 novembre (Paolo, via MOTORE): il dado e` img/d20_<fazione>.png;
+    // il disegno (prima restituito da d20Svg) e` il ripiego, window.d20Disegno.
+    ok(/^<img class="d20" data-fazione="NOMADI" src="img\/d20_nomadi\.png" alt="D20" height="30"/.test(H.d20Svg('NOMADI')) && /src="img\/d20_panoceania\.png"/.test(H.d20Svg('PANOCEANIA')) &&
+       /onerror="this\.outerHTML='&lt;svg class=&quot;d20&quot; data-fazione=&quot;NOMADI&quot;/.test(H.d20Svg('NOMADI')) &&
+       /fill="#cc1111"/.test(H.d20Disegno('NOMADI')) && /fill="#0099dd"/.test(H.d20Disegno('PANOCEANIA')) && />20<\/text>/.test(H.d20Disegno('NOMADI')) && /fill="#fff">20/.test(H.d20Disegno('NOMADI')), 'P22: il D20 disegnato: rosso per i Nomadi, azzurro per PanOceania, numeri bianchi');
     // --- P23: TIRO SALVEZZA ovunque ---
     ok(!/SE COLPITO/.test(senzaCommenti(ctr)), 'P23: «SE COLPITO DA…» non c e piu` (ora «TIRO SALVEZZA»)');
     // --- P24: il Tiro Salvezza dai dati ---
@@ -3386,7 +3429,8 @@ sezione('51. Collaudo grafico di Paolo, 30 ottobre (P1-P25): schieramento, riqua
         esito: ['Fallimento = Isolato'], marker: ['Il Marker va rivelato.'], note: ['Nota'], notaCritico: 'Un Critico aggiunge 1 Tiro Salvezza extra.' };
     const tsH = H.salvezzaHub({ fazione: 'PANOCEANIA', tiroSalvezza: ts });
     const tsT = testo(tsH);
-    ok(/^Munizioni: DA Successo al \(ARM\): 9 \(o meno\) Dadi da lanciare: 1 20 Successo al \(BTS\): 6 \(o meno\) Dadi da lanciare: 1 20 Fallimento = Isolato Il Marker va rivelato\.$/.test(tsT) && /class="ts-marker"/.test(tsH) && !/Nota/.test(tsT),
+    // RISCRITTO il 4 novembre: il dado ora e` un'immagine (prima l SVG col «20» scritto, che il testo leggeva).
+    ok(/^Munizioni: DA Successo al \(ARM\): 9 \(o meno\) Dadi da lanciare: 1 Successo al \(BTS\): 6 \(o meno\) Dadi da lanciare: 1 Fallimento = Isolato Il Marker va rivelato\.$/.test(tsT) && /class="ts-marker"/.test(tsH) && !/Nota/.test(tsT),
        'P24: Tiro Salvezza combinato: Munizioni, poi Successo e Dadi di ARM e di BTS una sotto l altra, l esito in rosso e il Marker nel riquadro arancio; le note no (' + tsT + ')');
     ok(testo(H.salvezzaHub({ tiroSalvezza: { nessuno: true, testo: 'Nessun danno' } })) === 'Nessun danno' && H.salvezzaHub({ salvezza: '<b>vecchia</b>' }) === '<b>vecchia</b>', 'P24: senza danno la sua frase; senza i dati nuovi l HTML di prima');
     // --- P25: i dettagli sotto ogni numero ---
@@ -3507,23 +3551,34 @@ sezione('52. Collaudo grafico, 31 ottobre sera: icone a token, segnalini a sinis
         P.roster = [vera]; P.apriDeployStati(0); P.creaRepliche(0, 'HOLOECHO');
         const fig = P.roster.filter(u => u.figuraHoloecho === true);
         ok(fig.length === 1 && P.roster.every(u => typeof u.figuraHoloecho === 'boolean'), '8: premessa (motore): uno dei tre e` la figura');
-        // RISCRITTI il 1 novembre (Paolo, versione B): nella propria app la VERA
-        // ha sempre la foto e la sua riga dice il numero della miniatura
-        // («sul tavolo la figura è il N»); le copie i loro segnalini. Prima:
-        // «FIGURA SUL TAVOLO» sull'elemento figura, e la vera non figura col segnalino.
+        // RISCRITTI il 4 novembre (Paolo, via MOTORE: M.vistaHoloecho e
+        // M.inFilaRepliche). Nella propria app l Holoecho come al calcolatore:
+        // la FIGURA ha la foto della miniatura vera, le altre il segnalino
+        // holoecho_n, tutte si chiamano HOLOECHO n, sulla vera «QUESTA È LA
+        // VERA»; le tre righe in fila, prima la figura poi per numero. Prima
+        // (versione B del 1 novembre): la vera sempre con la foto e «sul tavolo
+        // la figura è il N».
         P.roster.forEach((u, i) => { u.figuraHoloecho = (i === 1); });   // la figura e` una copia
         const nFig = P.roster[1].numeroReplica, vNum = P.roster[0].numeroReplica;
+        const altri = P.roster.filter((u, i) => i !== 1).map(u => u.numeroReplica).sort();
+        P.roster.push(truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p9', alias: 'Altro' }));
+        P.roster.unshift(P.roster.pop());   // un altra truppa prima del gruppo
         P.deployGroup = 1; P.renderDeployUnits();
         const depH = String(T.pano.el('deploy-units-container').innerHTML);
-        ok((depH.match(/class='etichetta-figura'/g) || []).length === 1 && depH.indexOf('🧍 sul tavolo la figura è il ' + nFig) >= 0 && !/FIGURA SUL TAVOLO/.test(depH), '8: allo schieramento, sulla vera: «sul tavolo la figura è il ' + nFig + '»; nient altro');
+        const nomiD = (depH.match(/<div class="rup-nome">([^<]*)<\/div>/g) || []).map(x => x.replace(/<[^>]*>/g, ''));
+        ok(J(nomiD) === J(['Fusilier', 'HOLOECHO ' + nFig].concat(altri.map(n => 'HOLOECHO ' + n))) && (depH.match(/QUESTA È LA VERA/g) || []).length === 1 && !/sul tavolo la figura|FIGURA SUL TAVOLO/.test(depH),
+           '8: allo schieramento le tre righe in fila, prima la figura (' + nFig + ') poi per numero; sulla vera «QUESTA È LA VERA» (' + J(nomiD) + ')');
         P.currentGroup = 1; P.isCoordinated = false; P.selectedCoordinatedUnits = []; P.aggiornaGraficaRoster();
         const lista = String(T.pano.el('unit-buttons-container').innerHTML);
-        const rV = lista.split(/(?=<button)/).filter(r => /riga-unita/.test(r)).find(r => /★ VERA/.test(r)) || '';
-        ok((lista.match(/class="etichetta-figura"/g) || []).length === 1 && /class="etichetta-figura"[^>]*>🧍 sul tavolo la figura è il \d</.test(rV) && /★ VERA \d/.test(lista) && (lista.match(/🪞 REPLICA \d/g) || []).length === 2,
-           '8: nell elenco: «★ VERA ' + vNum + '» con «sul tavolo la figura è il ' + nFig + '», due «REPLICA n»');
-        ok(/<img class="rup-foto" src="img\/panoceania\/fusilier\.png"/.test(rV) && !/rup-segnalino-schieramento/.test(rV), '8: la vera ha sempre la sua foto, anche se sul tavolo e` un segnalino');
+        const righeL = lista.split(/(?=<button)/).filter(r => /riga-unita/.test(r));
+        const rFig = righeL.find(r => r.indexOf('>HOLOECHO ' + nFig + '<') >= 0) || '';
+        const rV = righeL.find(r => /QUESTA È LA VERA/.test(r)) || '';
+        ok(/<img class="rup-foto" src="img\/panoceania\/fusilier\.png"/.test(rFig) && new RegExp('src="img/panoceania/holoecho_' + vNum + '\\.png"').test(rV) && rV.indexOf('>HOLOECHO ' + vNum + '<') >= 0,
+           '8: la figura (una copia) ha la foto della miniatura vera; la vera, che sul tavolo e` un segnalino, ha il suo segnalino holoecho_' + vNum);
+        P.roster = P.roster.filter(u => u.id !== 'p9');
         P.roster.forEach((u, i) => { u.figuraHoloecho = (i === 0); });   // la figura e` la vera
-        ok(P.etichettaFiguraHoloecho(P.roster[0]) === '🧍 sul tavolo la figura è lei (' + vNum + ')' && P.segnalinoSchieramento(P.roster[0]) === null, '8: se la figura e` la vera, la riga lo dice (e la foto resta)');
+        const vS = P.vistaHoloechoDi(P.roster[0]);
+        ok(vS.figura && vS.vera && vS.imgVariant === 'fusilier.png' && vS.etichettaVera === 'QUESTA È LA VERA', '8: se la figura e` la vera, ha la sua foto e l etichetta');
         ok(P.roster.filter(u => u.replica).every(r => /^holoecho_\d\.png$/.test(r.imgVariant)), '8: le copie restano coi loro segnalini');
         // 1 novembre (Paolo): nell app dell AVVERSARIO niente «TOGLI LA REPLICA»:
         // le copie le toglie il proprietario. Non arrivano ne` replica ne` il gruppo.
@@ -3537,13 +3592,15 @@ sezione('52. Collaudo grafico, 31 ottobre sera: icone a token, segnalini a sinis
         // degli stati della replica, non della vera, e passa da window.togliReplicaDalTavolo.
         const T2 = creaTavolo(DIR); const P2 = T2.pano.g;
         { const v2 = truppa(T2.profilo(T2.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Eco' }); v2.equip = String(v2.equip || '') + ', Holoprojector'; P2.roster = [v2]; P2.apriDeployStati(0); P2.creaRepliche(0, 'HOLOECHO'); }
+        // RISCRITTO il 4 novembre (logica_stati 11-03.1: niente icona davanti
+        // alle voci degli stati). Prima «🪞 TOGLI LA REPLICA», ora «TOGLI LA REPLICA».
         if (typeof P2.togliReplicaDaStati === 'function') {
             const iV = P2.roster.findIndex(u => !u.replica), iR = P2.roster.findIndex(u => u.replica);
             P2.apriPaginaStati(iV); const stV = String(T2.pano.el('states-content').innerHTML); P2.annullaStati && P2.annullaStati();
             P2.apriPaginaStati(iR); const stR = String(T2.pano.el('states-content').innerHTML);
             const quante = P2.roster.length;
             P2.confirm = () => true; P2.togliReplicaDaStati(); T2.giro();
-            ok(!/togli-replica/.test(stV) && /class="huge-btn togli-replica"[^>]*onclick="window\.togliReplicaDaStati\(\)">\s*🪞 TOGLI LA REPLICA/.test(stR) && P2.roster.length === quante - 1 && P2.roster.filter(u => u.replica).length === 1,
+            ok(!/togli-replica/.test(stV) && /class="huge-btn togli-replica"[^>]*onclick="window\.togliReplicaDaStati\(\)">\s*TOGLI LA REPLICA/.test(stR) && P2.roster.length === quante - 1 && P2.roster.filter(u => u.replica).length === 1,
                'negli stati (logica_stati 11-01.1): il tasto sulla replica si`, sulla vera no; premuto, passa da window.togliReplicaDalTavolo e la replica esce (' + quante + ' -> ' + P2.roster.length + ')');
         } else ok(false, 'logica_stati senza window.togliReplicaDaStati (serve la 2026-11-01.1): la replica non si toglie dagli stati');
         const pub = P.MotoreN5.rosterPubblico(P.roster);
@@ -3617,6 +3674,63 @@ sezione('54. Tiro di schieramento e piazzamento solo col Minelayer (1 novembre, 
     ok(!/window\.schieraPiazzabile\s*=/.test(ros) && !/schieraPiazzabile\(/.test(ros) && /M\.piazzabiliInSchieramento\(u\)/.test(ros), 'tolto schieraPiazzabile (E63): si passa da M.piazzabiliInSchieramento e dal Minelayer');
     ok(['apriDeployAzioni', 'mostraMenuDeployables', 'schieraDeployableSelezionato'].every(f => typeof N[f] === 'undefined') && !/DB_DEPLOYABLES\.find\(d => d\.id === depId\)/.test(ros),
        'tolto il codice morto (apriDeployAzioni, mostraMenuDeployables, schieraDeployableSelezionato: segnalini costruiti a mano, senza il motore)');
+});
+
+sezione('55. MOTORE 4 novembre: Holoecho come al calcolatore, rientro in Holo, Periferiche, pilota a bordo, Hub (Null, loghi, dadi), koala', () => {
+    const T = creaTavolo(DIR); const N = T.nomadi.g, P = T.pano.g, H = T.hub.g;
+    const app = paginaApp(), aro = fs.readFileSync(DIR + 'logica_aro.js', 'utf8');
+    // --- 2. le voci RIENTRARE IN HOLOECHO / HOLOMASK ---
+    const eco = truppa(T.profilo(T.pano, /^Fusilier \(Combi/), { id: 'p1', alias: 'Eco' }); eco.equip = String(eco.equip || '') + ', Holoprojector';
+    ok(P.dbAzioniN5.lunghe.some(a => a.id === 'RIENTRARE IN HOLOECHO' && a.type === 'LONG_SKILL') && P.dbAzioniN5.lunghe.some(a => a.id === 'RIENTRARE IN HOLOMASK'), '2: le due voci nuove fra le Abilità Lunghe');
+    const puo = (u, t) => P.MotoreN5.puoRientrareInHolo(u, t, { inAro: false }).puo === true;
+    ok(P.puoFareAzione(eco, 'RIENTRARE IN HOLOECHO') === puo(eco, 'HOLOECHO') && puo(eco, 'HOLOECHO') === true && P.puoFareAzione(eco, 'RIENTRARE IN HOLOMASK') === false,
+       '2: RIENTRARE IN HOLOECHO solo se il motore dice puo` (Holoprojector, fuori dall Holoecho); niente HOLOMASK senza HoloMask');
+    const giaEco = Object.assign({}, eco, { states: { holoecho: true } });
+    ok(P.puoFareAzione(giaEco, 'RIENTRARE IN HOLOECHO') === false, '2: CONTROPROVA: gia` in Holoecho, la voce non c e`');
+    const veraMot = P.MotoreN5.puoRientrareInHolo; P.MotoreN5.puoRientrareInHolo = undefined;
+    ok(P.puoFareAzione(eco, 'RIENTRARE IN HOLOECHO') === false, '2: senza M.puoRientrareInHolo la voce non compare (nessun ripiego)');
+    P.MotoreN5.puoRientrareInHolo = veraMot;
+    // --- 3. Periferiche sotto il controllore, negli elenchi ---
+    const pr = (id) => N.DB_NOMADI.find(u => u.id === id);
+    N.roster = [truppa(pr('pupnik'), { id: 'a1', alias: 'Pup A', combatGroup: 1 }), truppa(profilo(T, /^Alguacil \(Combi/), { id: 'a2', alias: 'Alg', combatGroup: 1 }),
+                truppa(pr('chimera'), { id: 'a3', alias: 'Chim', combatGroup: 1 }), truppa(pr('pupnik'), { id: 'a4', alias: 'Pup B', combatGroup: 1 }), truppa(pr('pupnik'), { id: 'a5', alias: 'Pup C', combatGroup: 1 })];
+    const coll = N.collegaPerifericheLista();
+    ok(coll && N.roster.filter(u => u.controllore === 'a3').length === 3 && coll.mancanti.length === 0, '3: M.collegaPeriferiche lega i tre Pupnik alla Chimera');
+    N.currentGroup = 1; N.isCoordinated = false; N.selectedCoordinatedUnits = []; N.aggiornaGraficaRoster();
+    const alias = (h) => (String(h).match(/<div class="rup-alias">"([^"]*)"/g) || []).map(x => x.replace(/<[^>]*>|"/g, ''));
+    const ordine = alias(T.nomadi.el('unit-buttons-container').innerHTML);
+    ok(J(ordine.slice(0, 5)) === J(['Alg', 'Chim', 'Pup A', 'Pup B', 'Pup C']), '3: nell elenco del Gruppo i Pupnik subito sotto la Chimera (' + J(ordine) + ')');
+    ok(N.vociInfo('step-unit').some(v => v.tasto === 'truppa-a1' && /Periferica di Chim/.test(v.testo)), '3: nella ⓘ «Periferica di Chim»');
+    ok(/window\.ordinaElenco\(window\.roster \|\| \[\]\)/.test(aro), '3: anche l elenco ARO passa da window.ordinaElenco');
+    // --- 4. il pilota a bordo non sta fra le unita` attive ---
+    const gator = truppa(N.DB_NOMADI.find(u => /^Gator/.test(u.nome)), { id: 'g1', alias: 'Gator', combatGroup: 1 });
+    const pilota = truppa(profilo(T, /^Alguacil \(Combi/), { id: 'g2', alias: 'Pilota', combatGroup: 1, deployState: 'A_BORDO', aBordoDi: 'g1' });
+    N.roster = [gator, pilota]; N.aggiornaGraficaRoster();
+    const lista4 = String(T.nomadi.el('unit-buttons-container').innerHTML);
+    ok((lista4.match(/class="huge-btn riga-unita riga-unita-foto/g) || []).length === 1 && /<div class="rup-nome">Gator<\/div>/.test(lista4) && !/"Pilota"/.test(lista4) && N.vociInfo('step-unit').some(v => v.tasto === 'truppa-g1' && /Pilota a bordo: Pilota/.test(v.testo)),
+       '4: il pilota a bordo non compare fra le unita` attive; la ⓘ del TAG dice «Pilota a bordo: Pilota»');
+    // --- 5. Hub: stato Null senza bordo rosso e senza NULL ---
+    const tag = H.etichettaStato('👾', 'POSSEDUTO', '#300', '#fff', 'Posseduto', true, 'possessed');
+    ok(!/NULL<\/b>|#ff2020/.test(tag) && /title="Posseduto — Stato Null/.test(tag), '5: lo stato Null: solo l icona, niente bordo rosso ne` «NULL»; «Stato Null…» resta nel suggerimento');
+    // --- 6. i loghi delle fazioni, col ripiego ---
+    const tit = H.titoloConIconeHub('<h3>X</h3>', ['NOMADI', 'PANOCEANIA']);
+    ok(/src="img\/logo_nomadi\.png" data-rip="img\/icona_nomadi\.png"/.test(tit) && /src="img\/logo_panoceania\.png" data-rip="img\/icona_panoceania\.png"/.test(tit), '6: all Hub i loghi senza sfondo, e se mancano le icone di prima');
+    // --- 7. il dado in PNG col disegno di ripiego (vedi anche 51-P22) ---
+    ok(/^<img class="d20" data-fazione="PANOCEANIA" src="img\/d20_panoceania\.png" alt="D20" height="22"/.test(H.d20Svg('PANOCEANIA', 22)), '7: il dado e` img/d20_<fazione>.png, stessa classe, data-fazione e altezza');
+    // --- 8. la foto del prossimo CrazyKoala sul tasto del Minelayer ---
+    N.roster = [truppa(profilo(T, /^Taskmaster \(Red Fury/), { id: 't1', alias: 'Task' })]; N.apriDeployStati(0);
+    const tk = String(T.nomadi.el('deploy-states-content').innerHTML);
+    ok(/<button class="huge-btn bottone-minelayer" onclick="window\.piazzaConMinelayer\(0, 0\)" data-nota="minelayer"><img class="foto-prossimo-deployable" src="img\/nomadi\/crazykoala_1\.png" data-rip="img\/armi\/[^"]+\.png"/.test(tk),
+       '8: il tasto del CrazyKoala mostra la foto che prendera` (crazykoala_1), col ripiego sull immagine dell arma');
+    // --- 1. le righe del gruppo Holoecho in fila anche nella ⓘ: la vista ---
+    ok(!/id="step-deploy-actions"|deploy-action-list-container/.test(app), 'tolta la pagina morta «AZIONI DISPIEGAMENTO» (step-deploy-actions)');
+    // --- 9. (Paolo, 4 novembre) soprannome uguale al nome completo: niente virgolette ---
+    const gt = N.DB_NOMADI.find(u => /^Gator/.test(u.nome));
+    const rG = String(N.rigaUnitaConFoto(truppa(gt, { id: 'z1', alias: String(gt.nome).toUpperCase() }), {}));
+    const rG2 = String(N.rigaUnitaConFoto(truppa(gt, { id: 'z2', alias: 'Coccodrillo' }), {}));
+    ok(!/rup-alias">"/.test(rG) && new RegExp('<div class="rup-alias rup-profilo">' + N.opzioneDelProfilo(gt).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '</div>').test(rG) && /<div class="rup-alias">"Coccodrillo"<\/div>/.test(rG2),
+       '9: soprannome uguale al nome completo («' + String(gt.nome).toUpperCase() + '»): niente virgolette, l opzione del profilo; CONTROPROVA: un soprannome vero resta');
+    ok(/window\.vistaHoloechoDi = /.test(app) && !/window\.numeroFiguraHoloecho = |window\.etichettaFiguraHoloecho = /.test(app), '1: tolti numeroFiguraHoloecho ed etichettaFiguraHoloecho; la vista la da` M.vistaHoloecho');
 });
 
 console.log(`\n──────────────\n${passati} passati, ${falliti} falliti\n`);

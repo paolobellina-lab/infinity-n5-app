@@ -1,4 +1,4 @@
-// @versione 2026-11-01.1 | ordine_supporto.js | proprieta`: chat MOTORE
+// @versione 2026-11-03.1 | ordine_supporto.js | proprieta`: chat MOTORE
 // ==========================================
 // 🩺 SUPPORTO: MEDICO E INGEGNERE (N5) - ordine_supporto.js
 // ------------------------------------------
@@ -314,6 +314,9 @@
                 base: e.base, mod: e.mod, voci: e.voci,
                 fallimentoLetale: e.fallimentoLetale,
                 tiroPerColpire: e.tiroPerColpire,
+                // 3 novembre (Paolo, SUP-07): il ri-tiro col Command Token
+                // si legge al calcolatore, dopo il tiro (M.esitoSupporto).
+                note: Array.isArray(e.noteHub) ? e.noteHub.slice() : [],
                 nonOffensivo: true
             }
         });
@@ -360,7 +363,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_supporto.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_supporto.js', versione: '2026-11-03.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

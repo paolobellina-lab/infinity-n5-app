@@ -1,4 +1,4 @@
-// @versione 2026-10-31.1 | ordine_movimento.js | proprieta`: chat MOTORE
+// @versione 2026-11-03.1 | ordine_movimento.js | proprieta`: chat MOTORE
 // ==========================================
 // 🏃 MOVIMENTO E INSTRADAMENTO (N5) - ordine_movimento.js
 // ------------------------------------------
@@ -95,6 +95,16 @@
                 : a === 'SCENDI DAL TAG' ? M.scendiDalTag(u, window.roster)
                 : M.risaliSulTag(u, window.roster);
         if (!e.possibile) { alert(M.accenti('⛔ ' + e.motivo)); return false; }
+        // Sposta `chi` nel roster subito dopo `mezzo` (stesso Gruppo: l'elenco
+        // e` per Gruppo, l'ordine del roster e` quello delle righe).
+        const sottoAlMezzo = (chi, mezzo) => {
+            const r = window.roster || [];
+            const i = r.indexOf(chi);
+            if (i < 0) return;
+            r.splice(i, 1);
+            const j = r.findIndex(x => x && mezzo && x.id === mezzo.id);
+            r.splice(j >= 0 ? j + 1 : r.length, 0, chi);
+        };
         const togli = (id) => { const i = (window.roster || []).findIndex(x => x && x.id === id); if (i >= 0) window.roster.splice(i, 1); };
         let chi = u;
         if (a === 'RISALI SUL TAG') {
@@ -105,9 +115,13 @@
         } else if (e.esistente) {
             // Il pilota della lista era a bordo: scende LUI.
             Object.assign(e.esistente.prima, e.esistente.dopo);
+            // 3 novembre (Paolo): nell'elenco sta subito sotto il suo mezzo.
+            if (a === 'SCENDI DAL TAG') sottoAlMezzo(e.esistente.prima, u);
         } else {
             if (e.rimuovi) togli(e.rimuovi);
-            if (e.nuova) window.roster.push(e.nuova);
+            // 3 novembre (Paolo): chi scende va SUBITO SOTTO il mezzo (TAG o
+            // moto), non in fondo alla lista.
+            if (e.nuova) { window.roster.push(e.nuova); sottoAlMezzo(e.nuova, u); }
         }
         if (typeof window.sostituisciUnita === 'function') window.sostituisciUnita(chi, e.unitaAggiornata, actionId);
         else Object.assign(chi, e.unitaAggiornata);
@@ -389,7 +403,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_movimento.js', versione: '2026-10-31.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_movimento.js', versione: '2026-11-03.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();

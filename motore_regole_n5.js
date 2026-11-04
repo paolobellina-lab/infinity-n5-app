@@ -1,4 +1,4 @@
-// @versione 2026-11-01.2 | motore_regole_n5.js | proprieta`: chat MOTORE
+// @versione 2026-11-04.4 | motore_regole_n5.js | proprieta`: chat MOTORE
 // ==========================================
 // 🧠 MOTORE REGOLE N5 - motore_regole_n5.js
 // ------------------------------------------
@@ -31,7 +31,7 @@
     // incrociato su un file che in realta` era gia` cambiato. E` successo.
     //
     // Ora questo E` la riga in testa: stessa stringa, unica fonte.
-    M.VERSIONE = '2026-11-01.2';
+    M.VERSIONE = '2026-11-04.4';
 
     // La tappa funzionale resta, ma come etichetta descrittiva: non si usa
     // per il controllo incrociato.
@@ -74,6 +74,8 @@
         PIAZZA_DEPLOYABLE: 'PIAZZARE EQUIPAGGIAMENTO',
         TRINCERARSI:  'TRINCERARSI',
         RIENTRO_CAMO: 'RIENTRARE IN CAMO',
+        RIENTRO_HOLOECHO: 'RIENTRARE IN HOLOECHO',
+        RIENTRO_HOLOMASK: 'RIENTRARE IN HOLOMASK',
         CYBERMASK:    'CYBERMASK',
         FAIRY_DUST:   'FAIRY DUST',
         FORWARD_OBSERVER: 'FORWARD OBSERVER',
@@ -159,6 +161,8 @@
         'REQUEST SPEEDBALL': { schieramento: 'nessuno', attributo: 'PH', arma: 'nessuna', bersagli: 'nessuno', burst: 'fisso1', gittata: false, etichetta: 'Request Speedball' },
         'TRINCERARSI': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Trincerarsi' },
         'RIENTRARE IN CAMO': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Rientrare in CAMO' },
+        'RIENTRARE IN HOLOECHO': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Rientrare in Holoecho' },
+        'RIENTRARE IN HOLOMASK': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Rientrare in HoloMask' },
         'CYBERMASK': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Cybermask' },
         'FAIRY DUST': { schieramento: 'nessuno', attributo: null, arma: 'nessuna', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Fairy Dust' },
         'PIAZZARE EQUIPAGGIAMENTO': { schieramento: 'nessuno', attributo: null, arma: 'obbligatoria', bersagli: 'nessuno', burst: 'nessuno', gittata: false, tiro: false, etichetta: 'Piazza Deployable' },
@@ -491,7 +495,11 @@
             // forma e sbagliato nel merito.
             const eScenico = (spec.schieramento === 'scenografia');
             const nemici = eScenico
-                ? M.scenografia().concat(M.deployableInCampo())
+                // 3 novembre (Paolo): anche i Deployable NEMICI del roster
+                // (CrazyKoala, Armed Turret...), come M.bersagliDeactivator dal
+                // 26 ottobre. Qui mancavano: la pagina li mostrava, e alla
+                // conferma l'invio si bloccava con E05b.
+                ? M.scenografia().concat(M.deployableInCampo(), (M.rosterNemico() || []).filter(function (d) { return d && d.deployable === true; }))
                 : (spec.schieramento === 'alleato') ? M.rosterProprio() : M.rosterNemico();
 
             if (bersagli.length === 0) {
@@ -4086,7 +4094,10 @@
             'CC_ATTACK': M.AZIONI.CC_ATTACK,
             'HACKING':   M.AZIONI.HACKING,
             'DODGE':     M.AZIONI.SCHIVATA,
-            'RESET':     M.AZIONI.RESET
+            'RESET':     M.AZIONI.RESET,
+            // 4 novembre (TEST, giro 31): senza, in ARO lo stato dopo un Look
+            // Out! si calcolava su null e CAMO/Holoecho/HoloMask non cadevano.
+            'LOOK_OUT':  'LOOK OUT!'
         };
         return mappa[String(idAro || '').toUpperCase()] || null;
     };
@@ -6435,7 +6446,10 @@
         // provoca uno); se manca anche quella, l'immagine sparisce.
         const nomeProg = chiaveProg || p.nome;
         const img = o.immagine || (programma ? ('img/programmi/' + M.nomeImmagineArma(nomeProg) + '.png') : ('img/armi/' + M.nomeImmagineArma(p.nome) + '.png'));
-        const ripiego = (!o.immagine && programma) ? (icone[String(p.effetto || (H0[nomeProg] || {}).effetto || '').toUpperCase()] || '') : '';
+        // Con una foto passata da fuori (o.immagine: il CrazyKoala), se il
+        // file manca si torna all'immagine dell'arma.
+        const ripiego = o.immagine ? (o.ripiego || ('img/armi/' + M.nomeImmagineArma(p.nome) + '.png'))
+                      : (programma ? (icone[String(p.effetto || (H0[nomeProg] || {}).effetto || '').toUpperCase()] || '') : '');
         return M.formaBottone({
             classe: 'bottone-arma' + (esaurito ? ' bottone-arma-esaurito' : ''),
             contorno: esaurito ? '#666' : colore,
@@ -6569,6 +6583,7 @@
         'SOPPRESSIONE': { categoria: 'intero' }, 'BERSERK': { categoria: 'intero' }, 'ATTACCO GUIDATO': { categoria: 'intero' },
         'ATTACCO INTUITIVO': { categoria: 'intero' }, 'FUOCO SPECULATIVO': { categoria: 'intero' }, 'TRIANGULATED FIRE': { categoria: 'intero' },
         'TRINCERARSI': { categoria: 'intero' }, 'RIENTRARE IN CAMO': { categoria: 'intero' }, 'CYBERMASK': { categoria: 'intero' },
+        'RIENTRARE IN HOLOECHO': { categoria: 'intero' }, 'RIENTRARE IN HOLOMASK': { categoria: 'intero' },
         'INGRESSO IN CAMPO': { categoria: 'intero' }, 'REQUEST SPEEDBALL': { categoria: 'intero' }
     };
     // Le tinte dell'Ordine `azione`; se l'azione non e` in tabella, quelle
@@ -8573,6 +8588,17 @@
             d.note = (d.note || []).concat([testo]); altro.note = (altro.note || []).concat([testo]);
         });
 
+        // 3 novembre (Paolo, CO-13): l'Ordine Coordinato costa un Command
+        // Token, che l'app non tiene: si scala a mano. Il promemoria stava
+        // solo nella console del telefono; ora si legge sul tabellone, nel
+        // primo scontro dell'Ordine.
+        if (payload && payload.isCoordinated && scontri.length) {
+            const C = catalogo('ORDINE_COORDINATO') || {};
+            const testo = M.accenti(C.promemoriaToken || 'Ordine Coordinato: scala a mano 1 Command Token (e 1 Ordine Regolare dal Pool).');
+            const s0 = scontri[0];
+            s0.note = Array.isArray(s0.note) ? s0.note : [];
+            if (s0.note.indexOf(testo) < 0) s0.note.unshift(testo);
+        }
         return scontri;
     };
 
@@ -9123,6 +9149,66 @@
     M.ePeriferica = function (unita) {
         if (!unita) return false;
         return !!(M.haCaratteristica(unita, 'Peripheral') || /PERIPHERAL\s*\(/i.test(skillsDi(unita)));
+    };
+
+    // ==================================================================
+    // PERIFERICHE E CONTROLLORE (4 novembre, Paolo; dati di DATABASE)
+    // ------------------------------------------------------------------
+    // Il dato sta sulla riga del CONTROLLORE: periferiche: [{ id, q }]
+    // (database 2026-11-04.1, dal campo `includes` della fonte). Il verso
+    // inverso lo ricava il motore. Fra le truppe di UNA lista il legame e`
+    // il campo `controllore` (id dell'istanza) sulla Periferica: lo scrive
+    // M.collegaPeriferiche, all'importazione della lista.
+    //  - La moto della Zondnautica (smonta.periferico) nasce scendendo: non
+    //    e` una Periferica da schierare.
+    //  - Puppetbot (Control): la fonte li lega al gruppo Puppet Masters, non
+    //    a un'opzione. Regola del motore: il Puppet Masters piu` vicino
+    //    della lista, prima nello stesso Gruppo di Combattimento.
+    // ==================================================================
+    M.perifericheDi = function (u) {
+        const base = M.profiloDiDatabase(u) || u || {};
+        const moto = base.smonta && base.smonta.periferico;
+        return (Array.isArray(base.periferiche) ? base.periferiche : [])
+            .filter(p => p && p.id && p.id !== moto)
+            .map(p => ({ id: p.id, q: Math.max(1, parseInt(p.q, 10) || 1), profilo: M.profiloDaId(p.id) }));
+    };
+    function idProfilo(u) { const b = M.profiloDiDatabase(u); return b ? b.id : (u && u.id); }
+    //   -> { roster: copia con `controllore` sulle Periferiche, legami: [{ controllore, periferica }],
+    //        mancanti: [{ controllore, id, attese, trovate }] }
+    M.collegaPeriferiche = function (roster) {
+        const r = (roster || []).map(u => u ? Object.assign({}, u) : u);
+        const legami = [], mancanti = [];
+        const libera = x => x && M.ePeriferica(x) && !x.controllore && !x.replica && !x.deployable;
+        r.forEach(function (c, ic) {
+            if (!c || M.ePeriferica(c)) return;
+            M.perifericheDi(c).forEach(function (p) {
+                // Prima le righe DOPO il controllore (l'ordine della lista Army).
+                const cand = r.map((x, i) => ({ x, i })).filter(o => libera(o.x) && idProfilo(o.x) === p.id)
+                              .sort((a, b) => ((a.i > ic ? 0 : 1) - (b.i > ic ? 0 : 1)) || (a.i - b.i));
+                const prese = cand.slice(0, p.q);
+                prese.forEach(o => { o.x.controllore = c.id; legami.push({ controllore: c.id, periferica: o.x.id }); });
+                if (prese.length < p.q) mancanti.push({ controllore: c.id, id: p.id, attese: p.q, trovate: prese.length });
+            });
+        });
+        // Puppetbot: al Puppet Masters piu` vicino.
+        r.forEach(function (x, i) {
+            if (!libera(x) || !/PERIPHERAL\s*\(\s*CONTROL/i.test(skillsDi(x)) || !/PUPPETBOT/i.test(String(x.nome || x.name || ''))) return;
+            const pm = r.map((c, j) => ({ c, j })).filter(o => o.c && /^PUPPET MASTERS/i.test(String(o.c.nome || o.c.name || '')))
+                        .sort((a, b) => ((String(a.c.combatGroup) === String(x.combatGroup) ? 0 : 1) - (String(b.c.combatGroup) === String(x.combatGroup) ? 0 : 1)) || (Math.abs(a.j - i) - Math.abs(b.j - i)))[0];
+            if (pm) { x.controllore = pm.c.id; legami.push({ controllore: pm.c.id, periferica: x.id }); }
+        });
+        return { roster: r, legami: legami, mancanti: mancanti };
+    };
+    M.controlloreDi = function (periferica, roster) {
+        if (!periferica || !periferica.controllore) return null;
+        return (roster || G.roster || []).find(u => u && u.id === periferica.controllore) || null;
+    };
+    // Le Periferiche (della lista) di un controllore; `sincronizzate`: solo
+    // le Synchronized, che agiscono con il suo Ordine.
+    M.periferichePresenti = function (controllore, roster, opzioni) {
+        opzioni = opzioni || {};
+        return (roster || G.roster || []).filter(u => u && controllore && u.controllore === controllore.id && u.state !== 'DEAD' &&
+            (!opzioni.sincronizzate || /PERIPHERAL\s*\(\s*SYNCHRONI[SZ]ED/i.test(skillsDi(u))));
     };
 
     // Un gruppo puo` formare un Ordine Coordinato?
@@ -10060,7 +10146,19 @@
         note.push(`⚠️ ${R.fallimento}`);
         if (R.senzaSalvezza) note.push(R.senzaSalvezza);
         if (S.proneAnnullato) note.push(S.proneAnnullato);
-        if (R.riTiro) note.push(R.riTiro);
+        // 3 novembre (Paolo, SUP-07): il ri-tiro col Command Token si usa
+        // DOPO un tiro fallito, quindi la nota va al calcolatore (noteHub,
+        // regole.note della busta), non nella ⓘ del modulo. Ed esce solo se
+        // il bersaglio ha davvero il Cubo / Remote Presence (R.riTiroSe).
+        const noteHub = [];
+        const riTiroValido = (function () {
+            const c = R.riTiroSe;
+            if (!c || !bersaglio) return false;
+            if (c.caratteristica && /\bCUBE\b/i.test(M.caratteristicheDi(bersaglio).join(','))) return true;
+            if (c.skill && new RegExp('\\b' + c.skill + '\\b', 'i').test(skillsDi(bersaglio))) return true;
+            return false;
+        })();
+        if (R.riTiro && riTiroValido) noteHub.push(R.riTiro);
 
         const esitoSupporto = {
             valido: true,
@@ -10073,7 +10171,7 @@
             impossibile: valore < 1,
             fallimentoLetale: !!R.fallimentoLetale,
             tiroPerColpire: tiroPerColpire,
-            voci: voci, note: note, avvisi: avvisi
+            voci: voci, note: note, noteHub: noteHub, avvisi: avvisi
         };
         // IL DOTTORE, N5.2 (wiki "Doctor", chat REGOLE, 28 settembre).
         if (/DOTTORE|DOCTOR/i.test(String(strumento || ''))) {
@@ -10089,7 +10187,7 @@
                     ? 'Bersaglio Stordito con STR: lo Stordito lo cancella l\'Ingegnere, non il Dottore.'
                     : (R.annullaStordito || 'Cancella lo Stordito anche se il bersaglio non e` Incosciente.'));
             }
-            if (/RE ?ROLL/i.test(skillsDi(utente)) && R.riTiroCommandToken) esitoSupporto.note.push(R.riTiroCommandToken);
+            if (riTiroValido && /RE ?ROLL/i.test(skillsDi(utente)) && R.riTiroCommandToken) esitoSupporto.noteHub.push(R.riTiroCommandToken);
         }
 
         // Il bersaglio di un GizmoKit con Tech-Recovery ha un tiro suo.
@@ -13712,10 +13810,12 @@
         // chat REGOLE). Oggi il catalogo non la classifica Corta Base, quindi
         // non cambierebbe nulla: l'esclusione e` scritta perche` non dipenda
         // da una classificazione che potrebbe cambiare.
-        const eLookOut = /LOOK OUT/.test(az);
+        // 4 novembre (TEST, giro 31): anche gli id dell'app, 'GUARDA_FUORI'
+        // (menu) e 'LOOK_OUT' (ARO). Prima solo «LOOK OUT» alla lettera.
+        const eLookOut = /LOOK[ _]?OUT|GUARDA[ _]FUORI/.test(az);
         const eCortaBaseSenzaTiro = !!(senza && senza.tipo === 'BASIC_SHORT') && !eLookOut;
         const spec = M.SPEC ? M.SPEC[M.azioneCanonica(az) || az] : null;
-        const conTiro = !!(spec && spec.attributo) || /LOOK OUT/.test(az);
+        const conTiro = !!(spec && spec.attributo) || eLookOut;
         // Il catalogo scrive le Abilita` Lunghe 'LONG_SKILL'; qui si cercava
         // 'LONG'. Due nomi per lo stesso fatto: Arrampicarsi, Salto e
         // Trincerarsi non rivelavano mai un Camuffato (riga 13627: "dichiara
@@ -13801,6 +13901,39 @@
             }
         }
 
+        // 4 novembre (Paolo, chat REGOLE): HOLOECHO, HOLOMASK e DECOY cadono
+        // come gli stati Marker. Prima il motore non li toccava: un Holoecho
+        // che attaccava o schivava restava con le copie sul tavolo.
+        //  - Holoecho (13988-13997) e HoloMask (14065-14076): Attacco, Look
+        //    Out! o Abilita` con tiro (la Schivata e` un Faccia a Faccia,
+        //    riga 7258, ed e` confermata dall'esempio 14115-14117), Abilita`
+        //    Lunga diversa dal Movimento Cauto. Piazzare e` un Attacco (7551).
+        //  - Decoy (13775-13782): le stesse, tranne il Combat Jump e, fra le
+        //    Lunghe, Movimento Cauto, Paracadutista e Combat Jump.
+        // Le copie (Holoecho, Decoy) si tolgono alla fine dell'Ordine
+        // (13999-14001); il Modello vero dell'HoloMask prende il posto di
+        // quello imitato alla fine dell'Ordine (14078-14080). Qui si toglie
+        // lo stato; le copie le toglie window.sostituisciUnita (motore_core).
+        const holo = { holoecho: !!st.holoecho, holomask: !!st.holomask, decoy: !!st.decoy };
+        const holoDopo = Object.assign({}, holo);
+        if (!unita.replica && (holo.holoecho || holo.holomask || holo.decoy) && !(senza && senza.soloDaModello)) {
+            const eIngresso = /INGRESSO IN CAMPO|COMBAT JUMP|PARACADUT|AIRBORNE/.test(az);
+            const cadeHolo = conTiro || (eLunga && !eCauto) || ePiazza;
+            const cadeDecoy = (conTiro && !eIngresso) || (eLunga && !eCauto && !eIngresso) || ePiazza;
+            if (holo.holoecho && cadeHolo) {
+                holoDopo.holoecho = false; fonti.push('righe 13988-13997');
+                note.push('Holoecho cancellato: alla fine dell\'Ordine si tolgono tutte le copie (righe 13999-14001).');
+            }
+            if (holo.holomask && cadeHolo) {
+                holoDopo.holomask = false; fonti.push('righe 14065-14076');
+                note.push('HoloMask cancellata: alla fine dell\'Ordine il Modello vero prende il posto di quello imitato (righe 14078-14083).');
+            }
+            if (holo.decoy && cadeDecoy) {
+                holoDopo.decoy = false; fonti.push('righe 13775-13782');
+                note.push('Decoy cancellato: la truppa vera si rivela e si tolgono tutte le repliche (righe 13775-13785).');
+            }
+        }
+
         const u = Object.assign({}, unita);
         u.deployState = deployDopo;
         // Il campo singolare `state` (vecchio) va tenuto coerente: lasciarlo a
@@ -13823,11 +13956,14 @@
         }
         u.states = Object.assign({}, st, { camo: markerDopo === 'CAMO', impersonation: markerDopo === 'IMP' });
         if (deploy === 'HIDDEN') u.states.hidden = false;
+        ['holoecho', 'holomask', 'decoy'].forEach(function (k) { if (holo[k] && !holoDopo[k]) u.states[k] = false; });
+        if (holo.holomask && !holoDopo.holomask) u.holomaskImita = undefined;
 
         const mutazioni = [];
         if (deploy !== deployDopo) mutazioni.push({ campo: 'deployState', da: deploy, a: deployDopo });
         if (!!st.camo !== (markerDopo === 'CAMO')) mutazioni.push({ campo: 'states.camo', da: !!st.camo, a: markerDopo === 'CAMO' });
         if (!!st.impersonation !== (markerDopo === 'IMP')) mutazioni.push({ campo: 'states.impersonation', da: !!st.impersonation, a: markerDopo === 'IMP' });
+        ['holoecho', 'holomask', 'decoy'].forEach(function (k) { if (holo[k] !== holoDopo[k]) mutazioni.push({ campo: 'states.' + k, da: holo[k], a: holoDopo[k] }); });
 
         const modMarker = markerDopo ? (M.valoreMimetismo ? (M.valoreMimetismo(unita) || 0) : 0) : 0;
         return {
@@ -13839,6 +13975,89 @@
         };
     };
 
+
+    // ==================================================================
+    // PARTE 51-TER: RIENTRARE IN HOLOECHO / HOLOMASK (4 novembre, Paolo;
+    // righe dalla chat REGOLE)
+    // ------------------------------------------------------------------
+    // REGOLA: nel Turno Attivo si rientra spendendo un'Abilita` Lunga fuori
+    // dalla LoF nemica. Holoecho righe 13943-13944 (e 10879: l'Holoprojector
+    // "in game, allows the user to enter Holoecho State"); HoloMask righe
+    // 14038-14041 (e 10861). Il Decoy non rientra mai (13754, 8130, 8134).
+    // Stesso schema del rientro in CAMO: la domanda sulla LoF e` un
+    // Requisito, se manca e` IDLE con l'Ordine speso (righe 1240-1247).
+    // Holoecho: si piazzano 2 copie a contatto (M.creaRepliche).
+    // HoloMask: si sceglie il Modello da imitare (M.profiliImitabili).
+    // NON MODELLATO: il rientro automatico dell'Holoecho nella Fase degli
+    // Stati (13941-13942): non e` un Ordine, si fa dall'editor degli stati.
+    // ==================================================================
+    function tipoHolo(t) { return String(t || '').toUpperCase() === 'HOLOMASK' ? 'HOLOMASK' : 'HOLOECHO'; }
+    M.puoRientrareInHolo = function (unita, tipo, ctx) {
+        ctx = ctx || {};
+        const t = tipoHolo(tipo);
+        const C = (catalogo('RIENTRO_HOLO') || {})[t] || {};
+        const st = M.statoBersaglio(unita || {});
+        const s = (unita && unita.states) || {};
+        const testo = [unita && unita.skills, unita && unita.equip].filter(Boolean).join(',');
+        const blocchi = [];
+        if (ctx.inAro) blocchi.push('Solo nel Turno Attivo: non \u00e8 un\'ARO (' + (C.righe || '') + ').');
+        if (!unita || unita.replica || unita.deployable) blocchi.push('Solo la truppa vera.');
+        if (t === 'HOLOECHO' && !(M.numeroRepliche(unita, 'HOLOECHO') > 0)) blocchi.push('Serve l\'Holoprojector.');
+        if (t === 'HOLOMASK' && !/\bHOLOMASK\b/i.test(testo)) blocchi.push('Serve la HoloMask.');
+        if (t === 'HOLOECHO' && s.holoecho) blocchi.push('\u00c8 gi\u00e0 in Holoecho.');
+        if (t === 'HOLOMASK' && s.holomask) blocchi.push('\u00c8 gi\u00e0 in HoloMask.');
+        if (st.camo || st.imp) blocchi.push('\u00c8 in forma di Marker.');
+        if (st.hidden) blocchi.push('\u00c8 in Schieramento Nascosto: non \u00e8 sul tavolo.');
+        if (st.morto || st.incosciente || st.disconnesso) blocchi.push('Non puo` agire: Morto, Incosciente o Disconnesso.');
+        const az = t === 'HOLOMASK' ? M.AZIONI.RIENTRO_HOLOMASK : M.AZIONI.RIENTRO_HOLOECHO;
+        M.azionePermessaDaStati(unita, az).bloccanti.forEach(function (b) { blocchi.push(b.motivo); });
+        if (t === 'HOLOECHO' && s.fireteam) blocchi.push('In Holoecho non si sta in una Squadra (righe 13984-13985): prima esci dal Fireteam.');
+        const RC = catalogo('RIENTRO_CAMO') || {};
+        return {
+            puo: blocchi.length === 0, blocchi: blocchi, motivo: blocchi.length ? blocchi[0] : null,
+            tipo: 'LONG_SKILL',
+            domande: [{ id: 'fuoriDallaLoF', testo: RC.domanda || null, blocca: true, rispostaBloccante: false,
+                        seBloccata: 'IDLE', seNo: C.seInLoF || RC.seInLoF || null }],
+            imitabili: t === 'HOLOMASK' && unita ? M.profiliImitabili(unita) : [],
+            avvisi: []
+        };
+    };
+    //   risposte: { fuoriDallaLoF, imitato (id, solo HoloMask) }
+    //   -> come M.rientraInCamo; esito 'RIENTRA' con unitaAggiornata e,
+    //      per l'Holoecho, `repliche` da mettere nel roster subito dopo.
+    M.rientraInHolo = function (unita, tipo, risposte, ctx) {
+        const t = tipoHolo(tipo);
+        const C = (catalogo('RIENTRO_HOLO') || {})[t] || {};
+        const pre = M.puoRientrareInHolo(unita, t, ctx);
+        const base = { rientra: false, ordineSpeso: false, generaAro: false, unitaAggiornata: unita,
+                       repliche: [], mutazioni: [], note: [], avvisi: [] };
+        if (!pre.puo) return Object.assign(base, { esito: 'NON_DISPONIBILE', motivo: pre.motivo, blocchi: pre.blocchi });
+        const dom = M.valutaDomande(pre.domande, risposte || {});
+        if (dom.esito === 'NON_RISPOSTO') return Object.assign(base, { esito: 'NON_RISPOSTO', incompleto: true, mancanti: dom.mancanti, motivo: 'Manca una risposta.' });
+        const az = t === 'HOLOMASK' ? M.AZIONI.RIENTRO_HOLOMASK : M.AZIONI.RIENTRO_HOLOECHO;
+        if (dom.esito === 'BLOCCATA') {
+            const idle = M.applicaIdle(unita, null, { azione: az });
+            return Object.assign(base, { esito: 'IDLE', idle: true, ordineSpeso: true, generaAro: true, motivo: dom.motivo,
+                                         unitaAggiornata: idle.unitaAggiornata, mutazioni: idle.mutazioni,
+                                         note: ['L\'Ordine \u00e8 comunque speso.'].concat(idle.note) });
+        }
+        if (t === 'HOLOMASK') {
+            const id = risposte && risposte.imitato;
+            if (!id) return Object.assign(base, { esito: 'NON_RISPOSTO', incompleto: true, mancanti: ['imitato'], motivo: 'Scegli il Modello da imitare.' });
+            const h = M.applicaHolomask(unita, id);
+            if (!h.possibile) return Object.assign(base, { esito: 'NON_RISPOSTO', incompleto: true, mancanti: ['imitato'], motivo: h.motivo });
+            return { esito: 'RIENTRA', rientra: true, ordineSpeso: true, isLongSkill: true, generaAro: true, stato: 'holomask',
+                     unitaAggiornata: h.unitaAggiornata, repliche: [],
+                     mutazioni: [{ campo: 'states.holomask', da: false, a: true }, { campo: 'holomaskImita', da: unita.holomaskImita, a: id }],
+                     note: [M.accenti(C.fatto || 'Rientra in HoloMask.')].concat(h.note), avvisi: [], fonti: [C.righe].filter(Boolean) };
+        }
+        const r = M.creaRepliche(unita, 'HOLOECHO', { roster: (ctx && ctx.roster) || G.roster });
+        if (!r.possibile) return Object.assign(base, { esito: 'NON_DISPONIBILE', motivo: r.motivo, blocchi: [r.motivo] });
+        return { esito: 'RIENTRA', rientra: true, ordineSpeso: true, isLongSkill: true, generaAro: true, stato: 'holoecho',
+                 unitaAggiornata: r.unitaAggiornata, repliche: r.repliche,
+                 mutazioni: [{ campo: 'states.holoecho', da: false, a: true }],
+                 note: [M.accenti(C.fatto || 'Rientra in Holoecho: piazza 2 copie a contatto.')].concat(r.note), avvisi: [], fonti: [C.righe].filter(Boolean) };
+    };
 
     // ==================================================================
     // PARTE 51: CAMOUFLAGE (1 USE)
@@ -14418,6 +14637,49 @@
     M.replicheDi = function (roster, idVero) {
         return (roster || []).filter(u => u && u.replica && u.replicaDi === idVero);
     };
+    // 3 novembre (Paolo): nell'app del PROPRIETARIO l'Holoecho si vede come
+    // sul tavolo e all'Hub: UNA riga e` la FIGURA (la foto della miniatura
+    // vera), le altre due sono HOLOECHO col segnalino numerato; accanto alla
+    // truppa vera la scritta che e` lei. Le tre righe stanno SEMPRE in fila.
+    //   M.vistaHoloecho(u, roster) -> null (non e` un Holoecho) oppure
+    //     { figura, vera, numero, nome, imgVariant, etichettaVera }
+    M.vistaHoloecho = function (u, roster) {
+        if (!u || !u.gruppoRepliche || u.tipoRepliche === 'DECOY') return null;
+        const gruppo = (roster || G.roster || []).filter(x => x && x.gruppoRepliche === u.gruppoRepliche);
+        const vera = gruppo.find(x => !x.replica) || (u.replica ? null : u);
+        const figura = u.figuraHoloecho === true;
+        const S = catalogo('SCHIERAMENTO') || {};
+        const etich = S.etichette || {};
+        const numero = u.numeroReplica || null;
+        return {
+            figura: figura,
+            vera: !u.replica,
+            numero: numero,
+            // Lo stesso nome dell'Hub (M.filtraPerAvversario): la figura si
+            // riconosce dalla foto, come al tavolo.
+            nome: (etich.HOLOECHO || 'HOLOECHO') + (numero ? ' ' + numero : ''),
+            imgVariant: figura ? ((vera && M.fotoValida(vera.imgVariant)) ? vera.imgVariant : '0') : (M.fileSegnalinoHoloecho(numero) || '0'),
+            etichettaVera: !u.replica ? M.accenti(etich.VERA_HOLOECHO || 'QUESTA E` LA VERA') : ''
+        };
+    };
+    // Le righe di un gruppo di repliche in fila, al posto della prima che
+    // compare: prima la FIGURA, poi gli HOLOECHO per numero (Decoy: per
+    // numero). Non tocca la lista: ne restituisce una nuova.
+    M.inFilaRepliche = function (lista) {
+        const fuori = [], visti = {};
+        (lista || []).forEach(function (u) {
+            if (!u || !u.gruppoRepliche) { fuori.push(u); return; }
+            if (visti[u.gruppoRepliche]) return;
+            visti[u.gruppoRepliche] = true;
+            const g = (lista || []).filter(x => x && x.gruppoRepliche === u.gruppoRepliche);
+            g.sort(function (a, b) {
+                if (!!b.figuraHoloecho !== !!a.figuraHoloecho) return b.figuraHoloecho ? 1 : -1;
+                return (a.numeroReplica || 0) - (b.numeroReplica || 0);
+            });
+            g.forEach(x => fuori.push(x));
+        });
+        return fuori;
+    };
     // Toglie TUTTE le repliche della truppa (in place) -> [repliche tolte]
     M.togliRepliche = function (roster, idVero) {
         const tolte = [];
@@ -14839,6 +15101,25 @@
     // Lo stesso per le icone degli STATI (CATALOGO_N5.ICONE_EFFETTO e quelle
     // dell'app): 'img/icon_targeted.png' -> 'img/nomadi/icon_targeted.png'.
     // Senza fazione, o con un percorso che non comincia da img/, resta com'e`.
+    // 3 novembre (Paolo): la foto che prendera` il prossimo Deployable di
+    // quell'arma (CrazyKoala: crazykoala_1 ... _4, la prima libera). Il tasto
+    // che lo piazza la mostra, e la miniatura sul tavolo avra` la stessa.
+    //   -> 'img/nomadi/crazykoala_2.png', o null (arma senza foto in
+    //      sequenza, o tutte gia` prese: resta l'immagine dell'arma).
+    M.fotoProssimoDeployable = function (nomeArma, roster, fazione) {
+        const elenco = (catalogo('SCHIERAMENTO') || {}).fotoInSequenza || [];
+        const voce = elenco.find(v => new RegExp('^\\s*' + v.arma, 'i').test(String(nomeArma || '')));
+        if (!voce) return null;
+        const nome = k => String(voce.file).replace('{n}', k);
+        const prese = (roster || G.roster || []).filter(x => x && x.deployable && x.state !== 'DEAD').map(x => x.imgVariant);
+        for (let k = 1; k <= (voce.quante || 0); k++) {
+            if (prese.indexOf(nome(k)) < 0) {
+                const f = fazione || (typeof M.fazionePropria === 'function' ? M.fazionePropria() : null);
+                return M.iconaDellaFazione('img/' + nome(k), f) || ('img/' + nome(k));
+            }
+        }
+        return null;
+    };
     M.iconaDellaFazione = function (percorso, fazione) {
         const p = String(percorso || '');
         const cartelle = (catalogo('SCHIERAMENTO') || {}).cartelleSegnalini || {};

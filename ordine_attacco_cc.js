@@ -1,4 +1,4 @@
-// @versione 2026-11-01.1 | ordine_attacco_cc.js | proprieta`: chat MOTORE
+// @versione 2026-11-03.1 | ordine_attacco_cc.js | proprieta`: chat MOTORE
 // ==========================================
 // ⚔️ CORPO A CORPO (N5) - ordine_attacco_cc.js
 // ------------------------------------------
@@ -188,7 +188,11 @@
         const burst = M.burstCC(unita, arma, {
             coordMode: window.coordMode,
             indiceCoord: window.coordIndex,
-            alleatiIngaggiati: window.ccAlleatiIngaggiati || 0
+            // 3 novembre (Paolo, CO-11): in un Coordinato in mischia tira solo
+            // la Punta di Lancia, con +1B per OGNI gregario dell'Ordine: chi
+            // dichiara il CC sullo stesso bersaglio gli e` a contatto.
+            partecipantiIngaggiati: window.coordMode ? Math.max(0, (window.coordUnits || []).length - 1) : 0,
+            alleatiIngaggiati: window.coordMode ? 0 : (window.ccAlleatiIngaggiati || 0)
         });
         window.totalBurst = burst.valore;
         window.burstDettaglio = burst;
@@ -229,7 +233,9 @@
         }
 
         // Alleati nella mischia: dato non deducibile, lo dichiara il giocatore.
-        html += `<div style="background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-attenzione-fondo,#554400); padding:12px; border-radius:5px; margin-bottom:15px;">
+        // Nel Coordinato no: il +1B per gregario lo conta gia` il motore
+        // (M.burstCC, partecipantiIngaggiati), e i due bonus non si sommano.
+        if (!window.coordMode) html += `<div style="background:var(--mn-nota-fondo,#1a1000); border:1px solid var(--mn-attenzione-fondo,#554400); padding:12px; border-radius:5px; margin-bottom:15px;">
             <div style="text-align:center; color:var(--mn-nota-tenue,#cc9955); font-size:var(--fs-s); margin-bottom:8px;">
                 <b>Close Combat with Multiple Troopers</b><br>
                 <span style="font-size:var(--fs-xs); color:var(--mn-nota-tenue,#cc9955);">Quanti TUOI alleati sono ingaggiati in questa mischia? (+1B ciascuno)</span>
@@ -358,6 +364,17 @@
 
         window.coordIndex++;
 
+        // 3 novembre (Paolo, CO-11): nel Coordinato in mischia i gregari NON
+        // tirano (M.burstCC: nonTira). Prima l'app faceva scegliere loro arma
+        // e bersaglio, e all'invio la busta con 0 dadi si bloccava (E20).
+        // Tirata la Punta di Lancia, l'Ordine si invia.
+        const gregariCC = window.coordMode ? window.coordUnits.slice(window.coordIndex) : [];
+        if (gregariCC.length) {
+            const nomiG = gregariCC.map(u => M.nomeUnita(u)).join(', ');
+            M.nota('step-modifiers', 'Gregari', `${nomiG}: in mischia non tirano, solo la Punta di Lancia (+${gregariCC.length}B).`, { tipo: 'regole' });
+            window.coordIndex = window.coordUnits.length;
+        }
+
         if (window.coordIndex < window.coordUnits.length) {
             window.combatTargets = [];
             window.pendingTargets = [];
@@ -367,7 +384,7 @@
 
         const spedito = M.inviaCalcolo(window.coordPayloads, { isCoordinated: window.coordMode });
         if (!spedito) {
-            window.coordIndex--;
+            window.coordIndex = window.coordPayloads.length - 1;
             window.coordPayloads.pop();
             return;
         }
@@ -392,7 +409,7 @@
 // caso la versione resta in coda e il motore la raccoglie all'avvio.
 (function () {
     var g = (typeof window !== 'undefined') ? window : globalThis;
-    var v = { file: 'ordine_attacco_cc.js', versione: '2026-11-01.1', proprieta: 'MOTORE' };
+    var v = { file: 'ordine_attacco_cc.js', versione: '2026-11-03.1', proprieta: 'MOTORE' };
     if (g.MotoreN5 && g.MotoreN5.dichiaraVersione) g.MotoreN5.dichiaraVersione(v.file, v.versione, v.proprieta);
     else { g.__versioniN5 = g.__versioniN5 || []; g.__versioniN5.push(v); }
 })();
